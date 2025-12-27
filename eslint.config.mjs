@@ -223,6 +223,7 @@ export default defineConfig([
   {
     files: [
       'src/app/**/*.tsx',
+      'src/screens/**/*-screen.tsx',
       'src/components/**/*-screen.tsx',
       'src/components/**/*-modal.tsx',
       'src/components/**/*-sheet.tsx',

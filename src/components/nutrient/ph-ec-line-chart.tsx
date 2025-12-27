@@ -249,7 +249,7 @@ const PhEcLineChartComponent = ({
         </View>
         <LineChart {...chartConfig} />
         {events && events.length > 0 && (
-          <View className="dark:bg-primary-950 mt-2 rounded-md bg-primary-50 px-3 py-2">
+          <View className="mt-2 rounded-md bg-primary-50 px-3 py-2 dark:bg-primary-950">
             <Text className="text-xs text-primary-700 dark:text-primary-300">
               {t('nutrient.chart.eventMarkersNote', {
                 count: events.length,

@@ -1,7 +1,8 @@
+import type { BottomSheetModal } from '@gorhom/bottom-sheet';
+import { BottomSheetView } from '@gorhom/bottom-sheet';
 import * as React from 'react';
-import { Modal } from 'react-native';
 
-import { Button, Input, Text, View } from '@/components/ui';
+import { Button, Input, Modal, Text, useModal, View } from '@/components/ui';
 import { translate } from '@/lib';
 import { openLinkInBrowser } from '@/lib/utils';
 
@@ -13,7 +14,6 @@ type PendingMfaEnrollment = {
 };
 
 type MfaSetupModalProps = {
-  visible: boolean;
   pendingEnrollment: PendingMfaEnrollment | null;
   verificationCode: string;
   onVerificationCodeChange: (code: string) => void;
@@ -22,76 +22,107 @@ type MfaSetupModalProps = {
   isVerifying: boolean;
 };
 
-export function MfaSetupModal({
-  visible,
-  pendingEnrollment,
-  verificationCode,
-  onVerificationCodeChange,
-  onVerify,
-  onClose,
-  isVerifying,
-}: MfaSetupModalProps) {
+export type MfaSetupModalRef = BottomSheetModal;
+
+/**
+ * Modal for MFA TOTP setup with secret display and verification code input.
+ *
+ * Uses @gorhom/bottom-sheet for native feel. Sensitive data (secrets) are kept
+ * in component state, not exposed in navigation params.
+ *
+ * Usage:
+ * ```tsx
+ * const { ref, present, dismiss } = useModal();
+ *
+ * <MfaSetupModal
+ *   ref={ref}
+ *   pendingEnrollment={enrollment}
+ *   verificationCode={code}
+ *   onVerificationCodeChange={setCode}
+ *   onVerify={handleVerify}
+ *   onClose={dismiss}
+ *   isVerifying={isPending}
+ * />
+ *
+ * // To show the modal:
+ * present();
+ * ```
+ */
+export const MfaSetupModal = React.forwardRef<
+  MfaSetupModalRef,
+  MfaSetupModalProps
+>(function MfaSetupModal(
+  {
+    pendingEnrollment,
+    verificationCode,
+    onVerificationCodeChange,
+    onVerify,
+    onClose,
+    isVerifying,
+  },
+  ref
+) {
   return (
     <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
+      ref={ref}
+      snapPoints={['55%']}
+      title={translate('auth.security.mfa_setup_title')}
+      enablePanDownToClose
+      onDismiss={onClose}
     >
-      <View className="flex-1 bg-black/60">
-        <View className="flex-1 items-center justify-center px-4 py-10">
-          <View className="w-full rounded-2xl bg-white p-5 dark:bg-charcoal-900">
-            <Text className="mb-2 text-xl font-bold">
-              {translate('auth.security.mfa_setup_title')}
+      <BottomSheetView className="px-5 pb-5">
+        <Text className="mb-4 text-neutral-600 dark:text-neutral-300">
+          {translate('auth.security.mfa_setup_description')}
+        </Text>
+
+        {pendingEnrollment ? (
+          <>
+            <Text className="text-sm font-semibold text-neutral-500 dark:text-neutral-400">
+              {translate('auth.security.mfa_secret_label')}
             </Text>
-            <Text className="mb-4 text-neutral-600 dark:text-neutral-300">
-              {translate('auth.security.mfa_setup_description')}
-            </Text>
-            {pendingEnrollment ? (
-              <>
-                <Text className="text-sm font-semibold text-neutral-500 dark:text-neutral-400">
-                  {translate('auth.security.mfa_secret_label')}
-                </Text>
-                <View className="my-2 rounded-lg border border-dashed border-neutral-400 p-3">
-                  <Text selectable className="font-mono text-lg">
-                    {pendingEnrollment.secret}
-                  </Text>
-                </View>
-                <Button
-                  variant="outline"
-                  label={translate('auth.security.mfa_open_authenticator')}
-                  onPress={() => openLinkInBrowser(pendingEnrollment.uri)}
-                  className="mt-2"
-                />
-              </>
-            ) : null}
-            <Input
-              className="mt-4"
-              value={verificationCode}
-              onChangeText={onVerificationCodeChange}
-              placeholder={translate('auth.security.mfa_code_placeholder')}
-              keyboardType="number-pad"
-              maxLength={6}
-              autoFocus
-              testID="mfa-code-input"
-            />
-            <View className="mt-6 flex-row gap-3">
-              <Button
-                variant="outline"
-                label={translate('common.cancel')}
-                onPress={onClose}
-                className="flex-1"
-              />
-              <Button
-                label={translate('common.confirm')}
-                onPress={onVerify}
-                loading={isVerifying}
-                className="flex-1"
-              />
+            <View className="my-2 rounded-lg border border-dashed border-neutral-400 p-3">
+              <Text selectable className="font-mono text-lg">
+                {pendingEnrollment.secret}
+              </Text>
             </View>
-          </View>
+            <Button
+              variant="outline"
+              label={translate('auth.security.mfa_open_authenticator')}
+              onPress={() => openLinkInBrowser(pendingEnrollment.uri)}
+              className="mt-2"
+            />
+          </>
+        ) : null}
+
+        <Input
+          className="mt-4"
+          value={verificationCode}
+          onChangeText={onVerificationCodeChange}
+          placeholder={translate('auth.security.mfa_code_placeholder')}
+          keyboardType="number-pad"
+          maxLength={6}
+          autoFocus
+          testID="mfa-code-input"
+        />
+
+        <View className="mt-6 flex-row gap-3">
+          <Button
+            variant="outline"
+            label={translate('common.cancel')}
+            onPress={onClose}
+            className="flex-1"
+          />
+          <Button
+            label={translate('common.confirm')}
+            onPress={onVerify}
+            loading={isVerifying}
+            className="flex-1"
+          />
         </View>
-      </View>
+      </BottomSheetView>
     </Modal>
   );
-}
+});
+
+// Re-export useModal for convenience
+export { useModal };

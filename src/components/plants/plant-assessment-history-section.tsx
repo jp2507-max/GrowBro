@@ -64,7 +64,7 @@ export function PlantAssessmentHistorySection({
       <Pressable
         accessibilityRole="button"
         onPress={toggleExpanded}
-        className="flex-row items-center justify-between rounded-lg border border-neutral-200 bg-white p-4 active:opacity-70 dark:border-charcoal-700 dark:bg-charcoal-900"
+        className="flex-row items-center justify-between rounded-lg border border-neutral-200 bg-white p-4 shadow-sm active:opacity-70 dark:border-white/10 dark:bg-white/10 dark:shadow-none"
         testID={`${testID}-header`}
       >
         <View className="flex-1">
@@ -91,7 +91,7 @@ export function PlantAssessmentHistorySection({
       </Pressable>
 
       {expanded && (
-        <View className="mt-2 rounded-lg border border-neutral-200 bg-white p-3 dark:border-charcoal-700 dark:bg-charcoal-900">
+        <View className="mt-2 rounded-lg border border-neutral-200 bg-white p-3 shadow-sm dark:border-white/10 dark:bg-white/10 dark:shadow-none">
           {count === 0 ? (
             <View className="items-center py-6">
               <Text className="text-sm text-neutral-500 dark:text-neutral-400">

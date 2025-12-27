@@ -125,6 +125,13 @@
       "quick_action_hint": "Opens the {{action}} quick action.",
       "share_update_hint": "Opens the Create Post screen."
     },
+    "modal": {
+      "backdrop_hint": "Double-tap to dismiss the modal",
+      "backdrop_label": "Close modal",
+      "close_hint": "Double-tap to close the modal and return to the previous screen",
+      "close_label": "Close modal",
+      "input_label": "{{label}} input"
+    },
     "plants": {
       "assessmentHistory": {
         "empty": "No assessments yet",
@@ -768,6 +775,7 @@
     "go_back": "Go back",
     "loading": "Loading...",
     "na": "N/A",
+    "no": "No",
     "notSelected": "not selected",
     "null": "null",
     "off": "OFF",
@@ -784,7 +792,8 @@
     "saving": "Saving...",
     "select_date": "Select date",
     "selected": "selected",
-    "undo": "Undo"
+    "undo": "Undo",
+    "yes": "Yes"
   },
   "community": {
     "adopt": {
@@ -2090,11 +2099,13 @@
     "no_events_description": "Start logging reservoir events to track your changes",
     "no_events_title": "No Events Recorded",
     "no_readings": "No readings available",
+    "notes": "Notes",
     "performance_report": "Performance Report",
     "ph": "pH",
     "phTrend": "pH Trend",
     "ppm": "PPM",
     "ppm_scale_label": "PPM Scale",
+    "publishPrivately": "Publish privately",
     "reservoir": {
       "max": "Max",
       "medium": "Growing Medium",
@@ -2114,8 +2125,13 @@
       },
       "volume": "Volume (L)"
     },
+    "saveStrainProfile": "Save Strain Profile",
     "save_reading": "Save Reading",
     "start_logging_ph_ec": "Start logging pH/EC measurements",
+    "strainName": "Strain Name",
+    "strainNamePlaceholder": "Enter a name for your strain profile",
+    "strainNotesPlaceholder": "Add notes about your strain profile...",
+    "strainProfileDescription": "Save your custom nutrient settings as a strain profile for future use.",
     "targetMax": "Max",
     "targetMin": "Min",
     "targetRange": "Target",
@@ -3851,6 +3867,9 @@
   "units": {
     "celsius": "°C",
     "ms_per_cm": "mS/cm"
+  },
+  "validation": {
+    "strainNameRequired": "Strain name is required"
   },
   "welcome": "Welcome to GrowBro app site"
 }

@@ -8,9 +8,10 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { getSetupDisplayLabel } from '@/components/playbooks/playbook-selection-card';
-import { Button, SafeAreaView, Text, View } from '@/components/ui';
+import { Button, Text, View } from '@/components/ui';
 import { usePlaybookService } from '@/lib/playbooks';
 import type { PlaybookPreview } from '@/types/playbook';
 
@@ -18,25 +19,21 @@ function LoadingState() {
   const { t } = useTranslation();
 
   return (
-    <SafeAreaView className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
-      <View className="flex-1 items-center justify-center">
-        <Text className="text-neutral-600 dark:text-neutral-400">
-          {t('list.loading')}
-        </Text>
-      </View>
-    </SafeAreaView>
+    <View className="flex-1 items-center justify-center bg-neutral-50 dark:bg-charcoal-950">
+      <Text className="text-neutral-600 dark:text-neutral-400">
+        {t('list.loading')}
+      </Text>
+    </View>
   );
 }
 
 function NotFoundState({ message }: { message: string }) {
   return (
-    <SafeAreaView className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
-      <View className="flex-1 items-center justify-center px-4">
-        <Text className="text-center text-neutral-600 dark:text-neutral-400">
-          {message}
-        </Text>
-      </View>
-    </SafeAreaView>
+    <View className="flex-1 items-center justify-center bg-neutral-50 px-4 dark:bg-charcoal-950">
+      <Text className="text-center text-neutral-600 dark:text-neutral-400">
+        {message}
+      </Text>
+    </View>
   );
 }
 
@@ -48,10 +45,11 @@ function PlaybookContent({
   onApply: () => void;
 }) {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
 
   return (
-    <SafeAreaView className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
-      <ScrollView className="flex-1">
+    <View className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
+      <ScrollView className="flex-1" contentInsetAdjustmentBehavior="automatic">
         <View className="p-4">
           <View className="rounded-xl bg-white p-4 dark:bg-charcoal-900">
             <Text className="mb-2 text-2xl font-bold text-charcoal-900 dark:text-neutral-100">
@@ -76,14 +74,17 @@ function PlaybookContent({
         </View>
       </ScrollView>
 
-      <View className="border-t border-neutral-200 bg-white p-4 dark:border-charcoal-700 dark:bg-charcoal-900">
+      <View
+        className="border-t border-neutral-200 bg-white p-4 dark:border-charcoal-700 dark:bg-charcoal-900"
+        style={{ paddingBottom: Math.max(insets.bottom, 16) }}
+      >
         <Button
           label={t('playbooks.applyToPlant')}
           onPress={onApply}
           className="w-full"
         />
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 

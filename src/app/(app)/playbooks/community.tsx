@@ -11,7 +11,7 @@ import { useTranslation } from 'react-i18next';
 
 import type { CommunityTemplate } from '@/api/templates';
 import { TemplateListItem } from '@/components/playbooks';
-import { SafeAreaView, Text, View } from '@/components/ui';
+import { Text, View } from '@/components/ui';
 import { useAnalytics } from '@/lib/use-analytics';
 
 function TemplateHeader() {
@@ -132,7 +132,7 @@ export default function CommunityTemplatesScreen() {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
+    <View className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
       <View className="flex-1">
         <TemplateHeader />
         {loading ? (
@@ -146,9 +146,10 @@ export default function CommunityTemplatesScreen() {
             keyExtractor={keyExtractor}
             getItemType={getItemType}
             contentContainerClassName="px-4 pb-4"
+            contentInsetAdjustmentBehavior="automatic"
           />
         )}
       </View>
-    </SafeAreaView>
+    </View>
   );
 }

@@ -12,6 +12,9 @@ export { ReservoirForm } from './reservoir-form';
 export { ReservoirSelector } from './reservoir-selector';
 export { ScheduleBulkEditPanel } from './schedule-bulk-edit-panel';
 export { SourceWaterProfileForm } from './source-water-profile-form';
-export { StrainProfileSaveDialog } from './strain-profile-save-dialog';
+export {
+  StrainProfileSaveDialog,
+  type StrainProfileSaveDialogRef,
+} from './strain-profile-save-dialog';
 export { TemplateFilterBar } from './template-filter-bar';
 export { TemplateListItem } from './template-list-item';

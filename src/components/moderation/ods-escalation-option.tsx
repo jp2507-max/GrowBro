@@ -13,7 +13,7 @@ export function OdsEscalationOption({
   const { t } = useTranslation();
   return (
     <View
-      className="dark:bg-primary-950 mb-6 rounded-lg border border-primary-300 bg-primary-50 p-4 dark:border-primary-700"
+      className="mb-6 rounded-lg border border-primary-300 bg-primary-50 p-4 dark:border-primary-700 dark:bg-primary-950"
       testID={testID}
     >
       <Text className="mb-2 text-sm font-bold text-primary-900 dark:text-primary-100">

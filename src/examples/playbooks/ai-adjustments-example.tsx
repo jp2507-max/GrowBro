@@ -1,21 +1,26 @@
 /**
- * Example implementation showing how to use AI adjustments in a plant detail screen
- * This demonstrates the complete flow: suggestion display, preview, acceptance, and voting
+ * ⚠️ EXAMPLE CODE - NOT FOR PRODUCTION USE
+ *
+ * This is a demonstration implementation showing how to use AI adjustments
+ * in a plant detail screen. It illustrates the complete flow:
+ * - Suggestion display
+ * - Preview modal (using @gorhom/bottom-sheet)
+ * - Acceptance and voting
  */
 
+import { BottomSheetView } from '@gorhom/bottom-sheet';
 import * as React from 'react';
-import { Modal, Pressable, ScrollView } from 'react-native';
+import { Pressable, ScrollView } from 'react-native';
 
+import { AdjustmentPreviewModal } from '@/components/playbooks/adjustment-preview-modal';
+import { AdjustmentSuggestionCard } from '@/components/playbooks/adjustment-suggestion-card';
+import { HelpfulnessVoting } from '@/components/playbooks/helpfulness-voting';
+import { Modal, Text, useModal, View as UIView } from '@/components/ui';
 import { useAIAdjustments } from '@/lib/playbooks/use-ai-adjustments';
 import type {
   AdjustmentContext,
   AdjustmentSuggestion,
 } from '@/types/ai-adjustments';
-
-import { Text, View as UIView } from '../ui';
-import { AdjustmentPreviewModal } from './adjustment-preview-modal';
-import { AdjustmentSuggestionCard } from './adjustment-suggestion-card';
-import { HelpfulnessVoting } from './helpfulness-voting';
 
 type Props = {
   plantId: string;
@@ -31,7 +36,7 @@ type AcceptParams = {
   setAcceptedSuggestions: React.Dispatch<
     React.SetStateAction<AdjustmentSuggestion[]>
   >;
-  setShowPreview: React.Dispatch<React.SetStateAction<boolean>>;
+  dismissModal: () => void;
   setSelectedSuggestion: React.Dispatch<
     React.SetStateAction<AdjustmentSuggestion | null>
   >;
@@ -48,7 +53,7 @@ async function acceptAllTasks(params: AcceptParams) {
         updated,
       ]);
     }
-    params.setShowPreview(false);
+    params.dismissModal();
     params.setSelectedSuggestion(null);
   } catch (error) {
     console.error('Failed to accept suggestion:', error);
@@ -68,7 +73,7 @@ async function acceptPartialTasks(params: AcceptParams) {
         updated,
       ]);
     }
-    params.setShowPreview(false);
+    params.dismissModal();
     params.setSelectedSuggestion(null);
   } catch (error) {
     console.error('Failed to accept partial suggestion:', error);
@@ -81,7 +86,7 @@ type DeclineParams = {
   setAcceptedSuggestions: React.Dispatch<
     React.SetStateAction<AdjustmentSuggestion[]>
   >;
-  setShowPreview: React.Dispatch<React.SetStateAction<boolean>>;
+  dismissModal: () => void;
   setSelectedSuggestion: React.Dispatch<
     React.SetStateAction<AdjustmentSuggestion | null>
   >;
@@ -94,7 +99,7 @@ async function declineSuggestionHandler(params: DeclineParams) {
     params.setAcceptedSuggestions((prev: AdjustmentSuggestion[]) =>
       prev.filter((s) => s.id !== params.selectedSuggestion!.id)
     );
-    params.setShowPreview(false);
+    params.dismissModal();
     params.setSelectedSuggestion(null);
   } catch (error) {
     console.error('Failed to decline suggestion:', error);
@@ -112,7 +117,7 @@ function useAdjustmentHandlers(options: {
     React.SetStateAction<AdjustmentSuggestion[]>
   >;
   setters: {
-    setShowPreview: React.Dispatch<React.SetStateAction<boolean>>;
+    dismissModal: () => void;
     setSelectedSuggestion: React.Dispatch<
       React.SetStateAction<AdjustmentSuggestion | null>
     >;
@@ -125,7 +130,7 @@ function useAdjustmentHandlers(options: {
       selectedSuggestion,
       acceptSuggestion: options.acceptSuggestion,
       setAcceptedSuggestions: options.setAcceptedSuggestions,
-      setShowPreview: options.setters.setShowPreview,
+      dismissModal: options.setters.dismissModal,
       setSelectedSuggestion: options.setters.setSelectedSuggestion,
     });
   };
@@ -139,7 +144,7 @@ function useAdjustmentHandlers(options: {
       taskIds,
       acceptSuggestion: options.acceptSuggestion,
       setAcceptedSuggestions: options.setAcceptedSuggestions,
-      setShowPreview: options.setters.setShowPreview,
+      dismissModal: options.setters.dismissModal,
       setSelectedSuggestion: options.setters.setSelectedSuggestion,
     });
   };
@@ -151,7 +156,7 @@ function useAdjustmentHandlers(options: {
       selectedSuggestion,
       declineSuggestion: options.declineSuggestion,
       setAcceptedSuggestions: options.setAcceptedSuggestions,
-      setShowPreview: options.setters.setShowPreview,
+      dismissModal: options.setters.dismissModal,
       setSelectedSuggestion: options.setters.setSelectedSuggestion,
     });
   };
@@ -374,9 +379,9 @@ function DebugSection({
 function useLocalSuggestionState(acceptedSuggestions: AdjustmentSuggestion[]) {
   const [selectedSuggestion, setSelectedSuggestion] =
     React.useState<AdjustmentSuggestion | null>(null);
-  const [showPreview, setShowPreview] = React.useState(false);
   const [localAcceptedSuggestions, setLocalAcceptedSuggestions] =
     React.useState<AdjustmentSuggestion[]>([]);
+  const previewModal = useModal();
 
   React.useEffect(() => {
     setLocalAcceptedSuggestions(acceptedSuggestions);
@@ -385,8 +390,7 @@ function useLocalSuggestionState(acceptedSuggestions: AdjustmentSuggestion[]) {
   return {
     selectedSuggestion,
     setSelectedSuggestion,
-    showPreview,
-    setShowPreview,
+    previewModal,
     localAcceptedSuggestions,
     setLocalAcceptedSuggestions,
   };
@@ -407,8 +411,7 @@ function useAdjustmentState(plantId: string, playbookId?: string) {
   const {
     selectedSuggestion,
     setSelectedSuggestion,
-    showPreview,
-    setShowPreview,
+    previewModal,
     localAcceptedSuggestions,
     setLocalAcceptedSuggestions,
   } = useLocalSuggestionState(acceptedSuggestions);
@@ -419,7 +422,7 @@ function useAdjustmentState(plantId: string, playbookId?: string) {
       declineSuggestion,
       acceptedSuggestions: localAcceptedSuggestions,
       setAcceptedSuggestions: setLocalAcceptedSuggestions,
-      setters: { setShowPreview, setSelectedSuggestion },
+      setters: { dismissModal: previewModal.dismiss, setSelectedSuggestion },
     });
 
   const {
@@ -438,7 +441,7 @@ function useAdjustmentState(plantId: string, playbookId?: string) {
 
   const handleViewDetails = (suggestion: AdjustmentSuggestion) => {
     setSelectedSuggestion(suggestion);
-    setShowPreview(true);
+    previewModal.present();
   };
 
   const pendingSuggestions = suggestions.filter((s) => s.status === 'pending');
@@ -446,8 +449,7 @@ function useAdjustmentState(plantId: string, playbookId?: string) {
   return {
     loading,
     selectedSuggestion,
-    showPreview,
-    setShowPreview,
+    previewModal,
     handleAcceptAll,
     handleAcceptPartial,
     handleDecline,
@@ -465,8 +467,7 @@ export function AIAdjustmentsExample({ plantId, playbookId }: Props) {
   const {
     loading,
     selectedSuggestion,
-    showPreview,
-    setShowPreview,
+    previewModal,
     handleAcceptAll,
     handleAcceptPartial,
     handleDecline,
@@ -507,22 +508,25 @@ export function AIAdjustmentsExample({ plantId, playbookId }: Props) {
       </ScrollView>
 
       <Modal
-        visible={showPreview}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setShowPreview(false)}
+        ref={previewModal.ref}
+        snapPoints={['85%']}
+        title="Adjustment Preview"
+        enablePanDownToClose
+        onDismiss={previewModal.dismiss}
       >
-        {selectedSuggestion && (
-          <AdjustmentPreviewModal
-            suggestion={selectedSuggestion}
-            onAcceptAll={() => handleAcceptAll(selectedSuggestion)}
-            onAcceptPartial={(taskIds) =>
-              handleAcceptPartial(selectedSuggestion, taskIds)
-            }
-            onDecline={() => handleDecline(selectedSuggestion)}
-            onClose={() => setShowPreview(false)}
-          />
-        )}
+        <BottomSheetView className="flex-1">
+          {selectedSuggestion && (
+            <AdjustmentPreviewModal
+              suggestion={selectedSuggestion}
+              onAcceptAll={() => handleAcceptAll(selectedSuggestion)}
+              onAcceptPartial={(taskIds) =>
+                handleAcceptPartial(selectedSuggestion, taskIds)
+              }
+              onDecline={() => handleDecline(selectedSuggestion)}
+              onClose={previewModal.dismiss}
+            />
+          )}
+        </BottomSheetView>
       </Modal>
     </UIView>
   );

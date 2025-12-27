@@ -177,10 +177,10 @@ export default function StrainsScreen(): React.ReactElement {
       />
 
       {/* Overlapping content sheet - slides up over header */}
-      <View className="bg-sheet z-10 -mt-6 flex-1 rounded-t-[32px] shadow-xl">
+      <View className="z-10 -mt-6 flex-1 rounded-t-[32px] bg-white shadow-xl dark:bg-charcoal-900">
         {/* Handle Bar - indicates draggable sheet */}
         <View className="w-full items-center pb-2 pt-3">
-          <View className="bg-sheet-handle h-1.5 w-12 rounded-full" />
+          <View className="h-1.5 w-12 rounded-full bg-neutral-200 dark:bg-white/20" />
         </View>
 
         <View className="px-4">

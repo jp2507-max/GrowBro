@@ -1,7 +1,14 @@
 import i18n from '@/lib/i18n';
 
 import type { PlantSettings, SeriesSpec } from './types';
-import { AUTOFLOWER_NUDGE_START_DAY, FLUSH_DAYS } from './types';
+import {
+  AUTOFLOWER_NUDGE_START_DAY,
+  CURE_DAILY_BURP_DAYS,
+  CURE_TOTAL_MONITORING_DAYS,
+  FLUSH_DAYS,
+  STEM_SNAP_CHECK_DAYS,
+  STRETCH_WARNING_DAY,
+} from './types';
 import {
   addDays,
   buildDtstartTimestamps,
@@ -197,7 +204,7 @@ export class TaskFactory {
       return [];
     }
 
-    const stretchWarningDate = addDays(flowerStart, 21); // Week 3
+    const stretchWarningDate = addDays(flowerStart, STRETCH_WARNING_DAY);
     if (stretchWarningDate <= now) {
       return [];
     }
@@ -266,7 +273,7 @@ export class TaskFactory {
         dtstartLocal,
         dtstartUtc,
         timezone,
-        count: 10,
+        count: STEM_SNAP_CHECK_DAYS,
       },
     ];
   }
@@ -291,15 +298,15 @@ export class TaskFactory {
       dtstartLocal: dtstartLocal1,
       dtstartUtc: dtstartUtc1,
       timezone,
-      count: 14,
+      count: CURE_DAILY_BURP_DAYS,
     });
 
     // Weeks 3-4: Every 3 days
-    const week3Start = addDays(cureStart, 14);
+    const week3Start = addDays(cureStart, CURE_DAILY_BURP_DAYS);
     if (week3Start > now) {
       const { dtstartLocal: dtstartLocal2, dtstartUtc: dtstartUtc2 } =
         buildDtstartTimestamps(week3Start, timezone);
-      const week4End = addDays(cureStart, 28);
+      const week4End = addDays(cureStart, CURE_TOTAL_MONITORING_DAYS);
       specs.push({
         title: i18n.t('tasks.burp_jars_week3.title'),
         description: i18n.t('tasks.burp_jars_week3.description'),

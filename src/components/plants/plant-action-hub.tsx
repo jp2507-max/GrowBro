@@ -54,7 +54,7 @@ export function PlantActionHub({
             <Button
               key={task.id}
               variant="default"
-              className="w-full rounded-2xl bg-terracotta-500 py-4 shadow-lg shadow-terracotta-200 active:bg-terracotta-600"
+              className="w-full rounded-2xl py-4 shadow-lg shadow-terracotta-200 dark:shadow-none"
               textClassName="text-white text-base font-semibold"
               onPress={() => onTaskPress?.(task.id)}
               testID={`action-task-${task.id}`}
@@ -86,7 +86,7 @@ export function PlantActionHub({
       {canHarvest && onHarvestPress ? (
         <Button
           variant="default"
-          className="w-full rounded-2xl bg-success-600 py-4 shadow-lg shadow-success-200 active:bg-success-700"
+          className="w-full rounded-2xl bg-success-600 py-4 shadow-lg shadow-success-200 active:bg-success-700 dark:shadow-none"
           textClassName="text-white text-base font-semibold"
           onPress={onHarvestPress}
           testID="action-start-harvest"

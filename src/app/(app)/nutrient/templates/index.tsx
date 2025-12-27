@@ -11,10 +11,11 @@ import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { TemplateFilterBar } from '@/components/nutrient/template-filter-bar';
 import { TemplateListItem } from '@/components/nutrient/template-list-item';
-import { Button, SafeAreaView, Text, View } from '@/components/ui';
+import { Button, Text, View } from '@/components/ui';
 import { listTemplates } from '@/lib/nutrient-engine/services/template-service';
 import type {
   FeedingTemplate,
@@ -35,6 +36,7 @@ function EmptyState({ message }: { message: string }): React.JSX.Element {
 export default function TemplateListScreen(): React.JSX.Element {
   const { t } = useTranslation();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   const [templates, setTemplates] = React.useState<FeedingTemplate[]>([]);
   const [selectedMedium, setSelectedMedium] =
@@ -87,7 +89,7 @@ export default function TemplateListScreen(): React.JSX.Element {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
+    <View className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
       <View className="flex-1">
         <View className="px-4 py-3">
           <Text className="text-2xl font-bold text-charcoal-900 dark:text-neutral-100">
@@ -114,10 +116,14 @@ export default function TemplateListScreen(): React.JSX.Element {
             keyExtractor={keyExtractor}
             getItemType={getItemType}
             contentContainerClassName="p-4"
+            contentInsetAdjustmentBehavior="automatic"
           />
         )}
 
-        <View className="border-t border-neutral-200 p-4 dark:border-charcoal-700">
+        <View
+          className="border-t border-neutral-200 p-4 dark:border-charcoal-700"
+          style={{ paddingBottom: Math.max(insets.bottom, 16) }}
+        >
           <Button
             label={t('nutrient.createTemplate')}
             onPress={handleCreateNew}
@@ -125,6 +131,6 @@ export default function TemplateListScreen(): React.JSX.Element {
           />
         </View>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }

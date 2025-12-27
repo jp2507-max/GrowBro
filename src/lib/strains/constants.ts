@@ -37,7 +37,7 @@ export const DEFAULT_HEIGHT = 'Not reported';
  * Fallback image URL for broken or missing strain images
  */
 export const FALLBACK_IMAGE_URL =
-  'https://via.placeholder.com/400x300?text=Strain+Image';
+  'https://placehold.co/400x400/e5e7eb/6b7280?text=Strain+Image';
 
 /**
  * Error messages for API failures

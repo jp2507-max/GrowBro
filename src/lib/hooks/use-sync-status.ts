@@ -7,6 +7,8 @@ import { useEffect, useState } from 'react';
 
 import type { SyncState, SyncStatus } from '../sync/types';
 
+const SYNC_STATUS_POLL_INTERVAL_MS = 1000;
+
 type SyncStatusSource = {
   getStatus: () => SyncStatus;
   subscribeStatus?: (listener: (status: SyncStatus) => void) => () => void;
@@ -40,7 +42,10 @@ export function useSyncStatus(syncWorker?: SyncStatusSource): SyncStatus {
 
     // Fallback: poll if no event API
     setStatus(syncWorker.getStatus());
-    const interval = setInterval(() => setStatus(syncWorker.getStatus()), 1000);
+    const interval = setInterval(
+      () => setStatus(syncWorker.getStatus()),
+      SYNC_STATUS_POLL_INTERVAL_MS
+    );
     return () => clearInterval(interval);
   }, [syncWorker]);
 

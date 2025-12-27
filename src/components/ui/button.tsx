@@ -25,16 +25,23 @@ const PRESS_DURATION = 120;
 const button = tv({
   slots: {
     container: 'my-2 flex flex-row items-center justify-center rounded-md px-4',
-    label: 'font-inter text-base font-semibold',
+    label: 'text-base font-semibold',
     indicator: 'h-6 text-white',
   },
 
   variants: {
     variant: {
+      /** Default/Primary CTA - uses terracotta brand action color */
       default: {
-        container: 'bg-black dark:bg-white',
-        label: 'text-white dark:text-black',
-        indicator: 'text-white dark:text-black',
+        container: 'bg-terracotta-500 active:bg-terracotta-600',
+        label: 'text-white',
+        indicator: 'text-white',
+      },
+      /** Primary alias - same as default for explicit CTA usage */
+      primary: {
+        container: 'bg-terracotta-500 active:bg-terracotta-600',
+        label: 'text-white',
+        indicator: 'text-white',
       },
       secondary: {
         container: 'bg-primary-600',
@@ -42,7 +49,7 @@ const button = tv({
         indicator: 'text-white',
       },
       outline: {
-        container: 'border border-neutral-400',
+        container: 'border border-neutral-400 dark:border-white/20',
         label: 'text-black dark:text-neutral-100',
         indicator: 'text-black dark:text-neutral-100',
       },
@@ -58,8 +65,14 @@ const button = tv({
       },
       link: {
         container: 'bg-transparent',
-        label: 'text-black',
-        indicator: 'text-black',
+        label: 'text-black dark:text-white',
+        indicator: 'text-black dark:text-white',
+      },
+      /** Neutral button for non-primary actions */
+      neutral: {
+        container: 'bg-neutral-900 dark:bg-white',
+        label: 'text-white dark:text-black',
+        indicator: 'text-white dark:text-black',
       },
       /** Pill-shaped button for header actions */
       pill: {
@@ -222,7 +235,7 @@ export const Button = React.forwardRef<View, Props>(
                 className={styles.label({ className: textClassName })}
                 tx={tx}
               >
-                {text}
+                {text || 'DEBUG_TEST_TEXT'}
               </Text>
             )}
           </>

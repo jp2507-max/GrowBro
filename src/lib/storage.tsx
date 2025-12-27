@@ -1,3 +1,20 @@
+/**
+ * MMKV Storage Module
+ *
+ * This is the default shared MMKV instance for general app state.
+ * Use this for non-sensitive data like preferences, UI state, and caches.
+ *
+ * Storage Architecture:
+ * 1. Default (this file): Use `storage` for general app state
+ * 2. Encrypted auth: Use `auth-storage.ts` for auth tokens/sessions
+ * 3. Secure domains: Use `security/secure-storage.ts` for sensitive data
+ *    (auth, user-data, sync-metadata, security-cache, feature-flags)
+ * 4. Feature isolation: Create namespaced instances when data isolation
+ *    is needed (e.g., search-history.ts, filter-presets.ts)
+ *
+ * MMKV hooks (useMMKVString, useMMKVBoolean, etc.) should pass the
+ * shared `storage` instance as the second argument for reactivity.
+ */
 import { MMKV } from 'react-native-mmkv';
 
 export const storage = new MMKV();

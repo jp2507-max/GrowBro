@@ -7,7 +7,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { ScrollView, Text, TouchableOpacity, View } from '@/components/ui';
+import { Pressable, ScrollView, Text, View } from '@/components/ui';
 
 type FilterOption = {
   label: string;
@@ -44,11 +44,11 @@ export function QueueFilters({
           {PRIORITY_FILTERS.map((filter) => {
             const isActive = activeFilter === filter.value;
             return (
-              <TouchableOpacity
+              <Pressable
                 accessibilityRole="button"
                 key={filter.value}
                 onPress={() => onFilterChange(filter.value)}
-                className={`rounded-full px-4 py-2 ${
+                className={`rounded-full px-4 py-2 active:opacity-70 ${
                   isActive
                     ? 'bg-primary-600'
                     : 'border border-neutral-300 bg-white dark:border-neutral-600 dark:bg-charcoal-800'
@@ -64,7 +64,7 @@ export function QueueFilters({
                 >
                   {filter.label}
                 </Text>
-              </TouchableOpacity>
+              </Pressable>
             );
           })}
         </View>

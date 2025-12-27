@@ -29,22 +29,17 @@ export const IMAGE_SIZES = {
 
 /**
  * Generate optimized image URI with size parameters
- * This allows CDN/proxy to serve appropriately sized images
+ * NOTE: Previously this added CDN optimization params like w=, h=, fit=, q=
+ * but the upstream strain image servers don't support these parameters.
+ * Now returns the original URI unchanged.
  */
 export function getOptimizedImageUri(
   originalUri: string,
-  size: keyof typeof IMAGE_SIZES
+  _size: keyof typeof IMAGE_SIZES
 ): string {
-  if (!originalUri || originalUri === DEFAULT_STRAIN_IMAGE) {
-    return originalUri;
-  }
-
-  const { width, height } = IMAGE_SIZES[size];
-
-  // If the URI already has query params, append with &
-  const separator = originalUri.includes('?') ? '&' : '?';
-
-  return `${originalUri}${separator}w=${width}&h=${height}&fit=cover&q=85`;
+  // Return original URI unchanged - upstream servers don't support
+  // image optimization query parameters
+  return originalUri || DEFAULT_STRAIN_IMAGE;
 }
 
 /**

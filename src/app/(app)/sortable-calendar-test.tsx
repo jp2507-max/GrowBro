@@ -3,7 +3,7 @@ import { DateTime } from 'luxon';
 import React from 'react';
 
 import { SortableDayView } from '@/components/calendar/sortable-day-view.example';
-import { ActivityIndicator, SafeAreaView, Text } from '@/components/ui';
+import { ActivityIndicator, Text, View } from '@/components/ui';
 import { getTasksByDateRange } from '@/lib/task-manager';
 import type { Task } from '@/types/calendar';
 
@@ -57,23 +57,23 @@ export default function SortableCalendarTestScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-neutral-50 dark:bg-charcoal-950">
+      <View className="flex-1 items-center justify-center bg-neutral-50 dark:bg-charcoal-950">
         <ActivityIndicator />
-      </SafeAreaView>
+      </View>
     );
   }
 
   if (error) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-neutral-50 dark:bg-charcoal-950">
+      <View className="flex-1 items-center justify-center bg-neutral-50 dark:bg-charcoal-950">
         <Text className="text-danger-600">{error}</Text>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
+    <View className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
       <SortableDayView date={displayDate} tasks={tasks} />
-    </SafeAreaView>
+    </View>
   );
 }

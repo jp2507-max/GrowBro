@@ -325,9 +325,9 @@ type StrainContentProps = {
 };
 
 const StrainContentSheet = ({ strain }: { strain: Strain }) => (
-  <View className="bg-sheet -mt-6 min-h-screen rounded-t-sheet pb-20 pt-4 shadow-2xl">
+  <View className="-mt-6 min-h-screen rounded-t-sheet bg-white pb-20 pt-4 shadow-2xl dark:bg-charcoal-900">
     <View className="mb-4 w-full items-center">
-      <View className="bg-sheet-handle h-1.5 w-12 rounded-full" />
+      <View className="h-1.5 w-12 rounded-full bg-neutral-200 dark:bg-white/20" />
     </View>
     <PremiumTagsRow strain={strain} />
     <Animated.View entering={FadeIn.delay(200).springify()}>

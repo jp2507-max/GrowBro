@@ -102,7 +102,7 @@ export function handleValidationError(
  */
 export function handleNetworkError(
   error: NetworkError,
-  t: (key: string, options?: TOptions<any>) => string
+  t: (key: string, options?: TOptions<Record<string, unknown>>) => string
 ): ErrorHandlerResult {
   // Transient errors: show toast
   if (error.retryable) {
@@ -137,7 +137,7 @@ export function handleNetworkError(
  */
 export function handleBusinessLogicError(
   error: BusinessLogicError,
-  t: (key: string, options?: TOptions<any>) => string
+  t: (key: string, options?: TOptions<Record<string, unknown>>) => string
 ): ErrorHandlerResult {
   return {
     shouldShowToast: false,
@@ -153,7 +153,7 @@ export function handleBusinessLogicError(
  */
 export function handleConsistencyError(
   error: ConsistencyError,
-  t: (key: string, options?: TOptions<any>) => string
+  t: (key: string, options?: TOptions<Record<string, unknown>>) => string
 ): ErrorHandlerResult {
   return {
     shouldShowToast: false,
@@ -404,7 +404,7 @@ function getBusinessLogicActions(
  */
 export function handleHarvestError(
   error: unknown,
-  t: (key: string, options?: TOptions<any>) => string
+  t: (key: string, options?: TOptions<Record<string, unknown>>) => string
 ): ErrorHandlerResult {
   const classified = classifyError(error);
 

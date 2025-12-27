@@ -6,7 +6,7 @@ import { showMessage } from 'react-native-flash-message';
 
 import { useCreateReading } from '@/api/ph-ec-readings';
 import { PhEcReadingForm } from '@/components/nutrient/ph-ec-reading-form';
-import { SafeAreaView, Text, View } from '@/components/ui';
+import { Text, View } from '@/components/ui';
 import type { PpmScale } from '@/lib/nutrient-engine/types';
 
 /**
@@ -75,17 +75,18 @@ export default function AddReadingScreen(): React.ReactElement {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <View className="flex-1 bg-white dark:bg-charcoal-950">
       <ScrollView
         className="flex-1"
         contentContainerClassName="p-4"
+        contentInsetAdjustmentBehavior="automatic"
         keyboardShouldPersistTaps="handled"
       >
         <View className="mb-4">
-          <Text className="text-2xl font-bold text-neutral-900">
+          <Text className="text-2xl font-bold text-neutral-900 dark:text-neutral-50">
             {t('nutrient.add_reading')}
           </Text>
-          <Text className="mt-1 text-sm text-neutral-600">
+          <Text className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
             {t('nutrient.add_reading_description')}
           </Text>
         </View>
@@ -97,6 +98,6 @@ export default function AddReadingScreen(): React.ReactElement {
           reservoirs={[]}
         />
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }

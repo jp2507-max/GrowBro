@@ -663,7 +663,7 @@ function ReportTypeOption({
       onPress={onSelect}
       className={`rounded-lg border-2 p-4 ${
         selected
-          ? 'dark:bg-primary-950 border-primary-600 bg-primary-50 dark:border-primary-500'
+          ? 'border-primary-600 bg-primary-50 dark:border-primary-500 dark:bg-primary-950'
           : 'border-neutral-200 bg-white dark:border-neutral-700 dark:bg-charcoal-900'
       }`}
       accessibilityRole="radio"
@@ -715,7 +715,7 @@ function ReasonOptionComponent({
       onPress={onSelect}
       className={`mb-3 rounded-lg border-2 p-4 ${
         selected
-          ? 'dark:bg-primary-950 border-primary-600 bg-primary-50 dark:border-primary-500'
+          ? 'border-primary-600 bg-primary-50 dark:border-primary-500 dark:bg-primary-950'
           : 'border-neutral-200 bg-white dark:border-neutral-700 dark:bg-charcoal-900'
       }`}
       accessibilityRole="radio"

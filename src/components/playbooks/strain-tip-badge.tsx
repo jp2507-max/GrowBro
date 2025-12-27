@@ -21,7 +21,7 @@ export function StrainTipBadge({
 }: StrainTipBadgeProps): React.ReactElement {
   return (
     <View
-      className="dark:bg-primary-950/30 mt-3 rounded-lg border border-primary-200 bg-primary-50 p-3 dark:border-primary-800"
+      className="mt-3 rounded-lg border border-primary-200 bg-primary-50 p-3 dark:border-primary-800 dark:bg-primary-950/30"
       accessibilityRole="text"
       accessibilityLabel={`Strain tip: ${tip}`}
       accessibilityHint={translate('strainTip.accessibilityHint')}

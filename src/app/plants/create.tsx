@@ -345,9 +345,9 @@ export default function CreatePlantScreen(): React.ReactElement {
 
       {/* Overlapping White Content Sheet */}
       <View className="z-10 -mt-10 flex-1">
-        <View className="bg-sheet flex-1 rounded-t-[35px] shadow-xl">
+        <View className="flex-1 rounded-t-[35px] bg-white shadow-xl dark:bg-charcoal-900">
           {/* Handle Bar */}
-          <View className="bg-sheet-handle mb-2 mt-4 h-1.5 w-12 self-center rounded-full" />
+          <View className="mb-2 mt-4 h-1.5 w-12 self-center rounded-full bg-neutral-200 dark:bg-white/20" />
 
           <ScrollView
             className="flex-1"
@@ -367,12 +367,12 @@ export default function CreatePlantScreen(): React.ReactElement {
 
           {/* Floating CTA Button */}
           <View
-            className="bg-sheet/95 absolute inset-x-0 bottom-0 px-4 pt-3"
+            className="absolute inset-x-0 bottom-0 bg-white/95 px-4 pt-3 dark:bg-charcoal-900/95"
             style={{ paddingBottom: insets.bottom + 8 }}
           >
             <Button
               variant="default"
-              className="w-full rounded-2xl bg-terracotta-500 py-4 active:bg-terracotta-600"
+              className="w-full rounded-2xl py-4"
               textClassName="text-white text-lg font-semibold"
               onPress={handleHeaderSave}
               disabled={isSaving}

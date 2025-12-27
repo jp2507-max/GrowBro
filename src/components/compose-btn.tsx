@@ -1,5 +1,5 @@
 import React from 'react';
-import { TouchableOpacity } from 'react-native';
+import { Pressable } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useDerivedValue,
@@ -11,7 +11,7 @@ import { translate } from '@/lib';
 import { useAnimatedScrollList } from '@/lib/animations/animated-scroll-list-provider';
 import { useBottomTabBarHeight } from '@/lib/animations/use-bottom-tab-bar-height';
 
-const AnimatedPressable = Animated.createAnimatedComponent(TouchableOpacity);
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const AnimatedText = Animated.createAnimatedComponent(Text);
 const BTN_WIDTH = 125;
 const BTN_HEIGHT = 50;
@@ -58,8 +58,7 @@ export function ComposeBtn({
 
   return (
     <AnimatedPressable
-      activeOpacity={0.9}
-      className="absolute right-6 flex-row items-center justify-center gap-3 rounded-full bg-neutral-800 px-4 shadow-md"
+      className="absolute right-6 flex-row items-center justify-center gap-3 rounded-full bg-neutral-800 px-4 shadow-md active:opacity-90"
       style={[rContainerStyle, { bottom: grossHeight + 16 }]}
       onPress={onPress}
       accessibilityRole="button"

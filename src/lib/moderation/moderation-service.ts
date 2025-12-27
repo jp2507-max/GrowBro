@@ -104,15 +104,16 @@ type DbContentReport = {
  * Type guard to validate DbContentReport objects at runtime
  */
 function isDbContentReport(obj: unknown): obj is DbContentReport {
+  const record = obj as Record<string, unknown>;
   return (
     typeof obj === 'object' &&
     obj !== null &&
-    typeof (obj as any).id === 'string' &&
-    typeof (obj as any).reporter_id === 'string' &&
-    typeof (obj as any).status === 'string' &&
-    typeof (obj as any).priority === 'number' &&
-    typeof (obj as any).sla_deadline === 'string' &&
-    typeof (obj as any).created_at === 'string'
+    typeof record.id === 'string' &&
+    typeof record.reporter_id === 'string' &&
+    typeof record.status === 'string' &&
+    typeof record.priority === 'number' &&
+    typeof record.sla_deadline === 'string' &&
+    typeof record.created_at === 'string'
   );
 }
 

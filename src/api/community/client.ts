@@ -923,6 +923,7 @@ export class CommunityApiClient implements CommunityAPI {
   /**
    * Get posts with like/comment counts and user like status in a single optimized query
    */
+
   private async getPostsWithCounts(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     query: PostgrestFilterBuilder<any, any, any, any>,

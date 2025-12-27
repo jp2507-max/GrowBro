@@ -50,7 +50,7 @@ function ModalHeader({
 
 function ReasoningSection({ reasoning }: { reasoning: string }) {
   return (
-    <View className="dark:bg-primary-950 mb-4 rounded-lg bg-primary-50 p-4">
+    <View className="mb-4 rounded-lg bg-primary-50 p-4 dark:bg-primary-950">
       <Text className="mb-1 font-semibold text-primary-900 dark:text-primary-100">
         Why this adjustment?
       </Text>

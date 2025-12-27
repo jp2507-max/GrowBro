@@ -125,6 +125,13 @@
       "quick_action_hint": "Öffnet die Schnellaktion {{action}}.",
       "share_update_hint": "Öffnet den Bildschirm zum Erstellen eines Beitrags."
     },
+    "modal": {
+      "backdrop_hint": "Doppeltippen, um das Modal zu schließen",
+      "backdrop_label": "Modal schließen",
+      "close_hint": "Doppeltippen, um das Modal zu schließen und zum vorherigen Bildschirm zurückzukehren",
+      "close_label": "Modal schließen",
+      "input_label": "{{label}}-Eingabe"
+    },
     "plants": {
       "assessmentHistory": {
         "empty": "Noch keine Bewertungen",
@@ -768,6 +775,7 @@
     "go_back": "Zurück",
     "loading": "Lädt...",
     "na": "k.A.",
+    "no": "Nein",
     "notSelected": "nicht ausgewählt",
     "null": "null",
     "off": "AUS",
@@ -784,7 +792,8 @@
     "saving": "Speichert...",
     "select_date": "Datum wählen",
     "selected": "ausgewählt",
-    "undo": "Rückgängig"
+    "undo": "Rückgängig",
+    "yes": "Ja"
   },
   "community": {
     "adopt": {
@@ -2090,11 +2099,13 @@
     "no_events_description": "Beginne Reservoir-Ereignisse zu protokollieren, um deine Änderungen zu verfolgen",
     "no_events_title": "Keine Ereignisse aufgezeichnet",
     "no_readings": "Keine Messwerte verfügbar",
+    "notes": "Notizen",
     "performance_report": "Leistungsbericht",
     "ph": "pH",
     "phTrend": "pH-Verlauf",
     "ppm": "PPM",
     "ppm_scale_label": "PPM-Skala",
+    "publishPrivately": "Privat veröffentlichen",
     "reservoir": {
       "max": "Max",
       "medium": "Anbaumedium",
@@ -2114,8 +2125,13 @@
       },
       "volume": "Volumen (L)"
     },
+    "saveStrainProfile": "Sortenprofil speichern",
     "save_reading": "Messung speichern",
     "start_logging_ph_ec": "Starte pH/EC-Messungen",
+    "strainName": "Sortenname",
+    "strainNamePlaceholder": "Gib einen Namen für dein Sortenprofil ein",
+    "strainNotesPlaceholder": "Füge Notizen zu deinem Sortenprofil hinzu...",
+    "strainProfileDescription": "Speichere deine benutzerdefinierten Nährstoffeinstellungen als Sortenprofil für spätere Verwendung.",
     "targetMax": "Max",
     "targetMin": "Min",
     "targetRange": "Zielbereich",
@@ -3851,6 +3867,9 @@
   "units": {
     "celsius": "°C",
     "ms_per_cm": "mS/cm"
+  },
+  "validation": {
+    "strainNameRequired": "Sortenname ist erforderlich"
   },
   "welcome": "Willkommen bei der GrowBro App"
 }
