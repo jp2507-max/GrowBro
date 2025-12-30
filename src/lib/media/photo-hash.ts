@@ -1,5 +1,6 @@
 import * as Crypto from 'expo-crypto';
 import { File } from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 
 /**
  * Content-addressable storage utilities for photo files
@@ -12,28 +13,21 @@ import { File } from 'expo-file-system';
 /**
  * Generate SHA-256 hash of file content
  *
+ * Uses FileSystem.readAsStringAsync with base64 encoding for memory efficiency.
+ * This avoids loading the entire file into JS heap as an ArrayBuffer.
+ *
  * @param uri - File URI to hash
  * @returns SHA-256 hash (hex string)
  */
 export async function hashFileContent(uri: string): Promise<string> {
   try {
-    const file = new File(uri);
+    // Read file as base64 string directly - more memory efficient than ArrayBuffer
+    // The legacy API is used for SDK 54 compatibility with async file operations
+    const base64 = await FileSystem.readAsStringAsync(uri, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
 
-    // Read file as ArrayBuffer and convert to base64
-    // Process in chunks to avoid call stack overflow on large files
-    const arrayBuffer = await file.arrayBuffer();
-    const bytes = new Uint8Array(arrayBuffer);
-
-    // Build binary string in chunks (8KB each to stay well under stack limits)
-    const chunkSize = 8192;
-    let binaryString = '';
-    for (let i = 0; i < bytes.length; i += chunkSize) {
-      const chunk = bytes.subarray(i, i + chunkSize);
-      binaryString += String.fromCharCode.apply(null, Array.from(chunk));
-    }
-    const base64 = btoa(binaryString);
-
-    // Hash the content
+    // Hash the base64 content
     const hash = await Crypto.digestStringAsync(
       Crypto.CryptoDigestAlgorithm.SHA256,
       base64,
@@ -77,11 +71,15 @@ export function extractExtension(uriOrFilename: string): string {
 /**
  * Check if file exists at given path
  *
- * @param path - File path
+ * @param path - File path (must be a file:// URI)
  * @returns True if file exists
  */
 export async function fileExists(path: string): Promise<boolean> {
   try {
+    // Validate input - must be a file:// URI
+    if (!path || !path.startsWith('file://')) {
+      return false;
+    }
     const file = new File(path);
     return file.exists;
   } catch {

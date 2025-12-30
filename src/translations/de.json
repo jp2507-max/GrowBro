@@ -132,6 +132,7 @@
       "close_label": "Modal schließen",
       "input_label": "{{label}}-Eingabe"
     },
+    "plant_hero_image": "Pflanzenbild",
     "plants": {
       "assessmentHistory": {
         "empty": "Noch keine Bewertungen",
@@ -2362,6 +2363,8 @@
       "name_placeholder": "Meine Northern Lights",
       "notes_label": "Notizen",
       "notes_placeholder": "Fütterungsplan, Pheno-Notizen…",
+      "photo_save_error": "Foto konnte nicht gespeichert werden",
+      "photo_saved": "Foto aktualisiert",
       "photoperiod": {
         "autoflower": "Autoflower",
         "photoperiod": "Photoperiodisch (12/12 Wechsel)"

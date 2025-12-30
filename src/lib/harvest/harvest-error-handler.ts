@@ -332,7 +332,7 @@ function extractErrorMessage(error: unknown): string {
  */
 function getNetworkErrorActions(
   error: NetworkError,
-  t: (key: string) => string
+  t: (key: string, options?: TOptions<Record<string, unknown>>) => string
 ): ErrorHandlerResult['actions'] {
   const actions: ErrorHandlerResult['actions'] = [];
 
@@ -372,7 +372,7 @@ function getNetworkErrorActions(
 
 function getBusinessLogicActions(
   error: BusinessLogicError,
-  t: (key: string) => string
+  t: (key: string, options?: TOptions<Record<string, unknown>>) => string
 ): ErrorHandlerResult['actions'] {
   const actions: ErrorHandlerResult['actions'] = [];
 

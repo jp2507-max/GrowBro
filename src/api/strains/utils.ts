@@ -1,13 +1,8 @@
 import { parsePercentageRange } from '@/lib/strains';
 
 /**
- * Default placeholder for missing strain images
- */
-export const DEFAULT_STRAIN_IMAGE =
-  'https://placehold.co/400x300/e5e5e5/666666?text=No+Image';
-
-/**
  * Default BlurHash placeholder for image loading
+ * Used when strain has no image URL
  */
 export const DEFAULT_BLURHASH = 'L6PZfSi_.AyE_3t7t7R**0o#DgR4';
 

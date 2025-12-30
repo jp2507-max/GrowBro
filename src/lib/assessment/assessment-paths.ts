@@ -2,8 +2,16 @@
 import { Paths } from 'expo-file-system';
 
 /**
+ * Ensure a directory URI ends with a trailing slash.
+ */
+function ensureTrailingSlash(uri: string): string {
+  return uri.endsWith('/') ? uri : `${uri}/`;
+}
+
+/**
  * Get the document directory URI using the new Paths API.
  * Includes defensive validation to fail loudly if the URI is unavailable.
+ * Always returns a URI with a trailing slash for consistent path concatenation.
  */
 function getDocumentDirectoryUri(): string {
   const uri = Paths?.document?.uri;
@@ -12,7 +20,7 @@ function getDocumentDirectoryUri(): string {
       '[FileSystem] Document directory unavailable. Ensure expo-file-system is properly linked.'
     );
   }
-  return uri;
+  return ensureTrailingSlash(uri);
 }
 
 export function sanitizePathSegment(segment: string): string {

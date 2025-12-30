@@ -6,37 +6,75 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Plant } from '@/api/plants/types';
 import { Image, Pressable, Text, View } from '@/components/ui';
 import { ArrowLeft } from '@/components/ui/icons';
+import { usePlantPhotoSync } from '@/lib/plants/plant-photo-sync';
 
 type PlantDetailHeaderProps = {
   plant: Plant;
   onBack: () => void;
+  /** Optional callback for editing the plant photo (tap on image area) */
+  onEditPhoto?: () => void;
 };
 
 /**
  * Premium Organic hero header for the plant detail screen.
  * Full-width image with gradient overlay, plant name, and strain info.
+ * Optionally supports photo editing via onEditPhoto callback.
  */
 export function PlantDetailHeader({
   plant,
   onBack,
+  onEditPhoto,
 }: PlantDetailHeaderProps): React.ReactElement {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
 
-  // Get plant image or use fallback
-  const imageSource = plant.imageUrl
-    ? { uri: plant.imageUrl }
+  // Auto-sync plant photo from remote if missing locally
+  const { resolvedLocalUri } = usePlantPhotoSync(plant);
+  const imageSource = resolvedLocalUri
+    ? { uri: resolvedLocalUri }
     : require('../../../assets/icon.png');
 
   return (
     <View className="relative h-80 w-full bg-neutral-100 dark:bg-neutral-800">
-      {/* Hero Image */}
-      <Image
-        source={imageSource}
+      {/* Hero Image - tappable when onEditPhoto is provided */}
+      <Pressable
+        onPress={onEditPhoto}
+        disabled={!onEditPhoto}
         className="size-full"
-        contentFit="cover"
-        testID="plant-hero-image"
-      />
+        accessibilityRole={onEditPhoto ? 'button' : 'image'}
+        accessibilityLabel={
+          onEditPhoto
+            ? t('plants.form.edit_photo')
+            : t('accessibility.plant_hero_image')
+        }
+        accessibilityHint={
+          onEditPhoto ? t('harvest.photo.choose_source') : undefined
+        }
+        testID="plant-hero-image-pressable"
+      >
+        <Image
+          source={imageSource}
+          className="size-full"
+          contentFit="cover"
+          testID="plant-hero-image"
+        />
+      </Pressable>
+
+      {/* Edit Photo Button - shown when onEditPhoto is provided */}
+      {onEditPhoto && (
+        <View className="absolute right-4 z-20" style={{ top: insets.top + 8 }}>
+          <Pressable
+            onPress={onEditPhoto}
+            className="size-10 items-center justify-center rounded-full bg-black/30 active:bg-black/50"
+            accessibilityRole="button"
+            accessibilityLabel={t('plants.form.edit_photo')}
+            accessibilityHint={t('harvest.photo.choose_source')}
+            testID="plant-edit-photo-button"
+          >
+            <Text className="text-lg">✏️</Text>
+          </Pressable>
+        </View>
+      )}
 
       {/* Back Button - floating on image */}
       <Pressable

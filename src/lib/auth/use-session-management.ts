@@ -5,16 +5,29 @@ import { Alert } from 'react-native';
 import {
   useRevokeAllOtherSessions,
   useRevokeSession,
+  type UserSession,
   useSessions,
 } from '@/api/auth';
 import { translate, useAuth } from '@/lib';
 import { generateStableHash } from '@/lib/auth/utils';
 
+type UseSessionManagementReturn = {
+  sessions: UserSession[] | undefined;
+  isLoading: boolean;
+  error: Error | null;
+  currentSessionId: string | null;
+  isRevokingSession: boolean;
+  isRevokingAll: boolean;
+  otherSessionsCount: number;
+  handleRevokeAll: () => void;
+  handleRevoke: (sessionKey: string) => void;
+};
+
 /**
  * Custom hook that encapsulates all session management logic for ActiveSessionsScreen.
  * Extracts mutation handlers and state to reduce component complexity.
  */
-export function useSessionManagement() {
+export function useSessionManagement(): UseSessionManagementReturn {
   const queryClient = useQueryClient();
   const refreshToken = useAuth((state) => state.token?.refresh ?? null);
 

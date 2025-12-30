@@ -19,6 +19,7 @@ import { ArrowRight } from '@/components/ui/icons/arrow-right';
 import { useAnimatedScrollList } from '@/lib/animations/animated-scroll-list-provider';
 import { haptics } from '@/lib/haptics';
 import { usePlantAttention } from '@/lib/hooks/use-plant-attention';
+import { usePlantPhotoSync } from '@/lib/plants/plant-photo-sync';
 import { translate } from '@/lib/i18n';
 import type { TxKeyPath } from '@/lib/i18n/utils';
 
@@ -141,14 +142,17 @@ function PlantCardImage({
   plant: Plant;
   colors: StageColors;
 }) {
+  // Auto-sync plant photo from remote if missing locally
+  const { resolvedLocalUri } = usePlantPhotoSync(plant);
+
   return (
     <View
       className="size-16 overflow-hidden rounded-xl border border-neutral-100 bg-white dark:border-neutral-700"
       style={{ backgroundColor: colors.badgeBg }}
     >
-      {plant.imageUrl ? (
+      {resolvedLocalUri ? (
         <Image
-          source={{ uri: plant.imageUrl }}
+          source={{ uri: resolvedLocalUri }}
           className="size-full"
           contentFit="cover"
           testID={`plant-card-${plant.id}-image`}

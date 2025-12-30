@@ -132,6 +132,7 @@
       "close_label": "Close modal",
       "input_label": "{{label}} input"
     },
+    "plant_hero_image": "Plant hero image",
     "plants": {
       "assessmentHistory": {
         "empty": "No assessments yet",
@@ -2362,6 +2363,8 @@
       "name_placeholder": "My Northern Lights",
       "notes_label": "Notes",
       "notes_placeholder": "Feeding plan, phenotype notes…",
+      "photo_save_error": "Failed to save photo",
+      "photo_saved": "Photo updated",
       "photoperiod": {
         "autoflower": "Autoflower",
         "photoperiod": "Photoperiod (12/12 flip)"

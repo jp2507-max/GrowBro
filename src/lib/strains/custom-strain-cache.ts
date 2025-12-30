@@ -5,7 +5,6 @@ import {
   DEFAULT_FLOWERING_TIME,
   DEFAULT_HEIGHT,
   DEFAULT_YIELD,
-  FALLBACK_IMAGE_URL,
   NOT_REPORTED,
 } from './constants';
 import { generateId } from './normalization';
@@ -34,7 +33,7 @@ export function buildCustomStrain(name: string, race: Race = 'hybrid'): Strain {
     slug,
     synonyms: [],
     link: '',
-    imageUrl: FALLBACK_IMAGE_URL,
+    imageUrl: '',
     description: [DEFAULT_DESCRIPTION],
     genetics: { parents: [], lineage: '' },
     race,

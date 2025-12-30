@@ -1,0 +1,6 @@
+<svg width="400" height="400" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect width="400" height="400" fill="#e5e7eb"/>
+<path d="M120 160C120 140 140 120 160 120H240C260 120 280 140 280 160V240C280 260 260 280 240 280H160C140 280 120 260 120 240V160Z" fill="#6b7280"/>
+<circle cx="200" cy="200" r="30" fill="#6b7280"/>
+<text x="200" y="210" font-family="Arial, sans-serif" font-size="16" fill="#e5e7eb" text-anchor="middle">Strain</text>
+</svg>

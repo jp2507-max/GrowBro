@@ -28,6 +28,64 @@ import {
   type SyncResult,
 } from '@/lib/sync-engine';
 
+/**
+ * Process image upload queue after successful sync.
+ * Uses dynamic import to avoid circular dependencies.
+ */
+async function processImageQueueAfterSync(): Promise<void> {
+  try {
+    const { processImageQueueOnce } = await import('@/lib/uploads/queue');
+    const result = await processImageQueueOnce(3);
+    if (result.processed > 0) {
+      console.log(
+        `[SyncCoordinator] Processed ${result.processed} image uploads`
+      );
+    }
+  } catch (error) {
+    console.warn('[SyncCoordinator] Image queue processing error:', error);
+  }
+}
+
+/**
+ * Download missing plant photos after sync.
+ * Uses dynamic import to avoid circular dependencies.
+ */
+async function downloadMissingPlantPhotosAfterSync(): Promise<void> {
+  try {
+    const { syncMissingPlantPhotos } = await import(
+      '@/lib/plants/plant-photo-sync'
+    );
+    const { database } = await import('@/lib/watermelon');
+
+    // Get all plants - collection typing is handled by WatermelonDB schema
+    const plants = await database.collections.get('plants').query().fetch();
+
+    // Convert WatermelonDB models to Plant type
+    const plantData = plants.map((p) => ({
+      id: p.id,
+      imageUrl: (p as { imageUrl?: string }).imageUrl,
+      metadata: (p as { metadata?: Record<string, unknown> }).metadata,
+    }));
+
+    const result = await syncMissingPlantPhotos(
+      plantData as Parameters<typeof syncMissingPlantPhotos>[0]
+    );
+
+    if (result.downloaded > 0) {
+      console.log(
+        `[SyncCoordinator] Downloaded ${result.downloaded} plant photos`
+      );
+    }
+    if (result.failed > 0) {
+      console.warn(
+        `[SyncCoordinator] Failed to download ${result.failed} plant photos`
+      );
+    }
+  } catch (error) {
+    console.warn('[SyncCoordinator] Plant photo sync error:', error);
+  }
+}
+
 export type SyncCoordinatorOptions = {
   /**
    * Whether to use retry logic with exponential backoff
@@ -98,6 +156,16 @@ export async function performSync(
         durationMs,
       });
     }
+
+    // Process image upload queue after successful sync (non-blocking)
+    processImageQueueAfterSync().catch((err) => {
+      console.warn('[SyncCoordinator] Image queue processing failed:', err);
+    });
+
+    // Download missing plant photos after sync (non-blocking)
+    downloadMissingPlantPhotosAfterSync().catch((err) => {
+      console.warn('[SyncCoordinator] Plant photo download failed:', err);
+    });
 
     return result;
   } catch (error) {

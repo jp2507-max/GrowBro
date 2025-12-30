@@ -9,6 +9,32 @@ type SetupSyncTriggersOptions = {
 };
 
 /**
+ * Process image upload queue when conditions allow.
+ * Non-blocking, errors are logged but don't affect caller.
+ */
+async function maybeProcessImageQueue(): Promise<void> {
+  try {
+    const { processImageQueueOnce, cleanupCompletedQueueItems } = await import(
+      '@/lib/uploads/queue'
+    );
+    const result = await processImageQueueOnce(5);
+    if (result.processed > 0) {
+      console.log(
+        `[sync-triggers] Processed ${result.processed} image uploads`
+      );
+    }
+
+    // Periodically clean up completed queue items (older than 24 hours)
+    const cleanedUp = await cleanupCompletedQueueItems();
+    if (cleanedUp > 0) {
+      console.log(`[sync-triggers] Cleaned up ${cleanedUp} completed uploads`);
+    }
+  } catch (error) {
+    console.warn('[sync-triggers] Image queue processing failed:', error);
+  }
+}
+
+/**
  * Registers app lifecycle and connectivity triggers that run a sync when:
  * - App starts
  * - App returns to foreground
@@ -29,6 +55,8 @@ export function setupSyncTriggers(
     try {
       await runSyncWithRetry(1, { trigger: 'auto' });
       opts.onSuccess?.();
+      // Process image queue after successful sync
+      void maybeProcessImageQueue();
     } catch {
       // noop; retry/backoff is handled inside runSyncWithRetry
     }
@@ -51,6 +79,9 @@ export function setupSyncTriggers(
   const removeNet = onConnectivityChange((state) => {
     if (state.isConnected && state.isInternetReachable) {
       void maybeRunSync();
+      // Also try to process image queue on connectivity restore
+      // (even if sync is skipped due to prefs, we may still have pending uploads)
+      void maybeProcessImageQueue();
     }
   });
 

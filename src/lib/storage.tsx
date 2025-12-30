@@ -32,7 +32,12 @@ export function getItem<T>(key: string): T | null {
 }
 
 export function setItem<T>(key: string, value: T): void {
-  storage.set(key, JSON.stringify(value));
+  try {
+    storage.set(key, JSON.stringify(value));
+  } catch (error) {
+    console.error(`[storage] Failed to serialize value for key: ${key}`, error);
+    // Fail silently to prevent crashes, but log for debugging
+  }
 }
 
 export function removeItem(key: string): void {

@@ -13,10 +13,16 @@ import { Platform } from 'react-native';
 export const STRAIN_IMAGE_BLURHASH = 'L6PZfSi_.AyE_3t7t7R**0o#DgR4';
 
 /**
- * Default placeholder image URL
+ * Default placeholder image for strain images
+ * Uses blurhash for lightweight placeholder rendering
+ * Note: expo-image handles blurhash natively
  */
-export const DEFAULT_STRAIN_IMAGE =
-  'https://placehold.co/400x400/e5e7eb/6b7280?text=No+Image';
+export const DEFAULT_STRAIN_PLACEHOLDER = STRAIN_IMAGE_BLURHASH;
+
+/**
+ * Type for image source - can be either a URI string or undefined (uses placeholder)
+ */
+export type ImageSource = { uri: string } | undefined;
 
 /**
  * Image size configurations
@@ -28,18 +34,33 @@ export const IMAGE_SIZES = {
 } as const;
 
 /**
+ * Generate image source for expo-image
+ * Returns URI object for remote images or undefined to use placeholder
+ */
+export function getImageSource(
+  originalUri: string | undefined | null
+): ImageSource {
+  if (
+    originalUri &&
+    typeof originalUri === 'string' &&
+    originalUri.length > 0
+  ) {
+    return { uri: originalUri };
+  }
+  return undefined;
+}
+
+/**
  * Generate optimized image URI with size parameters
- * NOTE: Previously this added CDN optimization params like w=, h=, fit=, q=
- * but the upstream strain image servers don't support these parameters.
- * Now returns the original URI unchanged.
+ * @deprecated Use getImageSource() instead for proper type handling
+ * NOTE: This function is kept for backward compatibility but size param is ignored.
+ * Returns the original URI unchanged or empty string (not the placeholder).
  */
 export function getOptimizedImageUri(
   originalUri: string,
   _size: keyof typeof IMAGE_SIZES
 ): string {
-  // Return original URI unchanged - upstream servers don't support
-  // image optimization query parameters
-  return originalUri || DEFAULT_STRAIN_IMAGE;
+  return originalUri || '';
 }
 
 /**
@@ -52,7 +73,7 @@ export async function prefetchStrainImages(
 ): Promise<void> {
   try {
     const optimizedUris = imageUris
-      .filter((uri) => uri && uri !== DEFAULT_STRAIN_IMAGE)
+      .filter((uri) => uri && uri.length > 0)
       .map((uri) => getOptimizedImageUri(uri, size));
 
     // Prefetch in parallel with a limit
@@ -126,7 +147,7 @@ export const IMAGE_CONFIG = {
  */
 export function getListImageProps(strainId: string, imageUrl: string) {
   return {
-    source: { uri: getOptimizedImageUri(imageUrl, 'thumbnail') },
+    source: getImageSource(imageUrl),
     placeholder: IMAGE_CONFIG.placeholder,
     cachePolicy: IMAGE_CONFIG.cachePolicy,
     recyclingKey: IMAGE_CONFIG.recyclingKey(strainId),
@@ -140,7 +161,7 @@ export function getListImageProps(strainId: string, imageUrl: string) {
  */
 export function getDetailImageProps(strainId: string, imageUrl: string) {
   return {
-    source: { uri: getOptimizedImageUri(imageUrl, 'detail') },
+    source: getImageSource(imageUrl),
     placeholder: IMAGE_CONFIG.placeholder,
     cachePolicy: IMAGE_CONFIG.cachePolicy,
     recyclingKey: IMAGE_CONFIG.recyclingKey(strainId),

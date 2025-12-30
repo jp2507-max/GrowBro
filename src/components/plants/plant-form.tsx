@@ -32,7 +32,6 @@ import {
 import { FormSection } from '@/components/plants/form-section';
 import {
   ActivityIndicator,
-  Button,
   ControlledDatePicker,
   ControlledInput,
   Input,
@@ -42,13 +41,13 @@ import {
   Text,
   View,
 } from '@/components/ui';
+import type { PlantPhotoStoreResult } from '@/lib/media/plant-photo-storage';
 import { derivePlantDefaultsFromStrain } from '@/lib/plants/derive-from-strain';
 import {
   buildCustomStrain,
   saveCustomStrainToSupabase,
   saveStrainToSupabase,
 } from '@/lib/strains/custom-strain-cache';
-import type { PhotoVariants } from '@/types/photo-storage';
 
 import { HeroPhotoSection } from './hero-photo-section';
 
@@ -446,6 +445,12 @@ export type PlantFormValues = {
   imageUrl?: string;
 };
 
+/** Info for parent components to render HeroPhotoSection when using renderAsFragment */
+export type PlantPhotoInfo = {
+  imageUrl?: string;
+  onPhotoCaptured: (photo: PlantPhotoStoreResult) => void;
+};
+
 type PlantFormProps = {
   defaultValues?: Partial<PlantFormValues>;
   onSubmit: SubmitHandler<PlantFormValues>;
@@ -459,8 +464,16 @@ type PlantFormProps = {
   /**
    * When true, renders form sections without the outer ScrollView wrapper.
    * Use when embedding PlantForm inside an existing scroll container.
+   * Parent must render HeroPhotoSection using info from onPhotoInfo callback.
    */
   renderAsFragment?: boolean;
+  /**
+   * Called with photo info (imageUrl, onPhotoCaptured) for parent to render
+   * HeroPhotoSection when using renderAsFragment mode.
+   */
+  onPhotoInfo?: (info: PlantPhotoInfo) => void;
+  /** Plant ID for auto-saving photo changes (only for existing plants) */
+  plantId?: string;
 };
 
 type SelectFieldProps = {
@@ -775,7 +788,7 @@ function buildSchema(t: (key: string) => string) {
 type UsePlantFormControllerResult = {
   control: Control<PlantFormValues>;
   imageUrl: string | undefined;
-  onPhotoCaptured: (photo: PhotoVariants) => void;
+  onPhotoCaptured: (photo: PlantPhotoStoreResult) => void;
   isSubmitting: boolean;
   handleFormSubmit: () => void;
   completion: number;
@@ -818,8 +831,8 @@ function usePlantFormController({
   );
 
   const onPhotoCaptured = React.useCallback(
-    (photo: PhotoVariants) => {
-      setValue('imageUrl', photo.resized || photo.original, {
+    (photo: PlantPhotoStoreResult) => {
+      setValue('imageUrl', photo.localUri, {
         shouldDirty: true,
       });
     },
@@ -849,16 +862,19 @@ type DeletePlantButtonProps = {
 
 function DeletePlantButton({ onDelete, t }: DeletePlantButtonProps) {
   return (
-    <View className="mt-8 px-4 pb-8">
-      <Button
-        variant="destructive"
+    <View className="mb-4 mt-10 px-4 pb-24">
+      <Pressable
         onPress={onDelete}
-        label={t('plants.form.delete_button')}
-        className="rounded-xl bg-red-50 dark:bg-red-900/20"
-        textClassName="text-red-600 dark:text-red-400"
+        accessibilityRole="button"
+        accessibilityLabel={t('plants.form.delete_button')}
         accessibilityHint={t('plants.form.delete_confirm_body')}
         testID="delete-plant-button"
-      />
+        className="items-center justify-center rounded-xl border border-red-500/30 bg-red-500/10 p-4 active:bg-red-500/20 dark:border-red-400/40 dark:bg-red-500/20"
+      >
+        <Text className="font-medium text-red-600 dark:text-red-400">
+          {t('plants.form.delete_button')}
+        </Text>
+      </Pressable>
     </View>
   );
 }
@@ -914,6 +930,8 @@ export function PlantForm({
   onProgressChange,
   onDelete,
   renderAsFragment = false,
+  onPhotoInfo,
+  plantId,
 }: PlantFormProps): React.ReactElement {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -927,22 +945,22 @@ export function PlantForm({
     setValue,
   } = usePlantFormController({ defaultValues, t, onSubmit, onError });
 
-  // Expose submit handler to parent via callback (for header button)
   const submitRef = React.useRef(handleFormSubmit);
   submitRef.current = handleFormSubmit;
+  const stableSubmit = React.useCallback(() => submitRef.current(), []);
 
-  const stableSubmit = React.useCallback(() => {
-    submitRef.current();
-  }, []);
-
-  React.useEffect(() => {
-    onSubmitReady?.(stableSubmit);
-  }, [onSubmitReady, stableSubmit]);
-
-  // Report completion progress to parent
-  React.useEffect(() => {
-    onProgressChange?.(completion);
-  }, [completion, onProgressChange]);
+  React.useEffect(
+    () => onSubmitReady?.(stableSubmit),
+    [onSubmitReady, stableSubmit]
+  );
+  React.useEffect(
+    () => onProgressChange?.(completion),
+    [completion, onProgressChange]
+  );
+  React.useEffect(
+    () => onPhotoInfo?.({ imageUrl, onPhotoCaptured }),
+    [imageUrl, onPhotoCaptured, onPhotoInfo]
+  );
 
   const options = React.useMemo(
     () => ({
@@ -955,7 +973,6 @@ export function PlantForm({
     [t]
   );
 
-  // Calculate content padding: top for safe area, bottom for tab bar
   const scrollContentStyle = React.useMemo(
     () => ({
       paddingTop: insets.top + 8,
@@ -966,7 +983,6 @@ export function PlantForm({
 
   const isDisabled = isSubmitting || formSubmitting;
 
-  // Fragment mode: render sections only (for embedding in existing scroll container)
   if (renderAsFragment) {
     return (
       <FormSections
@@ -979,7 +995,6 @@ export function PlantForm({
     );
   }
 
-  // Standalone mode: render with hero photo, progress bar, and scroll container
   return (
     <View className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
       <ScrollView
@@ -987,19 +1002,16 @@ export function PlantForm({
         contentContainerStyle={scrollContentStyle}
         showsVerticalScrollIndicator={false}
       >
-        {/* Hero Photo Section */}
         <HeroPhotoSection
           imageUrl={imageUrl}
           onPhotoCaptured={onPhotoCaptured}
           disabled={isDisabled}
+          plantId={plantId}
         />
-
-        {/* Completion Progress */}
         <CompletionProgress
           progress={completion}
           label={t('plants.form.completion', { percent: completion })}
         />
-
         <FormSections
           control={control}
           options={options}

@@ -34,10 +34,10 @@ export const DEFAULT_YIELD = 'Not reported';
 export const DEFAULT_HEIGHT = 'Not reported';
 
 /**
- * Fallback image URL for broken or missing strain images
+ * Fallback image placeholder for broken or missing strain images
+ * Uses blurhash for lightweight placeholder rendering
  */
-export const FALLBACK_IMAGE_URL =
-  'https://placehold.co/400x400/e5e7eb/6b7280?text=Strain+Image';
+export const FALLBACK_IMAGE_BLURHASH = DEFAULT_STRAIN_BLURHASH;
 
 /**
  * Error messages for API failures

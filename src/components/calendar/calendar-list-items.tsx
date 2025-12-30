@@ -55,7 +55,7 @@ export function getItemKey(item: CalendarListItem, index: number): string {
   }
 }
 
-export function getItemType(item: CalendarListItem): string {
+export function getItemType(item: CalendarListItem): CalendarListItem['type'] {
   return item.type;
 }
 
@@ -131,11 +131,9 @@ export function buildCalendarListData(
     testID: 'calendar-plan-section-header',
   });
 
-  if (isLoading) {
-    items.push({ type: 'loading' });
-  } else if (pendingTasks.length === 0) {
+  if (pendingTasks.length === 0 && !isLoading) {
     items.push({ type: 'empty', message: emptyPlanMessage });
-  } else {
+  } else if (pendingTasks.length > 0) {
     for (const task of pendingTasks) {
       items.push({ type: 'task', task, isCompleted: false });
     }
@@ -149,14 +147,17 @@ export function buildCalendarListData(
     testID: 'calendar-history-section-header',
   });
 
-  if (isLoading) {
-    items.push({ type: 'loading' });
-  } else if (completedTasks.length === 0) {
+  if (completedTasks.length === 0 && !isLoading) {
     items.push({ type: 'empty', message: emptyHistoryMessage });
-  } else {
+  } else if (completedTasks.length > 0) {
     for (const task of completedTasks) {
       items.push({ type: 'task', task, isCompleted: true });
     }
+  }
+
+  // Add single loading state at the end if loading globally
+  if (isLoading) {
+    items.push({ type: 'loading' });
   }
 
   return items;

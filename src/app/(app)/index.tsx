@@ -105,36 +105,39 @@ export default function Feed() {
         insets={insets}
       />
 
-      {/* Content floats above header with z-10 and negative margin */}
-      <ScrollView
-        className="z-10 -mt-10"
-        contentContainerStyle={contentPaddingBottom}
-        showsVerticalScrollIndicator={false}
-      >
-        <View className="gap-4 px-4 pb-4">
-          <ActivationChecklist onActionComplete={onActivationActionComplete} />
-
-          <TaskBanner
-            overdue={snapshot.overdue}
-            today={snapshot.today}
-            isLoading={isTaskLoading}
-          />
-
-          {hasPlantsError ? (
-            <PlantsErrorCard onRetry={refetchPlants} className="mb-2" />
-          ) : null}
-
-          {isEmpty ? (
-            <HomeEmptyState />
-          ) : (
-            <PlantsSection
-              plants={plants}
-              isLoading={isLoading}
-              onPlantPress={onPlantPress}
+      {/* Overlapping content sheet - z-10 on wrapper, not ScrollView */}
+      <View className="z-10 -mt-10 flex-1">
+        <ScrollView
+          contentContainerStyle={contentPaddingBottom}
+          showsVerticalScrollIndicator={false}
+        >
+          <View className="gap-4 px-4 pb-4">
+            <ActivationChecklist
+              onActionComplete={onActivationActionComplete}
             />
-          )}
-        </View>
-      </ScrollView>
+
+            <TaskBanner
+              overdue={snapshot.overdue}
+              today={snapshot.today}
+              isLoading={isTaskLoading}
+            />
+
+            {hasPlantsError ? (
+              <PlantsErrorCard onRetry={refetchPlants} className="mb-2" />
+            ) : null}
+
+            {isEmpty ? (
+              <HomeEmptyState />
+            ) : (
+              <PlantsSection
+                plants={plants}
+                isLoading={isLoading}
+                onPlantPress={onPlantPress}
+              />
+            )}
+          </View>
+        </ScrollView>
+      </View>
       <AddPlantFab />
     </View>
   );

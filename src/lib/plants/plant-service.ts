@@ -32,6 +32,62 @@ function generatePlantId(): string {
   return randomUUID();
 }
 
+/**
+ * Extract hash and extension from a plant photo local URI.
+ * Plant photos are stored as content-addressed files: {hash}.{ext}
+ */
+function extractPhotoHashFromUri(
+  uri: string
+): { hash: string; extension: string } | null {
+  if (!uri || !uri.startsWith('file://')) {
+    return null;
+  }
+  // Extract filename from URI
+  const parts = uri.split('/');
+  const filename = parts[parts.length - 1];
+  if (!filename) return null;
+
+  // Split filename into hash and extension
+  const dotIndex = filename.lastIndexOf('.');
+  if (dotIndex <= 0) return null;
+
+  const hash = filename.slice(0, dotIndex);
+  const extension = filename.slice(dotIndex + 1);
+
+  // Validate hash looks like a content hash (hexadecimal)
+  if (!/^[a-f0-9]{8,}$/i.test(hash)) {
+    return null;
+  }
+
+  return { hash, extension };
+}
+
+/**
+ * Enqueue plant photo for upload if it's a local file URI.
+ */
+async function maybeEnqueuePlantPhotoUpload(
+  plantId: string,
+  imageUrl: string | undefined | null
+): Promise<void> {
+  const photoInfo = extractPhotoHashFromUri(imageUrl ?? '');
+  if (!photoInfo) {
+    return; // Not a local file URI or invalid format
+  }
+
+  try {
+    const { enqueuePlantProfilePhoto } = await import('@/lib/uploads/queue');
+    await enqueuePlantProfilePhoto({
+      localUri: imageUrl!,
+      plantId,
+      hash: photoInfo.hash,
+      extension: photoInfo.extension,
+    });
+  } catch (error) {
+    console.warn('[PlantService] Failed to enqueue plant photo upload:', error);
+    // Don't fail the plant save if enqueueing fails
+  }
+}
+
 function buildMetadata(
   input: PlantUpsertInput
 ): PlantMetadataLocal | undefined {
@@ -126,6 +182,11 @@ export async function createPlantFromForm(
     });
   });
 
+  // Non-blocking: Enqueue plant photo for background upload
+  maybeEnqueuePlantPhotoUpload(id, input.imageUrl).catch((error) => {
+    console.warn('[PlantService] Failed to enqueue photo upload:', error);
+  });
+
   // Non-blocking: Create GrowBro task schedules for the new plant
   if (input.stage) {
     const engine = createTaskEngine();
@@ -150,11 +211,14 @@ export async function updatePlantFromForm(
     throw new Error(`Plant ${id} not found`);
   }
 
-  // Capture previous stage for change detection
+  // Capture previous stage and imageUrl for change detection
   const previousStage = record.stage as PlantStage | undefined;
+  const previousImageUrl = record.imageUrl;
   const newStage = input.stage as PlantStage | undefined;
   const stageChanged =
     input.stage !== undefined && input.stage !== previousStage;
+  const imageChanged =
+    input.imageUrl !== undefined && input.imageUrl !== previousImageUrl;
 
   const metadata = buildMetadata(input as PlantUpsertInput);
   const now = new Date();
@@ -184,6 +248,13 @@ export async function updatePlantFromForm(
     });
   });
 
+  // Non-blocking: Enqueue plant photo for background upload if image changed
+  if (imageChanged) {
+    maybeEnqueuePlantPhotoUpload(id, input.imageUrl).catch((error) => {
+      console.warn('[PlantService] Failed to enqueue photo upload:', error);
+    });
+  }
+
   // Non-blocking: Handle stage change with TaskEngine
   if (stageChanged && newStage) {
     const engine = createTaskEngine();
@@ -207,6 +278,15 @@ export async function deletePlant(id: string): Promise<void> {
   const record = await getPlantById(id);
   if (!record) {
     throw new Error(`Plant ${id} not found`);
+  }
+
+  // Cancel any pending upload queue entries for this plant
+  try {
+    const { cancelQueueEntriesForPlant } = await import('@/lib/uploads/queue');
+    await cancelQueueEntriesForPlant(id);
+  } catch (error) {
+    console.warn('[PlantService] Failed to cancel queue entries:', error);
+    // Don't fail deletion if queue cleanup fails
   }
 
   await database.write(async () => {

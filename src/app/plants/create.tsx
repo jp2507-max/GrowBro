@@ -8,9 +8,11 @@ import { showMessage } from 'react-native-flash-message';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { Plant } from '@/api/plants/types';
+import { HeroPhotoSection } from '@/components/plants/hero-photo-section';
 import {
   PlantForm,
   type PlantFormValues,
+  type PlantPhotoInfo,
 } from '@/components/plants/plant-form';
 import {
   Button,
@@ -24,6 +26,7 @@ import { ArrowLeft } from '@/components/ui/icons';
 import { useModal } from '@/components/ui/modal';
 import { getOptionalAuthenticatedUserId } from '@/lib/auth';
 import { haptics } from '@/lib/haptics';
+import type { PlantPhotoStoreResult } from '@/lib/media/plant-photo-storage';
 import { createPlantFromForm, toPlant } from '@/lib/plants/plant-service';
 import { syncPlantsToCloud } from '@/lib/plants/plants-sync';
 import { captureExceptionIfConsented } from '@/lib/settings/privacy-runtime';
@@ -269,6 +272,8 @@ export default function CreatePlantScreen(): React.ReactElement {
   const [formKey, setFormKey] = React.useState(0);
   const [isSaving, setIsSaving] = React.useState(false);
   const submitHandlerRef = React.useRef<(() => void) | null>(null);
+  const [photoInfo, setPhotoInfo] = React.useState<PlantPhotoInfo | null>(null);
+  const [imageUrl, setImageUrl] = React.useState<string | undefined>(undefined);
 
   const handleSubmit = usePlantSubmit({
     setIsSaving,
@@ -280,9 +285,7 @@ export default function CreatePlantScreen(): React.ReactElement {
 
   const handleViewPlant = React.useCallback(() => {
     successModal.dismiss();
-    if (createdPlant?.id) {
-      router.replace(`/plants/${createdPlant.id}`);
-    }
+    if (createdPlant?.id) router.replace(`/plants/${createdPlant.id}`);
   }, [createdPlant?.id, router, successModal]);
 
   const handleGoToSchedule = React.useCallback(() => {
@@ -293,7 +296,9 @@ export default function CreatePlantScreen(): React.ReactElement {
   const handleAddAnother = React.useCallback(() => {
     successModal.dismiss();
     setCreatedPlant(null);
-    setFormKey((key) => key + 1);
+    setImageUrl(undefined);
+    setPhotoInfo(null);
+    setFormKey((k) => k + 1);
   }, [successModal]);
 
   const handleCreateStarterTasks = useStarterTasks({
@@ -303,39 +308,38 @@ export default function CreatePlantScreen(): React.ReactElement {
 
   const handleComplete = React.useCallback(() => {
     haptics.selection();
-    if (params?.returnTo) {
-      router.replace(params.returnTo);
-    } else {
-      // Use replace('/') instead of back() to navigate to home
-      // since plants/ is a nested stack and back() would try to
-      // navigate within the stack rather than exit to home.
-      router.replace('/');
-    }
+    router.replace(params?.returnTo ?? '/');
   }, [params?.returnTo, router]);
 
   const handleSubmitReady = React.useCallback((submit: () => void) => {
     submitHandlerRef.current = submit;
   }, []);
-
   const handleHeaderSave = React.useCallback(() => {
     haptics.selection();
     submitHandlerRef.current?.();
   }, []);
+  const handlePhotoInfo = React.useCallback((info: PlantPhotoInfo) => {
+    setPhotoInfo(info);
+  }, []);
+  const handlePhotoCaptured = React.useCallback(
+    (photo: PlantPhotoStoreResult) => {
+      setImageUrl(photo.localUri);
+      photoInfo?.onPhotoCaptured(photo);
+    },
+    [photoInfo]
+  );
 
   const insets = useSafeAreaInsets();
   const [completion, setCompletion] = React.useState(0);
-
   const handleProgressChange = React.useCallback((progress: number) => {
     setCompletion(progress);
   }, []);
-
   const scrollContentStyle = React.useMemo(() => ({ paddingBottom: 100 }), []);
 
   return (
     <View className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
       <Stack.Screen options={{ headerShown: false }} />
       <FocusAwareStatusBar style="light" />
-
       <CreatePlantHeader
         onBack={handleComplete}
         completion={completion}
@@ -343,36 +347,38 @@ export default function CreatePlantScreen(): React.ReactElement {
         t={t}
       />
 
-      {/* Overlapping White Content Sheet */}
       <View className="z-10 -mt-10 flex-1">
-        <View className="flex-1 rounded-t-[35px] bg-white shadow-xl dark:bg-charcoal-900">
-          {/* Handle Bar */}
-          <View className="mb-2 mt-4 h-1.5 w-12 self-center rounded-full bg-neutral-200 dark:bg-white/20" />
-
+        <View className="bg-sheet flex-1 rounded-t-[35px] shadow-xl">
+          <View className="bg-sheet-handle mb-2 mt-4 h-1.5 w-12 self-center rounded-full" />
           <ScrollView
             className="flex-1"
             contentContainerStyle={scrollContentStyle}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
           >
+            <HeroPhotoSection
+              imageUrl={imageUrl}
+              onPhotoCaptured={handlePhotoCaptured}
+              disabled={isSaving}
+              testID="create-plant-hero-photo"
+            />
             <PlantForm
               key={formKey}
               onSubmit={handleSubmit}
               isSubmitting={isSaving}
               onSubmitReady={handleSubmitReady}
               onProgressChange={handleProgressChange}
+              onPhotoInfo={handlePhotoInfo}
               renderAsFragment
             />
           </ScrollView>
-
-          {/* Floating CTA Button */}
           <View
-            className="absolute inset-x-0 bottom-0 bg-white/95 px-4 pt-3 dark:bg-charcoal-900/95"
+            className="bg-sheet/95 absolute inset-x-0 bottom-0 px-4 pt-3"
             style={{ paddingBottom: insets.bottom + 8 }}
           >
             <Button
               variant="default"
-              className="w-full rounded-2xl py-4"
+              className="w-full rounded-2xl bg-terracotta-500 py-4 active:bg-terracotta-600"
               textClassName="text-white text-lg font-semibold"
               onPress={handleHeaderSave}
               disabled={isSaving}
@@ -383,7 +389,6 @@ export default function CreatePlantScreen(): React.ReactElement {
           </View>
         </View>
       </View>
-
       <PlantAddedModal
         modal={successModal}
         t={t}

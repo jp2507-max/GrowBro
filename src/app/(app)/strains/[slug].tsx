@@ -108,7 +108,11 @@ async function shareStrain(strain: Strain) {
   }
 }
 
-const EffectsFlavorsSection = ({ strain }: { strain: Strain }) => {
+const EffectsFlavorsSection = ({
+  strain,
+}: {
+  strain: Strain;
+}): React.ReactElement => {
   return (
     <Animated.View
       entering={FadeIn.delay(400).springify().reduceMotion(ReduceMotion.System)}
@@ -169,7 +173,7 @@ const EffectsFlavorsSection = ({ strain }: { strain: Strain }) => {
   );
 };
 
-const HardFactsGrid = ({ strain }: { strain: Strain }) => {
+const HardFactsGrid = ({ strain }: { strain: Strain }): React.ReactElement => {
   const floweringTime =
     strain.grow?.flowering_time?.label ??
     (strain.grow?.flowering_time?.min_weeks &&
@@ -262,7 +266,7 @@ const HardFactsGrid = ({ strain }: { strain: Strain }) => {
   );
 };
 
-const PremiumTagsRow = ({ strain }: { strain: Strain }) => {
+const PremiumTagsRow = ({ strain }: { strain: Strain }): React.ReactElement => {
   return (
     <View className="px-5 pt-2">
       <RaceBadge race={strain.race} variant="premium" />
@@ -276,7 +280,11 @@ type ErrorStateProps = {
   topInset: number;
 };
 
-const StrainErrorState = ({ onBack, onRetry, topInset }: ErrorStateProps) => (
+const StrainErrorState = ({
+  onBack,
+  onRetry,
+  topInset,
+}: ErrorStateProps): React.ReactElement => (
   <View
     className="flex-1 bg-neutral-50 dark:bg-charcoal-950"
     testID="strain-detail-error"
@@ -305,7 +313,11 @@ const StrainErrorState = ({ onBack, onRetry, topInset }: ErrorStateProps) => (
   </View>
 );
 
-const InvalidIdState = ({ onBack }: { onBack: () => void }) => (
+const InvalidIdState = ({
+  onBack,
+}: {
+  onBack: () => void;
+}): React.ReactElement => (
   <View
     className="flex-1 bg-neutral-50 dark:bg-charcoal-950"
     testID="strain-detail-invalid"
@@ -324,7 +336,11 @@ type StrainContentProps = {
   scrollHandler: ReturnType<typeof useAnimatedScrollHandler>;
 };
 
-const StrainContentSheet = ({ strain }: { strain: Strain }) => (
+const StrainContentSheet = ({
+  strain,
+}: {
+  strain: Strain;
+}): React.ReactElement => (
   <View className="-mt-6 min-h-screen rounded-t-sheet bg-white pb-20 pt-4 shadow-2xl dark:bg-charcoal-900">
     <View className="mb-4 w-full items-center">
       <View className="h-1.5 w-12 rounded-full bg-neutral-200 dark:bg-white/20" />
@@ -367,7 +383,7 @@ const FloatingNavButtons = ({
   navStyle,
   onBack,
   onShare,
-}: NavButtonsProps) => (
+}: NavButtonsProps): React.ReactElement => (
   <Animated.View
     className="absolute inset-x-0 top-0 z-20 flex-row items-center justify-between px-4"
     style={[{ paddingTop: topInset + 8 }, navStyle]}
@@ -403,7 +419,10 @@ const FloatingNavButtons = ({
   </Animated.View>
 );
 
-const StrainScrollContent = ({ strain, scrollHandler }: StrainContentProps) => (
+const StrainScrollContent = ({
+  strain,
+  scrollHandler,
+}: StrainContentProps): React.ReactElement => (
   <Animated.ScrollView
     className="z-10 flex-1"
     contentContainerClassName="pb-10"
@@ -428,7 +447,7 @@ const StrainScrollContent = ({ strain, scrollHandler }: StrainContentProps) => (
   </Animated.ScrollView>
 );
 
-export default function StrainDetailsScreen() {
+export default function StrainDetailsScreen(): React.ReactElement {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const router = useRouter();
   const navigation = useNavigation();

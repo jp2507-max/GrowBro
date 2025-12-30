@@ -1,12 +1,11 @@
 import React from 'react';
-import { Pressable } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useDerivedValue,
   withTiming,
 } from 'react-native-reanimated';
 
-import { Text } from '@/components/ui';
+import { Pressable, Text } from '@/components/ui';
 import { translate } from '@/lib';
 import { useAnimatedScrollList } from '@/lib/animations/animated-scroll-list-provider';
 import { useBottomTabBarHeight } from '@/lib/animations/use-bottom-tab-bar-height';
@@ -58,8 +57,12 @@ export function ComposeBtn({
 
   return (
     <AnimatedPressable
-      className="absolute right-6 flex-row items-center justify-center gap-3 rounded-full bg-neutral-800 px-4 shadow-md active:opacity-90"
-      style={[rContainerStyle, { bottom: grossHeight + 16 }]}
+      className="absolute right-6 flex-row items-center justify-center gap-3 rounded-full bg-neutral-800 px-4 shadow-md"
+      style={({ pressed }: { pressed: boolean }) => [
+        rContainerStyle,
+        { bottom: grossHeight + 16 },
+        pressed && { opacity: 0.9 },
+      ]}
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={translate('community.create_post')}

@@ -20,39 +20,18 @@ function isUuid(value: string): boolean {
   );
 }
 
-export async function syncPlantsToCloud(): Promise<number> {
-  const userId = await getOptionalAuthenticatedUserId();
-  if (!userId) {
-    if (__DEV__) {
-      console.info('[PlantsSync] skipped push: no user session');
-    }
-    return 0;
-  }
+type PlantData = Awaited<ReturnType<typeof getPlantsNeedingSync>>[number];
 
-  const pending = await getPlantsNeedingSync(userId);
-  if (pending.length === 0) {
-    if (__DEV__) {
-      console.info('[PlantsSync] no pending plants to push');
-    }
-    return 0;
-  }
+/** Build the upsert payload for a plant */
+function buildPlantPayload(plant: PlantData, userId: string) {
+  const metadata = (plant.metadata ?? {}) as Record<string, unknown>;
+  const remoteImagePath = metadata.remoteImagePath as string | undefined;
+  const isLocalFileUri = plant.imageUrl?.startsWith('file://');
+  const cloudImageUrl = isLocalFileUri
+    ? (remoteImagePath ?? null)
+    : (plant.imageUrl ?? null);
 
-  const syncable = pending.filter((plant) => isUuid(plant.id));
-  const skipped = pending.length - syncable.length;
-
-  if (skipped > 0 && __DEV__) {
-    console.warn('[PlantsSync] skipped plants with non-UUID ids', {
-      skipped,
-    });
-  }
-
-  if (syncable.length === 0) {
-    return 0;
-  }
-
-  const startedAt = Date.now();
-
-  const payload = syncable.map((plant) => ({
+  return {
     id: plant.id,
     user_id: userId,
     name: plant.name,
@@ -66,12 +45,36 @@ export async function syncPlantsToCloud(): Promise<number> {
     environment: plant.environment ?? null,
     photoperiod_type: plant.photoperiodType ?? null,
     genetic_lean: plant.geneticLean ?? null,
-    image_url: plant.imageUrl ?? null,
+    image_url: cloudImageUrl,
     notes: plant.notes ?? null,
     metadata: plant.metadata ?? null,
     created_at: toIso(plant.createdAt) ?? new Date().toISOString(),
     updated_at: toIso(plant.updatedAt) ?? new Date().toISOString(),
-  }));
+  };
+}
+
+export async function syncPlantsToCloud(): Promise<number> {
+  const userId = await getOptionalAuthenticatedUserId();
+  if (!userId) {
+    if (__DEV__) console.info('[PlantsSync] skipped push: no user session');
+    return 0;
+  }
+
+  const pending = await getPlantsNeedingSync(userId);
+  if (pending.length === 0) {
+    if (__DEV__) console.info('[PlantsSync] no pending plants to push');
+    return 0;
+  }
+
+  const syncable = pending.filter((plant) => isUuid(plant.id));
+  const skipped = pending.length - syncable.length;
+  if (skipped > 0 && __DEV__) {
+    console.warn('[PlantsSync] skipped plants with non-UUID ids', { skipped });
+  }
+  if (syncable.length === 0) return 0;
+
+  const startedAt = Date.now();
+  const payload = syncable.map((p) => buildPlantPayload(p, userId));
 
   const { data, error } = await supabase
     .from('plants')
@@ -89,10 +92,9 @@ export async function syncPlantsToCloud(): Promise<number> {
 
   const timestampMap =
     data?.reduce<Record<string, number>>((acc, row) => {
-      const ts = row.updated_at
+      acc[row.id] = row.updated_at
         ? new Date(row.updated_at).getTime()
         : Date.now();
-      acc[row.id] = ts;
       return acc;
     }, {}) ?? {};
 

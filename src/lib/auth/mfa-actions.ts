@@ -17,7 +17,9 @@ import type { PendingMfaEnrollment } from './use-mfa-handlers';
 export const showMfaError = (error: unknown) =>
   Alert.alert(
     translate('common.error'),
-    error instanceof Error ? error.message : String(error)
+    error instanceof Error
+      ? error.message
+      : translate('auth.security.mfa_verification_error')
   );
 
 type EnrollParams = {
@@ -32,7 +34,7 @@ export async function startMfaEnrollment({
   setPendingEnrollment,
   setVerificationCode,
   present,
-}: EnrollParams) {
+}: EnrollParams): Promise<void> {
   try {
     const enrollment = await enrollTotp.mutateAsync({
       friendlyName: translate('auth.security.primary_mfa_label'),
@@ -54,13 +56,13 @@ type VerifyParams = {
   pendingEnrollment: PendingMfaEnrollment | null;
   verificationCode: string;
   verifyTotp: ReturnType<typeof useMfaChallengeAndVerify>;
-  refetchMfaFactors: () => void;
+  refetchMfaFactors: () => Promise<unknown>;
   setPendingEnrollment: (e: PendingMfaEnrollment | null) => void;
   setVerificationCode: (c: string) => void;
   dismiss: () => void;
 };
 
-export async function verifyMfaCode(params: VerifyParams) {
+export async function verifyMfaCode(params: VerifyParams): Promise<void> {
   const {
     pendingEnrollment,
     verificationCode,
@@ -105,14 +107,14 @@ export async function verifyMfaCode(params: VerifyParams) {
 type DisableParams = {
   activeFactor: { id: string } | undefined;
   unenrollTotp: ReturnType<typeof useMfaUnenroll>;
-  refetchMfaFactors: () => void;
+  refetchMfaFactors: () => Promise<unknown>;
 };
 
 export function confirmDisableMfa({
   activeFactor,
   unenrollTotp,
   refetchMfaFactors,
-}: DisableParams) {
+}: DisableParams): void {
   if (!activeFactor) return;
   Alert.alert(
     translate('auth.security.mfa_disable_confirm_title'),

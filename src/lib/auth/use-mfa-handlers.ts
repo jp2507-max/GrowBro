@@ -24,7 +24,7 @@ type UseMfaHandlersParams = {
   enrollTotp: ReturnType<typeof useMfaEnrollTotp>;
   verifyTotp: ReturnType<typeof useMfaChallengeAndVerify>;
   unenrollTotp: ReturnType<typeof useMfaUnenroll>;
-  refetchMfaFactors: () => void;
+  refetchMfaFactors: () => Promise<unknown>;
   activeFactor: { id: string } | undefined;
   mfaModal: ReturnType<typeof useModal>;
 };
@@ -42,27 +42,41 @@ export function useMfaHandlers(params: UseMfaHandlersParams) {
     React.useState<PendingMfaEnrollment | null>(null);
   const [verificationCode, setVerificationCode] = React.useState('');
 
-  const handleStartEnableMfa = () =>
-    startMfaEnrollment({
-      enrollTotp,
-      setPendingEnrollment,
-      setVerificationCode,
-      present: mfaModal.present,
-    });
+  const handleStartEnableMfa = React.useCallback(
+    () =>
+      startMfaEnrollment({
+        enrollTotp,
+        setPendingEnrollment,
+        setVerificationCode,
+        present: mfaModal.present,
+      }),
+    [enrollTotp, mfaModal.present]
+  );
 
-  const handleVerifyMfa = () =>
-    verifyMfaCode({
+  const handleVerifyMfa = React.useCallback(
+    () =>
+      verifyMfaCode({
+        pendingEnrollment,
+        verificationCode,
+        verifyTotp,
+        refetchMfaFactors,
+        setPendingEnrollment,
+        setVerificationCode,
+        dismiss: mfaModal.dismiss,
+      }),
+    [
       pendingEnrollment,
       verificationCode,
       verifyTotp,
       refetchMfaFactors,
-      setPendingEnrollment,
-      setVerificationCode,
-      dismiss: mfaModal.dismiss,
-    });
+      mfaModal.dismiss,
+    ]
+  );
 
-  const handleDisableMfa = () =>
-    confirmDisableMfa({ activeFactor, unenrollTotp, refetchMfaFactors });
+  const handleDisableMfa = React.useCallback(
+    () => confirmDisableMfa({ activeFactor, unenrollTotp, refetchMfaFactors }),
+    [activeFactor, unenrollTotp, refetchMfaFactors]
+  );
 
   const handleCloseMfaModal = React.useCallback(() => {
     mfaModal.dismiss();

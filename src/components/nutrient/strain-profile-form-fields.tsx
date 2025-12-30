@@ -4,6 +4,7 @@
  * Extracted form field components for the strain profile save dialog.
  */
 
+import React from 'react';
 import { type Control, Controller } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
@@ -20,7 +21,10 @@ type NameFieldProps = {
   testID: string;
 };
 
-export function NameField({ control, testID }: NameFieldProps) {
+export function NameField({
+  control,
+  testID,
+}: NameFieldProps): React.ReactElement {
   const { t } = useTranslation();
   return (
     <Controller
@@ -45,7 +49,10 @@ type NotesFieldProps = {
   testID: string;
 };
 
-export function NotesField({ control, testID }: NotesFieldProps) {
+export function NotesField({
+  control,
+  testID,
+}: NotesFieldProps): React.ReactElement {
   const { t } = useTranslation();
   return (
     <Controller
@@ -74,7 +81,7 @@ type PublishToggleFieldProps = {
 export function PublishToggleField({
   control,
   testID,
-}: PublishToggleFieldProps) {
+}: PublishToggleFieldProps): React.ReactElement {
   const { t } = useTranslation();
   return (
     <Controller

@@ -48,11 +48,12 @@ export function QueueFilters({
                 accessibilityRole="button"
                 key={filter.value}
                 onPress={() => onFilterChange(filter.value)}
-                className={`rounded-full px-4 py-2 active:opacity-70 ${
+                className={`rounded-full px-4 py-2 ${
                   isActive
                     ? 'bg-primary-600'
                     : 'border border-neutral-300 bg-white dark:border-neutral-600 dark:bg-charcoal-800'
                 }`}
+                style={({ pressed }) => pressed && { opacity: 0.7 }}
                 testID={`filter-${filter.value}`}
               >
                 <Text
