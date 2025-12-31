@@ -45,7 +45,7 @@ describe('TaskFactory', () => {
       const specs = TaskFactory.create(settings);
 
       const titles = specs.map((s) => s.title);
-      expect(titles).not.toContain('Water Plant');
+      expect(titles).not.toContain('Check Water Need');
       expect(titles).not.toContain('Feed Plant');
     });
   });
@@ -59,7 +59,7 @@ describe('TaskFactory', () => {
       });
       const specs = TaskFactory.create(settings);
 
-      const waterTask = specs.find((s) => s.title === 'Water Plant');
+      const waterTask = specs.find((s) => s.title === 'Check Water Need');
       expect(waterTask).toBeDefined();
       expect(waterTask?.rrule).toBe('FREQ=DAILY;INTERVAL=3');
     });
@@ -72,7 +72,7 @@ describe('TaskFactory', () => {
       });
       const specs = TaskFactory.create(settings);
 
-      const waterTask = specs.find((s) => s.title === 'Water Plant');
+      const waterTask = specs.find((s) => s.title === 'Check Water Need');
       expect(waterTask?.rrule).toBe('FREQ=DAILY;INTERVAL=2');
     });
 
@@ -84,7 +84,7 @@ describe('TaskFactory', () => {
       });
       const specs = TaskFactory.create(settings);
 
-      const waterTask = specs.find((s) => s.title === 'Water Plant');
+      const waterTask = specs.find((s) => s.title === 'Check Water Need');
       expect(waterTask?.rrule).toBe('FREQ=DAILY;INTERVAL=4');
     });
 
@@ -99,6 +99,18 @@ describe('TaskFactory', () => {
       expect(feedTask).toBeDefined();
       expect(feedTask?.rrule).toBe('FREQ=WEEKLY;BYDAY=FR');
     });
+
+    it('creates weekly climate check task on Wednesdays', () => {
+      const settings = createDefaultSettings({
+        stage: 'vegetative',
+        medium: 'soil',
+      });
+      const specs = TaskFactory.create(settings);
+
+      const climateTask = specs.find((s) => s.title === 'Climate Check');
+      expect(climateTask).toBeDefined();
+      expect(climateTask?.rrule).toBe('FREQ=WEEKLY;BYDAY=WE');
+    });
   });
 
   describe('Vegetative stage - Coco medium', () => {
@@ -109,7 +121,7 @@ describe('TaskFactory', () => {
       });
       const specs = TaskFactory.create(settings);
 
-      const waterTask = specs.find((s) => s.title === 'Water Plant');
+      const waterTask = specs.find((s) => s.title === 'Check Water Need');
       expect(waterTask?.rrule).toBe('FREQ=DAILY;INTERVAL=1');
     });
 
@@ -134,7 +146,7 @@ describe('TaskFactory', () => {
       });
       const specs = TaskFactory.create(settings);
 
-      const waterTask = specs.find((s) => s.title === 'Water Plant');
+      const waterTask = specs.find((s) => s.title === 'Check Water Need');
       expect(waterTask).toBeDefined();
       expect(waterTask?.rrule).toBe('FREQ=DAILY;INTERVAL=3');
     });
@@ -171,7 +183,7 @@ describe('TaskFactory', () => {
       });
       const specs = TaskFactory.create(settings);
 
-      const waterTask = specs.find((s) => s.title === 'Water Plant');
+      const waterTask = specs.find((s) => s.title === 'Check Water Need');
       expect(waterTask).toBeUndefined();
     });
 

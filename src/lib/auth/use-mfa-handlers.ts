@@ -9,16 +9,10 @@ import { type useModal } from '@/components/settings/mfa-setup-modal';
 
 import {
   confirmDisableMfa,
+  type PendingMfaEnrollment,
   startMfaEnrollment,
   verifyMfaCode,
 } from './mfa-actions';
-
-export type PendingMfaEnrollment = {
-  factorId: string;
-  secret: string;
-  uri: string;
-  friendlyName: string | null;
-};
 
 type UseMfaHandlersParams = {
   enrollTotp: ReturnType<typeof useMfaEnrollTotp>;

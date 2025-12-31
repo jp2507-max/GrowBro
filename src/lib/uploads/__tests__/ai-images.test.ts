@@ -6,6 +6,19 @@ import {
   uploadTrainingImage,
 } from '@/lib/uploads/ai-images';
 
+// Mock expo-file-system with EncodingType
+const mockReadAsStringAsync = jest
+  .fn()
+  .mockResolvedValue('bW9ja2VkLWJhc2U2NA==');
+jest.mock('expo-file-system', () => ({
+  ...jest.requireActual('expo-file-system'),
+  readAsStringAsync: mockReadAsStringAsync,
+  EncodingType: {
+    UTF8: 'utf8',
+    Base64: 'base64',
+  },
+}));
+
 jest.mock('@/lib/supabase', () => ({
   supabase: {
     storage: {
@@ -24,48 +37,15 @@ jest.mock('@/lib/media/exif', () => ({
     .mockResolvedValue({ uri: 'file:///tmp/stripped.jpg', didStrip: true }),
 }));
 
-type MockFetchResponse = {
-  ok: boolean;
-  status: number;
-  statusText: string;
-  headers: {
-    get: jest.Mock<string | null, [string]>;
-  };
-  arrayBuffer: jest.Mock<Promise<ArrayBuffer>, []>;
-  blob: jest.Mock<Promise<Blob>, []>;
-  json: jest.Mock;
-  text: jest.Mock;
-};
-
-let mockResponse: MockFetchResponse;
-
-function createMockResponse(): MockFetchResponse {
-  const mockArrayBuffer = new Uint8Array([1, 2, 3, 4, 5]).buffer;
-  return {
-    ok: true,
-    status: 200,
-    statusText: 'OK',
-    headers: {
-      get: jest.fn((name: string) => {
-        if (name === 'content-type') return 'image/jpeg';
-        return null;
-      }),
-    },
-    arrayBuffer: jest.fn().mockResolvedValue(mockArrayBuffer),
-    blob: jest
-      .fn()
-      .mockResolvedValue(new Blob([mockArrayBuffer], { type: 'image/jpeg' })),
-    json: jest.fn(),
-    text: jest.fn(),
-  };
-}
+// Mock base64-arraybuffer
+jest.mock('base64-arraybuffer', () => ({
+  decode: jest.fn().mockReturnValue(new ArrayBuffer(8)),
+}));
 
 async function setupTestEnvironment() {
   jest.restoreAllMocks();
-  mockResponse = createMockResponse();
-  jest
-    .spyOn(global, 'fetch')
-    .mockResolvedValue(mockResponse as unknown as Response);
+  // Mock FileSystem.readAsStringAsync to return base64 data
+  mockReadAsStringAsync.mockResolvedValue('bW9ja2VkLWJhc2U2NC1kYXRh');
   // Reset consents to false
   await ConsentService.setConsent('cloudProcessing', false);
   await ConsentService.setConsent('aiTraining', false);
@@ -95,9 +75,11 @@ describe('AI image uploads with consent gating', () => {
     });
     expect(res.bucket).toBe('plant-images');
     expect(res.path).toContain('inference/u1/p1/');
-    // Verify fetch was called and arrayBuffer was used
-    expect(fetch).toHaveBeenCalledWith('file:///tmp/stripped.jpg');
-    expect(mockResponse.arrayBuffer).toHaveBeenCalled();
+    // Verify FileSystem.readAsStringAsync was called with stripped URI
+    expect(mockReadAsStringAsync).toHaveBeenCalledWith(
+      'file:///tmp/stripped.jpg',
+      { encoding: 'base64' }
+    );
   });
 
   test('training upload throws ConsentRequiredError without consent', async () => {
@@ -124,9 +106,11 @@ describe('AI image upload implementation details', () => {
     });
     expect(res.path).toContain('training/');
     expect(res.path).toContain('/u1/p1/');
-    // Verify fetch was called and arrayBuffer was used
-    expect(fetch).toHaveBeenCalledWith('file:///tmp/stripped.jpg');
-    expect(mockResponse.arrayBuffer).toHaveBeenCalled();
+    // Verify FileSystem.readAsStringAsync was called with stripped URI
+    expect(mockReadAsStringAsync).toHaveBeenCalledWith(
+      'file:///tmp/stripped.jpg',
+      { encoding: 'base64' }
+    );
   });
 
   test('calls stripExifAndGeolocation before upload', async () => {
@@ -141,7 +125,7 @@ describe('AI image upload implementation details', () => {
     );
   });
 
-  test('handles different MIME types and creates blob correctly', async () => {
+  test('handles different MIME types and creates ArrayBuffer correctly', async () => {
     await ConsentService.setConsent('cloudProcessing', true);
     // Test with PNG
     const result = await uploadInferenceImage({
@@ -151,9 +135,11 @@ describe('AI image upload implementation details', () => {
       mimeType: 'image/png',
     });
 
-    // Verify the response methods were called
-    expect(fetch).toHaveBeenCalledWith('file:///tmp/stripped.jpg');
-    expect(mockResponse.arrayBuffer).toHaveBeenCalled();
+    // Verify FileSystem.readAsStringAsync was called
+    expect(mockReadAsStringAsync).toHaveBeenCalledWith(
+      'file:///tmp/stripped.jpg',
+      { encoding: 'base64' }
+    );
 
     // Verify upload succeeded and path contains expected structure
     expect(result.bucket).toBe('plant-images');

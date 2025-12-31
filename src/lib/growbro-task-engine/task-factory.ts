@@ -13,6 +13,7 @@ import {
   addDays,
   buildDtstartTimestamps,
   buildUntilUtc,
+  calculateWaterVolume,
   daysSince,
   getWateringInterval,
 } from './utils';
@@ -84,6 +85,9 @@ export class TaskFactory {
     if (medium === 'hydro') {
       specs.push(...this.createHydroMaintenanceTasks(settings, now));
     }
+
+    // Environment check task (weekly on Wednesdays)
+    specs.push(...this.createEnvironmentCheckTasks(settings, now));
 
     // Living soil top dressing (monthly)
     if (medium === 'living_soil') {
@@ -159,6 +163,9 @@ export class TaskFactory {
     if (medium === 'hydro') {
       specs.push(...this.createHydroMaintenanceTasks(settings, now));
     }
+
+    // Environment check task (weekly on Wednesdays)
+    specs.push(...this.createEnvironmentCheckTasks(settings, now));
 
     // Photoperiod + Indoor: Switch to 12/12 reminder (one-time)
     if (photoperiodType === 'photoperiod' && environment === 'indoor') {
@@ -247,7 +254,7 @@ export class TaskFactory {
     return [
       {
         title: i18n.t('tasks.start_flushing.title'),
-        description: i18n.t('tasks.start_flushing.description'),
+        description: i18n.t('tasks.start_flushing.description_rich'),
         rrule: 'FREQ=DAILY;INTERVAL=2',
         dtstartLocal,
         dtstartUtc,
@@ -293,7 +300,7 @@ export class TaskFactory {
       buildDtstartTimestamps(cureStart, timezone);
     specs.push({
       title: i18n.t('tasks.burp_jars_week1.title'),
-      description: i18n.t('tasks.burp_jars_week1.description'),
+      description: i18n.t('tasks.burp_jars_week1.description_rich'),
       rrule: 'FREQ=DAILY;INTERVAL=1',
       dtstartLocal: dtstartLocal1,
       dtstartUtc: dtstartUtc1,
@@ -309,7 +316,7 @@ export class TaskFactory {
       const week4End = addDays(cureStart, CURE_TOTAL_MONITORING_DAYS);
       specs.push({
         title: i18n.t('tasks.burp_jars_week3.title'),
-        description: i18n.t('tasks.burp_jars_week3.description'),
+        description: i18n.t('tasks.burp_jars_week3.description_rich'),
         rrule: 'FREQ=DAILY;INTERVAL=3',
         dtstartLocal: dtstartLocal2,
         dtstartUtc: dtstartUtc2,
@@ -341,15 +348,18 @@ export class TaskFactory {
       timezone
     );
 
+    // Calculate dynamic water volume
+    const { min, max } = calculateWaterVolume(potSizeLiters);
+
     const descriptionKey =
       medium === 'coco'
-        ? 'tasks.water_plant.description_coco'
-        : 'tasks.water_plant.description_soil';
+        ? 'tasks.check_water_need.description_coco'
+        : 'tasks.check_water_need.description_soil';
 
     return [
       {
-        title: i18n.t('tasks.water_plant.title'),
-        description: i18n.t(descriptionKey),
+        title: i18n.t('tasks.check_water_need.title'),
+        description: i18n.t(descriptionKey, { min, max }),
         rrule: `FREQ=DAILY;INTERVAL=${interval}`,
         dtstartLocal,
         dtstartUtc,
@@ -359,14 +369,14 @@ export class TaskFactory {
   }
 
   /**
-   * Create feeding tasks based on medium
+   * Create feeding tasks based on medium and stage
    */
   private static createFeedingTasks(
     settings: PlantSettings,
     startDate: Date,
     untilDate?: Date
   ): SeriesSpec[] {
-    const { medium, timezone } = settings;
+    const { medium, timezone, stage } = settings;
 
     // Living soil: No liquid feeding (uses top dressing instead)
     // Hydro: Nutrients handled in reservoir
@@ -382,16 +392,23 @@ export class TaskFactory {
     let rrule: string;
     let descriptionKey: string;
 
+    // Stage-aware description keys
+    const isFlowering = stage === 'flowering';
+
     switch (medium) {
       case 'coco':
         rrule = 'FREQ=DAILY;INTERVAL=1';
-        descriptionKey = 'tasks.feed_plant.description_coco';
+        descriptionKey = isFlowering
+          ? 'tasks.feed_plant.description_coco_flower_safe'
+          : 'tasks.feed_plant.description_coco_veg_safe';
         break;
       case 'soil':
       case 'other':
       default:
         rrule = 'FREQ=WEEKLY;BYDAY=FR';
-        descriptionKey = 'tasks.feed_plant.description_soil';
+        descriptionKey = isFlowering
+          ? 'tasks.feed_plant.description_soil_flower_safe'
+          : 'tasks.feed_plant.description_soil_veg_safe';
         break;
     }
 
@@ -442,6 +459,38 @@ export class TaskFactory {
         title: i18n.t('tasks.change_reservoir.title'),
         description: i18n.t('tasks.change_reservoir.description'),
         rrule: 'FREQ=WEEKLY;INTERVAL=1',
+        dtstartLocal,
+        dtstartUtc,
+        timezone,
+      },
+    ];
+  }
+
+  /**
+   * Create environment check tasks (weekly on Wednesdays)
+   * Helps beginners monitor temperature and humidity conditions
+   */
+  private static createEnvironmentCheckTasks(
+    settings: PlantSettings,
+    startDate: Date
+  ): SeriesSpec[] {
+    const { timezone, stage } = settings;
+    const { dtstartLocal, dtstartUtc } = buildDtstartTimestamps(
+      startDate,
+      timezone
+    );
+
+    // Use stage-specific description for humidity targets
+    const descriptionKey =
+      stage === 'flowering'
+        ? 'tasks.climate_check.description_flower'
+        : 'tasks.climate_check.description_veg';
+
+    return [
+      {
+        title: i18n.t('tasks.climate_check.title'),
+        description: i18n.t(descriptionKey),
+        rrule: 'FREQ=WEEKLY;BYDAY=WE',
         dtstartLocal,
         dtstartUtc,
         timezone,

@@ -9,6 +9,12 @@
 export const cacheDirectory = 'file:///cache';
 export const documentDirectory = 'file:///documents';
 
+// EncodingType enum for base64/utf8 encoding options
+export const EncodingType = {
+  UTF8: 'utf8',
+  Base64: 'base64',
+} as const;
+
 // Create a mock Directory constructor that can be used in tests
 export const Directory = jest
   .fn()
@@ -105,6 +111,7 @@ export const getTotalDiskCapacityAsync = jest
 export default {
   cacheDirectory,
   documentDirectory,
+  EncodingType,
   getInfoAsync,
   makeDirectoryAsync,
   writeAsStringAsync,

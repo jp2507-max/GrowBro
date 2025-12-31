@@ -1,3 +1,5 @@
+import { decode } from 'base64-arraybuffer';
+import * as FileSystem from 'expo-file-system/legacy';
 import * as ImageManipulator from 'expo-image-manipulator';
 
 import { stripExifAndGeolocation } from '@/lib/media/exif';
@@ -166,12 +168,17 @@ export async function uploadAvatar(
     // Step 5 & 6: Check file size and compress further if needed
     // Iterative compression loop: reduce quality by 10% until < 200KB or quality < 30%
     onProgress?.({ status: 'uploading', progress: 50 });
-    const response = await fetch(processedImage.uri);
-    let blob = await response.blob();
+    let currentUri = processedImage.uri;
+    let fileInfo = await FileSystem.getInfoAsync(currentUri);
     let quality = 0.8;
 
     // Iteratively compress until under 200KB
-    while (blob.size > MAX_FILE_SIZE_KB * 1024 && quality > 0.3) {
+    while (
+      fileInfo.exists &&
+      'size' in fileInfo &&
+      fileInfo.size > MAX_FILE_SIZE_KB * 1024 &&
+      quality > 0.3
+    ) {
       quality -= 0.1;
       const recompressed = await ImageManipulator.manipulateAsync(
         processedImage.uri,
@@ -181,8 +188,8 @@ export async function uploadAvatar(
           format: ImageManipulator.SaveFormat.JPEG,
         }
       );
-      const recompressedResponse = await fetch(recompressed.uri);
-      blob = await recompressedResponse.blob();
+      currentUri = recompressed.uri;
+      fileInfo = await FileSystem.getInfoAsync(currentUri);
     }
 
     // Step 7: Upload to Supabase Storage
@@ -191,7 +198,12 @@ export async function uploadAvatar(
     const filename = `${timestamp}.jpg`;
     const path = `${userId}/${filename}`;
 
-    const arrayBuffer = await blob.arrayBuffer();
+    // Read file as base64 and decode to ArrayBuffer for Supabase upload
+    // (blob.arrayBuffer() is not available in React Native)
+    const base64 = await FileSystem.readAsStringAsync(currentUri, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+    const arrayBuffer = decode(base64);
 
     const { data, error } = await supabase.storage
       .from(AVATAR_BUCKET)

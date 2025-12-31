@@ -11,6 +11,8 @@ import {
 import { translate, useAuth } from '@/lib';
 import { generateStableHash } from '@/lib/auth/utils';
 
+const SESSIONS_QUERY_KEY = ['auth', 'sessions'] as const;
+
 type UseSessionManagementReturn = {
   sessions: UserSession[] | undefined;
   isLoading: boolean;
@@ -22,6 +24,48 @@ type UseSessionManagementReturn = {
   handleRevokeAll: () => void;
   handleRevoke: (sessionKey: string) => void;
 };
+
+function createRevokeSessionHandlers(
+  queryClient: ReturnType<typeof useQueryClient>
+) {
+  return {
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: SESSIONS_QUERY_KEY });
+      Alert.alert(
+        translate('auth.sessions.revoke_success_title'),
+        translate('auth.sessions.revoke_success_message')
+      );
+    },
+    onError: (revokeError: Error) => {
+      Alert.alert(
+        translate('auth.sessions.revoke_error_title'),
+        translate('auth.sessions.revoke_error_message')
+      );
+      console.error('Failed to revoke session:', revokeError);
+    },
+  };
+}
+
+function createRevokeAllHandlers(
+  queryClient: ReturnType<typeof useQueryClient>
+) {
+  return {
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: SESSIONS_QUERY_KEY });
+      Alert.alert(
+        translate('auth.sessions.revoke_all_success_title'),
+        translate('auth.sessions.revoke_all_success_message')
+      );
+    },
+    onError: (revokeAllError: Error) => {
+      Alert.alert(
+        translate('auth.sessions.revoke_all_error_title'),
+        translate('auth.sessions.revoke_all_error_message')
+      );
+      console.error('Failed to revoke all sessions:', revokeAllError);
+    },
+  };
+}
 
 /**
  * Custom hook that encapsulates all session management logic for ActiveSessionsScreen.
@@ -36,52 +80,20 @@ export function useSessionManagement(): UseSessionManagementReturn {
     [refreshToken]
   );
 
-  // Fetch sessions
   const { data: sessions, isLoading, error } = useSessions();
 
-  // Revoke session mutation
   const { mutate: revokeSession, isPending: isRevokingSession } =
-    useRevokeSession({
-      onSuccess: () => {
-        void queryClient.invalidateQueries({ queryKey: ['auth', 'sessions'] });
-      },
-      onError: (revokeError) => {
-        Alert.alert(
-          translate('auth.sessions.revoke_error_title'),
-          translate('auth.sessions.revoke_error_message')
-        );
-        console.error('Failed to revoke session:', revokeError);
-      },
-    });
+    useRevokeSession(createRevokeSessionHandlers(queryClient));
 
-  // Revoke all other sessions mutation
   const { mutate: revokeAllOtherSessions, isPending: isRevokingAll } =
-    useRevokeAllOtherSessions({
-      onSuccess: () => {
-        void queryClient.invalidateQueries({ queryKey: ['auth', 'sessions'] });
-        Alert.alert(
-          translate('auth.sessions.revoke_all_success_title'),
-          translate('auth.sessions.revoke_all_success_message')
-        );
-      },
-      onError: (revokeAllError) => {
-        Alert.alert(
-          translate('auth.sessions.revoke_all_error_title'),
-          translate('auth.sessions.revoke_all_error_message')
-        );
-        console.error('Failed to revoke all sessions:', revokeAllError);
-      },
-    });
+    useRevokeAllOtherSessions(createRevokeAllHandlers(queryClient));
 
   const handleRevokeAll = React.useCallback(() => {
     Alert.alert(
       translate('auth.sessions.revoke_all_confirm_title'),
       translate('auth.sessions.revoke_all_confirm_message'),
       [
-        {
-          text: translate('common.cancel'),
-          style: 'cancel',
-        },
+        { text: translate('common.cancel'), style: 'cancel' },
         {
           text: translate('auth.sessions.revoke_all'),
           style: 'destructive',

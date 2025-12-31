@@ -245,9 +245,8 @@ export async function getRetentionImpact(
   recordsToDelete: number;
 }> {
   const now = Date.now();
-  const imageCutoff = now - policy.images * 24 * 60 * 60 * 1000;
-  const metricsCutoff = now - policy.metrics * 24 * 60 * 60 * 1000;
-  const recordsCutoff = now - policy.records * 24 * 60 * 60 * 1000;
+  const { imageCutoff, metricsCutoff, recordsCutoff } =
+    calculateRetentionCutoffs(policy, now);
 
   const assessments = (await database
     .get('assessments')

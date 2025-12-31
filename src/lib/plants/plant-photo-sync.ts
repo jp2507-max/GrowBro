@@ -20,6 +20,40 @@ import type { PlantModel } from '@/lib/watermelon-models/plant';
 /** Signed URL expiry time in seconds (1 hour) */
 const SIGNED_URL_EXPIRY_SECONDS = 3600;
 
+/** Network operation timeout in milliseconds (30 seconds) */
+const NETWORK_TIMEOUT_MS = 30000;
+
+/** Default concurrency for batch photo sync */
+const DEFAULT_SYNC_CONCURRENCY = 3;
+
+/** Typed metadata shape for plant photo sync fields */
+type PlantMetadata = {
+  remoteImagePath?: string;
+};
+
+/**
+ * Wrap a promise with a timeout.
+ * @param promise - Promise to wrap
+ * @param ms - Timeout in milliseconds
+ * @returns Promise that rejects if timeout exceeded
+ */
+async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  const timeout = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error(`Operation timed out after ${ms}ms`)), ms)
+  );
+  return Promise.race([promise, timeout]);
+}
+
+/**
+ * Extract remoteImagePath from plant metadata with type safety.
+ * @param plant - Plant object or null
+ * @returns Remote image path or undefined
+ */
+function getRemoteImagePath(plant: Plant | null): string | undefined {
+  const metadata = plant?.metadata as PlantMetadata | undefined;
+  return metadata?.remoteImagePath;
+}
+
 type PlantPhotoSyncResult = {
   /** Whether a download is in progress */
   isDownloading: boolean;
@@ -76,10 +110,13 @@ export async function syncPlantPhotoIfNeeded(
   // Download from remote
   const { bucket, path } = parseRemotePath(remoteImagePath);
 
-  // Generate signed URL
-  const { data: signedData, error: signedError } = await supabase.storage
-    .from(bucket)
-    .createSignedUrl(path, SIGNED_URL_EXPIRY_SECONDS);
+  // Generate signed URL (with timeout)
+  const { data: signedData, error: signedError } = await withTimeout(
+    supabase.storage
+      .from(bucket)
+      .createSignedUrl(path, SIGNED_URL_EXPIRY_SECONDS),
+    NETWORK_TIMEOUT_MS
+  );
 
   if (signedError || !signedData?.signedUrl) {
     throw new Error(
@@ -87,25 +124,29 @@ export async function syncPlantPhotoIfNeeded(
     );
   }
 
-  // Download and cache locally
-  const newLocalUri = await downloadAndCachePlantPhoto(
-    signedData.signedUrl,
-    plantId
+  // Download and cache locally (with timeout)
+  const newLocalUri = await withTimeout(
+    downloadAndCachePlantPhoto(signedData.signedUrl, plantId),
+    NETWORK_TIMEOUT_MS
   );
 
   // Update plant record with new local URI
-  await updatePlantLocalImageUrl(plantId, newLocalUri);
+  const updateSuccess = await updatePlantLocalImageUrl(plantId, newLocalUri);
+  if (!updateSuccess) {
+    throw new Error(`Failed to update plant ${plantId} with local image URI`);
+  }
 
   return newLocalUri;
 }
 
 /**
  * Update plant's imageUrl with newly downloaded local file URI.
+ * @returns true if update was successful, false on failure
  */
 async function updatePlantLocalImageUrl(
   plantId: string,
   localUri: string
-): Promise<void> {
+): Promise<boolean> {
   try {
     const coll = database.collections.get<PlantModel>('plants');
     const plant = await coll.find(plantId);
@@ -116,11 +157,13 @@ async function updatePlantLocalImageUrl(
         // Don't update updatedAt to avoid triggering unnecessary syncs
       })
     );
+    return true;
   } catch (error) {
     console.warn(
       `[PlantPhotoSync] Failed to update plant ${plantId} with local URI:`,
       error
     );
+    return false;
   }
 }
 
@@ -141,9 +184,7 @@ export function usePlantPhotoSync(plant: Plant | null): PlantPhotoSyncResult {
 
   const plantId = plant?.id;
   const imageUrl = plant?.imageUrl;
-  const remoteImagePath =
-    (plant?.metadata as { remoteImagePath?: string } | undefined)
-      ?.remoteImagePath ?? undefined;
+  const remoteImagePath = getRemoteImagePath(plant);
 
   React.useEffect(() => {
     if (!plantId || !remoteImagePath) {
@@ -212,40 +253,45 @@ export function usePlantPhotoSync(plant: Plant | null): PlantPhotoSyncResult {
  * Batch sync all plants with remote images that are missing locally.
  * Use this on app startup or sync completion.
  *
+ * Processes plants in parallel batches for better performance.
+ *
  * @param plants - Array of plants to check
- * @returns Number of photos downloaded
+ * @param concurrency - Number of concurrent downloads (default: 3)
+ * @returns Number of photos downloaded and failed
  */
 export async function syncMissingPlantPhotos(
-  plants: Plant[]
+  plants: Plant[],
+  concurrency = DEFAULT_SYNC_CONCURRENCY
 ): Promise<{ downloaded: number; failed: number }> {
   let downloaded = 0;
   let failed = 0;
 
-  for (const plant of plants) {
-    const remoteImagePath =
-      (plant.metadata as { remoteImagePath?: string } | undefined)
-        ?.remoteImagePath ?? undefined;
+  // Filter to plants with remote paths
+  const plantsWithRemote = plants.filter(
+    (p) => getRemoteImagePath(p) !== undefined
+  );
 
-    if (!remoteImagePath) {
-      continue;
-    }
+  // Process in batches with concurrency limit
+  for (let i = 0; i < plantsWithRemote.length; i += concurrency) {
+    const batch = plantsWithRemote.slice(i, i + concurrency);
 
-    try {
-      const result = await syncPlantPhotoIfNeeded(
-        plant.id,
-        plant.imageUrl,
-        remoteImagePath
-      );
+    const results = await Promise.allSettled(
+      batch.map((plant) =>
+        syncPlantPhotoIfNeeded(
+          plant.id,
+          plant.imageUrl,
+          getRemoteImagePath(plant)
+        )
+      )
+    );
 
-      if (result) {
+    for (const result of results) {
+      if (result.status === 'fulfilled' && result.value) {
         downloaded++;
+      } else if (result.status === 'rejected') {
+        failed++;
+        console.warn('[PlantPhotoSync] Batch sync error:', result.reason);
       }
-    } catch (error) {
-      console.warn(
-        `[PlantPhotoSync] Failed to sync photo for plant ${plant.id}:`,
-        error
-      );
-      failed++;
     }
   }
 

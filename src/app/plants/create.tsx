@@ -147,6 +147,58 @@ function useStarterTasks({ createdPlantId, t }: StarterTasksParams) {
   }, [createdPlantId, t]);
 }
 
+type PhotoHandlingHook = {
+  photoInfo: PlantPhotoInfo | null;
+  imageUrl: string | undefined;
+  handlePhotoInfo: (info: PlantPhotoInfo) => void;
+  handlePhotoCaptured: (photo: PlantPhotoStoreResult) => void;
+  resetPhoto: () => void;
+};
+
+function usePlantPhotoHandling(): PhotoHandlingHook {
+  const [photoInfo, setPhotoInfo] = React.useState<PlantPhotoInfo | null>(null);
+  const [imageUrl, setImageUrl] = React.useState<string | undefined>(undefined);
+  const [pendingPhoto, setPendingPhoto] =
+    React.useState<PlantPhotoStoreResult | null>(null);
+
+  const handlePhotoInfo = React.useCallback((info: PlantPhotoInfo) => {
+    setPhotoInfo(info);
+  }, []);
+
+  const handlePhotoCaptured = React.useCallback(
+    (photo: PlantPhotoStoreResult) => {
+      setImageUrl(photo.localUri);
+      if (photoInfo) {
+        photoInfo.onPhotoCaptured(photo);
+      } else {
+        setPendingPhoto(photo);
+      }
+    },
+    [photoInfo]
+  );
+
+  const resetPhoto = React.useCallback(() => {
+    setImageUrl(undefined);
+    setPhotoInfo(null);
+  }, []);
+
+  // Flush pending photo when photoInfo becomes available
+  React.useEffect(() => {
+    if (photoInfo && pendingPhoto) {
+      photoInfo.onPhotoCaptured(pendingPhoto);
+      setPendingPhoto(null);
+    }
+  }, [photoInfo, pendingPhoto]);
+
+  return {
+    photoInfo,
+    imageUrl,
+    handlePhotoInfo,
+    handlePhotoCaptured,
+    resetPhoto,
+  };
+}
+
 type AddedModalProps = {
   modal: ReturnType<typeof useModal>;
   t: (key: string) => string;
@@ -268,18 +320,24 @@ export default function CreatePlantScreen(): React.ReactElement {
   }>();
   const queryClient = useQueryClient();
   const successModal = useModal();
+  const insets = useSafeAreaInsets();
   const [createdPlant, setCreatedPlant] = React.useState<Plant | null>(null);
   const [formKey, setFormKey] = React.useState(0);
   const [isSaving, setIsSaving] = React.useState(false);
+  const [completion, setCompletion] = React.useState(0);
   const submitHandlerRef = React.useRef<(() => void) | null>(null);
-  const [photoInfo, setPhotoInfo] = React.useState<PlantPhotoInfo | null>(null);
-  const [imageUrl, setImageUrl] = React.useState<string | undefined>(undefined);
+  const { imageUrl, handlePhotoInfo, handlePhotoCaptured, resetPhoto } =
+    usePlantPhotoHandling();
 
   const handleSubmit = usePlantSubmit({
     setIsSaving,
     setCreatedPlant,
     successModal,
     queryClient,
+    t,
+  });
+  const handleCreateStarterTasks = useStarterTasks({
+    createdPlantId: createdPlant?.id,
     t,
   });
 
@@ -296,15 +354,9 @@ export default function CreatePlantScreen(): React.ReactElement {
   const handleAddAnother = React.useCallback(() => {
     successModal.dismiss();
     setCreatedPlant(null);
-    setImageUrl(undefined);
-    setPhotoInfo(null);
+    resetPhoto();
     setFormKey((k) => k + 1);
-  }, [successModal]);
-
-  const handleCreateStarterTasks = useStarterTasks({
-    createdPlantId: createdPlant?.id,
-    t,
-  });
+  }, [successModal, resetPhoto]);
 
   const handleComplete = React.useCallback(() => {
     haptics.selection();
@@ -314,26 +366,16 @@ export default function CreatePlantScreen(): React.ReactElement {
   const handleSubmitReady = React.useCallback((submit: () => void) => {
     submitHandlerRef.current = submit;
   }, []);
+
   const handleHeaderSave = React.useCallback(() => {
     haptics.selection();
     submitHandlerRef.current?.();
   }, []);
-  const handlePhotoInfo = React.useCallback((info: PlantPhotoInfo) => {
-    setPhotoInfo(info);
-  }, []);
-  const handlePhotoCaptured = React.useCallback(
-    (photo: PlantPhotoStoreResult) => {
-      setImageUrl(photo.localUri);
-      photoInfo?.onPhotoCaptured(photo);
-    },
-    [photoInfo]
-  );
 
-  const insets = useSafeAreaInsets();
-  const [completion, setCompletion] = React.useState(0);
-  const handleProgressChange = React.useCallback((progress: number) => {
-    setCompletion(progress);
-  }, []);
+  const handleProgressChange = React.useCallback(
+    (progress: number) => setCompletion(progress),
+    []
+  );
   const scrollContentStyle = React.useMemo(() => ({ paddingBottom: 100 }), []);
 
   return (
@@ -348,8 +390,8 @@ export default function CreatePlantScreen(): React.ReactElement {
       />
 
       <View className="z-10 -mt-10 flex-1">
-        <View className="bg-sheet flex-1 rounded-t-[35px] shadow-xl">
-          <View className="bg-sheet-handle mb-2 mt-4 h-1.5 w-12 self-center rounded-full" />
+        <View className="flex-1 rounded-t-[35px] bg-sheet shadow-xl dark:bg-charcoal-900">
+          <View className="mb-2 mt-4 h-1.5 w-12 self-center rounded-full bg-sheet-handle dark:bg-white/10" />
           <ScrollView
             className="flex-1"
             contentContainerStyle={scrollContentStyle}
@@ -373,7 +415,7 @@ export default function CreatePlantScreen(): React.ReactElement {
             />
           </ScrollView>
           <View
-            className="bg-sheet/95 absolute inset-x-0 bottom-0 px-4 pt-3"
+            className="absolute inset-x-0 bottom-0 bg-sheet/95 px-4 pt-3 dark:bg-charcoal-900/95"
             style={{ paddingBottom: insets.bottom + 8 }}
           >
             <Button

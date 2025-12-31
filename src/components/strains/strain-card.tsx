@@ -107,7 +107,7 @@ export const StrainCard = React.memo<Props>(({ strain, testID }) => {
         thc_display: strain.thc_display,
         difficulty: strain.grow.difficulty,
       }),
-    [strain]
+    [strain.name, strain.race, strain.thc_display, strain.grow.difficulty]
   );
 
   const imageProps = React.useMemo(

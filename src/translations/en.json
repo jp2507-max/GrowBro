@@ -126,7 +126,7 @@
       "share_update_hint": "Opens the Create Post screen."
     },
     "modal": {
-      "backdrop_hint": "Double-tap to dismiss the modal",
+      "backdrop_hint": "Tap to dismiss the modal",
       "backdrop_label": "Close modal",
       "close_hint": "Double-tap to close the modal and return to the previous screen",
       "close_label": "Close modal",
@@ -625,6 +625,8 @@
       "revoke_error_message": "Failed to revoke session. Please try again.",
       "revoke_error_title": "Error",
       "revoke_hint": "Revoke access for {{device}}",
+      "revoke_success_message": "Session has been revoked successfully.",
+      "revoke_success_title": "Success",
       "session_revoked_from_device": "Your session was revoked from another device",
       "title": "Active Sessions"
     },
@@ -1494,6 +1496,7 @@
         "select_failed": "Failed to select photo",
         "selection_failed": "Failed to select photo",
         "storage_failed": "Failed to store photo",
+        "unknown_error": "An unknown error occurred",
         "upload_failed": "Failed to upload photo",
         "upload_missing_metadata": "Photo metadata is incomplete",
         "upload_not_authenticated": "You must be logged in to upload photos"
@@ -3768,10 +3771,12 @@
   "tasks": {
     "burp_jars_week1": {
       "description": "Open jars for 15-30 minutes to release moisture and refresh air. Check for mold or ammonia smell.",
+      "description_rich": "Open jar & air for 15 min. Check for mold or ammonia smell.",
       "title": "Burp Jars"
     },
     "burp_jars_week3": {
       "description": "Open jars briefly to maintain proper humidity levels. Less frequent burping is needed as cure progresses.",
+      "description_rich": "Open jar & air for 15 min. Less frequent as cure progresses.",
       "title": "Burp Jars"
     },
     "change_reservoir": {
@@ -3798,17 +3803,36 @@
       "description": "Bend a small stem - if it snaps cleanly (not bends), buds are ready for curing. Check daily until dry.",
       "title": "Check Stem Snap"
     },
+    "check_water_need": {
+      "description_coco": "~{{min}}-{{max}}L – **ONLY if the top 2-3cm of medium is dry!** Check runoff EC/pH.",
+      "description_soil": "~{{min}}-{{max}}L – **ONLY if the top 2-3cm of soil is dry!** Water until slight runoff.",
+      "title": "Check Water Need"
+    },
     "check_water_temp": {
       "description": "Maintain reservoir temperature between 18-22°C (65-72°F) to prevent root issues.",
       "title": "Check Water Temperature"
     },
+    "climate_check": {
+      "description_flower": "Temp: 22-28°C? Humidity: ~45%? High humidity = mold risk!",
+      "description_veg": "Temp: 22-28°C? Humidity: ~60%? Check for optimal growth conditions.",
+      "title": "Climate Check"
+    },
     "feed_plant": {
       "description_coco": "Feed with every watering in coco. Monitor EC/pH of runoff.",
+      "description_coco_flower": "Bloom schedule (P/K-heavy). Feed with every watering, monitor EC/pH.",
+      "description_coco_flower_safe": "Bloom nutrients. Watch for yellow leaf tips (nutrient burn). Monitor EC/pH.",
+      "description_coco_veg": "Veg schedule (N-heavy). Feed with every watering, monitor EC/pH.",
+      "description_coco_veg_safe": "Veg nutrients. **Tip: Start with 50% of manufacturer's dosage.** Monitor EC/pH.",
       "description_soil": "Apply nutrients according to your feeding schedule. Adjust based on plant response.",
+      "description_soil_flower": "Bloom schedule (P/K-heavy). Apply nutrients based on plant response.",
+      "description_soil_flower_safe": "Bloom nutrients. Watch for yellow leaf tips (nutrient burn).",
+      "description_soil_veg": "Veg schedule (N-heavy). Apply nutrients based on plant response.",
+      "description_soil_veg_safe": "Veg nutrients. **Tip: Start with 50% of manufacturer's dosage.**",
       "title": "Feed Plant"
     },
     "start_flushing": {
       "description": "Begin the flush period - use plain pH-balanced water only. This helps remove excess nutrients and improves final taste.",
+      "description_rich": "Water only! No more nutrients. Use pH-balanced water to flush excess salts.",
       "title": "Start Flushing (Water Only)"
     },
     "switch_lights": {
@@ -3821,7 +3845,9 @@
     },
     "water_plant": {
       "description_coco": "Water until ~10-20% runoff. Coco dries quickly - check daily.",
+      "description_coco_rich": "~{{min}}-{{max}}L to water (when medium is dry). Check runoff EC/pH.",
       "description_soil": "Water until ~10-20% runoff. Check soil moisture before watering.",
+      "description_soil_rich": "~{{min}}-{{max}}L to water (when soil is dry). Water until slight runoff.",
       "title": "Water Plant"
     }
   },

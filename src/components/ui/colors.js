@@ -53,6 +53,12 @@ module.exports = {
     onPrimaryContainer: '#86EFAC', // Light mint green text (primary-300)
   },
 
+  // Sheet colors for bottom sheets and modals
+  sheet: {
+    DEFAULT: '#FFFFFF', // Light mode sheet background
+    handle: '#E6F4ED', // Light mode handle (neutral-100)
+  },
+
   // Primary: "Deep Jungle"
   // Etwas satter und weniger "neon" als vorher
   primary: {

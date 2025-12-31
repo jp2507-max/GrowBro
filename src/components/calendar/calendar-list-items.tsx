@@ -21,6 +21,8 @@ export type TaskItem = {
   type: 'task';
   task: Task;
   isCompleted: boolean;
+  plantName?: string;
+  plantImage?: string;
 };
 
 export type EmptyStateItem = {
@@ -52,6 +54,9 @@ export function getItemKey(item: CalendarListItem, index: number): string {
       return `empty-${index}`;
     case 'loading':
       return `loading-${index}`;
+    default: {
+      return `unknown-${index}`;
+    }
   }
 }
 
@@ -74,14 +79,18 @@ function SectionHeader({
 }): React.ReactElement {
   return (
     <View
-      className="flex-row items-center justify-between bg-neutral-50 py-2 dark:bg-charcoal-950"
+      className="flex-row items-center justify-between bg-neutral-50 pb-2 pt-4 dark:bg-charcoal-950"
       testID={testID}
+      accessible={true}
+      accessibilityRole="header"
+      accessibilityLabel={`${title}, ${count} items`}
+      accessibilityHint="Section header"
     >
       <Text className="text-lg font-bold text-charcoal-900 dark:text-neutral-100">
         {title}
       </Text>
-      <View className="rounded-full bg-neutral-200 px-2 py-0.5 dark:bg-neutral-700">
-        <Text className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
+      <View className="min-w-[28px] items-center rounded-full bg-primary-100 px-2.5 py-1 dark:bg-primary-900/40">
+        <Text className="text-sm font-bold text-primary-700 dark:text-primary-300">
           {count}
         </Text>
       </View>
@@ -91,7 +100,10 @@ function SectionHeader({
 
 function EmptyState({ message }: { message: string }): React.ReactElement {
   return (
-    <View className="items-center justify-center py-8">
+    <View
+      className="items-center justify-center py-8"
+      testID="calendar-empty-state"
+    >
       <Text className="text-base text-neutral-600 dark:text-neutral-400">
         {message}
       </Text>
@@ -101,27 +113,56 @@ function EmptyState({ message }: { message: string }): React.ReactElement {
 
 function LoadingState(): React.ReactElement {
   return (
-    <View className="items-center py-8">
+    <View className="items-center py-8" testID="calendar-loading-state">
       <ActivityIndicator />
     </View>
   );
 }
 
 // -----------------------------------------------------------------------------
+// Plant info type for calendar list building
+// -----------------------------------------------------------------------------
+
+export type PlantInfo = {
+  id: string;
+  name: string;
+  imageUrl?: string | null;
+};
+
+// -----------------------------------------------------------------------------
 // List data builder
 // -----------------------------------------------------------------------------
 
+export type BuildCalendarListDataOptions = {
+  pendingTasks: Task[];
+  completedTasks: Task[];
+  isLoading: boolean;
+  plantMap?: Map<string, PlantInfo>;
+};
+
 export function buildCalendarListData(
-  pendingTasks: Task[],
-  completedTasks: Task[],
-  isLoading: boolean
+  options: BuildCalendarListDataOptions
 ): CalendarListItem[] {
+  const { pendingTasks, completedTasks, isLoading, plantMap } = options;
   const planTitle = translate('calendar.sections.plan');
   const historyTitle = translate('calendar.sections.history');
   const emptyPlanMessage = translate('calendar.sections.empty_plan');
   const emptyHistoryMessage = translate('calendar.sections.empty_history');
 
   const items: CalendarListItem[] = [];
+
+  // Helper to get plant info for a task
+  const getPlantInfoForTask = (
+    task: Task
+  ): { plantName?: string; plantImage?: string } => {
+    if (!task.plantId || !plantMap) return {};
+    const plant = plantMap.get(task.plantId);
+    if (!plant) return {};
+    return {
+      plantName: plant.name,
+      plantImage: plant.imageUrl ?? undefined,
+    };
+  };
 
   // Plan section
   items.push({
@@ -135,7 +176,14 @@ export function buildCalendarListData(
     items.push({ type: 'empty', message: emptyPlanMessage });
   } else if (pendingTasks.length > 0) {
     for (const task of pendingTasks) {
-      items.push({ type: 'task', task, isCompleted: false });
+      const { plantName, plantImage } = getPlantInfoForTask(task);
+      items.push({
+        type: 'task',
+        task,
+        isCompleted: false,
+        plantName,
+        plantImage,
+      });
     }
   }
 
@@ -151,7 +199,14 @@ export function buildCalendarListData(
     items.push({ type: 'empty', message: emptyHistoryMessage });
   } else if (completedTasks.length > 0) {
     for (const task of completedTasks) {
-      items.push({ type: 'task', task, isCompleted: true });
+      const { plantName, plantImage } = getPlantInfoForTask(task);
+      items.push({
+        type: 'task',
+        task,
+        isCompleted: true,
+        plantName,
+        plantImage,
+      });
     }
   }
 
@@ -190,6 +245,8 @@ export function createRenderItem(
         return (
           <DayTaskRow
             task={item.task}
+            plantName={item.plantName}
+            plantImage={item.plantImage}
             onComplete={handleCompleteTask}
             isCompleted={item.isCompleted}
             testID={

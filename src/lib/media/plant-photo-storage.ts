@@ -27,39 +27,47 @@ import {
 const PLANT_PHOTO_DIR_NAME = 'plant-photos';
 
 let plantPhotoDirectoryUri: string | null = null;
+let initPromise: Promise<string | null> | null = null;
 
 /**
  * Get or create plant photo storage directory URI.
  * Uses document directory (persistent, survives cache clearing).
+ * Uses an initialization promise to prevent race conditions.
  *
  * @returns Directory URI or null if FileSystem unavailable
  */
 export async function getPlantPhotoDirectoryUri(): Promise<string | null> {
-  if (!plantPhotoDirectoryUri) {
-    try {
-      const baseDir = getDocumentDirectoryUri();
-      if (!baseDir) {
-        console.error('[PlantPhotoStorage] Document directory unavailable');
+  if (plantPhotoDirectoryUri) return plantPhotoDirectoryUri;
+
+  if (!initPromise) {
+    initPromise = (async () => {
+      try {
+        const baseDir = getDocumentDirectoryUri();
+        if (!baseDir) {
+          console.error('[PlantPhotoStorage] Document directory unavailable');
+          return null;
+        }
+
+        const dirUri = `${baseDir}${PLANT_PHOTO_DIR_NAME}/`;
+
+        const dirInfo = await FileSystem.getInfoAsync(dirUri);
+        if (!dirInfo.exists) {
+          await FileSystem.makeDirectoryAsync(dirUri, {
+            intermediates: true,
+          });
+        }
+        plantPhotoDirectoryUri = dirUri;
+        return dirUri;
+      } catch (error) {
+        console.error(
+          '[PlantPhotoStorage] Failed to initialize directory:',
+          error
+        );
         return null;
       }
-
-      plantPhotoDirectoryUri = `${baseDir}${PLANT_PHOTO_DIR_NAME}/`;
-
-      const dirInfo = await FileSystem.getInfoAsync(plantPhotoDirectoryUri);
-      if (!dirInfo.exists) {
-        await FileSystem.makeDirectoryAsync(plantPhotoDirectoryUri, {
-          intermediates: true,
-        });
-      }
-    } catch (error) {
-      console.error(
-        '[PlantPhotoStorage] Failed to initialize directory:',
-        error
-      );
-      return null;
-    }
+    })();
   }
-  return plantPhotoDirectoryUri;
+  return initPromise;
 }
 
 /**

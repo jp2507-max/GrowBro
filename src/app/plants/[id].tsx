@@ -149,6 +149,7 @@ function PlantContentSheet({
         className="flex-1"
         contentContainerClassName="pb-[72px]"
         showsVerticalScrollIndicator={false}
+        contentInsetAdjustmentBehavior="automatic"
       >
         {/* Stats Grid */}
         <PlantStatsGrid plant={plant} />

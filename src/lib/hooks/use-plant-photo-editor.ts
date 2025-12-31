@@ -26,13 +26,51 @@ type PlantPhotoEditorActionParams = {
   t: ReturnType<typeof useTranslation>['t'];
 };
 
-async function capturePhoto({
-  photoInfo,
-  plantId,
-  updatePlantPhoto,
-  queryClient,
-  t,
-}: PlantPhotoEditorActionParams): Promise<void> {
+/**
+ * Shared logic for processing and saving a photo after capture/selection:
+ * - Stores photo locally
+ * - Updates form state
+ * - Saves to database
+ * - Invalidates queries
+ * - Shows success/error messages
+ */
+async function processAndSavePhoto(
+  uri: string,
+  params: PlantPhotoEditorActionParams
+): Promise<void> {
+  const { photoInfo, plantId, updatePlantPhoto, queryClient, t } = params;
+  const { storePlantPhotoLocally } = await import(
+    '@/lib/media/plant-photo-storage'
+  );
+  const storeResult = await storePlantPhotoLocally(uri);
+  // Update form state
+  photoInfo.onPhotoCaptured(storeResult);
+  // Auto-save to database
+  try {
+    await updatePlantPhoto({
+      id: plantId,
+      imageUrl: storeResult.localUri,
+    });
+    await queryClient.invalidateQueries({
+      queryKey: ['plant', plantId],
+    });
+    showMessage({
+      message: t('plants.form.photo_saved'),
+      type: 'success',
+    });
+  } catch (saveError) {
+    console.error('[PlantPhotoEditor] Photo save failed:', saveError);
+    showMessage({
+      message: t('plants.form.photo_save_error'),
+      type: 'danger',
+    });
+  }
+}
+
+async function capturePhoto(
+  params: PlantPhotoEditorActionParams
+): Promise<void> {
+  const { t } = params;
   try {
     const ImagePicker = await import('expo-image-picker');
     const permission = await ImagePicker.requestCameraPermissionsAsync();
@@ -44,85 +82,50 @@ async function capturePhoto({
       return;
     }
     const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ['images'],
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
       quality: 1,
     });
     if (!result.canceled && result.assets[0]?.uri) {
-      const { storePlantPhotoLocally } = await import(
-        '@/lib/media/plant-photo-storage'
-      );
-      const storeResult = await storePlantPhotoLocally(result.assets[0].uri);
-      // Update form state
-      photoInfo.onPhotoCaptured(storeResult);
-      // Auto-save to database
-      try {
-        await updatePlantPhoto({
-          id: plantId,
-          imageUrl: storeResult.localUri,
-        });
-        await queryClient.invalidateQueries({
-          queryKey: ['plant', plantId],
-        });
-        showMessage({
-          message: t('plants.form.photo_saved'),
-          type: 'success',
-        });
-      } catch (saveError) {
-        console.error('[PlantPhotoEditor] Photo save failed:', saveError);
-        showMessage({
-          message: t('plants.form.photo_save_error'),
-          type: 'danger',
-        });
-      }
+      await processAndSavePhoto(result.assets[0].uri, params);
     }
   } catch (error) {
     console.error('[PlantPhotoEditor] Photo capture failed:', error);
+    showMessage({
+      message: t('harvest.photo.errors.capture_failed'),
+      description:
+        error instanceof Error
+          ? error.message
+          : t('harvest.photo.errors.unknown_error'),
+      type: 'danger',
+    });
+    throw error;
   }
 }
 
-async function pickPhotoFromLibrary({
-  photoInfo,
-  plantId,
-  updatePlantPhoto,
-  queryClient,
-  t,
-}: PlantPhotoEditorActionParams): Promise<void> {
+async function pickPhotoFromLibrary(
+  params: PlantPhotoEditorActionParams
+): Promise<void> {
+  const { t } = params;
   try {
     const ImagePicker = await import('expo-image-picker');
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
       quality: 1,
     });
     if (!result.canceled && result.assets[0]?.uri) {
-      const { storePlantPhotoLocally } = await import(
-        '@/lib/media/plant-photo-storage'
-      );
-      const storeResult = await storePlantPhotoLocally(result.assets[0].uri);
-      // Update form state
-      photoInfo.onPhotoCaptured(storeResult);
-      // Auto-save to database
-      try {
-        await updatePlantPhoto({
-          id: plantId,
-          imageUrl: storeResult.localUri,
-        });
-        await queryClient.invalidateQueries({
-          queryKey: ['plant', plantId],
-        });
-        showMessage({
-          message: t('plants.form.photo_saved'),
-          type: 'success',
-        });
-      } catch (saveError) {
-        console.error('[PlantPhotoEditor] Photo save failed:', saveError);
-        showMessage({
-          message: t('plants.form.photo_save_error'),
-          type: 'danger',
-        });
-      }
+      await processAndSavePhoto(result.assets[0].uri, params);
     }
   } catch (error) {
     console.error('[PlantPhotoEditor] Photo pick failed:', error);
+    showMessage({
+      message: t('harvest.photo.errors.select_failed'),
+      description:
+        error instanceof Error
+          ? error.message
+          : t('harvest.photo.errors.unknown_error'),
+      type: 'danger',
+    });
+    throw error;
   }
 }
 

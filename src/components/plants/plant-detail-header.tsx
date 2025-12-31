@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { Plant } from '@/api/plants/types';
 import { Image, Pressable, Text, View } from '@/components/ui';
+import colors from '@/components/ui/colors';
 import { ArrowLeft } from '@/components/ui/icons';
 import { usePlantPhotoSync } from '@/lib/plants/plant-photo-sync';
 
@@ -94,8 +95,8 @@ export function PlantDetailHeader({
         <LinearGradient
           colors={[
             'transparent',
-            'rgba(2, 44, 34, 0.7)',
-            'rgba(2, 44, 34, 0.9)',
+            `${colors.primary[950]}B3`, // 70% opacity
+            `${colors.primary[950]}E6`, // 90% opacity
           ]}
           locations={[0, 0.4, 1]}
           className="w-full"

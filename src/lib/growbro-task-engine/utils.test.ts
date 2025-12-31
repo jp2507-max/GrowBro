@@ -4,6 +4,7 @@ import {
   addDays,
   buildDtstartTimestamps,
   buildUntilUtc,
+  calculateWaterVolume,
   daysSince,
   getWateringInterval,
   parsePotSizeLiters,
@@ -142,5 +143,31 @@ describe('getWateringInterval', () => {
 
   it('treats other medium like soil', () => {
     expect(getWateringInterval('other', 15)).toBe(3);
+  });
+});
+
+describe('calculateWaterVolume', () => {
+  it('calculates 25-30% of pot size for standard pots', () => {
+    const { min, max } = calculateWaterVolume(10);
+    expect(min).toBe(2.5);
+    expect(max).toBe(3);
+  });
+
+  it('rounds to 1 decimal place', () => {
+    const { min, max } = calculateWaterVolume(7);
+    expect(min).toBe(1.8); // 7 * 0.25 = 1.75 → 1.8
+    expect(max).toBe(2.1); // 7 * 0.30 = 2.1
+  });
+
+  it('handles large pot sizes', () => {
+    const { min, max } = calculateWaterVolume(30);
+    expect(min).toBe(7.5);
+    expect(max).toBe(9);
+  });
+
+  it('handles small pot sizes', () => {
+    const { min, max } = calculateWaterVolume(3);
+    expect(min).toBe(0.8); // 3 * 0.25 = 0.75 → 0.8
+    expect(max).toBe(0.9); // 3 * 0.30 = 0.9
   });
 });

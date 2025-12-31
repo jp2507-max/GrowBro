@@ -1,3 +1,6 @@
+import { decode } from 'base64-arraybuffer';
+import * as FileSystem from 'expo-file-system/legacy';
+
 import { supabase } from '@/lib/supabase';
 
 export interface UploadProgressCallback {
@@ -27,16 +30,18 @@ export async function uploadImageWithProgress(params: {
   try {
     // NOTE: EXIF/GPS is already stripped at storage time (storePlantPhotoLocally)
     // so we upload the file as-is to avoid double-processing and hash mismatches
-    const response = await fetch(localUri);
-    const blob = await response.blob();
 
     // Use the provided mime type and filename directly
     // (they were determined at store time when EXIF was stripped)
     const finalMimeType = mimeType;
     const finalFilename = filename;
 
-    // Convert blob to ArrayBuffer for Supabase upload
-    const arrayBuffer = await blob.arrayBuffer();
+    // Read file as base64 and decode to ArrayBuffer for Supabase upload
+    // (blob.arrayBuffer() is not available in React Native)
+    const base64 = await FileSystem.readAsStringAsync(localUri, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+    const arrayBuffer = decode(base64);
 
     // Create the RLS-safe file path: userId/plantId/filename
     const bucket = 'plant-images';

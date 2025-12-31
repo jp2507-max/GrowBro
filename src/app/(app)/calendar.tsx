@@ -3,6 +3,7 @@ import React, { useCallback, useMemo } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CalendarHeader } from '@/components/calendar/calendar-header';
+import type { PlantInfo } from '@/components/calendar/calendar-list-items';
 import {
   buildCalendarListData,
   createRenderItem,
@@ -17,6 +18,8 @@ import {
   getCompletedTasksByDateRange,
   getTasksByDateRange,
 } from '@/lib/task-manager';
+import { database } from '@/lib/watermelon';
+import type { PlantModel } from '@/lib/watermelon-models/plant';
 import type { Task } from '@/types/calendar';
 
 const BOTTOM_PADDING_EXTRA = 24;
@@ -45,11 +48,15 @@ function parseEphemeralTaskInfo(
 function useDayTasks(selectedDate: DateTime): {
   pendingTasks: Task[];
   completedTasks: Task[];
+  plantMap: Map<string, PlantInfo>;
   isLoading: boolean;
   refetch: () => Promise<void>;
 } {
   const [pendingTasks, setPendingTasks] = React.useState<Task[]>([]);
   const [completedTasks, setCompletedTasks] = React.useState<Task[]>([]);
+  const [plantMap, setPlantMap] = React.useState<Map<string, PlantInfo>>(
+    new Map()
+  );
   const [isLoading, setIsLoading] = React.useState(true);
 
   const loadTasks = React.useCallback(async () => {
@@ -63,8 +70,46 @@ function useDayTasks(selectedDate: DateTime): {
         getCompletedTasksByDateRange(startOfDay, endOfDay),
       ]);
 
+      // Collect unique plant IDs from all tasks
+      const plantIds = new Set<string>();
+      for (const task of [...pending, ...completed]) {
+        if (task.plantId) {
+          plantIds.add(task.plantId);
+        }
+      }
+
+      // Fetch plant info for all relevant plant IDs
+      const newPlantMap = new Map<string, PlantInfo>();
+      if (plantIds.size > 0) {
+        const plantsCollection = database.get<PlantModel>('plants');
+        const plantIdsArray = Array.from(plantIds);
+
+        // Fetch plants in parallel batches
+        const plantPromises = plantIdsArray.map(async (id) => {
+          try {
+            const plant = await plantsCollection.find(id);
+            return {
+              id: plant.id,
+              name: plant.name,
+              imageUrl: plant.imageUrl,
+            };
+          } catch {
+            // Plant not found, skip
+            return null;
+          }
+        });
+
+        const plants = await Promise.all(plantPromises);
+        for (const plant of plants) {
+          if (plant) {
+            newPlantMap.set(plant.id, plant);
+          }
+        }
+      }
+
       setPendingTasks(pending);
       setCompletedTasks(completed);
+      setPlantMap(newPlantMap);
     } catch (error) {
       console.warn('[CalendarScreen] Failed to load tasks:', error);
     } finally {
@@ -76,7 +121,13 @@ function useDayTasks(selectedDate: DateTime): {
     loadTasks();
   }, [loadTasks]);
 
-  return { pendingTasks, completedTasks, isLoading, refetch: loadTasks };
+  return {
+    pendingTasks,
+    completedTasks,
+    plantMap,
+    isLoading,
+    refetch: loadTasks,
+  };
 }
 
 // -----------------------------------------------------------------------------
@@ -90,7 +141,7 @@ export default function CalendarScreen(): React.ReactElement {
     DateTime.now().startOf('day')
   );
 
-  const { pendingTasks, completedTasks, isLoading, refetch } =
+  const { pendingTasks, completedTasks, plantMap, isLoading, refetch } =
     useDayTasks(selectedDate);
 
   const onDateSelect = useCallback((date: DateTime) => {
@@ -122,8 +173,14 @@ export default function CalendarScreen(): React.ReactElement {
   );
 
   const listData = useMemo(
-    () => buildCalendarListData(pendingTasks, completedTasks, isLoading),
-    [pendingTasks, completedTasks, isLoading]
+    () =>
+      buildCalendarListData({
+        pendingTasks,
+        completedTasks,
+        isLoading,
+        plantMap,
+      }),
+    [pendingTasks, completedTasks, isLoading, plantMap]
   );
 
   const renderItem = useMemo(

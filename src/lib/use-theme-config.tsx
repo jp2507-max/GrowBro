@@ -24,7 +24,10 @@ const LightTheme: Theme = {
   colors: {
     ...DefaultTheme.colors,
     primary: colors.primary[400],
-    background: colors.white,
+    background: colors.neutral[50],
+    text: colors.neutral[900],
+    border: colors.neutral[200],
+    card: colors.white,
   },
 };
 

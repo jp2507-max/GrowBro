@@ -39,6 +39,13 @@ import type { Strain } from '@/types/strains';
 const AnimatedImage = Animated.createAnimatedComponent(Image);
 const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
 
+/** Hero image overlay gradient colors (dark overlay for text readability) */
+const HERO_GRADIENT_COLORS = [
+  'transparent',
+  'rgba(0,0,0,0.4)',
+  'rgba(0,0,0,0.95)',
+] as const;
+
 /**
  * Check if using proxy (production always uses proxy, dev can disable)
  */
@@ -549,7 +556,7 @@ export default function StrainDetailsScreen(): React.ReactElement {
           {...imageProps}
         />
         <AnimatedLinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.4)', 'rgba(0,0,0,0.95)']}
+          colors={HERO_GRADIENT_COLORS}
           locations={[0, 0.5, 1]}
           className="absolute inset-0 z-10"
         />

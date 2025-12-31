@@ -12,7 +12,12 @@ import { translate } from '@/lib';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 
-import type { PendingMfaEnrollment } from './use-mfa-handlers';
+export type PendingMfaEnrollment = {
+  factorId: string;
+  secret: string;
+  uri: string;
+  friendlyName: string | null;
+};
 
 export const showMfaError = (error: unknown) =>
   Alert.alert(
@@ -74,7 +79,7 @@ export async function verifyMfaCode(params: VerifyParams): Promise<void> {
   } = params;
   if (!pendingEnrollment) return;
   const code = verificationCode.trim();
-  if (code.length < 6) {
+  if (code.length !== 6) {
     Alert.alert(
       translate('common.error'),
       translate('auth.security.mfa_code_required')

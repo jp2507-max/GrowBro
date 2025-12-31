@@ -1,3 +1,6 @@
+import { decode } from 'base64-arraybuffer';
+import * as FileSystem from 'expo-file-system/legacy';
+
 import { stripExifAndGeolocation } from '@/lib/media/exif';
 import { ConsentService } from '@/lib/privacy/consent-service';
 import { getDeletionAdapter } from '@/lib/privacy/deletion-adapter';
@@ -74,13 +77,17 @@ async function doUpload({
   localUri,
   mimeType,
 }: DoUploadArgs): Promise<UploadAiImageResult> {
-  const response = await fetch(localUri);
-  const arrayBuffer = await response.arrayBuffer();
-  const blob = new Blob([arrayBuffer], { type: mimeType });
+  // Use expo-file-system + base64-arraybuffer for React Native compatibility
+  // (Response.arrayBuffer() is not available in bare RN)
+  const base64 = await FileSystem.readAsStringAsync(localUri, {
+    encoding: FileSystem.EncodingType.Base64,
+  });
+  const arrayBuffer = decode(base64);
+
   const { data, error } = await supabase.storage
     .from(bucket)
-    .upload(path, blob, {
-      contentType: mimeType,
+    .upload(path, arrayBuffer, {
+      contentType: mimeType ?? 'image/jpeg',
       upsert: false,
     });
   if (error) throw new Error(`Upload failed: ${error.message}`);

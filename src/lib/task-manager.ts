@@ -595,14 +595,17 @@ export async function getCompletedTasksByDateRange(
   end: Date
 ): Promise<Task[]> {
   const repos = getRepos();
-  const completedInRange = await repos.tasks
-    .query(
-      Q.where('status', 'completed'),
-      Q.where('deleted_at', null),
-      Q.where('completed_at', Q.gte(start.getTime())),
-      Q.where('completed_at', Q.lte(end.getTime()))
-    )
+  // Query completed tasks by due date (when they were scheduled for)
+  // not by completedAt (when the user marked them done), so tasks
+  // appear in the correct day section on the calendar.
+  const allCompleted = await repos.tasks
+    .query(Q.where('status', 'completed'), Q.where('deleted_at', null))
     .fetch();
+
+  const completedInRange = allCompleted.filter((taskModel) => {
+    const due = DateTime.fromISO(taskModel.dueAtLocal);
+    return due.toJSDate() >= start && due.toJSDate() <= end;
+  });
 
   return completedInRange
     .map(toTaskFromModel)

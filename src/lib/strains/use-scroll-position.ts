@@ -8,6 +8,7 @@ import { storage } from '@/lib/storage';
 
 interface ScrollPosition {
   offset: number;
+  index?: number; // Store visible index for more accurate restoration
   timestamp: number;
 }
 
@@ -40,12 +41,12 @@ export function useScrollPosition(queryKey: string) {
   const hasRestoredRef = useRef(false);
   const storageKey = `${SCROLL_POSITION_KEY}_${queryKey}`;
 
-  const saveScrollPosition = (offset: number) => {
+  const saveScrollPosition = (offset: number, index?: number) => {
     scrollOffsetRef.current = offset;
     try {
       storage.set(
         storageKey,
-        JSON.stringify({ offset, timestamp: Date.now() })
+        JSON.stringify({ offset, index, timestamp: Date.now() })
       );
     } catch (error) {
       console.warn('[useScrollPosition] Failed to save:', error);
@@ -64,6 +65,21 @@ export function useScrollPosition(queryKey: string) {
       return position.offset;
     } catch (error) {
       console.warn('[useScrollPosition] Failed to get:', error);
+      return null;
+    }
+  };
+
+  const getSavedScrollIndex = (): number | null => {
+    try {
+      const saved = storage.getString(storageKey);
+      if (!saved) return null;
+      const position: ScrollPosition = JSON.parse(saved);
+      if (Date.now() - position.timestamp > SCROLL_POSITION_TTL) {
+        return null;
+      }
+      return position.index ?? null;
+    } catch (error) {
+      console.warn('[useScrollPosition] Failed to get index:', error);
       return null;
     }
   };
@@ -96,6 +112,7 @@ export function useScrollPosition(queryKey: string) {
   return {
     saveScrollPosition,
     getSavedScrollPosition,
+    getSavedScrollIndex,
     clearScrollPosition,
     getInitialScrollOffset,
     currentOffset: scrollOffsetRef.current,

@@ -98,6 +98,7 @@ function useStrainSearchAnalytics(params: AnalyticsParams) {
 
 export default function StrainsScreen(): React.ReactElement {
   const { listRef, scrollHandler, resetScrollState } = useAnimatedScrollList();
+
   useScrollToTop(
     listRef as React.RefObject<{
       scrollToOffset: (params: { offset?: number; animated?: boolean }) => void;
@@ -183,8 +184,7 @@ export default function StrainsScreen(): React.ReactElement {
         <StrainsListWithCache
           searchQuery={debouncedQuery}
           filters={filters}
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          onScroll={scrollHandler as any}
+          onScroll={scrollHandler}
           listRef={listRef}
           contentContainerStyle={[
             styles.listContentContainer,

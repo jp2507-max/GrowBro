@@ -74,10 +74,23 @@ export function classifyError(error: unknown): ClassifiedError {
     return createClassified({ category: ERROR_CATEGORY.VALIDATION });
 
   if (isBusinessLogicError(error))
-    return createClassified({ category: ERROR_CATEGORY.BUSINESS_LOGIC });
+    return createClassified({
+      category: ERROR_CATEGORY.BUSINESS_LOGIC,
+      // preserve original string code if present so handlers can react to it
+      code:
+        typeof (error as Record<string, unknown>).code === 'string'
+          ? ((error as Record<string, unknown>).code as string)
+          : undefined,
+    });
 
   if (isConsistencyError(error))
-    return createClassified({ category: ERROR_CATEGORY.CONSISTENCY });
+    return createClassified({
+      category: ERROR_CATEGORY.CONSISTENCY,
+      code:
+        typeof (error as Record<string, unknown>).code === 'string'
+          ? ((error as Record<string, unknown>).code as string)
+          : undefined,
+    });
 
   return createClassified({});
 }
@@ -275,6 +288,24 @@ function isRetryableNetworkError(error: unknown): boolean {
   return false;
 }
 
+/**
+ * Type predicates to narrow a ClassifiedError to specific subtypes
+ * This avoids unchecked type assertions in handlers and makes narrowing explicit.
+ */
+function isNetworkClassified(e: ClassifiedError): e is NetworkError {
+  return e.category === ERROR_CATEGORY.NETWORK;
+}
+
+function isBusinessLogicClassified(
+  e: ClassifiedError
+): e is BusinessLogicError {
+  return e.category === ERROR_CATEGORY.BUSINESS_LOGIC;
+}
+
+function isConsistencyClassified(e: ClassifiedError): e is ConsistencyError {
+  return e.category === ERROR_CATEGORY.CONSISTENCY;
+}
+
 function getErrorCode(error: unknown): number | undefined {
   if (error && typeof error === 'object') {
     if (
@@ -377,7 +408,8 @@ function getBusinessLogicActions(
   const actions: ErrorHandlerResult['actions'] = [];
 
   // Missing dry weight
-  if (error.message.includes('dry weight')) {
+  // Prefer explicit error code checks over message matching (localization-safe)
+  if (String(error.code) === BUSINESS_LOGIC_ERROR_CODES.MISSING_DRY_WEIGHT) {
     actions.push({
       label: t('harvest.inventory.missing_dry_weight_cta'),
       action: 'update_weight',
@@ -408,28 +440,30 @@ export function handleHarvestError(
 ): ErrorHandlerResult {
   const classified = classifyError(error);
 
-  switch (classified.category) {
-    case ERROR_CATEGORY.VALIDATION:
-      return handleValidationError({
-        field: 'general',
-        message: classified.message,
-      });
-
-    case ERROR_CATEGORY.NETWORK:
-      return handleNetworkError(classified as NetworkError, t);
-
-    case ERROR_CATEGORY.BUSINESS_LOGIC:
-      return handleBusinessLogicError(classified as BusinessLogicError, t);
-
-    case ERROR_CATEGORY.CONSISTENCY:
-      return handleConsistencyError(classified as ConsistencyError, t);
-
-    default:
-      return {
-        shouldShowToast: true,
-        shouldShowBanner: false,
-        shouldShowInline: false,
-        toastMessage: classified.message,
-      };
+  // Use explicit type predicates for safe narrowing instead of type assertions
+  if (classified.category === ERROR_CATEGORY.VALIDATION) {
+    return handleValidationError({
+      field: 'general',
+      message: classified.message,
+    });
   }
+
+  if (isNetworkClassified(classified)) {
+    return handleNetworkError(classified, t);
+  }
+
+  if (isBusinessLogicClassified(classified)) {
+    return handleBusinessLogicError(classified, t);
+  }
+
+  if (isConsistencyClassified(classified)) {
+    return handleConsistencyError(classified, t);
+  }
+
+  return {
+    shouldShowToast: true,
+    shouldShowBanner: false,
+    shouldShowInline: false,
+    toastMessage: classified.message,
+  };
 }

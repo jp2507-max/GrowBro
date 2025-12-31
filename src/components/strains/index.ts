@@ -1,6 +1,5 @@
 export * from './active-filters-row';
 export * from './compliance-banner';
-export { default as CustomCellRendererComponent } from './custom-cell-renderer-component';
 export * from './did-you-mean';
 export * from './difficulty-badge';
 export * from './expandable-section';

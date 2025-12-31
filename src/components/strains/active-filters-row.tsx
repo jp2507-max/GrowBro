@@ -24,7 +24,12 @@ type FilterChipProps = {
   iconColor: string;
 };
 
-function FilterChip({ label, onClear, testID, iconColor }: FilterChipProps) {
+function FilterChip({
+  label,
+  onClear,
+  testID,
+  iconColor,
+}: FilterChipProps): React.ReactElement {
   const handlePress = () => {
     haptics.selection();
     onClear();

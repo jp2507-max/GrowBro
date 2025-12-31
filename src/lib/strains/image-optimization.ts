@@ -66,6 +66,10 @@ export function getOptimizedImageUri(
 /**
  * Prefetch images for visible-next items
  * Call this when items are about to become visible
+ *
+ * Optimized for fast scrolling:
+ * - Larger batch size (6) for parallel prefetching
+ * - No awaiting between batches for faster throughput
  */
 export async function prefetchStrainImages(
   imageUris: string[],
@@ -76,12 +80,19 @@ export async function prefetchStrainImages(
       .filter((uri) => uri && uri.length > 0)
       .map((uri) => getOptimizedImageUri(uri, size));
 
-    // Prefetch in parallel with a limit
-    const BATCH_SIZE = 3;
+    // Prefetch in parallel with larger batches for faster pre-loading
+    // Using Promise.allSettled to not fail if individual images fail
+    const BATCH_SIZE = 6;
+    const batches: Promise<PromiseSettledResult<boolean>[]>[] = [];
+
     for (let i = 0; i < optimizedUris.length; i += BATCH_SIZE) {
       const batch = optimizedUris.slice(i, i + BATCH_SIZE);
-      await Promise.all(batch.map((uri) => Image.prefetch(uri)));
+      // Fire batches concurrently, don't await each batch sequentially
+      batches.push(Promise.allSettled(batch.map((uri) => Image.prefetch(uri))));
     }
+
+    // Wait for all batches to complete
+    await Promise.all(batches);
   } catch (error) {
     console.debug('[prefetchStrainImages] Prefetch failed:', error);
   }

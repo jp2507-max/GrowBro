@@ -1,5 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { Pressable } from 'react-native';
 
 import type { PlantStage } from '@/api/plants/types';
 import { Button, Text, View } from '@/components/ui';
@@ -23,10 +24,25 @@ type ActionHubProps = {
 
 /**
  * Action Hub section showing today's tasks for the plant.
- * Displays a success card when no tasks, or prominent CTA buttons when tasks exist.
+ * Displays a success card when no tasks, or a sleek checklist widget when tasks exist.
  */
 /** Stages where harvest button should be shown */
 const HARVEST_ELIGIBLE_STAGES: PlantStage[] = ['flowering'];
+
+function getTaskIcon(
+  type: 'water' | 'feed' | 'other' | undefined
+): React.ReactElement {
+  const iconSize = 18;
+  if (type === 'water') {
+    return (
+      <Droplet color={colors.sky[500]} width={iconSize} height={iconSize} />
+    );
+  }
+  // feed or other => leaf icon
+  return (
+    <Leaf color={colors.success[500]} width={iconSize} height={iconSize} />
+  );
+}
 
 export function PlantActionHub({
   plantId: _plantId,
@@ -47,38 +63,49 @@ export function PlantActionHub({
         {t('plants.detail.action_hub_title')}
       </Text>
 
-      {/* Task List or Success State */}
+      {/* Task Checklist or Success State */}
       {hasTasks ? (
-        <View className="gap-2">
-          {tasks.map((task) => (
-            <Button
+        <View className="overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-50 dark:border-white/10 dark:bg-white/5">
+          {tasks.map((task, index) => (
+            <Pressable
               key={task.id}
-              variant="default"
-              className="h-auto w-full rounded-2xl py-4 shadow-lg shadow-terracotta-200 dark:shadow-none"
-              textClassName="text-white text-base font-semibold"
               onPress={() => onTaskPress?.(task.id)}
+              className={`flex-row items-center gap-3 px-4 py-3.5 active:bg-neutral-100 dark:active:bg-white/10 ${
+                index < tasks.length - 1
+                  ? 'border-b border-neutral-200 dark:border-white/10'
+                  : ''
+              }`}
+              accessibilityRole="button"
+              accessibilityLabel={task.title}
+              accessibilityHint={t('plants.detail.task_hint')}
               testID={`action-task-${task.id}`}
             >
-              <View className="flex-row items-center justify-center gap-2">
-                {task.type === 'water' ? (
-                  <Droplet color={colors.white} width={18} height={18} />
-                ) : null}
-                <Text className="text-base font-semibold text-white">
-                  {task.title}
-                </Text>
+              {/* Task Icon */}
+              <View className="size-8 items-center justify-center rounded-full bg-white dark:bg-white/10">
+                {getTaskIcon(task.type)}
               </View>
-            </Button>
+
+              {/* Task Title */}
+              <Text className="flex-1 text-base font-medium text-neutral-900 dark:text-neutral-200">
+                {task.title}
+              </Text>
+
+              {/* Checkbox Circle */}
+              <View className="size-6 items-center justify-center rounded-full border-2 border-neutral-300 dark:border-neutral-600" />
+            </Pressable>
           ))}
         </View>
       ) : (
         /* Success Card - All Good State */
-        <View className="flex-row items-center rounded-2xl border border-primary-100/50 bg-primary-50/50 p-4 dark:border-primary-800/30 dark:bg-primary-900/10">
-          <View className="mr-3 size-10 items-center justify-center rounded-full bg-primary-100/70 dark:bg-primary-800/20">
-            <Check color={colors.primary[600]} size={22} />
+        <View className="overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-50 dark:border-white/10 dark:bg-white/5">
+          <View className="flex-row items-center gap-3 px-4 py-3.5">
+            <View className="size-8 items-center justify-center rounded-full bg-primary-100/70 dark:bg-primary-800/20">
+              <Check color={colors.primary[600]} size={18} />
+            </View>
+            <Text className="flex-1 text-sm font-medium text-primary-700 dark:text-primary-300">
+              {t('plants.detail.all_good_message')}
+            </Text>
           </View>
-          <Text className="flex-1 text-sm font-medium text-primary-700 dark:text-primary-300">
-            {t('plants.detail.all_good_message')}
-          </Text>
         </View>
       )}
 

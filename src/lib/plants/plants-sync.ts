@@ -6,6 +6,8 @@ import {
   upsertRemotePlants,
 } from '@/lib/watermelon-models/plants-repository';
 
+type RemotePlant = Parameters<typeof upsertRemotePlants>[0][number];
+
 type SyncResult = { pushed: number; pulled: number };
 
 function toIso(value: Date | string | null | undefined): string | null {
@@ -23,12 +25,18 @@ function isUuid(value: string): boolean {
 type PlantData = Awaited<ReturnType<typeof getPlantsNeedingSync>>[number];
 
 /** Build the upsert payload for a plant */
-function buildPlantPayload(plant: PlantData, userId: string) {
-  const metadata = (plant.metadata ?? {}) as Record<string, unknown>;
-  const remoteImagePath = metadata.remoteImagePath as string | undefined;
+function buildPlantPayload(plant: PlantData, userId: string): RemotePlant {
+  const metadata =
+    plant.metadata && typeof plant.metadata === 'object' ? plant.metadata : {};
+  const remoteImagePath =
+    'remoteImagePath' in metadata &&
+    typeof metadata.remoteImagePath === 'string' &&
+    metadata.remoteImagePath.length > 0
+      ? metadata.remoteImagePath
+      : null;
   const isLocalFileUri = plant.imageUrl?.startsWith('file://');
   const cloudImageUrl = isLocalFileUri
-    ? (remoteImagePath ?? null)
+    ? (remoteImagePath ?? plant.imageUrl ?? null)
     : (plant.imageUrl ?? null);
 
   return {

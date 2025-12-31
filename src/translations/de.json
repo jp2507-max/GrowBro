@@ -126,7 +126,7 @@
       "share_update_hint": "Öffnet den Bildschirm zum Erstellen eines Beitrags."
     },
     "modal": {
-      "backdrop_hint": "Doppeltippen, um das Modal zu schließen",
+      "backdrop_hint": "Tippen, um das Modal zu schließen",
       "backdrop_label": "Modal schließen",
       "close_hint": "Doppeltippen, um das Modal zu schließen und zum vorherigen Bildschirm zurückzukehren",
       "close_label": "Modal schließen",
@@ -625,6 +625,8 @@
       "revoke_error_message": "Fehler beim Widerrufen der Sitzung. Bitte versuche es erneut.",
       "revoke_error_title": "Fehler",
       "revoke_hint": "Zugriff für {{device}} widerrufen",
+      "revoke_success_message": "Sitzung wurde erfolgreich widerrufen.",
+      "revoke_success_title": "Erfolg",
       "session_revoked_from_device": "Deine Sitzung wurde von einem anderen Gerät widerrufen",
       "title": "Aktive Sitzungen"
     },
@@ -1494,6 +1496,7 @@
         "select_failed": "Foto konnte nicht ausgewählt werden",
         "selection_failed": "Foto konnte nicht ausgewählt werden",
         "storage_failed": "Foto konnte nicht gespeichert werden",
+        "unknown_error": "Ein unbekannter Fehler ist aufgetreten",
         "upload_failed": "Foto konnte nicht hochgeladen werden",
         "upload_missing_metadata": "Foto-Metadaten sind unvollständig",
         "upload_not_authenticated": "Sie müssen angemeldet sein, um Fotos hochzuladen"
@@ -3768,10 +3771,12 @@
   "tasks": {
     "burp_jars_week1": {
       "description": "Gläser für 15-30 Minuten öffnen, um Feuchtigkeit abzulassen und Luft zu erneuern. Auf Schimmel oder Ammoniakgeruch prüfen.",
+      "description_rich": "Glas öffnen & 15 Min lüften. Auf Schimmel oder Ammoniakgeruch prüfen.",
       "title": "Gläser lüften"
     },
     "burp_jars_week3": {
       "description": "Gläser kurz öffnen, um die Luftfeuchtigkeit aufrechtzuerhalten. Weniger häufiges Lüften ist nötig, je weiter die Aushärtung fortschreitet.",
+      "description_rich": "Glas öffnen & 15 Min lüften. Weniger häufig bei fortgeschrittener Aushärtung.",
       "title": "Gläser lüften"
     },
     "change_reservoir": {
@@ -3798,17 +3803,36 @@
       "description": "Kleinen Stängel biegen - wenn er sauber bricht (nicht biegt), sind die Blüten bereit zum Aushärten. Täglich prüfen, bis trocken.",
       "title": "Stängelbruch prüfen"
     },
+    "check_water_need": {
+      "description_coco": "Ca. {{min}}-{{max}}L – **NUR wenn die oberen 2-3cm Medium trocken sind!** Ablauf EC/pH prüfen.",
+      "description_soil": "Ca. {{min}}-{{max}}L – **NUR wenn die oberen 2-3cm Erde trocken sind!** Bis leichtem Ablauf gießen.",
+      "title": "Wasserbedarf prüfen"
+    },
     "check_water_temp": {
       "description": "Reservoirtemperatur zwischen 18-22°C (65-72°F) halten, um Wurzelprobleme zu vermeiden.",
       "title": "Wassertemperatur prüfen"
     },
+    "climate_check": {
+      "description_flower": "Temp: 22-28°C? Luftfeuchte: ~45%? Zu hohe Feuchte = Schimmelrisiko!",
+      "description_veg": "Temp: 22-28°C? Luftfeuchte: ~60%? Optimales Wachstumsklima prüfen.",
+      "title": "Klima-Check"
+    },
     "feed_plant": {
       "description_coco": "Bei jeder Bewässerung in Kokos düngen. EC/pH des Ablaufs überwachen.",
+      "description_coco_flower": "Blüte-Schema (Phosphor/Kalium). Bei jeder Bewässerung düngen, EC/pH überwachen.",
+      "description_coco_flower_safe": "Blüte-Dünger. Auf gelbe Blattspitzen (Überdüngung) achten. EC/pH überwachen.",
+      "description_coco_veg": "Wachstums-Schema (Stickstoff/N-betont). Bei jeder Bewässerung düngen, EC/pH überwachen.",
+      "description_coco_veg_safe": "Wachstums-Dünger. **Tipp: Starte mit 50% der Hersteller-Dosierung.** EC/pH überwachen.",
       "description_soil": "Nährstoffe gemäß deinem Düngeplan anwenden. Basierend auf Pflanzenreaktion anpassen.",
-      "title": "Pflanze düngen"
+      "description_soil_flower": "Blüte-Schema (Phosphor/Kalium). Nährstoffe nach Pflanzenreaktion anpassen.",
+      "description_soil_flower_safe": "Blüte-Dünger. Auf gelbe Blattspitzen (Überdüngung) achten.",
+      "description_soil_veg": "Wachstums-Schema (Stickstoff/N-betont). Nährstoffe nach Pflanzenreaktion anpassen.",
+      "description_soil_veg_safe": "Wachstums-Dünger. **Tipp: Starte mit 50% der Hersteller-Dosierung.**",
+      "title": "Nährstoffe geben"
     },
     "start_flushing": {
       "description": "Spülphase beginnen - nur pH-ausgeglichenes Wasser verwenden. Dies hilft, überschüssige Nährstoffe zu entfernen und verbessert den Endgeschmack.",
+      "description_rich": "Nur Wasser! Keinen Dünger mehr. pH-ausgeglichenes Wasser verwenden, um überschüssige Salze auszuspülen.",
       "title": "Spülen beginnen (nur Wasser)"
     },
     "switch_lights": {
@@ -3821,7 +3845,9 @@
     },
     "water_plant": {
       "description_coco": "Gießen bis ~10-20% Ablauf. Kokos trocknet schnell - täglich prüfen.",
+      "description_coco_rich": "Ca. {{min}}-{{max}}L gießen (wenn Medium trocken). Ablauf EC/pH prüfen.",
       "description_soil": "Gießen bis ~10-20% Ablauf. Bodenfeuchtigkeit vor dem Gießen prüfen.",
+      "description_soil_rich": "Ca. {{min}}-{{max}}L gießen (wenn Erde trocken). Bis leichtem Ablauf gießen.",
       "title": "Pflanze gießen"
     }
   },

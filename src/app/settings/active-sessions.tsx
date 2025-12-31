@@ -22,6 +22,12 @@ type SessionItem = {
 type ActiveSessionListItem = SessionItem;
 
 // -----------------------------------------------------------------------------
+// Constants
+// -----------------------------------------------------------------------------
+
+const CONTENT_CONTAINER_STYLE = { paddingHorizontal: 16 };
+
+// -----------------------------------------------------------------------------
 // Main Screen Component
 // -----------------------------------------------------------------------------
 
@@ -86,13 +92,6 @@ export default function ActiveSessionsScreen(): React.ReactElement {
     [isLoading, error]
   );
 
-  const contentContainerStyle = React.useMemo(
-    () => ({
-      paddingHorizontal: 16,
-    }),
-    []
-  );
-
   return (
     <>
       <Stack.Screen
@@ -112,7 +111,7 @@ export default function ActiveSessionsScreen(): React.ReactElement {
               keyExtractor={keyExtractor}
               ListHeaderComponent={ListHeaderComponent}
               ListEmptyComponent={ListEmptyComponent}
-              contentContainerStyle={contentContainerStyle}
+              contentContainerStyle={CONTENT_CONTAINER_STYLE}
               contentInsetAdjustmentBehavior="automatic"
               showsVerticalScrollIndicator={false}
             />

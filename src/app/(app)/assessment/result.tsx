@@ -37,7 +37,11 @@ function getQualityScores(
 export default function AssessmentResultScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const retakeModal = useModal();
+  const {
+    ref: retakeModalRef,
+    present: retakeModalPresent,
+    dismiss: retakeModalDismiss,
+  } = useModal();
 
   const assessmentIdParam = params.assessmentId;
   const assessmentId =
@@ -68,7 +72,7 @@ export default function AssessmentResultScreen() {
   }, [qualityScores]);
 
   const handleRetake = React.useCallback(() => {
-    retakeModal.dismiss();
+    retakeModalDismiss();
     if (assessmentId && session?.plantContext?.id) {
       clearAssessmentSession(assessmentId);
       router.replace({
@@ -78,11 +82,11 @@ export default function AssessmentResultScreen() {
     } else {
       router.replace('/assessment/capture');
     }
-  }, [assessmentId, retakeModal, router, session?.plantContext?.id]);
+  }, [assessmentId, retakeModalDismiss, router, session?.plantContext?.id]);
 
   const handleOpenRetakeModal = React.useCallback(() => {
-    retakeModal.present();
-  }, [retakeModal]);
+    retakeModalPresent();
+  }, [retakeModalPresent]);
 
   const handleDismiss = React.useCallback(() => {
     router.replace('/');
@@ -108,8 +112,8 @@ export default function AssessmentResultScreen() {
       retakeRecommended={retakeRecommended}
       guidance={guidance}
       qualityScores={qualityScores}
-      retakeModalRef={retakeModal.ref}
-      retakeModalDismiss={retakeModal.dismiss}
+      retakeModalRef={retakeModalRef}
+      retakeModalDismiss={retakeModalDismiss}
     />
   );
 }
@@ -182,6 +186,7 @@ function AssessmentResultLayout({
                 label={t('assessment.result.retakePhotos')}
                 onPress={onRetake}
                 variant="outline"
+                testID="result-retake-photos-button"
               />
             </View>
           )}
@@ -220,6 +225,7 @@ function AssessmentResultLayout({
                 label={t('assessment.result.viewPhotoTips')}
                 onPress={onOpenRetakeModal}
                 variant="outline"
+                testID="result-view-photo-tips-button"
               />
             </View>
           )}
@@ -252,7 +258,11 @@ function MissingAssessmentSession({
       <Text className="mb-6 text-center text-lg text-neutral-900 dark:text-neutral-100">
         {t('assessment.result.dataUnavailable')}
       </Text>
-      <Button label={t('assessment.result.backToHome')} onPress={onDismiss} />
+      <Button
+        label={t('assessment.result.backToHome')}
+        onPress={onDismiss}
+        testID="missing-session-dismiss-button"
+      />
     </View>
   );
 }

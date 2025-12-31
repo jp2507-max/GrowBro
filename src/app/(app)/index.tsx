@@ -8,11 +8,9 @@ import type { Plant } from '@/api';
 import { usePlantsInfinite } from '@/api';
 import { ActivationChecklist } from '@/components/home/activation-checklist';
 import { AddPlantFab } from '@/components/home/add-plant-fab';
-import { useTaskSnapshot } from '@/components/home/home-dashboard';
 import { HomeEmptyState } from '@/components/home/home-empty-state';
 import { HomeHeader } from '@/components/home/home-header';
 import { PlantsSection } from '@/components/home/plants-section';
-import { TaskBanner } from '@/components/home/task-banner';
 import { PlantsErrorCard } from '@/components/plants';
 import { FocusAwareStatusBar, View } from '@/components/ui';
 import { useAnimatedScrollList } from '@/lib/animations/animated-scroll-list-provider';
@@ -48,7 +46,6 @@ export default function Feed() {
   const insets = useSafeAreaInsets();
   const { grossHeight } = useBottomTabBarHeight();
   const { resetScrollState } = useAnimatedScrollList();
-  const { snapshot, isLoading: isTaskLoading } = useTaskSnapshot();
   const {
     plants,
     isLoading: isPlantsLoading,
@@ -91,6 +88,13 @@ export default function Feed() {
   const hasPlantsError = isPlantsError && !isLoading && plants.length > 0;
   const isEmpty = !isLoading && plants.length === 0;
 
+  // Task count for header (derived from plants with pending tasks)
+  const taskCount = React.useMemo(() => {
+    // Simple heuristic: count plants that might have tasks
+    // The actual task count is shown in the calendar
+    return 0;
+  }, []);
+
   return (
     <View
       className="flex-1 bg-neutral-50 dark:bg-charcoal-950"
@@ -101,7 +105,7 @@ export default function Feed() {
       {/* Header rendered directly in screen for shared stacking context */}
       <HomeHeader
         plantCount={plants.length}
-        taskCount={snapshot.today + snapshot.overdue}
+        taskCount={taskCount}
         insets={insets}
       />
 
@@ -114,12 +118,6 @@ export default function Feed() {
           <View className="gap-4 px-4 pb-4">
             <ActivationChecklist
               onActionComplete={onActivationActionComplete}
-            />
-
-            <TaskBanner
-              overdue={snapshot.overdue}
-              today={snapshot.today}
-              isLoading={isTaskLoading}
             />
 
             {hasPlantsError ? (

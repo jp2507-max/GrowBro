@@ -4,14 +4,8 @@ import * as React from 'react';
 
 import { Button, Input, Modal, Text, useModal, View } from '@/components/ui';
 import { translate } from '@/lib';
+import type { PendingMfaEnrollment } from '@/lib/auth/mfa-actions';
 import { openLinkInBrowser } from '@/lib/utils';
-
-type PendingMfaEnrollment = {
-  factorId: string;
-  secret: string;
-  uri: string;
-  friendlyName: string | null;
-};
 
 type MfaSetupModalProps = {
   pendingEnrollment: PendingMfaEnrollment | null;

@@ -2,22 +2,7 @@ import React from 'react';
 
 import type { Plant } from '@/api';
 import { PlantCard } from '@/components/plants';
-import { usePlantAttention } from '@/lib/hooks/use-plant-attention';
 import { cleanup, screen, setup } from '@/lib/test-utils';
-
-// Mock usePlantAttention to avoid async state updates in tests
-jest.mock('@/lib/hooks/use-plant-attention', () => ({
-  usePlantAttention: jest.fn(() => ({
-    needsAttention: false,
-    overdueCount: 0,
-    dueTodayCount: 0,
-    isLoading: false,
-  })),
-}));
-
-const mockUsePlantAttention = usePlantAttention as jest.MockedFunction<
-  typeof usePlantAttention
->;
 
 afterEach(() => {
   cleanup();
@@ -75,33 +60,31 @@ describe('PlantCard', () => {
     expect(onPress).toHaveBeenCalledWith('plant-1');
   });
 
-  test('shows attention indicator when plant has pending tasks', async () => {
-    mockUsePlantAttention.mockReturnValue({
-      needsAttention: true,
-      overdueCount: 1,
-      dueTodayCount: 2,
-      isLoading: false,
-    });
-
-    setup(<PlantCard plant={basePlant} onPress={jest.fn()} />);
+  test('shows attention indicator when needsAttention is true', async () => {
+    setup(
+      <PlantCard plant={basePlant} onPress={jest.fn()} needsAttention={true} />
+    );
 
     expect(await screen.findByTestId('plant-card-plant-1')).toBeOnTheScreen();
     // Footer should show attention state with water icon
     expect(screen.getByText('💧')).toBeOnTheScreen();
   });
 
-  test('shows all good state when plant has no pending tasks', async () => {
-    mockUsePlantAttention.mockReturnValue({
-      needsAttention: false,
-      overdueCount: 0,
-      dueTodayCount: 0,
-      isLoading: false,
-    });
-
-    setup(<PlantCard plant={basePlant} onPress={jest.fn()} />);
+  test('shows all good state when needsAttention is false', async () => {
+    setup(
+      <PlantCard plant={basePlant} onPress={jest.fn()} needsAttention={false} />
+    );
 
     expect(await screen.findByTestId('plant-card-plant-1')).toBeOnTheScreen();
     // Footer should show checkmark for all good state
+    expect(screen.getByText('✓')).toBeOnTheScreen();
+  });
+
+  test('defaults to false when needsAttention is not provided', async () => {
+    setup(<PlantCard plant={basePlant} onPress={jest.fn()} />);
+
+    expect(await screen.findByTestId('plant-card-plant-1')).toBeOnTheScreen();
+    // Footer should show checkmark for all good state (default)
     expect(screen.getByText('✓')).toBeOnTheScreen();
   });
 });

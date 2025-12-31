@@ -3,6 +3,7 @@ import React from 'react';
 import type { Plant } from '@/api';
 import { PlantCard } from '@/components/plants';
 import { View } from '@/components/ui';
+import { usePlantsAttention } from '@/lib/hooks/use-plants-attention';
 
 type PlantsSectionProps = {
   plants: Plant[];
@@ -28,6 +29,16 @@ export function PlantsSection({
   isLoading,
   onPlantPress,
 }: PlantsSectionProps): React.ReactElement {
+  // Get plant IDs for attention query
+  const plantIds = React.useMemo(
+    () => plants.map((plant) => plant.id),
+    [plants]
+  );
+
+  // Fetch attention status for all plants at once
+  const { attentionMap, isLoading: isAttentionLoading } =
+    usePlantsAttention(plantIds);
+
   if (isLoading) {
     return (
       <View testID="plants-section-loading">
@@ -43,6 +54,8 @@ export function PlantsSection({
           key={plant.id}
           plant={plant}
           onPress={() => onPlantPress(plant.id)}
+          needsAttention={attentionMap[plant.id]?.needsAttention ?? false}
+          isLoadingAttention={isAttentionLoading}
         />
       ))}
     </View>

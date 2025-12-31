@@ -98,3 +98,17 @@ export function getWateringInterval(
       return 3; // Default for 10-25L
   }
 }
+
+/**
+ * Calculate recommended water volume based on pot size.
+ * Rule of thumb: 25-30% of pot size per watering.
+ * @returns { min: number; max: number } rounded to 1 decimal place
+ */
+export function calculateWaterVolume(potSizeLiters: number): {
+  min: number;
+  max: number;
+} {
+  const min = Math.round(potSizeLiters * 0.25 * 10) / 10;
+  const max = Math.round(potSizeLiters * 0.3 * 10) / 10;
+  return { min, max };
+}

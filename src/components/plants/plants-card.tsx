@@ -16,9 +16,9 @@ import { interpolate } from 'react-native-reanimated';
 import type { Plant } from '@/api';
 import { Image, Pressable, Text, View } from '@/components/ui';
 import { ArrowRight } from '@/components/ui/icons/arrow-right';
+import colors from '@/components/ui/colors';
 import { useAnimatedScrollList } from '@/lib/animations/animated-scroll-list-provider';
 import { haptics } from '@/lib/haptics';
-import { usePlantAttention } from '@/lib/hooks/use-plant-attention';
 import { usePlantPhotoSync } from '@/lib/plants/plant-photo-sync';
 import { translate } from '@/lib/i18n';
 import type { TxKeyPath } from '@/lib/i18n/utils';
@@ -27,6 +27,8 @@ export type PlantCardProps = {
   plant: Plant;
   onPress: (id: string) => void;
   itemY?: SharedValue<number>;
+  needsAttention?: boolean;
+  isLoadingAttention?: boolean;
 };
 
 type StageColors = {
@@ -37,64 +39,64 @@ type StageColors = {
   icon: string;
 };
 
-// Vibrant pastel colors with better visibility
+// Stage colors using design tokens
 function getStageColors(stage?: string): StageColors {
   switch (stage) {
     case 'seedling':
       return {
-        bg: '#C6F6D5',
-        text: '#14532d',
-        badgeBg: '#F0FDF4',
-        badgeText: '#166534',
-        icon: '#86EFAC',
+        bg: colors.success[200],
+        text: colors.success[900],
+        badgeBg: colors.success[50],
+        badgeText: colors.success[800],
+        icon: colors.success[300],
       };
     case 'vegetative':
       return {
-        bg: '#BAE6FD',
-        text: '#0c4a6e',
-        badgeBg: '#F0F9FF',
-        badgeText: '#075985',
-        icon: '#7DD3FC',
+        bg: colors.sky[200],
+        text: colors.sky[900],
+        badgeBg: colors.sky[50],
+        badgeText: colors.sky[800],
+        icon: colors.sky[300],
       };
     case 'flowering':
       return {
-        bg: '#E9D5FF',
-        text: '#581c87',
-        badgeBg: '#FAF5FF',
-        badgeText: '#6b21a8',
-        icon: '#D8B4FE',
+        bg: colors.indigo[200],
+        text: colors.indigo[900],
+        badgeBg: colors.indigo[50],
+        badgeText: colors.indigo[800],
+        icon: colors.indigo[300],
       };
     case 'harvesting':
       return {
-        bg: '#FED7AA',
-        text: '#7c2d12',
-        badgeBg: '#FFF7ED',
-        badgeText: '#9a3412',
-        icon: '#FDBA74',
+        bg: colors.terracotta[200],
+        text: colors.terracotta[900],
+        badgeBg: colors.terracotta[50],
+        badgeText: colors.terracotta[800],
+        icon: colors.terracotta[300],
       };
     case 'curing':
       return {
-        bg: '#FDE68A',
-        text: '#78350f',
-        badgeBg: '#FFFBEB',
-        badgeText: '#92400e',
-        icon: '#FCD34D',
+        bg: colors.warning[200],
+        text: colors.warning[900],
+        badgeBg: colors.warning[50],
+        badgeText: colors.warning[800],
+        icon: colors.warning[300],
       };
     case 'ready':
       return {
-        bg: '#A7F3D0',
-        text: '#064e3b',
-        badgeBg: '#ECFDF5',
-        badgeText: '#065f46',
-        icon: '#6EE7B7',
+        bg: colors.primary[200],
+        text: colors.primary[900],
+        badgeBg: colors.primary[50],
+        badgeText: colors.primary[800],
+        icon: colors.primary[300],
       };
     default:
       return {
-        bg: '#E5E7EB',
-        text: '#171717',
-        badgeBg: '#F9FAFB',
-        badgeText: '#262626',
-        icon: '#D4D4D4',
+        bg: colors.neutral[200],
+        text: colors.neutral[900],
+        badgeBg: colors.neutral[50],
+        badgeText: colors.neutral[900],
+        icon: colors.neutral[300],
       };
   }
 }
@@ -273,9 +275,11 @@ function PlantCardFooter({ needsAttention }: { needsAttention: boolean }) {
 function PlantCardContent({
   plant,
   onPress,
+  needsAttention = false,
 }: {
   plant: Plant;
   onPress: (id: string) => void;
+  needsAttention?: boolean;
 }) {
   const handlePress = React.useCallback(() => {
     haptics.selection();
@@ -300,9 +304,6 @@ function PlantCardContent({
     [plant.name, plant.strain, stageLabel]
   );
 
-  // Check task system for overdue/due-today tasks
-  const { needsAttention } = usePlantAttention(plant.id);
-
   return (
     <Pressable
       className="mb-3 overflow-hidden rounded-3xl border border-neutral-200 bg-white active:scale-[0.98] active:opacity-95 dark:border-charcoal-700 dark:bg-charcoal-900"
@@ -324,6 +325,7 @@ export function PlantCard({
   plant,
   onPress,
   itemY,
+  needsAttention = false,
 }: PlantCardProps): React.ReactElement {
   const { listOffsetY } = useAnimatedScrollList();
   const localItemY = useSharedValue(0);
@@ -364,19 +366,31 @@ export function PlantCard({
   );
 
   return (
-    <Animated.View style={[styles.wrapper, containerStyle]} onLayout={onLayout}>
-      <PlantCardContent plant={plant} onPress={onPress} />
+    <Animated.View style={containerStyle} onLayout={onLayout}>
+      <PlantCardContent
+        plant={plant}
+        onPress={onPress}
+        needsAttention={needsAttention}
+      />
     </Animated.View>
   );
 }
 
-const styles = StyleSheet.create({
-  wrapper: {},
-});
+export type RenderPlantItemOptions = {
+  info: ListRenderItemInfo<Plant>;
+  onPress: (id: string) => void;
+  needsAttention?: boolean;
+};
 
 export function renderPlantItem(
-  { item }: ListRenderItemInfo<Plant>,
-  onPress: (id: string) => void
+  options: RenderPlantItemOptions
 ): React.ReactElement {
-  return <PlantCard plant={item} onPress={onPress} />;
+  const { info, onPress, needsAttention } = options;
+  return (
+    <PlantCard
+      plant={info.item}
+      onPress={onPress}
+      needsAttention={needsAttention}
+    />
+  );
 }

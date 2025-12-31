@@ -1,6 +1,6 @@
 import { colorScheme, useColorScheme } from 'nativewind';
 import React from 'react';
-import { Appearance } from 'react-native';
+import { Appearance, InteractionManager } from 'react-native';
 import { useMMKVString } from 'react-native-mmkv';
 
 import { storage } from '../storage';
@@ -20,8 +20,13 @@ export const useSelectedTheme = () => {
 
   const setSelectedTheme = React.useCallback(
     (t: ColorSchemeType) => {
-      setColorScheme(t);
+      // Persist immediately for optimistic UI update
       _setTheme(t);
+      // Defer NativeWind colorScheme change to avoid "state update on unmounted component"
+      // error from react-native-css-interop's appearance listeners during render
+      InteractionManager.runAfterInteractions(() => {
+        setColorScheme(t);
+      });
     },
     [setColorScheme, _setTheme]
   );
