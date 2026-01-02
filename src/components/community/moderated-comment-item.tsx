@@ -23,6 +23,7 @@ import { ReportContentModal } from './report-content-modal';
 interface ModeratedCommentItemProps {
   comment: PostComment;
   status?: 'pending' | 'failed' | 'processed';
+  isHighlighted?: boolean;
   onRetry?: () => void;
   onCancel?: () => void;
   testID?: string;
@@ -31,6 +32,7 @@ interface ModeratedCommentItemProps {
 export function ModeratedCommentItem({
   comment,
   status = 'processed',
+  isHighlighted,
   onRetry,
   onCancel,
   testID = 'moderated-comment-item',
@@ -78,6 +80,7 @@ export function ModeratedCommentItem({
       <CommentItem
         comment={comment}
         status={status}
+        isHighlighted={isHighlighted}
         onRetry={onRetry}
         onCancel={onCancel}
         testID={`${testID}-comment`}

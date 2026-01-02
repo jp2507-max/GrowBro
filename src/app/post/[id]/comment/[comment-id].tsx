@@ -1,0 +1,17 @@
+import { Redirect, useLocalSearchParams } from 'expo-router';
+import type { ReactElement } from 'react';
+
+export default function PostCommentRedirect(): ReactElement {
+  const params = useLocalSearchParams<{
+    id: string;
+    'comment-id': string;
+  }>();
+
+  const postId = params.id;
+  const commentId = params['comment-id'];
+  const href = commentId
+    ? `/feed/${postId}?commentId=${commentId}`
+    : `/feed/${postId}`;
+
+  return <Redirect href={href} />;
+}

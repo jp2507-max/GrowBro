@@ -14,6 +14,10 @@ import { type QueryClient } from '@tanstack/react-query';
 
 import type { OutboxProcessor } from './outbox-processor';
 import { getOutboxProcessor } from './outbox-processor';
+import {
+  isCommunityPostsInfiniteKey,
+  isCommunityUserPostsKey,
+} from './query-keys';
 
 export interface ReconnectionHandlerOptions {
   database: Database;
@@ -43,6 +47,9 @@ export class ReconnectionHandler {
    * Start listening to network state changes
    */
   start(): void {
+    if (this.unsubscribe) {
+      return;
+    }
     this.unsubscribe = NetInfo.addEventListener(this.handleNetworkChange);
     console.log('[ReconnectionHandler] Started listening to network changes');
   }
@@ -96,9 +103,18 @@ export class ReconnectionHandler {
       this.onOutboxDrainedCallback?.();
 
       // Invalidate queries to trigger refetch
-      await this.queryClient.invalidateQueries({ queryKey: ['posts'] });
-      await this.queryClient.invalidateQueries({ queryKey: ['comments'] });
-      await this.queryClient.invalidateQueries({ queryKey: ['post-likes'] });
+      await this.queryClient.invalidateQueries({
+        predicate: (query) => isCommunityPostsInfiniteKey(query.queryKey),
+      });
+      await this.queryClient.invalidateQueries({
+        predicate: (query) => isCommunityUserPostsKey(query.queryKey),
+      });
+      await this.queryClient.invalidateQueries({
+        queryKey: ['community-comments'],
+      });
+      await this.queryClient.invalidateQueries({
+        queryKey: ['community-post'],
+      });
 
       console.log(
         '[ReconnectionHandler] Outbox drained and queries invalidated'

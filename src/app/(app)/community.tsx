@@ -4,36 +4,61 @@ import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import React, { useCallback } from 'react';
 import Animated from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import type { Post } from '@/api';
-import { usePostsInfinite } from '@/api';
 import { useUndoDeletePost } from '@/api/community';
+import type { CommunityPostSort, Post } from '@/api/community/types';
+import { useCommunityPostsInfinite } from '@/api/community/use-posts-infinite';
 import { CannabisEducationalBanner } from '@/components/cannabis-educational-banner';
 import { AgeGatedPostCard } from '@/components/community/age-gated-post-card';
 import { AgeVerificationPrompt } from '@/components/community/age-verification-prompt';
+import { CommunityDiscoveryEmptyState } from '@/components/community/community-discovery-empty-state';
+import { CommunityDiscoveryFilters } from '@/components/community/community-discovery-filters';
 import { CommunityEmptyState } from '@/components/community/community-empty-state';
 import { CommunityErrorBoundary } from '@/components/community/community-error-boundary';
 import { CommunityErrorCard } from '@/components/community/community-error-card';
 import { CommunityFooterLoader } from '@/components/community/community-footer-loader';
+import { CommunityHeader } from '@/components/community/community-header';
+import { CommunitySearchBar } from '@/components/community/community-search-bar';
 import { CommunitySkeletonList } from '@/components/community/community-skeleton-list';
 import { OfflineIndicator } from '@/components/community/offline-indicator';
+import { OutboxBanner } from '@/components/community/outbox-banner';
 import { UndoSnackbar } from '@/components/community/undo-snackbar';
 import { ComposeBtn } from '@/components/compose-btn';
-import { FocusAwareStatusBar, Text, View } from '@/components/ui';
+import {
+  FocusAwareStatusBar,
+  Modal,
+  type ModalRef,
+  Text,
+  View,
+} from '@/components/ui';
 import { translate, useAnalytics } from '@/lib';
 import { sanitizeCommunityErrorType } from '@/lib/analytics';
 import { useAnimatedScrollList } from '@/lib/animations/animated-scroll-list-provider';
 import { useBottomTabBarHeight } from '@/lib/animations/use-bottom-tab-bar-height';
+import {
+  createOutboxAdapter,
+  useCommunityFeedRealtime,
+} from '@/lib/community/use-community-feed-realtime';
 import { getOptimizedFlashListConfig } from '@/lib/flashlist-config';
-import { useScreenErrorLogger } from '@/lib/hooks';
+import { useDebouncedValue, useScreenErrorLogger } from '@/lib/hooks';
 import type { TxKeyPath } from '@/lib/i18n';
 import { useAgeGatedFeed } from '@/lib/moderation/use-age-gated-feed';
+import { database } from '@/lib/watermelon';
 
 const AnimatedFlashList = Animated.createAnimatedComponent(
   FlashList
 ) as React.ComponentClass<FlashListProps<Post>>;
 
-function useCommunityData() {
+type CommunityQueryParams = {
+  query?: string;
+  sort?: CommunityPostSort;
+  photosOnly?: boolean;
+  mineOnly?: boolean;
+  limit?: number;
+};
+
+function useCommunityData(params: CommunityQueryParams) {
   const {
     data,
     isLoading,
@@ -42,8 +67,17 @@ function useCommunityData() {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
+    isFetching,
     refetch,
-  } = usePostsInfinite();
+  } = useCommunityPostsInfinite({
+    variables: {
+      query: params.query,
+      sort: params.sort,
+      photosOnly: params.photosOnly,
+      mineOnly: params.mineOnly,
+      limit: params.limit,
+    },
+  });
 
   const [isRefreshing, setIsRefreshing] = React.useState(false);
 
@@ -70,6 +104,7 @@ function useCommunityData() {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
+    isFetching,
     refetch,
     error,
     isRefreshing,
@@ -111,6 +146,7 @@ function useSkeletonVisibility(isLoading: boolean, postsLength: number) {
 // eslint-disable-next-line max-lines-per-function
 export default function CommunityScreen(): React.ReactElement {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const {
     listRef: sharedListRef,
     scrollHandler,
@@ -138,6 +174,17 @@ export default function CommunityScreen(): React.ReactElement {
   );
   const analytics = useAnalytics();
   const undoMutation = useUndoDeletePost();
+  const outboxAdapter = React.useMemo(() => createOutboxAdapter(database), []);
+  useCommunityFeedRealtime({ outboxAdapter });
+  const filterSheetRef = React.useRef<ModalRef>(null);
+  const [searchText, setSearchText] = React.useState('');
+  const debouncedSearchText = useDebouncedValue(searchText.trim(), 200);
+  const [sort, setSort] = React.useState<CommunityPostSort>('new');
+  const [photosOnly, setPhotosOnly] = React.useState(false);
+  const [mineOnly, setMineOnly] = React.useState(false);
+
+  const hasActiveFilters = sort !== 'new' || photosOnly || mineOnly;
+  const isDiscoveryActive = hasActiveFilters || searchText.trim().length > 0;
 
   const [undoState, setUndoState] = React.useState<{
     postId: string | number;
@@ -154,10 +201,17 @@ export default function CommunityScreen(): React.ReactElement {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
+    isFetching,
     refetch,
     isRefreshing,
     handleRefresh,
-  } = useCommunityData();
+  } = useCommunityData({
+    query: debouncedSearchText.length > 0 ? debouncedSearchText : undefined,
+    sort,
+    photosOnly,
+    mineOnly,
+    limit: 20,
+  });
 
   const {
     filterPosts,
@@ -168,6 +222,11 @@ export default function CommunityScreen(): React.ReactElement {
     enabled: true,
     onVerificationRequired: () => setShowAgePrompt(true),
   });
+
+  const isSearching =
+    isFetching &&
+    !isFetchingNextPage &&
+    (debouncedSearchText.length > 0 || hasActiveFilters);
 
   const filteredPosts = React.useMemo(
     () => filterPosts(posts),
@@ -188,7 +247,7 @@ export default function CommunityScreen(): React.ReactElement {
     screen: 'community',
     feature: 'community-feed',
     action: 'fetch',
-    queryKey: 'posts-infinite',
+    queryKey: 'community-posts-infinite',
     metadata: {
       postsCount: posts.length,
       isFetchingNextPage,
@@ -242,6 +301,18 @@ export default function CommunityScreen(): React.ReactElement {
     router.push('/add-post');
   }, [router]);
 
+  const handleFilterPress = React.useCallback(() => {
+    filterSheetRef.current?.present();
+  }, []);
+
+  const handleClearFilters = React.useCallback(() => {
+    setSort('new');
+    setPhotosOnly(false);
+    setMineOnly(false);
+    setSearchText('');
+    filterSheetRef.current?.dismiss();
+  }, []);
+
   const handlePostDelete = React.useCallback(
     (postId: string | number, undoExpiresAt: string) => {
       setUndoState({ postId, undoExpiresAt });
@@ -285,8 +356,20 @@ export default function CommunityScreen(): React.ReactElement {
   const listEmpty = React.useCallback(() => {
     if (isSkeletonVisible) return <CommunitySkeletonList />;
     if (isError) return <CommunityErrorCard onRetry={onRetry} />;
+    if (isDiscoveryActive) {
+      return (
+        <CommunityDiscoveryEmptyState onClearFilters={handleClearFilters} />
+      );
+    }
     return <CommunityEmptyState onCreatePress={onCreatePress} />;
-  }, [isSkeletonVisible, isError, onRetry, onCreatePress]);
+  }, [
+    isSkeletonVisible,
+    isError,
+    isDiscoveryActive,
+    handleClearFilters,
+    onRetry,
+    onCreatePress,
+  ]);
 
   const listFooter = React.useCallback(
     () => <CommunityFooterLoader isVisible={isFetchingNextPage} />,
@@ -300,61 +383,102 @@ export default function CommunityScreen(): React.ReactElement {
 
   const showPostsCount = !isSkeletonVisible;
   const postsCountKey: TxKeyPath = React.useMemo(() => {
-    if (posts.length === 0) return 'community.posts_count_zero';
-    if (posts.length === 1) return 'community.posts_count_one';
+    if (filteredPosts.length === 0) return 'community.posts_count_zero';
+    if (filteredPosts.length === 1) return 'community.posts_count_one';
     return 'community.posts_count_other';
-  }, [posts.length]);
+  }, [filteredPosts.length]);
   const postsCountLabel = translate(postsCountKey, {
-    count: posts.length,
+    count: filteredPosts.length,
   });
 
   return (
     <>
       <CommunityErrorBoundary>
-        <CommunityListView
-          listRef={listRef}
-          posts={filteredPosts}
-          renderItem={renderItem}
-          onEndReached={onEndReached}
-          scrollHandler={scrollHandler}
-          grossHeight={grossHeight}
-          isRefreshing={isRefreshing}
-          onRefresh={handleRefresh}
-          listHeader={
-            <View className="px-4 pb-4">
-              <CannabisEducationalBanner />
-              <OfflineIndicator onRetrySync={refetch} />
-              {requiresVerification && !isAgeCheckLoading && (
-                <AgeVerificationPrompt
-                  visible={showAgePrompt}
-                  onDismiss={() => setShowAgePrompt(false)}
-                  contentType="feed"
-                />
-              )}
-              {showPostsCount ? (
-                <Text
-                  className="pt-4 text-sm text-neutral-600 dark:text-neutral-300"
-                  accessibilityRole="text"
-                  testID="community-posts-count"
-                >
-                  {postsCountLabel}
-                </Text>
-              ) : null}
-              {posts.length > 0 && isError ? (
-                <View className="pt-4">
-                  <CommunityErrorCard
-                    onRetry={onRetry}
-                    testID="community-inline-error"
-                  />
-                </View>
-              ) : null}
+        <View className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
+          <FocusAwareStatusBar />
+          <CommunityHeader
+            insets={insets}
+            postsCount={filteredPosts.length}
+            hasActiveFilters={hasActiveFilters}
+            onFilterPress={handleFilterPress}
+          />
+          {/* Sheet overlay with rounded top corners */}
+          <View className="z-10 -mt-6 flex-1 rounded-t-[32px] bg-white shadow-xl dark:bg-charcoal-900">
+            {/* Drag indicator pill */}
+            <View className="w-full items-center pb-2 pt-3">
+              <View className="h-1.5 w-12 rounded-full bg-neutral-200 dark:bg-white/20" />
             </View>
-          }
-          listEmpty={listEmpty}
-          listFooter={listFooter}
-          onCreatePress={onCreatePress}
-        />
+            <CommunityListView
+              listRef={listRef}
+              posts={filteredPosts as Post[]}
+              renderItem={renderItem}
+              onEndReached={onEndReached}
+              scrollHandler={scrollHandler}
+              grossHeight={grossHeight}
+              isRefreshing={isRefreshing}
+              onRefresh={handleRefresh}
+              listHeader={
+                <View>
+                  <CommunitySearchBar
+                    value={searchText}
+                    onChangeText={setSearchText}
+                    isSearching={isSearching}
+                    onFilterPress={handleFilterPress}
+                    hasActiveFilters={hasActiveFilters}
+                  />
+                  <View className="px-4 pb-4">
+                    <CannabisEducationalBanner />
+                    <OfflineIndicator onRetrySync={refetch} />
+                    <OutboxBanner />
+                    {requiresVerification && !isAgeCheckLoading && (
+                      <AgeVerificationPrompt
+                        visible={showAgePrompt}
+                        onDismiss={() => setShowAgePrompt(false)}
+                        contentType="feed"
+                      />
+                    )}
+                    {showPostsCount ? (
+                      <Text
+                        className="pt-4 text-sm text-neutral-600 dark:text-neutral-300"
+                        accessibilityRole="text"
+                        testID="community-posts-count"
+                      >
+                        {postsCountLabel}
+                      </Text>
+                    ) : null}
+                    {posts.length > 0 && isError ? (
+                      <View className="pt-4">
+                        <CommunityErrorCard
+                          onRetry={onRetry}
+                          testID="community-inline-error"
+                        />
+                      </View>
+                    ) : null}
+                  </View>
+                </View>
+              }
+              listEmpty={listEmpty}
+              listFooter={listFooter}
+              onCreatePress={onCreatePress}
+            />
+          </View>
+        </View>
       </CommunityErrorBoundary>
+      <Modal
+        ref={filterSheetRef}
+        snapPoints={['70%']}
+        title={translate('community.filters_label')}
+      >
+        <CommunityDiscoveryFilters
+          sort={sort}
+          photosOnly={photosOnly}
+          mineOnly={mineOnly}
+          onSortChange={setSort}
+          onPhotosOnlyChange={setPhotosOnly}
+          onMineOnlyChange={setMineOnly}
+          onClearAll={handleClearFilters}
+        />
+      </Modal>
       <UndoSnackbar
         visible={!!undoState}
         message={translate('accessibility.community.post_deleted')}

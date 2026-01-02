@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/icons';
 import { useAgeGate, useAuth, useIsFirstTime } from '@/lib';
 import { AnimatedScrollListProvider } from '@/lib/animations/animated-scroll-list-provider';
+import { useCommunitySync } from '@/lib/community/use-community-sync';
 import { checkLegalVersionBumps } from '@/lib/compliance/legal-acceptances';
 import { usePendingDeletion } from '@/lib/hooks/use-pending-deletion';
 import { translate } from '@/lib/i18n';
@@ -115,6 +116,7 @@ export default function TabLayout() {
   const { count: lowStockCount } = useInventoryLowStockCount();
   const { pendingDeletion, hasPendingDeletion } = usePendingDeletion();
   useSplashScreenHide();
+  useCommunitySync();
 
   // Check for legal version bumps that need notification (minor/patch updates)
   const legalVersionCheck = checkLegalVersionBumps();

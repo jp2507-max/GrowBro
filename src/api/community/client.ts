@@ -9,6 +9,7 @@ import { supabase } from '@/lib/supabase';
 
 import type {
   CommunityAPI,
+  CommunityPostsDiscoverParams,
   ConflictResponse,
   CreateCommentData,
   CreatePostData,
@@ -149,6 +150,97 @@ export class CommunityApiClient implements CommunityAPI {
     }
 
     const posts = await this.getPostsWithCounts(query);
+    const next =
+      posts.length === limit ? posts[posts.length - 1].created_at : null;
+
+    return {
+      results: posts,
+      count: count || 0,
+      next,
+      previous: null,
+    };
+  }
+
+  async getPostsDiscover(
+    params: CommunityPostsDiscoverParams
+  ): Promise<PaginateQuery<Post>> {
+    const {
+      cursor,
+      limit = 20,
+      query,
+      sort = 'new',
+      photosOnly,
+      mineOnly,
+    } = params;
+
+    const trimmedQuery = query?.trim();
+    const now = new Date();
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    const { data: session } = await this.client.auth.getSession();
+    const userId = session?.session?.user?.id;
+
+    if (mineOnly && !userId) {
+      return {
+        results: [],
+        count: 0,
+        next: null,
+        previous: null,
+      };
+    }
+
+    const applyFilters = <
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      T extends PostgrestFilterBuilder<any, any, any, any[], any, any, any>,
+    >(
+      builder: T
+    ): T => {
+      let nextBuilder = builder.is('deleted_at', null).is('hidden_at', null);
+
+      if (trimmedQuery) {
+        nextBuilder = nextBuilder.ilike('body', `%${trimmedQuery}%`);
+      }
+
+      if (photosOnly) {
+        nextBuilder = nextBuilder.or(
+          'media_uri.not.is.null,media_resized_uri.not.is.null,media_thumbnail_uri.not.is.null'
+        );
+      }
+
+      if (mineOnly && userId) {
+        nextBuilder = nextBuilder.eq('user_id', userId);
+      }
+
+      if (sort === 'top_7d') {
+        nextBuilder = nextBuilder.gte('created_at', sevenDaysAgo.toISOString());
+      }
+
+      if (cursor) {
+        nextBuilder = nextBuilder.lt('created_at', cursor);
+      }
+
+      return nextBuilder;
+    };
+
+    const countQuery = applyFilters(
+      this.client.from('posts').select('*', { count: 'exact', head: true })
+    );
+
+    const { count } = await countQuery;
+
+    let queryBuilder = applyFilters(this.client.from('posts').select('*'));
+
+    if (sort === 'top_7d') {
+      queryBuilder = queryBuilder
+        .order('like_count', { ascending: false })
+        .order('created_at', { ascending: false });
+    } else {
+      queryBuilder = queryBuilder.order('created_at', { ascending: false });
+    }
+
+    queryBuilder = queryBuilder.limit(limit);
+
+    const posts = await this.getPostsWithCounts(queryBuilder);
     const next =
       posts.length === limit ? posts[posts.length - 1].created_at : null;
 

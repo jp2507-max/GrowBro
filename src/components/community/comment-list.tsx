@@ -19,6 +19,7 @@ interface CommentListProps {
   comments: PostComment[];
   isLoading?: boolean;
   commentStatuses?: Record<string, 'pending' | 'failed' | 'processed'>;
+  highlightedCommentId?: string;
   onRetryComment?: (commentId: string) => void;
   onCancelComment?: (commentId: string) => void;
   testID?: string;
@@ -28,6 +29,7 @@ export function CommentList({
   comments,
   isLoading = false,
   commentStatuses = {},
+  highlightedCommentId,
   onRetryComment,
   onCancelComment,
   testID = 'comment-list',
@@ -64,12 +66,14 @@ export function CommentList({
           (comment.id.startsWith('temp-') ? 'pending' : 'processed');
 
         const isFailed = status === 'failed';
+        const isHighlighted = comment.id === highlightedCommentId;
 
         return (
           <ModeratedCommentItem
             key={comment.id}
             comment={comment}
             status={status}
+            isHighlighted={isHighlighted}
             onRetry={
               isFailed && onRetryComment
                 ? () => onRetryComment(comment.id)

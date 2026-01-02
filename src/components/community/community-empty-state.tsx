@@ -17,7 +17,7 @@ export function CommunityEmptyState({
       className="flex-1 items-center justify-center gap-6 px-6 py-12"
     >
       <Animated.View
-        entering={FadeIn.duration(300).reduceMotion(ReduceMotion.System)}
+        entering={FadeIn.springify().reduceMotion(ReduceMotion.System)}
         className="items-center gap-4"
       >
         <Text
@@ -39,7 +39,7 @@ export function CommunityEmptyState({
 
       {onCreatePress && (
         <Animated.View
-          entering={FadeIn.duration(300)
+          entering={FadeIn.springify()
             .delay(150)
             .reduceMotion(ReduceMotion.System)}
         >

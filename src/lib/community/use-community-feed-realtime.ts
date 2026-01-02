@@ -1,8 +1,15 @@
 import { type Database } from '@nozbe/watermelondb';
 import { Q } from '@nozbe/watermelondb';
+import type { InfiniteData } from '@tanstack/react-query';
 import { useQueryClient } from '@tanstack/react-query';
 import * as React from 'react';
 
+import type { PaginateQuery } from '@/api/types';
+import {
+  communityPostKey,
+  isCommunityPostsInfiniteKey,
+  isCommunityUserPostsKey,
+} from '@/lib/community/query-keys';
 import type {
   CachedPostLike,
   Post,
@@ -56,9 +63,18 @@ type OutboxAdapter = {
   confirm: (clientTxId: string) => void | Promise<void>;
 };
 
+function matchesQueryKeyPrefix(
+  queryKey: readonly unknown[],
+  prefix: readonly unknown[]
+): boolean {
+  if (queryKey.length < prefix.length) return false;
+  return prefix.every((part, index) => queryKey[index] === part);
+}
+
 /**
  * Create a cache adapter for React Query that works with query key prefixes
- * This handles paginated queries where the cache key includes parameters like ['posts', cursor, limit]
+ * This handles paginated queries where the cache key includes parameters like
+ * ['community-comments', postId, cursor, limit]
  */
 export function createQueryCacheAdapter<TStored, TCache = TStored>(
   queryClient: ReturnType<typeof useQueryClient>,
@@ -71,19 +87,12 @@ export function createQueryCacheAdapter<TStored, TCache = TStored>(
 ): CacheAdapter<TCache> {
   const { queryKeyPrefix, keySelector, toStored, fromStored } = options;
 
-  // Helper to check if a query key starts with our prefix
-  const matchesPrefix = (queryKey: readonly unknown[]): boolean => {
-    if (queryKey.length < queryKeyPrefix.length) return false;
-    return queryKeyPrefix.every(
-      (prefixPart, index) => queryKey[index] === prefixPart
-    );
-  };
-
   return {
     get: (key: string) => {
       // Find the first matching query that has data
       const queries = queryClient.getQueriesData<TStored[]>({
-        predicate: (query) => matchesPrefix(query.queryKey),
+        predicate: (query) =>
+          matchesQueryKeyPrefix(query.queryKey, queryKeyPrefix),
       });
 
       for (const [, data] of queries) {
@@ -108,7 +117,10 @@ export function createQueryCacheAdapter<TStored, TCache = TStored>(
 
       // Update all queries that match our prefix
       queryClient.setQueriesData<TStored[]>(
-        { predicate: (query) => matchesPrefix(query.queryKey) },
+        {
+          predicate: (query) =>
+            matchesQueryKeyPrefix(query.queryKey, queryKeyPrefix),
+        },
         (old) => {
           if (!old) return [storedRow];
           const index = old.findIndex((item) => {
@@ -129,7 +141,10 @@ export function createQueryCacheAdapter<TStored, TCache = TStored>(
     remove: (key: string) => {
       // Remove from all queries that match our prefix
       queryClient.setQueriesData<TStored[]>(
-        { predicate: (query) => matchesPrefix(query.queryKey) },
+        {
+          predicate: (query) =>
+            matchesQueryKeyPrefix(query.queryKey, queryKeyPrefix),
+        },
         (old) => {
           if (!old) return [];
           return old.filter((item) => {
@@ -138,6 +153,155 @@ export function createQueryCacheAdapter<TStored, TCache = TStored>(
               : (item as unknown as TCache);
             return keySelector(cached) !== key;
           });
+        }
+      );
+    },
+  };
+}
+
+function createPaginatedQueryCacheAdapter<T>(
+  queryClient: ReturnType<typeof useQueryClient>,
+  options: {
+    queryKeyPrefix: readonly unknown[];
+    keySelector: (row: T) => string;
+  }
+): CacheAdapter<T> {
+  const { queryKeyPrefix, keySelector } = options;
+
+  return {
+    get: (key: string): T | undefined => {
+      const queries = queryClient.getQueriesData<PaginateQuery<T>>({
+        predicate: (query) =>
+          matchesQueryKeyPrefix(query.queryKey, queryKeyPrefix),
+      });
+
+      for (const [, data] of queries) {
+        if (!data) continue;
+        const found = data.results.find((row) => keySelector(row) === key);
+        if (found) return found;
+      }
+      return undefined;
+    },
+    upsert: (row: T): void => {
+      const rowKey = keySelector(row);
+      queryClient.setQueriesData<PaginateQuery<T>>(
+        {
+          predicate: (query) =>
+            matchesQueryKeyPrefix(query.queryKey, queryKeyPrefix),
+        },
+        (old) => {
+          if (!old) return old;
+          const exists = old.results.some(
+            (item) => keySelector(item) === rowKey
+          );
+          if (exists) {
+            return {
+              ...old,
+              results: old.results.map((item) =>
+                keySelector(item) === rowKey ? row : item
+              ),
+            };
+          }
+          return {
+            ...old,
+            results: [...old.results, row],
+            count: (old.count || 0) + 1,
+          };
+        }
+      );
+    },
+    remove: (key: string): void => {
+      queryClient.setQueriesData<PaginateQuery<T>>(
+        {
+          predicate: (query) =>
+            matchesQueryKeyPrefix(query.queryKey, queryKeyPrefix),
+        },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            results: old.results.filter((item) => keySelector(item) !== key),
+            count: Math.max((old.count || 0) - 1, 0),
+          };
+        }
+      );
+    },
+  };
+}
+
+function createInfiniteQueryCacheAdapter<T>(
+  queryClient: ReturnType<typeof useQueryClient>,
+  options: {
+    queryKeyPrefix: readonly unknown[];
+    keySelector: (row: T) => string;
+  }
+): CacheAdapter<T> {
+  const { queryKeyPrefix, keySelector } = options;
+
+  const updatePages = (
+    data: InfiniteData<PaginateQuery<T>>,
+    updater: (page: PaginateQuery<T>) => PaginateQuery<T>
+  ): InfiniteData<PaginateQuery<T>> => {
+    return {
+      ...data,
+      pages: data.pages.map((page) => updater(page)),
+    };
+  };
+
+  return {
+    get: (key: string): T | undefined => {
+      const queries = queryClient.getQueriesData<
+        InfiniteData<PaginateQuery<T>>
+      >({
+        predicate: (query) =>
+          matchesQueryKeyPrefix(query.queryKey, queryKeyPrefix),
+      });
+
+      for (const [, data] of queries) {
+        if (!data) continue;
+        for (const page of data.pages) {
+          const found = page.results.find((row) => keySelector(row) === key);
+          if (found) return found;
+        }
+      }
+      return undefined;
+    },
+    upsert: (row: T): void => {
+      const rowKey = keySelector(row);
+      queryClient.setQueriesData<InfiniteData<PaginateQuery<T>>>(
+        {
+          predicate: (query) =>
+            matchesQueryKeyPrefix(query.queryKey, queryKeyPrefix),
+        },
+        (old) => {
+          if (!old) return old;
+          return updatePages(old, (page) => {
+            const exists = page.results.some(
+              (item) => keySelector(item) === rowKey
+            );
+            if (!exists) return page;
+            return {
+              ...page,
+              results: page.results.map((item) =>
+                keySelector(item) === rowKey ? row : item
+              ),
+            };
+          });
+        }
+      );
+    },
+    remove: (key: string): void => {
+      queryClient.setQueriesData<InfiniteData<PaginateQuery<T>>>(
+        {
+          predicate: (query) =>
+            matchesQueryKeyPrefix(query.queryKey, queryKeyPrefix),
+        },
+        (old) => {
+          if (!old) return old;
+          return updatePages(old, (page) => ({
+            ...page,
+            results: page.results.filter((item) => keySelector(item) !== key),
+          }));
         }
       );
     },
@@ -178,20 +342,29 @@ export function createOutboxAdapter(database: Database): OutboxAdapter {
 }
 
 /**
- * Create event handlers for real-time subscriptions
+ * Create cache adapters for real-time subscriptions
  */
-function createRealtimeHandlers(
-  queryClient: ReturnType<typeof useQueryClient>,
-  outbox: OutboxAdapter
+function createRealtimeCacheAdapters(
+  queryClient: ReturnType<typeof useQueryClient>
 ) {
-  const postsCache = createQueryCacheAdapter<Post>(queryClient, {
-    queryKeyPrefix: ['posts'],
+  const postsInfiniteCache = createInfiniteQueryCacheAdapter<Post>(
+    queryClient,
+    {
+      queryKeyPrefix: ['community-posts', 'infinite'],
+      keySelector: (post) => post.id,
+    }
+  );
+  const userPostsCache = createInfiniteQueryCacheAdapter<Post>(queryClient, {
+    queryKeyPrefix: ['community-user-posts'],
     keySelector: (post) => post.id,
   });
-  const commentsCache = createQueryCacheAdapter<PostComment>(queryClient, {
-    queryKeyPrefix: ['comments'],
-    keySelector: (comment) => comment.id,
-  });
+  const commentsCache = createPaginatedQueryCacheAdapter<PostComment>(
+    queryClient,
+    {
+      queryKeyPrefix: ['community-comments'],
+      keySelector: (comment) => comment.id,
+    }
+  );
   const likesCache = createQueryCacheAdapter<PostLike, CachedPostLike>(
     queryClient,
     {
@@ -211,16 +384,65 @@ function createRealtimeHandlers(
     }
   );
 
+  return { postsInfiniteCache, userPostsCache, commentsCache, likesCache };
+}
+
+function createPostsCacheAdapter(
+  queryClient: ReturnType<typeof useQueryClient>,
+  postsInfiniteCache: CacheAdapter<Post>,
+  userPostsCache: CacheAdapter<Post>
+): CacheAdapter<Post> {
+  return {
+    get: (key) =>
+      queryClient.getQueryData<Post>(communityPostKey(key)) ??
+      postsInfiniteCache.get(key) ??
+      userPostsCache.get(key),
+    upsert: (row) => {
+      queryClient.setQueryData(communityPostKey(row.id), row);
+      postsInfiniteCache.upsert(row);
+      userPostsCache.upsert(row);
+    },
+    remove: (key) => {
+      postsInfiniteCache.remove(key);
+      userPostsCache.remove(key);
+    },
+  };
+}
+
+function invalidatePostsQueries(
+  queryClient: ReturnType<typeof useQueryClient>
+): void {
+  queryClient.invalidateQueries({
+    predicate: (query) => isCommunityPostsInfiniteKey(query.queryKey),
+  });
+  queryClient.invalidateQueries({
+    predicate: (query) => isCommunityUserPostsKey(query.queryKey),
+  });
+  queryClient.invalidateQueries({ queryKey: ['community-post'] });
+}
+
+/**
+ * Create event handlers for real-time subscriptions
+ */
+function createRealtimeHandlers(
+  queryClient: ReturnType<typeof useQueryClient>,
+  outbox: OutboxAdapter
+) {
+  const { postsInfiniteCache, userPostsCache, commentsCache, likesCache } =
+    createRealtimeCacheAdapters(queryClient);
+  const postsCache = createPostsCacheAdapter(
+    queryClient,
+    postsInfiniteCache,
+    userPostsCache
+  );
+
   return {
     onPostChange: async (event: RealtimeEvent<Post>) => {
       await handleRealtimeEvent(event, {
         table: 'posts',
         cache: postsCache,
         outbox,
-        onInvalidate: () => {
-          queryClient.invalidateQueries({ queryKey: ['posts'] });
-          queryClient.invalidateQueries({ queryKey: ['posts-infinite'] });
-        },
+        onInvalidate: () => invalidatePostsQueries(queryClient),
       } as EventHandlerOptions<Post>);
     },
     onCommentChange: async (event: RealtimeEvent<PostComment>) => {
@@ -229,7 +451,7 @@ function createRealtimeHandlers(
         cache: commentsCache,
         outbox,
         onInvalidate: () =>
-          queryClient.invalidateQueries({ queryKey: ['comments'] }),
+          queryClient.invalidateQueries({ queryKey: ['community-comments'] }),
       } as EventHandlerOptions<PostComment>);
     },
     onLikeChange: async (event: RealtimeEvent<PostLike>) => {
@@ -238,10 +460,7 @@ function createRealtimeHandlers(
         getKey: getLikeKey,
         cache: likesCache,
         outbox,
-        onInvalidate: () => {
-          queryClient.invalidateQueries({ queryKey: ['posts'] });
-          queryClient.invalidateQueries({ queryKey: ['posts-infinite'] });
-        },
+        onInvalidate: () => invalidatePostsQueries(queryClient),
       } as EventHandlerOptions<PostLike>);
     },
   };
@@ -301,9 +520,14 @@ function useReconciliationTimer(
 
   const reconcile = React.useCallback(() => {
     console.log('Reconciling counters with server...');
-    queryClient.invalidateQueries({ queryKey: ['posts'] });
-    queryClient.invalidateQueries({ queryKey: ['posts-infinite'] });
-    queryClient.invalidateQueries({ queryKey: ['comments'] });
+    queryClient.invalidateQueries({
+      predicate: (query) => isCommunityPostsInfiniteKey(query.queryKey),
+    });
+    queryClient.invalidateQueries({
+      predicate: (query) => isCommunityUserPostsKey(query.queryKey),
+    });
+    queryClient.invalidateQueries({ queryKey: ['community-post'] });
+    queryClient.invalidateQueries({ queryKey: ['community-comments'] });
   }, [queryClient]);
 
   const startReconciliation = React.useCallback(() => {
@@ -346,9 +570,14 @@ function usePollingEffect(
       // Start new 30s polling interval
       pollingIntervalRef.current = setInterval(() => {
         console.log('Polling: Invalidating queries...');
-        queryClient.invalidateQueries({ queryKey: ['posts'] });
-        queryClient.invalidateQueries({ queryKey: ['posts-infinite'] });
-        queryClient.invalidateQueries({ queryKey: ['comments'] });
+        queryClient.invalidateQueries({
+          predicate: (query) => isCommunityPostsInfiniteKey(query.queryKey),
+        });
+        queryClient.invalidateQueries({
+          predicate: (query) => isCommunityUserPostsKey(query.queryKey),
+        });
+        queryClient.invalidateQueries({ queryKey: ['community-post'] });
+        queryClient.invalidateQueries({ queryKey: ['community-comments'] });
       }, 30000);
     } else {
       // Clear polling interval when not polling

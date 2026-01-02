@@ -57,7 +57,12 @@ jest.mock('@/lib/auth', () => ({
 }));
 
 jest.mock('@/lib/privacy-consent', () => ({
+  getPrivacyConsent: jest.fn(() => ({
+    analytics: false,
+    crashReporting: false,
+  })),
   hasConsent: jest.fn(),
+  onPrivacyConsentChange: jest.fn(() => () => undefined),
 }));
 
 jest.mock('expo-constants', () => ({
@@ -81,7 +86,7 @@ function createWrapper() {
     },
   });
 
-  function Wrapper({ children }: any) {
+  function Wrapper({ children }: { children: React.ReactNode }) {
     return (
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     );
@@ -102,11 +107,13 @@ describe('Auth Hooks', () => {
     jest.clearAllMocks();
 
     // Mock useAuth store
-    (useAuth.getState as any).mockReturnValue({
+    (
+      useAuth.getState as jest.MockedFunction<typeof useAuth.getState>
+    ).mockReturnValue({
       signIn: mockSignIn,
       updateUser: mockUpdateUser,
       user: null,
-    });
+    } as unknown as ReturnType<typeof useAuth.getState>);
 
     // Default: no consent
     (hasConsent as jest.Mock).mockReturnValue(false);
@@ -241,7 +248,10 @@ describe('Auth Hooks', () => {
       });
 
       expect(result.current.error?.message).toBe('auth.error_account_locked');
-      expect((result.current.error as any)?.metadata?.lockout).toBe(true);
+      expect(
+        (result.current.error as Error & { metadata?: { lockout?: boolean } })
+          ?.metadata?.lockout
+      ).toBe(true);
     });
 
     it('should track analytics when consent is granted', async () => {
@@ -876,11 +886,13 @@ describe('Auth Hooks', () => {
           email_confirmed_at: null,
         };
 
-        (useAuth.getState as any).mockReturnValue({
+        (
+          useAuth.getState as jest.MockedFunction<typeof useAuth.getState>
+        ).mockReturnValue({
           signIn: mockSignIn,
           updateUser: mockUpdateUser,
           user: mockUser,
-        });
+        } as unknown as ReturnType<typeof useAuth.getState>);
 
         supabase.auth.verifyOtp.mockResolvedValueOnce({
           data: { session: {}, user: mockUser },

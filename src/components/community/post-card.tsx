@@ -14,15 +14,39 @@
 
 import { Link, useRouter } from 'expo-router';
 import React from 'react';
+import { Platform, StyleSheet } from 'react-native';
+import Animated, {
+  ReduceMotion,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
 
 import { useDeletePost } from '@/api/community';
 import type { Post as ApiPost } from '@/api/posts';
 import { OptimizedImage, Pressable, Text, View } from '@/components/ui';
 import { getOptionalAuthenticatedUserId } from '@/lib/auth/user-utils';
 import { normalizePostUserId } from '@/lib/community/post-utils';
+import { haptics } from '@/lib/haptics';
 import { translate } from '@/lib/i18n';
 
 import { LikeButton } from './like-button';
+
+const cardStyles = StyleSheet.create({
+  card: {
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
+  },
+});
 
 interface PostCardProps {
   post: ApiPost;
@@ -101,6 +125,7 @@ function PostCardComponent({
 }
 
 // Post card view component to satisfy max-lines-per-function
+// eslint-disable-next-line max-lines-per-function -- JSX-heavy component (150 limit per project rules)
 function PostCardView({
   post,
   postId,
@@ -127,77 +152,109 @@ function PostCardView({
     stopPropagation: () => void;
     preventDefault: () => void;
   }) => void;
-}) {
+}): React.ReactElement {
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const onPressIn = React.useCallback(() => {
+    scale.value = withSpring(0.97, {
+      damping: 10,
+      stiffness: 300,
+      reduceMotion: ReduceMotion.System,
+    });
+    haptics.selection();
+  }, [scale]);
+
+  const onPressOut = React.useCallback(() => {
+    scale.value = withSpring(1, {
+      damping: 10,
+      stiffness: 300,
+      reduceMotion: ReduceMotion.System,
+    });
+  }, [scale]);
+
   return (
-    <Link href={`/feed/${postId}`} asChild>
-      <Pressable
-        accessibilityHint={translate('accessibility.community.open_post_hint')}
-        accessibilityLabel={compositeLabel}
-        accessibilityRole="link"
-        testID={testID}
-      >
-        <View className="m-2 overflow-hidden rounded-xl border border-neutral-300 bg-white dark:border-neutral-700 dark:bg-neutral-900">
-          {post.media_uri && (
-            <OptimizedImage
-              className="h-56 w-full overflow-hidden rounded-t-xl"
-              uri={post.media_uri}
-              thumbnailUri={post.media_thumbnail_uri}
-              resizedUri={post.media_resized_uri}
-              blurhash={post.media_blurhash}
-              thumbhash={post.media_thumbhash}
-              recyclingKey={post.media_thumbnail_uri || post.media_uri}
-              accessibilityIgnoresInvertColors
-              accessibilityLabel={translate(
-                'accessibility.community.post_image',
-                { author: postUserId.slice(0, 8) }
-              )}
-              accessibilityHint={translate(
-                'accessibility.community.post_image_hint'
-              )}
-              testID={`${testID}-image`}
-            />
+    <Animated.View style={animatedStyle}>
+      <Link href={`/feed/${postId}`} asChild>
+        <Pressable
+          accessibilityHint={translate(
+            'accessibility.community.open_post_hint'
           )}
-          <View className="p-4">
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={translate(
-                'accessibility.community.view_author_profile',
-                { author: postUserId.slice(0, 8) }
-              )}
-              accessibilityHint={translate(
-                'accessibility.community.view_author_profile_hint'
-              )}
-              onPress={handleAuthorPress}
-              className="min-h-11 justify-center"
-              testID={`${testID}-author`}
-            >
-              <Text className="mb-2 text-sm font-semibold text-primary-700 dark:text-primary-400">
-                @{postUserId.slice(0, 8)}
+          accessibilityLabel={compositeLabel}
+          accessibilityRole="link"
+          testID={testID}
+          onPressIn={onPressIn}
+          onPressOut={onPressOut}
+        >
+          <View
+            className="m-2 overflow-hidden rounded-3xl border border-neutral-200 bg-white dark:border-charcoal-700 dark:bg-charcoal-900"
+            style={cardStyles.card}
+          >
+            {post.media_uri && (
+              <OptimizedImage
+                className="h-56 w-full overflow-hidden rounded-t-xl"
+                uri={post.media_uri}
+                thumbnailUri={post.media_thumbnail_uri}
+                resizedUri={post.media_resized_uri}
+                blurhash={post.media_blurhash}
+                thumbhash={post.media_thumbhash}
+                recyclingKey={post.media_thumbnail_uri || post.media_uri}
+                accessibilityIgnoresInvertColors
+                accessibilityLabel={translate(
+                  'accessibility.community.post_image',
+                  { author: postUserId.slice(0, 8) }
+                )}
+                accessibilityHint={translate(
+                  'accessibility.community.post_image_hint'
+                )}
+                testID={`${testID}-image`}
+              />
+            )}
+            <View className="p-4">
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={translate(
+                  'accessibility.community.view_author_profile',
+                  { author: postUserId.slice(0, 8) }
+                )}
+                accessibilityHint={translate(
+                  'accessibility.community.view_author_profile_hint'
+                )}
+                onPress={handleAuthorPress}
+                className="min-h-11 justify-center"
+                testID={`${testID}-author`}
+              >
+                <Text className="mb-2 text-sm font-semibold text-primary-700 dark:text-primary-400">
+                  @{postUserId.slice(0, 8)}
+                </Text>
+              </Pressable>
+              <Text className="w-fit rounded-full bg-success-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-success-800 dark:bg-success-900/40 dark:text-success-200">
+                {translate('cannabis.educational_badge')}
               </Text>
-            </Pressable>
-            <Text className="w-fit rounded-full bg-success-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-success-800 dark:bg-success-900/40 dark:text-success-200">
-              {translate('cannabis.educational_badge')}
-            </Text>
-            <Text
-              numberOfLines={5}
-              className="mt-3 text-base leading-snug text-neutral-900 dark:text-neutral-100"
-              testID={`${testID}-body`}
-            >
-              {post.body}
-            </Text>
-            <PostCardActions
-              post={post}
-              postId={postId}
-              _postUserId={postUserId}
-              isOwnPost={isOwnPost}
-              onDelete={onDelete}
-              testID={testID}
-              handleCommentPress={handleCommentPress}
-            />
+              <Text
+                numberOfLines={5}
+                className="mt-3 text-base leading-snug text-neutral-900 dark:text-neutral-100"
+                testID={`${testID}-body`}
+              >
+                {post.body}
+              </Text>
+              <PostCardActions
+                post={post}
+                postId={postId}
+                _postUserId={postUserId}
+                isOwnPost={isOwnPost}
+                onDelete={onDelete}
+                testID={testID}
+                handleCommentPress={handleCommentPress}
+              />
+            </View>
           </View>
-        </View>
-      </Pressable>
-    </Link>
+        </Pressable>
+      </Link>
+    </Animated.View>
   );
 }
 

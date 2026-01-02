@@ -214,9 +214,8 @@ function createExpoConfig(config) {
           autoVerify: true,
           data: [
             {
-              scheme: 'growbro',
+              scheme: Env.SCHEME,
               host: '*',
-              pathPrefix: '/inventory',
             },
           ],
           category: ['BROWSABLE', 'DEFAULT'],
@@ -231,6 +230,7 @@ function createExpoConfig(config) {
       // Fix CocoaPods CDN source issue on EAS builds
       './plugins/with-podfile-source.js',
       // Added from app.json (merged into this config)
+      'expo-web-browser',
       'expo-secure-store',
       [
         'expo-local-authentication',

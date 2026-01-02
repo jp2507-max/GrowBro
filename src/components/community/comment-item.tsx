@@ -21,6 +21,7 @@ import type { PostComment } from '@/types/community';
 interface CommentItemProps {
   comment: PostComment;
   status?: 'pending' | 'failed' | 'processed';
+  isHighlighted?: boolean;
   onRetry?: () => void;
   onCancel?: () => void;
   testID?: string;
@@ -85,6 +86,7 @@ function FailedActions({ onRetry, onCancel, testID }: FailedActionsProps) {
 function CommentItemComponent({
   comment,
   status = 'processed',
+  isHighlighted = false,
   onRetry,
   onCancel,
   testID = 'comment-item',
@@ -92,6 +94,16 @@ function CommentItemComponent({
   const router = useRouter();
   const isPending = status === 'pending';
   const isFailed = status === 'failed';
+  const shouldHighlight = isHighlighted && status === 'processed';
+  const containerClasses = `border-l-2 py-3 pl-3 ${
+    isFailed
+      ? 'dark:bg-danger-950/20 border-danger-500 bg-danger-50 dark:border-danger-600'
+      : isPending
+        ? 'border-neutral-300 opacity-60 dark:border-neutral-700'
+        : shouldHighlight
+          ? 'border-primary-500 bg-primary-50/70 dark:bg-primary-950/40'
+          : 'border-transparent'
+  }`;
 
   const handleAuthorPress = React.useCallback(() => {
     router.push(`/community/${comment.user_id}`);
@@ -103,16 +115,7 @@ function CommentItemComponent({
   );
 
   return (
-    <View
-      className={`border-l-2 py-3 pl-3 ${
-        isFailed
-          ? 'dark:bg-danger-950/20 border-danger-500 bg-danger-50 dark:border-danger-600'
-          : isPending
-            ? 'border-neutral-300 opacity-60 dark:border-neutral-700'
-            : 'border-transparent'
-      }`}
-      testID={testID}
-    >
+    <View className={containerClasses} testID={testID}>
       <View className="flex-row items-start justify-between">
         <View className="flex-1 gap-1">
           <View className="flex-row items-center gap-2">
@@ -177,6 +180,7 @@ export const CommentItem = React.memo(
       prevProps.comment.body === nextProps.comment.body &&
       prevProps.comment.created_at === nextProps.comment.created_at &&
       prevProps.status === nextProps.status &&
+      prevProps.isHighlighted === nextProps.isHighlighted &&
       prevProps.onRetry === nextProps.onRetry &&
       prevProps.onCancel === nextProps.onCancel &&
       prevProps.testID === nextProps.testID
