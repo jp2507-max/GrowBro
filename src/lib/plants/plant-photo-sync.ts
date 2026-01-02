@@ -6,7 +6,7 @@
  * This enables cross-device photo sync.
  */
 
-import * as React from 'react';
+import { useQuery } from '@tanstack/react-query';
 
 import type { Plant } from '@/api/plants/types';
 import {
@@ -176,77 +176,69 @@ async function updatePlantLocalImageUrl(
  * @returns Sync state and resolved local URI
  */
 export function usePlantPhotoSync(plant: Plant | null): PlantPhotoSyncResult {
-  const [isDownloading, setIsDownloading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
-  const [resolvedLocalUri, setResolvedLocalUri] = React.useState<
-    string | undefined
-  >(plant?.imageUrl);
-
   const plantId = plant?.id;
   const imageUrl = plant?.imageUrl;
   const remoteImagePath = getRemoteImagePath(plant);
 
-  React.useEffect(() => {
-    if (!plantId || !remoteImagePath) {
-      // No remote path, use existing imageUrl
-      setResolvedLocalUri(imageUrl);
-      return;
-    }
+  const {
+    data: resolvedUri,
+    isLoading,
+    error,
+    isError,
+  } = useQuery({
+    queryKey: ['plantPhotoSync', plantId, imageUrl, remoteImagePath],
+    queryFn: async () => {
+      if (!plantId || !remoteImagePath) {
+        return imageUrl;
+      }
 
-    // Capture for async closure
-    const capturedPlantId = plantId;
-    const capturedRemoteImagePath = remoteImagePath;
-
-    let cancelled = false;
-
-    async function checkAndDownload() {
       // First check if current imageUrl exists locally
       const hasLocal = await plantPhotoExists(imageUrl ?? '');
       if (hasLocal) {
-        if (!cancelled) {
-          setResolvedLocalUri(imageUrl);
-        }
-        return;
+        return imageUrl;
       }
 
       // Need to download from remote
-      if (!cancelled) {
-        setIsDownloading(true);
-        setError(null);
-      }
+      const newUri = await syncPlantPhotoIfNeeded(
+        plantId,
+        imageUrl,
+        remoteImagePath
+      );
 
-      try {
-        const newUri = await syncPlantPhotoIfNeeded(
-          capturedPlantId,
-          imageUrl,
-          capturedRemoteImagePath
-        );
+      return newUri ?? imageUrl;
+    },
+    enabled: !!plantId && !!remoteImagePath,
+    staleTime: Infinity, // Local file once synced is good forever (or until logic changes)
+    gcTime: 1000 * 60 * 10, // Keep in cache for 10 minutes
+    retry: 1, // Don't retry too aggressively on network errors
+  });
 
-        if (!cancelled) {
-          setResolvedLocalUri(newUri ?? imageUrl);
-        }
-      } catch (err) {
-        console.error('[usePlantPhotoSync] Download failed:', err);
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : 'Download failed');
-          // Still show remote URL placeholder or nothing
-          setResolvedLocalUri(undefined);
-        }
-      } finally {
-        if (!cancelled) {
-          setIsDownloading(false);
-        }
-      }
-    }
+  // Determine final URI based on state
+  let finalUri: string | undefined;
 
-    checkAndDownload();
+  if (!plantId || !remoteImagePath) {
+    // No sync needed
+    finalUri = imageUrl;
+  } else if (isLoading) {
+    // While requesting, show what we have (could be broken link, but prevents flash)
+    finalUri = imageUrl;
+  } else if (isError) {
+    // If failed, return undefined to show placeholder
+    finalUri = undefined;
+  } else {
+    // Success or exists
+    finalUri = resolvedUri;
+  }
 
-    return () => {
-      cancelled = true;
-    };
-  }, [plantId, imageUrl, remoteImagePath]);
-
-  return { isDownloading, error, resolvedLocalUri };
+  return {
+    isDownloading: isLoading,
+    error: error
+      ? error instanceof Error
+        ? error.message
+        : 'Sync failed'
+      : null,
+    resolvedLocalUri: finalUri,
+  };
 }
 
 /**

@@ -40,11 +40,10 @@ function buildDefaultValues(s?: Series): ScheduleFormData {
       (rruleGenerator.parseFrequencyFromRRULE(s.rrule) as RecurrencePattern) ||
       'daily',
     interval: rruleGenerator.parseIntervalFromRRULE(s.rrule) ?? 1,
-    weekdays: rruleGenerator.parseWeekdaysFromRRULE(s.rrule) || [
-      'MO',
-      'WE',
-      'FR',
-    ],
+    weekdays: (() => {
+      const parsed = rruleGenerator.parseWeekdaysFromRRULE(s.rrule);
+      return parsed.length > 0 ? parsed : [];
+    })(),
     startTime: DateTime.fromISO(s.dtstartLocal).toFormat('HH:mm'),
     plantId: s.plantId,
   };

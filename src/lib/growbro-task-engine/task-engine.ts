@@ -53,7 +53,15 @@ function buildPlantSettings(params: {
     plant.photoperiodType ?? metadata.photoperiodType ?? 'photoperiod';
   const geneticLean: GeneticLean =
     plant.geneticLean ?? metadata.geneticLean ?? 'unknown';
-  const plantedAt = plant.plantedAt ? new Date(plant.plantedAt) : new Date();
+  let plantedAt: Date;
+  if (plant.plantedAt) {
+    plantedAt = new Date(plant.plantedAt);
+  } else {
+    console.warn(
+      `[TaskEngine] Plant ${plant.id} missing plantedAt, using current time. This may cause schedule drift.`
+    );
+    plantedAt = new Date();
+  }
 
   // Use default flowering days based on strain type
   // TODO: breeder_flowering_range must be denormalized into Plant.metadata or otherwise
@@ -91,6 +99,10 @@ export class TaskEngine {
   /**
    * Ensure all appropriate schedules exist for a plant's current stage.
    * Idempotent - safe to call multiple times.
+   *
+   * Note: This method will not update existing schedules if plant settings change
+   * (e.g., medium, pot size, environment). To regenerate schedules, first call
+   * cleanupSchedulesForPlant() then ensureSchedulesForPlant().
    */
   async ensureSchedulesForPlant(plant: Plant): Promise<void> {
     if (!plant.stage) {
@@ -198,42 +210,61 @@ export class TaskEngine {
     const seriesIds = seriesToDelete.map((s) => s.id);
     const now = new Date();
 
-    await database.write(async () => {
-      // Soft-delete the series
-      for (const series of seriesToDelete) {
-        await series.update((record) => {
-          record.deletedAt = now;
-          record.updatedAt = now;
-        });
-      }
-
-      // Soft-delete future pending tasks for these series
-      const futureTasks = await tasksCollection
-        .query(
-          Q.where('series_id', Q.oneOf(seriesIds)),
-          Q.where('status', 'pending'),
-          Q.where('deleted_at', null)
-        )
-        .fetch();
-
-      for (const task of futureTasks) {
-        const parsedDt = DateTime.fromISO(task.dueAtLocal);
-        if (!parsedDt.isValid) {
-          console.warn(
-            `[TaskEngine] Invalid dueAtLocal for task ${task.id}: ${task.dueAtLocal}`
-          );
-          continue;
-        }
-        const taskDueAt = parsedDt.toJSDate();
-        // Only delete tasks that are strictly in the future (not overdue from earlier today)
-        if (taskDueAt > now) {
-          await task.update((record) => {
+    await database
+      .write(async () => {
+        // Soft-delete the series
+        for (const series of seriesToDelete) {
+          await series.update((record) => {
             record.deletedAt = now;
             record.updatedAt = now;
           });
         }
-      }
-    });
+
+        // Soft-delete future pending tasks for these series
+        const futureTasks = await tasksCollection
+          .query(
+            Q.where('series_id', Q.oneOf(seriesIds)),
+            Q.where('status', 'pending'),
+            Q.where('deleted_at', null)
+          )
+          .fetch();
+
+        for (const task of futureTasks) {
+          const parsedDt = DateTime.fromISO(task.dueAtLocal);
+          if (!parsedDt.isValid) {
+            console.warn(
+              `[TaskEngine] Invalid dueAtLocal for task ${task.id}: ${task.dueAtLocal} - deleting orphaned task`
+            );
+            try {
+              await task.update((record) => {
+                record.deletedAt = now;
+                record.updatedAt = now;
+              });
+            } catch (error) {
+              console.error(
+                `[TaskEngine] Failed to delete invalid task ${task.id}:`,
+                error
+              );
+            }
+            continue;
+          }
+          const taskDueAt = parsedDt.toJSDate();
+          // Only delete tasks that are strictly in the future (not overdue from earlier today)
+          if (taskDueAt > now) {
+            await task.update((record) => {
+              record.deletedAt = now;
+              record.updatedAt = now;
+            });
+          }
+        }
+      })
+      .catch((error) => {
+        console.error(
+          `[TaskEngine] Failed to cleanup schedules for plant ${plantId}:`,
+          error
+        );
+        throw error;
+      });
 
     console.log(
       `[TaskEngine] Cleaned up ${seriesToDelete.length} series for plant ${plantId}`
@@ -249,31 +280,39 @@ export class TaskEngine {
   ): Promise<void> {
     const collection = getSeriesCollection();
 
-    await database.write(async () => {
-      for (const spec of specs) {
-        await collection.create((record) => {
-          record.title = spec.title;
-          record.description = spec.description;
-          record.dtstartLocal = spec.dtstartLocal;
-          record.dtstartUtc = spec.dtstartUtc;
-          record.timezone = spec.timezone;
-          record.rrule = spec.rrule;
-          record.plantId = plantId;
-          record.origin = ORIGIN_GROWBRO;
-          if (spec.untilUtc) {
-            record.untilUtc = spec.untilUtc;
-          }
-          if (spec.count !== undefined) {
-            record.count = spec.count;
-          }
-          if (spec.metadata) {
-            record.metadata = spec.metadata;
-          }
-          record.createdAt = new Date();
-          record.updatedAt = new Date();
-        });
-      }
-    });
+    await database
+      .write(async () => {
+        for (const spec of specs) {
+          await collection.create((record) => {
+            record.title = spec.title;
+            record.description = spec.description;
+            record.dtstartLocal = spec.dtstartLocal;
+            record.dtstartUtc = spec.dtstartUtc;
+            record.timezone = spec.timezone;
+            record.rrule = spec.rrule;
+            record.plantId = plantId;
+            record.origin = ORIGIN_GROWBRO;
+            if (spec.untilUtc !== undefined) {
+              record.untilUtc = spec.untilUtc;
+            }
+            if (spec.count !== undefined) {
+              record.count = spec.count;
+            }
+            if (spec.metadata !== undefined) {
+              record.metadata = spec.metadata;
+            }
+            record.createdAt = new Date();
+            record.updatedAt = new Date();
+          });
+        }
+      })
+      .catch((error) => {
+        console.error(
+          `[TaskEngine] Failed to create series for plant ${plantId}:`,
+          error
+        );
+        throw error;
+      });
   }
 }
 
