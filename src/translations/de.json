@@ -675,7 +675,8 @@
       "invalidHour": "Stunde muss zwischen 0 und 23 liegen, erhalten: {{hour}}",
       "invalidMinute": "Minute muss zwischen 0 und 59 liegen, erhalten: {{minute}}",
       "invalidTimeFormat": "Ungültiges Zeitformat: {{timeString}}. Erwartet HH:mm",
-      "invalidTimeValues": "Ungültige Zeitwerte: Stunde={{hour}}, Minute={{minute}}"
+      "invalidTimeValues": "Ungültige Zeitwerte: Stunde={{hour}}, Minute={{minute}}",
+      "selectWeeklyDay": "Bitte wähle mindestens einen Tag für die wöchentliche Wiederholung aus"
     },
     "header": {
       "subtitle": "Dein Zeitplan",

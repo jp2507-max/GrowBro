@@ -120,7 +120,7 @@ async function submitSchedule(
   // Defensive validation: callers should validate weekdays for weekly recurrence,
   // but enforce here to avoid silently falling back to daily recurrence.
   if (data.recurrencePattern === 'weekly' && data.weekdays.length === 0) {
-    throw new Error('Please select at least one day for weekly recurrence');
+    throw new Error(t('calendar.errors.selectWeeklyDay'));
   }
 
   const { hour, minute } = parseAndValidateTime(data.startTime, t);
@@ -200,7 +200,7 @@ export function useScheduleForm({
       if (data.recurrencePattern === 'weekly' && data.weekdays.length === 0) {
         setError('weekdays', {
           type: 'required',
-          message: 'Please select at least one day for weekly recurrence',
+          message: t('calendar.errors.selectWeeklyDay'),
         });
         return;
       }

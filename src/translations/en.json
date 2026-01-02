@@ -675,7 +675,8 @@
       "invalidHour": "Hour must be between 0 and 23, got {{hour}}",
       "invalidMinute": "Minute must be between 0 and 59, got {{minute}}",
       "invalidTimeFormat": "Invalid time format: {{timeString}}. Expected HH:mm",
-      "invalidTimeValues": "Invalid time values: hour={{hour}}, minute={{minute}}"
+      "invalidTimeValues": "Invalid time values: hour={{hour}}, minute={{minute}}",
+      "selectWeeklyDay": "Please select at least one day for weekly recurrence"
     },
     "header": {
       "subtitle": "Your schedule",

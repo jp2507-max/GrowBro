@@ -234,6 +234,7 @@ export class TaskEngine {
             Q.where('series_id', Q.oneOf(seriesIds)),
             Q.where('status', 'pending'),
             Q.where('deleted_at', null)
+            // Add filter for due_at_local >= current date if supported by your schema
           )
           .fetch();
 
