@@ -22,7 +22,7 @@ SELECT
     100.0 * COUNT(*) FILTER (WHERE status = 'opened') / NULLIF(COUNT(*) FILTER (WHERE status = 'delivered'), 0),
     2
   ) AS engagement_rate_percent
-FROM notification_queue
+FROM push_notification_queue
 GROUP BY DATE(created_at), type, platform
 ORDER BY date DESC, type, platform;
 
@@ -90,7 +90,7 @@ SELECT
   error_message,
   created_at,
   updated_at
-FROM notification_queue
+FROM push_notification_queue
 WHERE status = 'failed'
   AND created_at > NOW() - INTERVAL '24 hours'
 ORDER BY created_at DESC;
@@ -109,7 +109,7 @@ SELECT
   nq.updated_at AS opened_at,
   nq.status,
   EXTRACT(EPOCH FROM (nq.updated_at - nq.created_at)) AS time_to_open_seconds
-FROM notification_queue nq
+FROM push_notification_queue nq
 WHERE nq.status = 'opened'
 ORDER BY nq.updated_at DESC;
 
@@ -136,7 +136,7 @@ BEGIN
       100.0 * COUNT(*) FILTER (WHERE status IN ('sent', 'delivered')) / NULLIF(COUNT(*), 0),
       2
     ) AS delivery_rate_percent
-  FROM notification_queue
+  FROM push_notification_queue
   WHERE type = p_notification_type
     AND created_at > NOW() - (p_days || ' days')::INTERVAL;
 END;
@@ -161,7 +161,7 @@ BEGIN
       2
     ) AS delivery_rate_percent,
     'Delivery rate below threshold (' || p_threshold || '%)' AS alert_message
-  FROM notification_queue
+  FROM push_notification_queue
   WHERE created_at > NOW() - INTERVAL '24 hours'
   GROUP BY type
   HAVING ROUND(

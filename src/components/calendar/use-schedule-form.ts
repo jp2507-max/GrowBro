@@ -36,9 +36,11 @@ function buildDefaultValues(s?: Series): ScheduleFormData {
     };
   return {
     title: s.title,
-    recurrencePattern: s.rrule.includes('WEEKLY') ? 'weekly' : 'daily',
-    interval: 1,
-    weekdays: rruleGenerator.parseWeekdaysFromRRule(s.rrule) || [
+    recurrencePattern:
+      (rruleGenerator.parseFrequencyFromRRULE(s.rrule) as RecurrencePattern) ||
+      'daily',
+    interval: rruleGenerator.parseIntervalFromRRULE(s.rrule) ?? 1,
+    weekdays: rruleGenerator.parseWeekdaysFromRRULE(s.rrule) || [
       'MO',
       'WE',
       'FR',
@@ -95,6 +97,12 @@ async function submitSchedule(
   params: { selectedDate?: DateTime; timezone: string; editingSeries?: Series }
 ): Promise<void> {
   const { selectedDate, timezone, editingSeries } = params;
+
+  // Defensive validation: callers should validate weekdays for weekly recurrence,
+  // but enforce here to avoid silently falling back to daily recurrence.
+  if (data.recurrencePattern === 'weekly' && data.weekdays.length === 0) {
+    throw new Error('Please select at least one day for weekly recurrence');
+  }
 
   const { hour, minute } = parseAndValidateTime(data.startTime);
 
@@ -155,7 +163,7 @@ export function useScheduleForm({
     () => buildDefaultValues(editingSeries),
     [editingSeries]
   );
-  const { control, handleSubmit, watch, reset, formState } =
+  const { control, handleSubmit, watch, reset, formState, setError } =
     useForm<ScheduleFormData>({ defaultValues });
 
   React.useEffect(() => {
@@ -164,6 +172,15 @@ export function useScheduleForm({
 
   const onSubmit = React.useCallback(
     async (data: ScheduleFormData) => {
+      // validate weekly weekdays selection at the form level so the UI can show an error
+      if (data.recurrencePattern === 'weekly' && data.weekdays.length === 0) {
+        setError('weekdays', {
+          type: 'required',
+          message: 'Please select at least one day for weekly recurrence',
+        });
+        return;
+      }
+
       try {
         await submitSchedule(data, { selectedDate, timezone, editingSeries });
         onSave?.();

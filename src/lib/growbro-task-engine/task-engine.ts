@@ -55,7 +55,9 @@ function buildPlantSettings(params: {
     plant.geneticLean ?? metadata.geneticLean ?? 'unknown';
   const plantedAt = plant.plantedAt ? new Date(plant.plantedAt) : new Date();
 
-  // Determine flowering days from strain or use defaults
+  // Use default flowering days based on strain type
+  // TODO: breeder_flowering_range must be denormalized into Plant.metadata or otherwise
+  // made available to buildPlantSettings before replacing the defaults.
   const floweringDays =
     photoperiodType === 'autoflower'
       ? DEFAULT_FLOWERING_DAYS_AUTOFLOWER

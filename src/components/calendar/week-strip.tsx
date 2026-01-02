@@ -10,6 +10,7 @@ import Animated, {
 import { twMerge } from 'tailwind-merge';
 
 import { Pressable, Text, View } from '@/components/ui';
+import colors from '@/components/ui/colors';
 import { haptics } from '@/lib/haptics';
 import { translate } from '@/lib/i18n';
 
@@ -148,7 +149,7 @@ const styles = StyleSheet.create({
   selectedPill: {
     ...Platform.select({
       ios: {
-        shadowColor: '#16a34a',
+        shadowColor: colors.primary[600],
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 8,

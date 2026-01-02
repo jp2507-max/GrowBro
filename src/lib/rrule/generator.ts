@@ -321,6 +321,48 @@ export class RRULEGenerator {
   }
 
   /**
+   * Parse FREQ from an RRULE string and map to our recurrence pattern strings
+   */
+  parseFrequencyFromRRULE(
+    rruleString: string
+  ): 'daily' | 'weekly' | 'custom' | null {
+    try {
+      const parsed = rrulestr(rruleString, { forceset: false });
+      const opts: Partial<RRuleOptions> =
+        parsed.origOptions || parsed.options || {};
+      const freq = opts.freq;
+      if (freq === RRule.DAILY) return 'daily';
+      if (freq === RRule.WEEKLY) return 'weekly';
+      if (typeof freq === 'number') return 'custom';
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Parse INTERVAL from an RRULE string. Returns null if not present or invalid.
+   */
+  parseIntervalFromRRULE(rruleString: string): number | null {
+    try {
+      const parsed = rrulestr(rruleString, { forceset: false });
+      const opts: Partial<RRuleOptions> =
+        parsed.origOptions || parsed.options || {};
+      const interval = opts.interval;
+      if (interval === undefined || interval === null) return null;
+      if (
+        typeof interval !== 'number' ||
+        !Number.isFinite(interval) ||
+        interval <= 0
+      )
+        return null;
+      return Math.floor(interval);
+    } catch {
+      return null;
+    }
+  }
+
+  /**
    * Get anchor date from plant or phase start date
    */
   getAnchorDate(

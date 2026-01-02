@@ -56,7 +56,8 @@ const selectTv = tv({
     chunky: {
       true: {
         input:
-          'rounded-2xl border-2 border-neutral-200 bg-white px-5 py-4 dark:border-white/10 dark:bg-white/10',
+          'rounded-2xl border-2 border-neutral-200 bg-white px-6 py-5 dark:border-white/10 dark:bg-white/10',
+        inputValue: 'text-lg',
       },
     },
   },

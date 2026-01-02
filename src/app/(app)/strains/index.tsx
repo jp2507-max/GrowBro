@@ -25,6 +25,7 @@ import {
 import { useAnalyticsConsent } from '@/lib/hooks/use-analytics-consent';
 import type { StrainListState } from '@/lib/hooks/use-strain-search-analytics';
 import { SEARCH_DEBOUNCE_MS } from '@/lib/strains/constants';
+import { hasActiveFilters } from '@/lib/strains/filter-utils';
 
 const LIST_BOTTOM_EXTRA = 24;
 
@@ -59,9 +60,7 @@ export default function StrainsScreen(): React.ReactElement {
   const resolvedCount = listState?.strains.length ?? 0;
   const resolvedOffline =
     listState?.isOffline ?? (!isConnected || !isInternetReachable);
-  const hasActiveFilters = Object.values(filters).some(
-    (v) => v !== undefined && (Array.isArray(v) ? v.length > 0 : true)
-  );
+  const hasFilters = hasActiveFilters(filters);
 
   useStrainSearchAnalytics({
     analytics,
@@ -89,6 +88,20 @@ export default function StrainsScreen(): React.ReactElement {
     [grossHeight]
   );
 
+  const handleStateChange = useCallback(
+    (
+      state: Parameters<
+        NonNullable<typeof StrainsListWithCache>['props']['onStateChange']
+      >[0]
+    ) => {
+      setListState({
+        ...state,
+        strains: { length: state.strains.length },
+      });
+    },
+    []
+  );
+
   return (
     <View
       className="flex-1 bg-neutral-50 dark:bg-charcoal-950"
@@ -100,7 +113,7 @@ export default function StrainsScreen(): React.ReactElement {
         searchValue={searchValue}
         onSearchChange={setSearchValue}
         strainCount={resolvedCount}
-        hasActiveFilters={hasActiveFilters}
+        hasActiveFilters={hasFilters}
         onFiltersPress={filterModal.openFilters}
       />
 
@@ -128,12 +141,7 @@ export default function StrainsScreen(): React.ReactElement {
             listContentPadding,
           ]}
           testID="strains-list"
-          onStateChange={(state) => {
-            setListState({
-              ...state,
-              strains: { length: state.strains.length },
-            });
-          }}
+          onStateChange={handleStateChange}
         />
       </View>
       <FilterModal

@@ -139,7 +139,7 @@ function PlantCardImage({
 }: {
   plant: Plant;
   colors: StageColors;
-}) {
+}): React.ReactElement {
   // Auto-sync plant photo from remote if missing locally
   const { resolvedLocalUri } = usePlantPhotoSync(plant);
 
@@ -175,7 +175,7 @@ function PlantCardHeader({
   plant: Plant;
   stageLabel: string | null;
   colors: StageColors;
-}) {
+}): React.ReactElement {
   return (
     <View className="flex-row items-start justify-between p-4 pb-3">
       <View className="flex-1 pr-3">
@@ -213,7 +213,7 @@ function PlantCardProgress({
 }: {
   plantId: string;
   progress: number;
-}) {
+}): React.ReactElement {
   return (
     <View className="px-4 pb-3">
       <View className="h-1.5 w-full overflow-hidden rounded-full bg-neutral-100 dark:bg-neutral-800">
@@ -230,7 +230,11 @@ function PlantCardProgress({
   );
 }
 
-function PlantCardFooter({ needsAttention }: { needsAttention: boolean }) {
+function PlantCardFooter({
+  needsAttention,
+}: {
+  needsAttention: boolean;
+}): React.ReactElement {
   return (
     <View
       className={`flex-row items-center justify-between px-4 py-3 ${needsAttention ? 'bg-terracotta-50 dark:bg-terracotta-900/20' : 'bg-neutral-50 dark:bg-charcoal-950'}`}
@@ -276,7 +280,7 @@ function PlantCardContent({
   plant: Plant;
   onPress: (id: string) => void;
   needsAttention?: boolean;
-}) {
+}): React.ReactElement {
   const handlePress = React.useCallback(() => {
     haptics.selection();
     onPress(plant.id);

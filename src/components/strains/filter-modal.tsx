@@ -5,6 +5,7 @@ import type { StrainFilters } from '@/api/strains/types';
 import { Button, Checkbox, Modal, Text, useModal, View } from '@/components/ui';
 import type { TxKeyPath } from '@/lib/i18n';
 import { translate, translateDynamic } from '@/lib/i18n';
+import { hasActiveFilters } from '@/lib/strains/filter-utils';
 
 import { DifficultyBadge } from './difficulty-badge';
 import { RaceBadge } from './race-badge';
@@ -250,18 +251,10 @@ function useFilterHandlers(
     onApply(localFilters);
   }, [localFilters, onApply]);
 
-  const hasActiveFilters = React.useMemo(() => {
-    return (
-      localFilters.race !== undefined ||
-      localFilters.difficulty !== undefined ||
-      localFilters.thcMin !== undefined ||
-      localFilters.thcMax !== undefined ||
-      localFilters.cbdMin !== undefined ||
-      localFilters.cbdMax !== undefined ||
-      (localFilters.effects && localFilters.effects.length > 0) ||
-      (localFilters.flavors && localFilters.flavors.length > 0)
-    );
-  }, [localFilters]);
+  const hasFilters = React.useMemo(
+    () => hasActiveFilters(localFilters),
+    [localFilters]
+  );
 
   return {
     localFilters,
@@ -273,7 +266,7 @@ function useFilterHandlers(
     handleCbdLevelToggle,
     handleClear,
     handleApply,
-    hasActiveFilters,
+    hasFilters,
   };
 }
 
@@ -430,7 +423,7 @@ export const FilterModal = React.forwardRef<
     handleCbdLevelToggle,
     handleClear,
     handleApply,
-    hasActiveFilters,
+    hasFilters,
   } = useFilterHandlers(filters, onApply, onClear);
 
   return (
@@ -460,7 +453,7 @@ export const FilterModal = React.forwardRef<
                 label={translate('strains.filters.clear_all')}
                 variant="outline"
                 onPress={handleClear}
-                disabled={!hasActiveFilters}
+                disabled={!hasFilters}
                 testID="filter-clear-button"
               />
             </View>

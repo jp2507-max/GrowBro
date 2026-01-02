@@ -45,6 +45,7 @@ ALTER FUNCTION public.update_moderation_decisions_updated_at() SET search_path =
 ALTER FUNCTION public.update_notification_delivery_log_updated_at() SET search_path = '';
 ALTER FUNCTION public.update_notification_preferences_last_updated() SET search_path = '';
 ALTER FUNCTION public.update_notification_queue_updated_at() SET search_path = '';
+ALTER FUNCTION public.update_push_notification_queue_updated_at() SET search_path = '';
 ALTER FUNCTION public.update_ods_bodies_updated_at() SET search_path = '';
 ALTER FUNCTION public.update_ods_escalations_updated_at() SET search_path = '';
 ALTER FUNCTION public.update_partition_manifests_updated_at() SET search_path = '';

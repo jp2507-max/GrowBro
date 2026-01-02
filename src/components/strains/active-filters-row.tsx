@@ -7,6 +7,7 @@ import colors from '@/components/ui/colors';
 import { X } from '@/components/ui/icons';
 import { translate } from '@/lib';
 import { haptics } from '@/lib/haptics';
+import { hasActiveFilters } from '@/lib/strains/filter-utils';
 
 type Props = {
   filters: StrainFilters;
@@ -56,17 +57,9 @@ export function ActiveFiltersRow({
   const isDark = colorScheme === 'dark';
   const iconColor = isDark ? colors.neutral[900] : colors.white;
 
-  const hasActiveFilters =
-    (filters.race && filters.race.length > 0) ||
-    (filters.effects && filters.effects.length > 0) ||
-    (filters.flavors && filters.flavors.length > 0) ||
-    filters.difficulty !== undefined ||
-    filters.thcMin !== undefined ||
-    filters.thcMax !== undefined ||
-    filters.cbdMin !== undefined ||
-    filters.cbdMax !== undefined;
+  const hasFilters = hasActiveFilters(filters);
 
-  if (!hasActiveFilters) {
+  if (!hasFilters) {
     return null;
   }
 

@@ -950,6 +950,12 @@ export function PlantForm({
   submitRef.current = handleFormSubmit;
   const stableSubmit = React.useCallback(() => submitRef.current(), []);
 
+  // Stabilize parent-provided callback to avoid effect re-running when parent
+  // passes an inline function. Caller may still pass a memoized callback, but
+  // using a ref here avoids unnecessary effect triggers.
+  const onPhotoInfoRef = React.useRef(onPhotoInfo);
+  onPhotoInfoRef.current = onPhotoInfo;
+
   React.useEffect(
     () => onSubmitReady?.(stableSubmit),
     [onSubmitReady, stableSubmit]
@@ -959,8 +965,8 @@ export function PlantForm({
     [completion, onProgressChange]
   );
   React.useEffect(
-    () => onPhotoInfo?.({ imageUrl, onPhotoCaptured }),
-    [imageUrl, onPhotoCaptured, onPhotoInfo]
+    () => onPhotoInfoRef.current?.({ imageUrl, onPhotoCaptured }),
+    [imageUrl, onPhotoCaptured]
   );
 
   const options = React.useMemo(
