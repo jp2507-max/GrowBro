@@ -181,6 +181,7 @@ export type ErrorHandlerResult = {
   shouldShowInline: boolean;
   toastMessage?: string;
   bannerMessage?: string;
+  inlineErrors?: Record<string, string[]>;
   actions?: ErrorAction[];
   auditNote?: string;
 };

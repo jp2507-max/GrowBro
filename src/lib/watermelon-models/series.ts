@@ -1,5 +1,7 @@
 import { Model } from '@nozbe/watermelondb';
-import { date, field, text } from '@nozbe/watermelondb/decorators';
+import { date, field, json, text } from '@nozbe/watermelondb/decorators';
+
+import type { TaskMetadata } from '@/types';
 
 export class SeriesModel extends Model {
   static table = 'series';
@@ -15,6 +17,9 @@ export class SeriesModel extends Model {
   @field('count') count?: number;
   @text('plant_id') plantId?: string;
   @text('origin') origin?: string;
+  @json('metadata', (raw) => raw as TaskMetadata)
+  metadata?: TaskMetadata;
+
   // @readonly removed so sync pipeline can write server-provided values
   // @readonly @field('server_revision') serverRevision?: number;
   @field('server_revision') serverRevision?: number;

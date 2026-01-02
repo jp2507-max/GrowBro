@@ -243,6 +243,7 @@ function toSeriesFromModel(model: SeriesModel): Series {
     rrule: model.rrule,
     untilUtc: model.untilUtc ?? undefined,
     plantId: model.plantId ?? undefined,
+    metadata: model.metadata ?? undefined,
     createdAt: model.createdAt.toISOString(),
     updatedAt: model.updatedAt.toISOString(),
     deletedAt: model.deletedAt?.toISOString(),
@@ -299,7 +300,7 @@ async function materializeNextOccurrence(
       record.dueAtUtc = dueAtUtc;
       record.timezone = series.timezone;
       record.status = 'pending';
-      record.metadata = {};
+      record.metadata = series.metadata ?? {};
       record.createdAt = new Date();
       record.updatedAt = new Date();
     });

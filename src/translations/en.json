@@ -160,6 +160,7 @@
       "facts_flowering": "Flowering",
       "facts_yield": "Yield",
       "favorite_hint": "Double-tap to toggle favorite status for this strain.",
+      "loading_label": "Loading strains",
       "offline_banner_hint": "Shows saved strains while offline.",
       "open_detail_hint": "Opens strain details.",
       "open_filters_hint": "Opens filter options.",

@@ -28,7 +28,11 @@ type DayTaskRowProps = {
   testID?: string;
 };
 
-function formatDueTime(dueAtLocal: string, timezone: string): string {
+function formatDueTime(dueAtLocal: string, timezone?: string): string {
+  if (!timezone) {
+    // Return empty string if no timezone is available to prevent runtime errors
+    return '';
+  }
   const dt = DateTime.fromISO(dueAtLocal, { zone: timezone });
   return dt.toFormat('HH:mm');
 }
@@ -37,6 +41,10 @@ function formatDueTime(dueAtLocal: string, timezone: string): string {
  * Determines the task type from task title for icon display
  */
 function getTaskType(task: Task): 'water' | 'feed' | 'other' {
+  // Explicit metadata takes precedence (more reliable and language-agnostic)
+  if (task.metadata?.type === 'water') return 'water';
+  if (task.metadata?.type === 'feed') return 'feed';
+
   const title = task.title.toLowerCase();
   if (
     title.includes('water') ||

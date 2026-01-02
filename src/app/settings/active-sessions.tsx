@@ -102,22 +102,28 @@ export default function ActiveSessionsScreen(): React.ReactElement {
       />
       <FocusAwareStatusBar />
 
-      <View className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
+      <View
+        testID="active-sessions-screen"
+        className="flex-1 bg-neutral-50 dark:bg-charcoal-950"
+      >
         {sessions && sessions.length > 0 ? (
-          <View className="mx-4 mt-4 overflow-hidden rounded-lg border border-neutral-200 dark:border-charcoal-700">
+          <View
+            testID="active-sessions-card"
+            className="mx-4 mt-4 overflow-hidden rounded-lg border border-neutral-200 dark:border-charcoal-700"
+          >
             <List
+              testID="active-sessions-list"
               data={listData}
               renderItem={renderItem}
               keyExtractor={keyExtractor}
               ListHeaderComponent={ListHeaderComponent}
-              ListEmptyComponent={ListEmptyComponent}
               contentContainerStyle={CONTENT_CONTAINER_STYLE}
               contentInsetAdjustmentBehavior="automatic"
               showsVerticalScrollIndicator={false}
             />
           </View>
         ) : (
-          <View className="px-4">
+          <View testID="active-sessions-empty" className="px-4">
             {ListHeaderComponent}
             {ListEmptyComponent}
           </View>

@@ -84,6 +84,7 @@ export const MfaSetupModal = React.forwardRef<
               label={translate('auth.security.mfa_open_authenticator')}
               onPress={() => openLinkInBrowser(pendingEnrollment.uri)}
               className="mt-2"
+              testID="mfa-open-authenticator-button"
             />
           </>
         ) : null}
@@ -97,6 +98,8 @@ export const MfaSetupModal = React.forwardRef<
           maxLength={6}
           autoFocus
           testID="mfa-code-input"
+          accessibilityLabel={translate('auth.security.mfa_code_placeholder')}
+          accessibilityHint={translate('auth.security.mfa_code_required')}
         />
 
         <View className="mt-6 flex-row gap-3">
@@ -105,12 +108,14 @@ export const MfaSetupModal = React.forwardRef<
             label={translate('common.cancel')}
             onPress={onClose}
             className="flex-1"
+            testID="mfa-cancel-button"
           />
           <Button
             label={translate('common.confirm')}
             onPress={onVerify}
             loading={isVerifying}
             className="flex-1"
+            testID="mfa-verify-button"
           />
         </View>
       </BottomSheetView>

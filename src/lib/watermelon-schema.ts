@@ -1,7 +1,7 @@
 import { appSchema as createSchema, tableSchema } from '@nozbe/watermelondb';
 
 export const appSchema = createSchema({
-  version: 37,
+  version: 38,
   tables: [
     tableSchema({
       name: 'series',
@@ -17,6 +17,7 @@ export const appSchema = createSchema({
         { name: 'plant_id', type: 'string', isOptional: true },
         { name: 'origin', type: 'string', isOptional: true },
         { name: 'user_id', type: 'string', isOptional: true },
+        { name: 'metadata', type: 'string', isOptional: true },
         { name: 'server_revision', type: 'number', isOptional: true },
         { name: 'server_updated_at_ms', type: 'number', isOptional: true },
         { name: 'created_at', type: 'number' },

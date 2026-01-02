@@ -170,4 +170,13 @@ describe('calculateWaterVolume', () => {
     expect(min).toBe(0.8); // 3 * 0.25 = 0.75 → 0.8
     expect(max).toBe(0.9); // 3 * 0.30 = 0.9
   });
+
+  it('throws error for invalid pot sizes', () => {
+    expect(() => calculateWaterVolume(0)).toThrow('Invalid pot size: 0');
+    expect(() => calculateWaterVolume(-5)).toThrow('Invalid pot size: -5');
+    expect(() => calculateWaterVolume(NaN)).toThrow('Invalid pot size: NaN');
+    expect(() => calculateWaterVolume(Infinity)).toThrow(
+      'Invalid pot size: Infinity'
+    );
+  });
 });

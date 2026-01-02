@@ -1,4 +1,5 @@
 export * from './use-analytics-consent';
+export * from './use-debounced-value';
 export * from './use-is-first-time';
 export * from './use-network-status';
 export * from './use-notification-summary';
@@ -7,3 +8,4 @@ export * from './use-profile-statistics';
 export * from './use-screen-error-logger';
 export * from './use-security-summary';
 export * from './use-selected-theme';
+export * from './use-strain-search-analytics';

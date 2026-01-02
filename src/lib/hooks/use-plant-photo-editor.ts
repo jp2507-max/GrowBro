@@ -98,7 +98,6 @@ async function capturePhoto(
           : t('harvest.photo.errors.unknown_error'),
       type: 'danger',
     });
-    throw error;
   }
 }
 
@@ -125,7 +124,6 @@ async function pickPhotoFromLibrary(
           : t('harvest.photo.errors.unknown_error'),
       type: 'danger',
     });
-    throw error;
   }
 }
 

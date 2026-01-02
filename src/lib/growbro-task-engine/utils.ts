@@ -108,6 +108,10 @@ export function calculateWaterVolume(potSizeLiters: number): {
   min: number;
   max: number;
 } {
+  if (!Number.isFinite(potSizeLiters) || potSizeLiters <= 0) {
+    throw new Error(`Invalid pot size: ${potSizeLiters}`);
+  }
+
   const min = Math.round(potSizeLiters * 0.25 * 10) / 10;
   const max = Math.round(potSizeLiters * 0.3 * 10) / 10;
   return { min, max };

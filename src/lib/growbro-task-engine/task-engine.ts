@@ -263,6 +263,9 @@ export class TaskEngine {
           if (spec.count !== undefined) {
             record.count = spec.count;
           }
+          if (spec.metadata) {
+            record.metadata = spec.metadata;
+          }
           record.createdAt = new Date();
           record.updatedAt = new Date();
         });

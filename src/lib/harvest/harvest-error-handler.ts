@@ -100,12 +100,68 @@ export function classifyError(error: unknown): ClassifiedError {
  * Requirement 17.1: Inline validation messages for form inputs
  */
 export function handleValidationError(
-  _error: ValidationError | ValidationError[]
+  error: ValidationError | ValidationError[] | unknown
 ): ErrorHandlerResult {
+  const inlineErrors: Record<string, string[]> = {};
+
+  // Handle ZodError-like structure
+  if (error && typeof error === 'object') {
+    // Check for ZodError with issues array
+    if ('issues' in error && Array.isArray(error.issues)) {
+      const zodError = error as {
+        issues: { path: (string | number)[]; message: string }[];
+      };
+
+      for (const issue of zodError.issues) {
+        // Join path segments to create field name (e.g., ['dryWeight'] -> 'dryWeight')
+        const fieldName = Array.isArray(issue.path)
+          ? issue.path.map(String).join('.')
+          : 'general';
+
+        if (!inlineErrors[fieldName]) {
+          inlineErrors[fieldName] = [];
+        }
+        inlineErrors[fieldName].push(issue.message);
+      }
+    }
+    // Handle array of ValidationErrors
+    else if (Array.isArray(error)) {
+      for (const validationError of error) {
+        if (
+          validationError &&
+          typeof validationError === 'object' &&
+          'field' in validationError &&
+          'message' in validationError
+        ) {
+          const field = String(validationError.field);
+          if (!inlineErrors[field]) {
+            inlineErrors[field] = [];
+          }
+          inlineErrors[field].push(String(validationError.message));
+        }
+      }
+    }
+    // Handle single ValidationError
+    else if ('field' in error && 'message' in error) {
+      const field = String(error.field);
+      inlineErrors[field] = [String(error.message)];
+    }
+  }
+
+  // If no field-specific errors were extracted, create a general error
+  if (Object.keys(inlineErrors).length === 0) {
+    const message =
+      error && typeof error === 'object' && 'message' in error
+        ? String(error.message)
+        : 'Validation failed';
+    inlineErrors.general = [message];
+  }
+
   return {
     shouldShowToast: false,
     shouldShowBanner: false,
     shouldShowInline: true,
+    inlineErrors,
   };
 }
 
@@ -442,10 +498,7 @@ export function handleHarvestError(
 
   // Use explicit type predicates for safe narrowing instead of type assertions
   if (classified.category === ERROR_CATEGORY.VALIDATION) {
-    return handleValidationError({
-      field: 'general',
-      message: classified.message,
-    });
+    return handleValidationError(classified.originalError);
   }
 
   if (isNetworkClassified(classified)) {

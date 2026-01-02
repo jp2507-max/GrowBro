@@ -184,7 +184,7 @@ export class TaskFactory {
       });
     }
 
-    // Sativa stretch warning (week 3 of flower, indoor only)
+    // Sativa/Balanced stretch warning (week 3 of flower, indoor only)
     specs.push(...this.createStretchWarningTask(settings, flowerStart, now));
 
     // Flush period tasks
@@ -196,7 +196,7 @@ export class TaskFactory {
   }
 
   /**
-   * Create stretch warning task for sativa-dominant plants (indoor only)
+   * Create stretch warning task for sativa-dominant and balanced plants (indoor only)
    */
   private static createStretchWarningTask(
     settings: PlantSettings,
@@ -364,6 +364,7 @@ export class TaskFactory {
         dtstartLocal,
         dtstartUtc,
         timezone,
+        metadata: { type: 'water' },
       },
     ];
   }
@@ -421,6 +422,7 @@ export class TaskFactory {
         dtstartUtc,
         timezone,
         ...(untilDate && { untilUtc: buildUntilUtc(untilDate) }),
+        metadata: { type: 'feed' },
       },
     ];
   }

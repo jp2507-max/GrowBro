@@ -1,13 +1,21 @@
 import React from 'react';
 
 import { View } from '@/components/ui';
+import { translate } from '@/lib/i18n';
 
-const PLACEHOLDER_ITEMS = Array.from({ length: 4 });
+const SKELETON_ITEM_COUNT = 4;
+const PLACEHOLDER_ITEMS = Array.from({ length: SKELETON_ITEM_COUNT });
 
 // Skeleton dimensions match StrainCard: h-52 (208px) image + ~100px content area
 export function StrainsSkeletonList(): React.ReactElement {
   return (
-    <View className="gap-5 px-4" testID="strains-skeleton-list">
+    <View
+      className="gap-5 px-4"
+      testID="strains-skeleton-list"
+      accessibilityLabel={translate('accessibility.strains.loading_label')}
+      accessibilityHint={translate('accessibility.common.loading_hint')}
+      accessibilityRole="progressbar"
+    >
       {PLACEHOLDER_ITEMS.map((_, index) => (
         <View
           key={index}

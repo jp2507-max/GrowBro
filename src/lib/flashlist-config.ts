@@ -10,14 +10,14 @@ import { Platform } from 'react-native';
 /**
  * Configuration interface for FlashList v2 performance optimization
  */
-export interface FlashListConfig {
+export type FlashListConfig = {
   drawDistance: number;
   removeClippedSubviews: boolean;
   maxToRenderPerBatch: number;
   windowSize: number;
   updateCellsBatchingPeriod: number;
   scrollEventThrottle: number;
-}
+};
 
 /**
  * Check if device is considered low-memory for adaptive configuration

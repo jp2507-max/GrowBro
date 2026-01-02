@@ -20,6 +20,7 @@ import {
   completeActivationAction,
   hydrateActivationState,
 } from '@/lib/compliance/activation-state';
+import { usePlantsAttention } from '@/lib/hooks/use-plants-attention';
 
 const BOTTOM_PADDING_EXTRA = 24;
 
@@ -89,11 +90,19 @@ export default function Feed() {
   const isEmpty = !isLoading && plants.length === 0;
 
   // Task count for header (derived from plants with pending tasks)
+  const plantIds = React.useMemo(
+    () => plants.map((plant) => plant.id),
+    [plants]
+  );
+  const { attentionMap } = usePlantsAttention(plantIds);
+
   const taskCount = React.useMemo(() => {
-    // Simple heuristic: count plants that might have tasks
-    // The actual task count is shown in the calendar
-    return 0;
-  }, []);
+    return Object.values(attentionMap).reduce(
+      (total, status) =>
+        total + (status.overdueCount || 0) + (status.dueTodayCount || 0),
+      0
+    );
+  }, [attentionMap]);
 
   return (
     <View

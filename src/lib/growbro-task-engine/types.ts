@@ -32,6 +32,7 @@ export type SeriesSpec = {
   timezone: string;
   untilUtc?: string;
   count?: number;
+  metadata?: Record<string, unknown>;
 };
 
 export type StageChangeEvent = {

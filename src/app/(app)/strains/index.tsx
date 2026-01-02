@@ -17,84 +17,16 @@ import { FocusAwareStatusBar, View } from '@/components/ui';
 import { useAnalytics } from '@/lib';
 import { useAnimatedScrollList } from '@/lib/animations/animated-scroll-list-provider';
 import { useBottomTabBarHeight } from '@/lib/animations/use-bottom-tab-bar-height';
-import { useNetworkStatus } from '@/lib/hooks';
+import {
+  useDebouncedValue,
+  useNetworkStatus,
+  useStrainSearchAnalytics,
+} from '@/lib/hooks';
 import { useAnalyticsConsent } from '@/lib/hooks/use-analytics-consent';
+import type { StrainListState } from '@/lib/hooks/use-strain-search-analytics';
 
 const SEARCH_DEBOUNCE_MS = 300;
 const LIST_BOTTOM_EXTRA = 24;
-
-function useDebouncedValue<T>(value: T, delayMs: number): T {
-  const [debounced, setDebounced] = React.useState(value);
-  React.useEffect(() => {
-    const handle = setTimeout(() => setDebounced(value), delayMs);
-    return () => clearTimeout(handle);
-  }, [value, delayMs]);
-  return debounced;
-}
-
-type ListState = {
-  strains: { length: number };
-  isOffline: boolean;
-  isUsingCache: boolean;
-  isLoading: boolean;
-  isError: boolean;
-  isFetchingNextPage: boolean;
-  hasNextPage: boolean;
-};
-
-type AnalyticsParams = {
-  analytics: ReturnType<typeof useAnalytics>;
-  debouncedQuery: string;
-  listState: ListState | null;
-  resolvedOffline: boolean;
-  hasAnalyticsConsent: boolean;
-};
-
-function useStrainSearchAnalytics(params: AnalyticsParams) {
-  const {
-    analytics,
-    debouncedQuery,
-    listState,
-    resolvedOffline,
-    hasAnalyticsConsent,
-  } = params;
-  const lastRef = React.useRef<{
-    query: string;
-    isOffline: boolean;
-    hasAnalyticsConsent: boolean;
-  } | null>(null);
-  React.useEffect(() => {
-    if (!listState || listState.isLoading || listState.isFetchingNextPage)
-      return;
-    const payload = {
-      query: debouncedQuery,
-      isOffline: resolvedOffline,
-      hasAnalyticsConsent,
-    };
-    const last = lastRef.current;
-    if (
-      last &&
-      last.query === payload.query &&
-      last.isOffline === payload.isOffline &&
-      last.hasAnalyticsConsent === payload.hasAnalyticsConsent
-    )
-      return;
-    lastRef.current = payload;
-    if (hasAnalyticsConsent) {
-      void analytics.track('strain_search', {
-        query: debouncedQuery,
-        results_count: listState.strains.length,
-        is_offline: resolvedOffline,
-      });
-    }
-  }, [
-    analytics,
-    debouncedQuery,
-    hasAnalyticsConsent,
-    listState,
-    resolvedOffline,
-  ]);
-}
 
 export default function StrainsScreen(): React.ReactElement {
   const { listRef, scrollHandler, resetScrollState } = useAnimatedScrollList();
@@ -122,7 +54,7 @@ export default function StrainsScreen(): React.ReactElement {
   const [searchValue, setSearchValue] = React.useState('');
   const debouncedQuery = useDebouncedValue(searchValue, SEARCH_DEBOUNCE_MS);
   const [filters, setFilters] = React.useState<StrainFilters>({});
-  const [listState, setListState] = useState<ListState | null>(null);
+  const [listState, setListState] = useState<StrainListState | null>(null);
 
   const resolvedCount = listState?.strains.length ?? 0;
   const resolvedOffline =
@@ -172,7 +104,11 @@ export default function StrainsScreen(): React.ReactElement {
         onFiltersPress={filterModal.openFilters}
       />
 
-      <View className="z-10 -mt-6 flex-1 rounded-t-[32px] bg-white shadow-xl dark:bg-charcoal-900">
+      <View
+        className="z-10 -mt-6 flex-1 rounded-t-[32px] bg-white shadow-xl dark:bg-charcoal-900"
+        accessible={true}
+        accessibilityLabel="Strains list section"
+      >
         <View className="w-full items-center pb-2 pt-3">
           <View className="h-1.5 w-12 rounded-full bg-neutral-200 dark:bg-white/20" />
         </View>

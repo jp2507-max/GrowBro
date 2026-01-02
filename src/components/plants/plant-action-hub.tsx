@@ -59,7 +59,10 @@ export function PlantActionHub({
   return (
     <View className="gap-3 px-4">
       {/* Section Header */}
-      <Text className="text-base font-semibold text-neutral-700 dark:text-neutral-300">
+      <Text
+        className="text-base font-semibold text-neutral-700 dark:text-neutral-300"
+        testID="action-hub-header"
+      >
         {t('plants.detail.action_hub_title')}
       </Text>
 
@@ -77,7 +80,7 @@ export function PlantActionHub({
               }`}
               accessibilityRole="button"
               accessibilityLabel={task.title}
-              accessibilityHint={t('plants.detail.task_hint')}
+              accessibilityHint={t('calendar.task_row.task_hint')}
               testID={`action-task-${task.id}`}
             >
               {/* Task Icon */}

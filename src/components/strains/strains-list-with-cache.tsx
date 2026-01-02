@@ -10,9 +10,7 @@ import {
 } from '@shopify/flash-list';
 import { useQueryClient } from '@tanstack/react-query';
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
-import Animated, {
-  type useAnimatedScrollHandler,
-} from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
 
 import type { Strain } from '@/api';
 import type { StrainFilters } from '@/api/strains/types';
@@ -45,13 +43,24 @@ const ITEM_HEIGHTS = {
 
 const DEFAULT_ITEM_HEIGHT = 320;
 
+/**
+ * Direct type alias for the animated scroll handler from FlashListProps.
+ */
+type AnimatedScrollHandler = FlashListProps<Strain>['onScroll'];
+
+/**
+ * Event type for the scroll callback, derived from AnimatedScrollHandler.
+ * Uses Parameters utility type to extract the first argument type.
+ */
+type ScrollEventType = Parameters<NonNullable<AnimatedScrollHandler>>[0];
+
 interface StrainsListWithCacheProps {
   searchQuery?: string;
   filters?: StrainFilters;
   sortBy?: string;
   sortDirection?: 'asc' | 'desc';
   /** Animated scroll handler from useAnimatedScrollHandler - passed directly to AnimatedFlashList */
-  onScroll?: ReturnType<typeof useAnimatedScrollHandler>;
+  onScroll?: AnimatedScrollHandler;
   listRef?: React.Ref<FlashListRef<Strain> | FlashListRef<unknown> | null>;
   contentContainerStyle?: FlashListProps<Strain>['contentContainerStyle'];
   testID?: string;
@@ -271,11 +280,11 @@ export function StrainsListWithCache({
 
   // Combined scroll handler for external handler + performance tracking
   const handleScroll = useCallback(
-    (event: unknown) => {
+    (event: ScrollEventType) => {
       onPerfScroll();
       // Forward to external handler if provided (preserves Reanimated worklet behavior)
-      if (onScroll && typeof onScroll === 'function') {
-        (onScroll as (event: unknown) => void)(event);
+      if (onScroll) {
+        onScroll(event);
       }
     },
     [onScroll, onPerfScroll]

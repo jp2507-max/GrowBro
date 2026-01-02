@@ -19,13 +19,16 @@ export type PendingMfaEnrollment = {
   friendlyName: string | null;
 };
 
-export const showMfaError = (error: unknown) =>
-  Alert.alert(
-    translate('common.error'),
+export const showMfaError = (error: unknown) => {
+  const message =
     error instanceof Error
       ? error.message
-      : translate('auth.security.mfa_verification_error')
-  );
+      : typeof error === 'string'
+        ? error
+        : translate('auth.security.mfa_verification_error');
+
+  Alert.alert(translate('common.error'), message);
+};
 
 type EnrollParams = {
   enrollTotp: ReturnType<typeof useMfaEnrollTotp>;
@@ -80,10 +83,7 @@ export async function verifyMfaCode(params: VerifyParams): Promise<void> {
   if (!pendingEnrollment) return;
   const code = verificationCode.trim();
   if (code.length !== 6) {
-    Alert.alert(
-      translate('common.error'),
-      translate('auth.security.mfa_code_required')
-    );
+    showMfaError(translate('auth.security.mfa_code_required'));
     return;
   }
   try {
@@ -91,21 +91,20 @@ export async function verifyMfaCode(params: VerifyParams): Promise<void> {
       factorId: pendingEnrollment.factorId,
       code,
     });
-    const sessionResponse = await supabase.auth.getSession();
-    if (sessionResponse.data.session)
-      useAuth.getState().updateSession(sessionResponse.data.session);
+    const { data, error } = await supabase.auth.getSession();
+    if (error) {
+      console.error('Failed to refresh session after MFA verification:', error);
+    }
+    if (data.session) {
+      useAuth.getState().updateSession(data.session);
+    }
     await refetchMfaFactors();
     setPendingEnrollment(null);
     setVerificationCode('');
     dismiss();
     Alert.alert(translate('auth.security.mfa_verification_success'), undefined);
   } catch (error) {
-    Alert.alert(
-      translate('common.error'),
-      error instanceof Error
-        ? error.message
-        : translate('auth.security.mfa_verification_error')
-    );
+    showMfaError(error);
   }
 }
 

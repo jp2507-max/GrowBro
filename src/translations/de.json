@@ -160,6 +160,7 @@
       "facts_flowering": "Blüte",
       "facts_yield": "Ertrag",
       "favorite_hint": "Doppeltippen, um den Favoriten-Status zu wechseln.",
+      "loading_label": "Sorten werden geladen",
       "offline_banner_hint": "Zeigt gespeicherte Sorten im Offline-Modus an.",
       "open_detail_hint": "Öffnet die Sortendetails.",
       "open_filters_hint": "Öffnet Filteroptionen.",

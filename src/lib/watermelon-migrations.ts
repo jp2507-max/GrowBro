@@ -1273,5 +1273,15 @@ export const migrations = schemaMigrations({
         },
       ],
     },
+    // Migration from version 37 to 38: Add metadata column to series
+    {
+      toVersion: 38,
+      steps: [
+        addColumns({
+          table: 'series',
+          columns: [{ name: 'metadata', type: 'string', isOptional: true }],
+        }),
+      ],
+    },
   ],
 });

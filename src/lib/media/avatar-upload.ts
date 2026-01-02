@@ -192,6 +192,17 @@ export async function uploadAvatar(
       fileInfo = await FileSystem.getInfoAsync(currentUri);
     }
 
+    // Warn if still oversized after compression
+    if (
+      fileInfo.exists &&
+      'size' in fileInfo &&
+      fileInfo.size > MAX_FILE_SIZE_KB * 1024
+    ) {
+      console.warn(
+        `Avatar still ${Math.round(fileInfo.size / 1024)}KB after compression to ${Math.round(quality * 100)}% quality`
+      );
+    }
+
     // Step 7: Upload to Supabase Storage
     onProgress?.({ status: 'uploading', progress: 70 });
     const timestamp = Date.now();

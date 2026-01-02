@@ -84,7 +84,7 @@ export function usePlantsAttention(
   const { enabled = true } = options;
 
   const { data, isLoading } = useQuery({
-    queryKey: ['plants-attention', plantIds.sort()],
+    queryKey: ['plants-attention', [...plantIds].sort()],
     queryFn: () => fetchPlantsAttentionMap(plantIds),
     enabled: enabled && plantIds.length > 0,
     staleTime: 60 * 1000, // 1 minute - balance freshness with performance

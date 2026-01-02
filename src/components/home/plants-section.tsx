@@ -36,8 +36,7 @@ export function PlantsSection({
   );
 
   // Fetch attention status for all plants at once
-  const { attentionMap, isLoading: isAttentionLoading } =
-    usePlantsAttention(plantIds);
+  const { attentionMap } = usePlantsAttention(plantIds);
 
   if (isLoading) {
     return (
@@ -55,7 +54,6 @@ export function PlantsSection({
           plant={plant}
           onPress={() => onPlantPress(plant.id)}
           needsAttention={attentionMap[plant.id]?.needsAttention ?? false}
-          isLoadingAttention={isAttentionLoading}
         />
       ))}
     </View>

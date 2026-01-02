@@ -1,14 +1,11 @@
 /* eslint-disable simple-import-sort/imports */
 import React from 'react';
-import {
-  StyleSheet,
-  type LayoutChangeEvent,
-  type ListRenderItemInfo,
-} from 'react-native';
+import { StyleSheet, type LayoutChangeEvent } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   type SharedValue,
+  ReduceMotion,
 } from 'react-native-reanimated';
 // @ts-expect-error - Reanimated 4.x type exports issue
 import { interpolate } from 'react-native-reanimated';
@@ -28,7 +25,6 @@ export type PlantCardProps = {
   onPress: (id: string) => void;
   itemY?: SharedValue<number>;
   needsAttention?: boolean;
-  isLoadingAttention?: boolean;
 };
 
 type StageColors = {
@@ -332,24 +328,33 @@ export function PlantCard({
   const effItemY = itemY ?? localItemY;
   const measuredHeight = useSharedValue(0);
 
-  const containerStyle = useAnimatedStyle(() => {
-    'worklet';
-    const h = Math.max(measuredHeight.value, 1);
-    const start = effItemY.value - 1;
-    const mid = effItemY.value;
-    const end = effItemY.value + h;
-    const scale = interpolate(
-      listOffsetY.value,
-      [start, mid, end],
-      [1, 1, 0.98]
-    );
-    const translateY = interpolate(
-      listOffsetY.value,
-      [start - 1, start, start + 1],
-      [0, 0, 1]
-    );
-    return { transform: [{ translateY }, { scale }] };
-  }, []);
+  const containerStyle = useAnimatedStyle(
+    () => {
+      'worklet';
+
+      if (ReduceMotion.shouldReduceMotion()) {
+        return { transform: [{ translateY: 0 }, { scale: 1 }] };
+      }
+
+      const h = Math.max(measuredHeight.value, 1);
+      const start = effItemY.value - 1;
+      const mid = effItemY.value;
+      const end = effItemY.value + h;
+      const scale = interpolate(
+        listOffsetY.value,
+        [start, mid, end],
+        [1, 1, 0.98]
+      );
+      const translateY = interpolate(
+        listOffsetY.value,
+        [start - 1, start, start + 1],
+        [0, 0, 1]
+      );
+      return { transform: [{ translateY }, { scale }] };
+    },
+    [],
+    { reduceMotion: ReduceMotion.System }
+  );
 
   const onLayout = React.useCallback(
     (e: LayoutChangeEvent) => {
@@ -373,24 +378,5 @@ export function PlantCard({
         needsAttention={needsAttention}
       />
     </Animated.View>
-  );
-}
-
-export type RenderPlantItemOptions = {
-  info: ListRenderItemInfo<Plant>;
-  onPress: (id: string) => void;
-  needsAttention?: boolean;
-};
-
-export function renderPlantItem(
-  options: RenderPlantItemOptions
-): React.ReactElement {
-  const { info, onPress, needsAttention } = options;
-  return (
-    <PlantCard
-      plant={info.item}
-      onPress={onPress}
-      needsAttention={needsAttention}
-    />
   );
 }
