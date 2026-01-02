@@ -420,7 +420,7 @@ export default function CreatePlantScreen(): React.ReactElement {
           >
             <Button
               variant="default"
-              className="w-full rounded-2xl bg-terracotta-500 py-4 active:bg-terracotta-600"
+              className="h-auto w-full rounded-2xl bg-terracotta-500 py-4 active:bg-terracotta-600"
               textClassName="text-white text-lg font-semibold"
               onPress={handleHeaderSave}
               disabled={isSaving}

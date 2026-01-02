@@ -52,7 +52,10 @@ async function processAndSavePhoto(
       imageUrl: storeResult.localUri,
     });
     await queryClient.invalidateQueries({
-      queryKey: ['plant', plantId],
+      queryKey: ['plant', { id: plantId }],
+    });
+    await queryClient.invalidateQueries({
+      queryKey: ['plants-infinite'],
     });
     showMessage({
       message: t('plants.form.photo_saved'),

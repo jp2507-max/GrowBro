@@ -328,7 +328,9 @@ function usePlantSubmit(
           );
         });
         await queryClient.invalidateQueries({ queryKey: ['plants-infinite'] });
-        await queryClient.invalidateQueries({ queryKey: ['plant', plantId] });
+        await queryClient.invalidateQueries({
+          queryKey: ['plant', { id: plantId }],
+        });
         showMessage({
           message: t('plants.form.update_success_title'),
           description: t('plants.form.update_success_body'),

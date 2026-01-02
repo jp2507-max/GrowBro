@@ -7,7 +7,7 @@ import {
   onSeriesOccurrenceCompleted,
   onTaskCompleted,
 } from '@/lib/plant-telemetry';
-import type { RRuleConfig, RRuleParse } from '@/lib/rrule';
+import type { RRuleParse } from '@/lib/rrule';
 import * as rrule from '@/lib/rrule';
 import { TaskNotificationService } from '@/lib/task-notifications';
 import { database } from '@/lib/watermelon';
@@ -38,6 +38,7 @@ export type CreateTaskInput = {
   plantId?: string;
   seriesId?: string; // optional link to a series occurrence
   metadata?: TaskMetadata;
+  scheduleNotifications?: boolean;
 };
 
 export type UpdateTaskInput = Partial<Omit<CreateTaskInput, 'seriesId'>> & {
@@ -103,14 +104,6 @@ function getRepos(): TaskRepositories {
   };
 }
 
-// BUG: This function strips the `timezone` property from the Task object,
-// causing all scheduled notifications to default to 'UTC' instead of preserving
-// the user's actual timezone. The TaskNotificationService.persistNotificationMapping
-// method expects the timezone field for analytics and timestamp rehydration,
-// but falls back to 'UTC' when it's missing. This breaks proper timezone handling
-// for scheduled notifications. The fix is to include `timezone: task.timezone`
-// in the returned object to ensure the correct timezone is persisted in the
-// notification_queue table.
 function toNotificationTaskPayload(
   task: Task
 ): Parameters<TaskNotificationService['scheduleTaskReminder']>[0] {
@@ -189,6 +182,39 @@ function sameLocalDay(aIsoWithZone: string, bIsoWithZone: string): boolean {
   return a.hasSame(b, 'day');
 }
 
+/**
+ * Create or update an occurrence override with status 'completed'.
+ * This prevents the RRule iterator from generating an ephemeral task for this date.
+ * Must be called within a database.write() transaction.
+ */
+async function upsertCompletedOverride(
+  repos: TaskRepositories,
+  seriesId: string,
+  occurrenceLocalDate: string
+): Promise<void> {
+  const existing = await repos.overrides
+    .query(
+      Q.where('series_id', seriesId),
+      Q.where('occurrence_local_date', occurrenceLocalDate)
+    )
+    .fetch();
+
+  if (existing.length > 0) {
+    await existing[0].update((record) => {
+      record.status = 'completed';
+      record.updatedAt = new Date();
+    });
+  } else {
+    await repos.overrides.create((record) => {
+      record.seriesId = seriesId;
+      record.occurrenceLocalDate = occurrenceLocalDate;
+      record.status = 'completed';
+      record.createdAt = new Date();
+      record.updatedAt = new Date();
+    });
+  }
+}
+
 async function getSeriesOverrides(
   seriesId: string
 ): Promise<OccurrenceOverride[]> {
@@ -242,12 +268,42 @@ function toSeriesFromModel(model: SeriesModel): Series {
     timezone: model.timezone,
     rrule: model.rrule,
     untilUtc: model.untilUtc ?? undefined,
+    count: model.count ?? undefined,
     plantId: model.plantId ?? undefined,
+    origin: model.origin ?? undefined,
     metadata: model.metadata ?? undefined,
     createdAt: model.createdAt.toISOString(),
     updatedAt: model.updatedAt.toISOString(),
     deletedAt: model.deletedAt?.toISOString(),
   };
+}
+
+function buildSeriesRRuleConfig(series: Series): RRuleParse {
+  const parsed = rrule.parseRule(series.rrule, series.dtstartUtc);
+  const config: RRuleParse = { ...parsed } as RRuleParse;
+
+  if (series.count !== undefined && series.untilUtc) {
+    console.warn(
+      `[TaskManager] Series ${series.id} has both count and untilUtc; preferring count`
+    );
+  }
+
+  if (series.count !== undefined) {
+    config.count = series.count;
+    config.until = undefined;
+  } else if (series.untilUtc) {
+    const until = DateTime.fromISO(series.untilUtc, { zone: 'utc' });
+    if (until.isValid) {
+      config.until = until.toJSDate();
+      config.count = undefined;
+    } else {
+      console.warn(
+        `[TaskManager] Series ${series.id} has invalid untilUtc: ${series.untilUtc}`
+      );
+    }
+  }
+
+  return config;
 }
 
 async function materializeNextOccurrence(
@@ -258,16 +314,14 @@ async function materializeNextOccurrence(
   const start = DateTime.fromISO(afterLocalIso).plus({ second: 1 }).toJSDate();
   const end = DateTime.fromJSDate(start).plus({ years: 1 }).toJSDate();
 
-  const parsed = rrule.parseRule(series.rrule, series.dtstartUtc);
-  const validationTarget = parsed as RRuleParse;
-  const validated = rrule.validate(validationTarget);
+  const config = buildSeriesRRuleConfig(series);
+  const validated = rrule.validate(config);
   if (!validated.ok) {
     console.warn(
       `[TaskManager] Skipping series ${series.id} due to invalid RRULE: ${validated.errors?.join(', ')}`
     );
     return null;
   }
-  const config = validationTarget as unknown as RRuleConfig;
   const iter = rrule
     .buildIterator({
       config,
@@ -353,9 +407,11 @@ export async function createTask(input: CreateTaskInput): Promise<Task> {
   if (!created) throw new Error('Failed to create task');
   const createdTask: TaskModel = created;
 
+  const shouldSchedule = input.scheduleNotifications !== false;
+
   // Schedule notifications for newly created tasks
   // This ensures users get reminders immediately without waiting for global rehydrate
-  if (createdTask.reminderAtUtc || createdTask.dueAtUtc) {
+  if (shouldSchedule && (createdTask.reminderAtUtc || createdTask.dueAtUtc)) {
     const task = toTaskFromModel(createdTask);
     const notifier = new TaskNotificationService();
     await notifier.scheduleTaskReminder(toNotificationTaskPayload(task));
@@ -1048,6 +1104,15 @@ export async function completeTask(id: string): Promise<Task> {
       record.completedAt = new Date();
       record.updatedAt = new Date();
     });
+
+    // For tasks linked to a series, create/update an occurrence override
+    // to prevent the RRule iterator from generating a duplicate ephemeral task
+    if (seriesId) {
+      const occurrenceLocalDate = DateTime.fromISO(task.dueAtLocal).toFormat(
+        'yyyy-LL-dd'
+      );
+      await upsertCompletedOverride(repos, seriesId, occurrenceLocalDate);
+    }
   });
 
   // Cancel associated notifications on completion
@@ -1282,15 +1347,14 @@ export async function buildVisibleForSeries(params: {
   const { s, materializedForSeries, start, end } = params;
   const series = toSeriesFromModel(s);
   const overrides = await getSeriesOverrides(series.id);
-  const parsed = rrule.parseRule(series.rrule, series.dtstartUtc);
-  const validated = rrule.validate(parsed as RRuleParse);
+  const config = buildSeriesRRuleConfig(series);
+  const validated = rrule.validate(config);
   if (!validated.ok) {
     console.warn(
       `[TaskManager] Skipping series ${series.id} due to invalid RRULE: ${validated.errors?.join(', ')}`
     );
     return [];
   }
-  const config = parsed as unknown as RRuleConfig;
   const range = { start, end, timezone: series.timezone };
 
   const out: Task[] = [];
@@ -1322,6 +1386,7 @@ export async function buildVisibleForSeries(params: {
       dueAtLocal: localIso,
       dueAtUtc: dueAtUtcIso,
       timezone: series.timezone,
+      plantId: series.plantId ?? undefined,
       status: 'pending',
       metadata: { ephemeral: true },
       createdAt: new Date().toISOString(),
@@ -1546,6 +1611,9 @@ export async function createSeries(input: CreateSeriesInput): Promise<Series> {
       if (input.untilUtc !== undefined) {
         record.untilUtc = input.untilUtc;
       }
+      if (input.count !== undefined) {
+        record.count = input.count;
+      }
       if (input.plantId !== undefined) {
         record.plantId = input.plantId;
       }
@@ -1575,6 +1643,7 @@ export async function updateSeries(
       if (updates.timezone !== undefined) record.timezone = updates.timezone;
       if (updates.rrule !== undefined) record.rrule = updates.rrule;
       if (updates.untilUtc !== undefined) record.untilUtc = updates.untilUtc;
+      if (updates.count !== undefined) record.count = updates.count;
       if (updates.plantId !== undefined)
         record.plantId = updates.plantId ?? undefined;
       record.updatedAt = new Date();

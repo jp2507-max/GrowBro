@@ -26,6 +26,15 @@ function inferTaskType(title: string): PlantTask['type'] {
 }
 
 function transformTask(task: Task): PlantTask {
+  const metadataType = task.metadata?.type;
+  if (metadataType === 'water' || metadataType === 'feed') {
+    return {
+      id: task.id,
+      title: task.title,
+      type: metadataType,
+    };
+  }
+
   return {
     id: task.id,
     title: task.title,

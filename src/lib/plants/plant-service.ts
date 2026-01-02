@@ -11,10 +11,13 @@ import type {
 } from '@/api/plants/types';
 import type { CreatePlantVariables } from '@/api/plants/use-create-plant';
 import { database } from '@/lib/watermelon';
+import type { OccurrenceOverrideModel } from '@/lib/watermelon-models/occurrence-override';
 import type {
   PlantMetadataLocal,
   PlantModel,
 } from '@/lib/watermelon-models/plant';
+import type { SeriesModel } from '@/lib/watermelon-models/series';
+import type { TaskModel } from '@/lib/watermelon-models/task';
 
 import { createTaskEngine } from '../growbro-task-engine';
 
@@ -161,13 +164,14 @@ export async function createPlantFromForm(
   const now = new Date();
   const id = generatePlantId();
   const metadata = buildMetadata(input);
+  const stage = input.stage ?? 'seedling';
 
   const record = await database.write(async () => {
     return collection.create((rec) => {
       rec._raw.id = id;
       rec.userId = options.userId ?? undefined;
       rec.name = input.name;
-      rec.stage = assignString(input.stage);
+      rec.stage = assignString(stage);
       rec.strain = assignString(input.strain);
       rec.photoperiodType = assignString(input.photoperiodType);
       rec.environment = assignString(input.environment);
@@ -188,15 +192,13 @@ export async function createPlantFromForm(
   });
 
   // Non-blocking: Create GrowBro task schedules for the new plant
-  if (input.stage) {
-    const engine = createTaskEngine();
-    engine.ensureSchedulesForPlant(toPlant(record)).catch((error) => {
-      console.warn(
-        '[PlantService] Failed to create task schedules for new plant:',
-        error
-      );
-    });
-  }
+  const engine = createTaskEngine();
+  engine.ensureSchedulesForPlant(toPlant(record)).catch((error) => {
+    console.warn(
+      '[PlantService] Failed to create task schedules for new plant:',
+      error
+    );
+  });
 
   return record;
 }
@@ -274,24 +276,136 @@ export async function updatePlantFromForm(
   return record;
 }
 
+async function cancelUploadQueueForPlant(plantId: string): Promise<void> {
+  try {
+    const { cancelQueueEntriesForPlant } = await import('@/lib/uploads/queue');
+    await cancelQueueEntriesForPlant(plantId);
+  } catch (error) {
+    console.warn('[PlantService] Failed to cancel queue entries:', error);
+  }
+}
+
+async function getLinkedRecords(plantId: string) {
+  const { SeriesModel } = await import('@/lib/watermelon-models/series');
+  const { TaskModel } = await import('@/lib/watermelon-models/task');
+  const { OccurrenceOverrideModel } = await import(
+    '@/lib/watermelon-models/occurrence-override'
+  );
+
+  const seriesCollection = database.get<InstanceType<typeof SeriesModel>>(
+    SeriesModel.table
+  );
+  const tasksCollection = database.get<InstanceType<typeof TaskModel>>(
+    TaskModel.table
+  );
+  const overridesCollection = database.get<
+    InstanceType<typeof OccurrenceOverrideModel>
+  >(OccurrenceOverrideModel.table);
+
+  const linkedSeries = await seriesCollection
+    .query(Q.where('plant_id', plantId), Q.where('deleted_at', null))
+    .fetch();
+  const seriesIds = linkedSeries.map((s) => s.id);
+
+  const linkedTasks = await tasksCollection
+    .query(
+      Q.or(
+        Q.where('plant_id', plantId),
+        seriesIds.length > 0
+          ? Q.where('series_id', Q.oneOf(seriesIds))
+          : Q.where('id', null)
+      ),
+      Q.where('deleted_at', null)
+    )
+    .fetch();
+
+  const linkedOverrides =
+    seriesIds.length > 0
+      ? await overridesCollection
+          .query(
+            Q.where('series_id', Q.oneOf(seriesIds)),
+            Q.where('deleted_at', null)
+          )
+          .fetch()
+      : [];
+
+  return { linkedSeries, linkedTasks, linkedOverrides };
+}
+
+interface SoftDeleteOptions {
+  linkedTasks: TaskModel[];
+  linkedOverrides: OccurrenceOverrideModel[];
+  linkedSeries: SeriesModel[];
+  plantRecord: PlantModel;
+}
+
+async function softDeleteRelatedRecords(
+  options: SoftDeleteOptions
+): Promise<void> {
+  const { linkedTasks, linkedOverrides, linkedSeries, plantRecord } = options;
+  const now = new Date();
+
+  await database.write(async () => {
+    for (const task of linkedTasks) {
+      await task.update((rec: TaskModel) => {
+        rec.deletedAt = now;
+        rec.updatedAt = now;
+      });
+    }
+
+    for (const override of linkedOverrides) {
+      await override.update((rec: OccurrenceOverrideModel) => {
+        rec.deletedAt = now;
+        rec.updatedAt = now;
+      });
+    }
+
+    for (const series of linkedSeries) {
+      await series.update((rec: SeriesModel) => {
+        rec.deletedAt = now;
+        rec.updatedAt = now;
+      });
+    }
+
+    await plantRecord.markAsDeleted();
+  });
+}
+
 export async function deletePlant(id: string): Promise<void> {
   const record = await getPlantById(id);
   if (!record) {
     throw new Error(`Plant ${id} not found`);
   }
 
-  // Cancel any pending upload queue entries for this plant
-  try {
-    const { cancelQueueEntriesForPlant } = await import('@/lib/uploads/queue');
-    await cancelQueueEntriesForPlant(id);
-  } catch (error) {
-    console.warn('[PlantService] Failed to cancel queue entries:', error);
-    // Don't fail deletion if queue cleanup fails
-  }
+  await cancelUploadQueueForPlant(id);
 
-  await database.write(async () => {
-    await record.markAsDeleted();
-  });
+  try {
+    const { TaskNotificationService } = await import(
+      '@/lib/task-notifications'
+    );
+    const { linkedSeries, linkedTasks, linkedOverrides } =
+      await getLinkedRecords(id);
+
+    for (const task of linkedTasks) {
+      await TaskNotificationService.cancelForTask(task.id);
+    }
+
+    await softDeleteRelatedRecords({
+      linkedTasks,
+      linkedOverrides,
+      linkedSeries,
+      plantRecord: record,
+    });
+
+    console.log(
+      `[PlantService] Deleted plant ${id} with ${linkedTasks.length} tasks, ${linkedSeries.length} series, and ${linkedOverrides.length} overrides`
+    );
+  } catch (error) {
+    console.warn('[PlantService] Failed to cleanup tasks/series:', error);
+    await database.write(async () => {
+      await record.markAsDeleted();
+    });
+  }
 }
 
 export async function listPlantsForUser(

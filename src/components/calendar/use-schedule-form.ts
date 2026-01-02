@@ -38,7 +38,11 @@ function buildDefaultValues(s?: Series): ScheduleFormData {
     title: s.title,
     recurrencePattern: s.rrule.includes('WEEKLY') ? 'weekly' : 'daily',
     interval: 1,
-    weekdays: ['MO', 'WE', 'FR'] as WeekDay[],
+    weekdays: rruleGenerator.parseWeekdaysFromRRule(s.rrule) || [
+      'MO',
+      'WE',
+      'FR',
+    ],
     startTime: DateTime.fromISO(s.dtstartLocal).toFormat('HH:mm'),
     plantId: s.plantId,
   };

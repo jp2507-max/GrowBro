@@ -5,7 +5,6 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   type SharedValue,
-  ReduceMotion,
 } from 'react-native-reanimated';
 // @ts-expect-error - Reanimated 4.x type exports issue
 import { interpolate } from 'react-native-reanimated';
@@ -19,6 +18,7 @@ import { haptics } from '@/lib/haptics';
 import { usePlantPhotoSync } from '@/lib/plants/plant-photo-sync';
 import { translate } from '@/lib/i18n';
 import type { TxKeyPath } from '@/lib/i18n/utils';
+import { useReduceMotionEnabled } from '@/lib/strains/accessibility';
 
 export type PlantCardProps = {
   plant: Plant;
@@ -327,34 +327,31 @@ export function PlantCard({
   const localItemY = useSharedValue(0);
   const effItemY = itemY ?? localItemY;
   const measuredHeight = useSharedValue(0);
+  const reduceMotion = useReduceMotionEnabled();
 
-  const containerStyle = useAnimatedStyle(
-    () => {
-      'worklet';
+  const containerStyle = useAnimatedStyle(() => {
+    'worklet';
 
-      if (ReduceMotion.shouldReduceMotion()) {
-        return { transform: [{ translateY: 0 }, { scale: 1 }] };
-      }
+    if (reduceMotion) {
+      return { transform: [{ translateY: 0 }, { scale: 1 }] };
+    }
 
-      const h = Math.max(measuredHeight.value, 1);
-      const start = effItemY.value - 1;
-      const mid = effItemY.value;
-      const end = effItemY.value + h;
-      const scale = interpolate(
-        listOffsetY.value,
-        [start, mid, end],
-        [1, 1, 0.98]
-      );
-      const translateY = interpolate(
-        listOffsetY.value,
-        [start - 1, start, start + 1],
-        [0, 0, 1]
-      );
-      return { transform: [{ translateY }, { scale }] };
-    },
-    [],
-    { reduceMotion: ReduceMotion.System }
-  );
+    const h = Math.max(measuredHeight.value, 1);
+    const start = effItemY.value - 1;
+    const mid = effItemY.value;
+    const end = effItemY.value + h;
+    const scale = interpolate(
+      listOffsetY.value,
+      [start, mid, end],
+      [1, 1, 0.98]
+    );
+    const translateY = interpolate(
+      listOffsetY.value,
+      [start - 1, start, start + 1],
+      [0, 0, 1]
+    );
+    return { transform: [{ translateY }, { scale }] };
+  });
 
   const onLayout = React.useCallback(
     (e: LayoutChangeEvent) => {

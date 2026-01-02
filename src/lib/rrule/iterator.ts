@@ -101,9 +101,10 @@ function* processWeekly(
       // If date is after UNTIL, stop processing this week (don't count it)
       if (config.until && localDT.toUTC().toJSDate() > config.until) break;
 
+      if (config.count !== undefined && produced >= config.count) return;
+
       // Increment counter for valid occurrences only
       produced++;
-      if (config.count !== undefined && produced >= config.count) break;
       if (isWithinRange(localJS, range)) {
         const overridden = applyOverrides(localJS, overrides, zone);
         if (overridden) yield overridden;
@@ -153,10 +154,8 @@ function shouldStopIteration(
 ): boolean {
   const { cursorLocal, range, produced } = context;
 
-  // If no count or until specified, stop when cursor exceeds range end
-  if (!config.count && !config.until) {
-    if (cursorLocal.toJSDate() > range.end) return true;
-  }
+  // Always stop when cursor exceeds range end
+  if (cursorLocal.toJSDate() > range.end) return true;
 
   // Stop if the produced count reaches or exceeds the specified count
   if (config.count !== undefined && produced >= config.count) return true;

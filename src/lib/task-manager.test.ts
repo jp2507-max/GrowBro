@@ -9,6 +9,7 @@ import {
   skipRecurringInstance,
   updateTask,
 } from './task-manager';
+import { TaskNotificationService } from './task-notifications';
 
 // These are lightweight integration-style tests that exercise core flows
 // without asserting on Watermelon internals. They verify shapes and basic
@@ -180,5 +181,42 @@ describe('TaskManager basic flows', () => {
     expect(moved).toBeTruthy();
 
     await deleteSeries(series.id);
+  });
+});
+
+describe('TaskManager notification scheduling', () => {
+  test('createTask respects scheduleNotifications=false', async () => {
+    const scheduleSpy = jest
+      .spyOn(TaskNotificationService.prototype, 'scheduleTaskReminder')
+      .mockResolvedValue('notification-id');
+
+    const task = await createTask({
+      title: 'Water plants',
+      description: 'Daily watering',
+      timezone: 'Europe/Berlin',
+      dueAtLocal: '2025-03-26T08:00:00+01:00',
+      scheduleNotifications: false,
+    });
+
+    expect(scheduleSpy).not.toHaveBeenCalled();
+    await deleteTask(task.id);
+    scheduleSpy.mockRestore();
+  });
+
+  test('createTask schedules reminders by default', async () => {
+    const scheduleSpy = jest
+      .spyOn(TaskNotificationService.prototype, 'scheduleTaskReminder')
+      .mockResolvedValue('notification-id');
+
+    const task = await createTask({
+      title: 'Check humidity',
+      description: 'Daily check',
+      timezone: 'Europe/Berlin',
+      dueAtLocal: '2025-03-27T08:00:00+01:00',
+    });
+
+    expect(scheduleSpy).toHaveBeenCalled();
+    await deleteTask(task.id);
+    scheduleSpy.mockRestore();
   });
 });

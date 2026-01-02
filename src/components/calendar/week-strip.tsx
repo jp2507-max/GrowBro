@@ -30,21 +30,18 @@ type WeekStripProps = {
 };
 
 function buildWeekDays(selectedDate: DateTime): DayItem[] {
-  const today = DateTime.now().startOf('day');
-  const days: DayItem[] = [];
+  const startOfWeek = selectedDate.startOf('week');
 
-  for (let offset = -3; offset <= 3; offset++) {
-    const date = today.plus({ days: offset });
-    days.push({
+  return Array.from({ length: 7 }).map((_, i) => {
+    const date = startOfWeek.plus({ days: i });
+    return {
       date,
       dayOfWeek: date.toFormat('ccc').toUpperCase(),
       dayOfMonth: date.day,
-      isToday: offset === 0,
+      isToday: date.hasSame(DateTime.now(), 'day'),
       isSelected: date.hasSame(selectedDate, 'day'),
-    });
-  }
-
-  return days;
+    };
+  });
 }
 
 function DayPill({

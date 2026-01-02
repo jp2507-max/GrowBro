@@ -37,7 +37,7 @@ describe('calendar-integration-service', () => {
       get: jest.fn().mockReturnValue({
         find: jest.fn(),
       }),
-    } as any;
+    } as unknown as Database;
   });
 
   describe('generateFeedingTasks', () => {
@@ -119,6 +119,12 @@ describe('calendar-integration-service', () => {
       expect(result.tasksCreated).toBe(2);
       expect(result.taskIds).toHaveLength(2);
       expect(mockCreateTask).toHaveBeenCalledTimes(2);
+
+      expect(
+        mockCreateTask.mock.calls.every(
+          ([input]) => input.scheduleNotifications === false
+        )
+      ).toBe(true);
 
       // Verify first task has correct unit-resolved instructions
       const firstCall = mockCreateTask.mock.calls[0][0];

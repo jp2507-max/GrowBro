@@ -6,6 +6,7 @@ import type {
   PhotoperiodType,
   Plant,
   PlantEnvironment,
+  PlantStage,
 } from '@/api/plants/types';
 import { database } from '@/lib/watermelon';
 import type { SeriesModel } from '@/lib/watermelon-models/series';
@@ -36,11 +37,13 @@ function getTasksCollection() {
 /**
  * Build PlantSettings from a Plant object
  */
-function buildPlantSettings(
-  plant: Plant,
-  timezone: string,
-  stageEnteredAt?: Date
-): PlantSettings {
+function buildPlantSettings(params: {
+  plant: Plant;
+  stage: PlantStage;
+  timezone: string;
+  stageEnteredAt?: Date;
+}): PlantSettings {
+  const { plant, stage, timezone, stageEnteredAt } = params;
   const metadata = plant.metadata ?? {};
   const medium: GrowMedium = metadata.medium ?? 'soil';
   const potSizeLiters = parsePotSizeLiters(metadata.potSize);
@@ -60,7 +63,7 @@ function buildPlantSettings(
 
   return {
     plantId: plant.id,
-    stage: plant.stage ?? 'seedling',
+    stage,
     medium,
     potSizeLiters,
     environment,
@@ -96,13 +99,11 @@ export class TaskEngine {
     }
 
     // Check if schedules already exist for this plant
+    // Note: v37 migration backfilled all legacy null-origin series to 'growbro'
     const existingSeries = await getSeriesCollection()
       .query(
         Q.where('plant_id', plant.id),
-        Q.or(
-          Q.where('origin', ORIGIN_GROWBRO),
-          Q.where('origin', null) // Legacy series created before v36
-        ),
+        Q.where('origin', ORIGIN_GROWBRO),
         Q.where('deleted_at', null)
       )
       .fetch();
@@ -115,7 +116,11 @@ export class TaskEngine {
     }
 
     // Build settings and create series
-    const settings = buildPlantSettings(plant, this.timezone);
+    const settings = buildPlantSettings({
+      plant,
+      stage: plant.stage,
+      timezone: this.timezone,
+    });
     const specs = TaskFactory.create(settings);
 
     if (specs.length === 0) {
@@ -145,14 +150,13 @@ export class TaskEngine {
     await this.cleanupSchedulesForPlant(plantId);
 
     // Create new schedules for the new stage
-    const settings = buildPlantSettings(plant, this.timezone, new Date());
-    // Override the stage with the new stage (in case plant object hasn't been updated yet)
-    const updatedSettings: PlantSettings = {
-      ...settings,
+    const settings = buildPlantSettings({
+      plant,
       stage: toStage,
+      timezone: this.timezone,
       stageEnteredAt: new Date(),
-    };
-    const specs = TaskFactory.create(updatedSettings);
+    });
+    const specs = TaskFactory.create(settings);
 
     if (specs.length === 0) {
       console.log(
@@ -175,14 +179,12 @@ export class TaskEngine {
     const seriesCollection = getSeriesCollection();
     const tasksCollection = getTasksCollection();
 
-    // Find all GrowBro series for this plant (including legacy series with null origin)
+    // Find all GrowBro series for this plant
+    // Note: v37 migration backfilled all legacy null-origin series to 'growbro'
     const seriesToDelete = await seriesCollection
       .query(
         Q.where('plant_id', plantId),
-        Q.or(
-          Q.where('origin', ORIGIN_GROWBRO),
-          Q.where('origin', null) // Legacy series created before v36
-        ),
+        Q.where('origin', ORIGIN_GROWBRO),
         Q.where('deleted_at', null)
       )
       .fetch();
@@ -193,7 +195,6 @@ export class TaskEngine {
 
     const seriesIds = seriesToDelete.map((s) => s.id);
     const now = new Date();
-    const startOfToday = DateTime.fromJSDate(now).startOf('day').toJSDate();
 
     await database.write(async () => {
       // Soft-delete the series
@@ -222,8 +223,8 @@ export class TaskEngine {
           continue;
         }
         const taskDueAt = parsedDt.toJSDate();
-        // Only delete tasks that are due today or in the future
-        if (taskDueAt >= startOfToday) {
+        // Only delete tasks that are strictly in the future (not overdue from earlier today)
+        if (taskDueAt > now) {
           await task.update((record) => {
             record.deletedAt = now;
             record.updatedAt = now;

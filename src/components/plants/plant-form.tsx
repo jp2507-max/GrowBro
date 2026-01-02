@@ -816,6 +816,7 @@ function usePlantFormController({
     resolver: zodResolver(schema),
     defaultValues: {
       name: '',
+      stage: 'seedling',
       photoperiodType: 'photoperiod',
       environment: 'indoor',
       ...defaultValues,

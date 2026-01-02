@@ -24,8 +24,8 @@ import {
 } from '@/lib/hooks';
 import { useAnalyticsConsent } from '@/lib/hooks/use-analytics-consent';
 import type { StrainListState } from '@/lib/hooks/use-strain-search-analytics';
+import { SEARCH_DEBOUNCE_MS } from '@/lib/strains/constants';
 
-const SEARCH_DEBOUNCE_MS = 300;
 const LIST_BOTTOM_EXTRA = 24;
 
 export default function StrainsScreen(): React.ReactElement {
@@ -108,6 +108,7 @@ export default function StrainsScreen(): React.ReactElement {
         className="z-10 -mt-6 flex-1 rounded-t-[32px] bg-white shadow-xl dark:bg-charcoal-900"
         accessible={true}
         accessibilityLabel="Strains list section"
+        accessibilityHint="Browse and filter cannabis strains"
       >
         <View className="w-full items-center pb-2 pt-3">
           <View className="h-1.5 w-12 rounded-full bg-neutral-200 dark:bg-white/20" />

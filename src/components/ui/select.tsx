@@ -285,15 +285,10 @@ export const Select = (props: SelectProps) => {
   const modal = useModal();
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = React.useState(false);
-  const pendingSelectionRef = React.useRef<string | number | null>(null);
 
   const handleDismiss = React.useCallback(() => {
     setIsOpen(false);
-    if (pendingSelectionRef.current !== null) {
-      onSelect?.(pendingSelectionRef.current);
-      pendingSelectionRef.current = null;
-    }
-  }, [onSelect]);
+  }, []);
 
   const openModal = React.useCallback(() => {
     if (disabled) return;
@@ -303,10 +298,10 @@ export const Select = (props: SelectProps) => {
 
   const onSelectOption = React.useCallback(
     (option: OptionType) => {
-      pendingSelectionRef.current = option.value;
+      onSelect?.(option.value);
       modal.dismiss();
     },
-    [modal]
+    [modal, onSelect]
   );
 
   const styles = React.useMemo(

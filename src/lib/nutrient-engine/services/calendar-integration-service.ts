@@ -86,6 +86,8 @@ export async function generateFeedingTasks(
         dueAtLocal: dueDateTime.toISO() || undefined,
         dueAtUtc: dueDateTime.toUTC().toISO() || undefined,
         plantId: taskData.plantId,
+        // Avoid double scheduling; handled via TaskNotificationManager below.
+        scheduleNotifications: false,
         metadata: {
           ...taskData.metadata,
           type: 'feeding',

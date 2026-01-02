@@ -1,4 +1,4 @@
-import { type Database } from '@nozbe/watermelondb';
+import { type Database, Q } from '@nozbe/watermelondb';
 import { DateTime } from 'luxon';
 
 import { TaskNotificationManager } from '@/lib/tasks/task-notification-manager';
@@ -72,15 +72,9 @@ export class OverdueTaskScheduler {
 
     const tasks = await collection
       .query(
-        // @ts-expect-error WatermelonDB query operators
-
-        collection.where('deleted_at', null),
-        // @ts-expect-error WatermelonDB query operators
-
-        collection.where('status', 'pending'),
-        // @ts-expect-error WatermelonDB query operators
-
-        collection.where('due_at_utc', collection.lt(now.toISO()))
+        Q.where('deleted_at', null),
+        Q.where('status', 'pending'),
+        Q.where('due_at_utc', Q.lt(now.toISO()))
       )
       .fetch();
 

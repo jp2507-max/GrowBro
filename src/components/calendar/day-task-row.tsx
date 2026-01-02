@@ -29,11 +29,13 @@ type DayTaskRowProps = {
 };
 
 function formatDueTime(dueAtLocal: string, timezone?: string): string {
-  if (!timezone) {
-    // Return empty string if no timezone is available to prevent runtime errors
-    return '';
+  const zone = timezone ?? DateTime.local().zoneName ?? 'UTC';
+  const dt = DateTime.fromISO(dueAtLocal, { zone });
+
+  if (!dt.isValid) {
+    return '—';
   }
-  const dt = DateTime.fromISO(dueAtLocal, { zone: timezone });
+
   return dt.toFormat('HH:mm');
 }
 

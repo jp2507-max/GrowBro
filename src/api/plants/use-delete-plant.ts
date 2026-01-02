@@ -28,7 +28,7 @@ export function useDeletePlant(options: UseDeletePlantOptions = {}) {
     },
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ['plants-infinite'] });
-      queryClient.invalidateQueries({ queryKey: ['plant', id] });
+      queryClient.invalidateQueries({ queryKey: ['plant', { id }] });
       options.onSuccess?.();
     },
     onError: (error) => {

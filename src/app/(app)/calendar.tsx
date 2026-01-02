@@ -155,7 +155,7 @@ export default function CalendarScreen(): React.ReactElement {
           const info = parseEphemeralTaskInfo(task.id);
           if (info) {
             const occurrenceDate = DateTime.fromISO(info.localDate, {
-              zone: task.timezone,
+              zone: task.timezone || 'UTC',
             }).toJSDate();
             await completeRecurringInstance(info.seriesId, occurrenceDate);
           } else {

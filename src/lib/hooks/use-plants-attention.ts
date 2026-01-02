@@ -49,7 +49,22 @@ async function fetchPlantsAttentionMap(
   pendingTasks.forEach((task: Task) => {
     if (!task.plantId || !attentionMap[task.plantId]) return;
 
+    // Validate dueAtLocal exists
+    if (!task.dueAtLocal) {
+      console.warn(
+        `[usePlantsAttention] Task ${task.id} missing dueAtLocal, skipping`
+      );
+      return;
+    }
+
+    // Parse and validate DateTime
     const due = DateTime.fromISO(task.dueAtLocal);
+    if (!due.isValid) {
+      console.warn(
+        `[usePlantsAttention] Task ${task.id} has invalid dueAtLocal: "${task.dueAtLocal}" (${due.invalidReason}), skipping`
+      );
+      return;
+    }
 
     if (due < startOfToday) {
       attentionMap[task.plantId].overdueCount++;
