@@ -1,6 +1,7 @@
 import { DateTime } from 'luxon';
 import React from 'react';
 import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 
 import { rruleGenerator, type WeekDay } from '@/lib/rrule/generator';
 import { createSeries, createTask, updateSeries } from '@/lib/task-manager';
@@ -25,6 +26,11 @@ type UseScheduleFormParams = {
   onCancel: () => void;
 };
 
+function parseWeekdaysOrEmpty(rrule: string): WeekDay[] {
+  const parsed = rruleGenerator.parseWeekdaysFromRRULE(rrule);
+  return parsed.length > 0 ? parsed : [];
+}
+
 function buildDefaultValues(s?: Series): ScheduleFormData {
   if (!s)
     return {
@@ -40,52 +46,60 @@ function buildDefaultValues(s?: Series): ScheduleFormData {
       (rruleGenerator.parseFrequencyFromRRULE(s.rrule) as RecurrencePattern) ||
       'daily',
     interval: rruleGenerator.parseIntervalFromRRULE(s.rrule) ?? 1,
-    weekdays: (() => {
-      const parsed = rruleGenerator.parseWeekdaysFromRRULE(s.rrule);
-      return parsed.length > 0 ? parsed : [];
-    })(),
+    weekdays: parseWeekdaysOrEmpty(s.rrule),
     startTime: DateTime.fromISO(s.dtstartLocal).toFormat('HH:mm'),
     plantId: s.plantId,
   };
 }
 
-function parseAndValidateTime(timeString: string): {
+function parseAndValidateTime(
+  timeString: string,
+  t: (key: string, params?: Record<string, unknown>) => string
+): {
   hour: number;
   minute: number;
 } {
   const timeMatch = /^(\d{1,2}):(\d{2})$/.exec(timeString);
   if (!timeMatch) {
-    throw new Error(`Invalid time format: ${timeString}. Expected HH:mm`);
+    throw new Error(t('calendar.errors.invalidTimeFormat', { timeString }));
   }
 
   const hour = parseInt(timeMatch[1], 10);
   const minute = parseInt(timeMatch[2], 10);
 
   if (!Number.isFinite(hour) || !Number.isFinite(minute)) {
-    throw new Error(`Invalid time values: hour=${hour}, minute=${minute}`);
+    throw new Error(t('calendar.errors.invalidTimeValues', { hour, minute }));
   }
 
   if (hour < 0 || hour > 23) {
-    throw new Error(`Hour must be between 0 and 23, got ${hour}`);
+    throw new Error(t('calendar.errors.invalidHour', { hour }));
   }
 
   if (minute < 0 || minute > 59) {
-    throw new Error(`Minute must be between 0 and 59, got ${minute}`);
+    throw new Error(t('calendar.errors.invalidMinute', { minute }));
   }
 
   return { hour, minute };
 }
 
-function validateAndConvertDateTime(dt: DateTime, label: string): string {
+function validateAndConvertDateTime(
+  dt: DateTime,
+  label: string,
+  t: (key: string, params?: Record<string, unknown>) => string
+): string {
   if (!dt.isValid) {
     throw new Error(
-      `Invalid ${label} DateTime: ${dt.invalidReason} - ${dt.invalidExplanation}`
+      t('calendar.errors.invalidDateTime', {
+        label,
+        reason: dt.invalidReason,
+        explanation: dt.invalidExplanation,
+      })
     );
   }
 
   const isoString = dt.toISO();
   if (!isoString) {
-    throw new Error(`Failed to convert ${label} DateTime to ISO string`);
+    throw new Error(t('calendar.errors.failedIsoConversion', { label }));
   }
 
   return isoString;
@@ -93,9 +107,14 @@ function validateAndConvertDateTime(dt: DateTime, label: string): string {
 
 async function submitSchedule(
   data: ScheduleFormData,
-  params: { selectedDate?: DateTime; timezone: string; editingSeries?: Series }
+  params: {
+    selectedDate?: DateTime;
+    timezone: string;
+    editingSeries?: Series;
+    t: (key: string, params?: Record<string, unknown>) => string;
+  }
 ): Promise<void> {
-  const { selectedDate, timezone, editingSeries } = params;
+  const { selectedDate, timezone, editingSeries, t } = params;
 
   // Defensive validation: callers should validate weekdays for weekly recurrence,
   // but enforce here to avoid silently falling back to daily recurrence.
@@ -103,7 +122,7 @@ async function submitSchedule(
     throw new Error('Please select at least one day for weekly recurrence');
   }
 
-  const { hour, minute } = parseAndValidateTime(data.startTime);
+  const { hour, minute } = parseAndValidateTime(data.startTime, t);
 
   const startDateTime = (selectedDate ?? DateTime.now())
     .set({
@@ -114,8 +133,12 @@ async function submitSchedule(
     })
     .setZone(timezone);
 
-  const dtstartLocal = validateAndConvertDateTime(startDateTime, 'local');
-  const dtstartUtc = validateAndConvertDateTime(startDateTime.toUTC(), 'UTC');
+  const dtstartLocal = validateAndConvertDateTime(startDateTime, 'local', t);
+  const dtstartUtc = validateAndConvertDateTime(
+    startDateTime.toUTC(),
+    'UTC',
+    t
+  );
 
   const rruleString =
     data.recurrencePattern === 'weekly' && data.weekdays.length > 0
@@ -158,6 +181,7 @@ export function useScheduleForm({
   onSave,
   onCancel,
 }: UseScheduleFormParams) {
+  const { t } = useTranslation();
   const defaultValues = React.useMemo(
     () => buildDefaultValues(editingSeries),
     [editingSeries]
@@ -181,14 +205,28 @@ export function useScheduleForm({
       }
 
       try {
-        await submitSchedule(data, { selectedDate, timezone, editingSeries });
+        await submitSchedule(data, {
+          selectedDate,
+          timezone,
+          editingSeries,
+          t,
+        });
         onSave?.();
         reset(defaultValues);
       } catch (e) {
         console.error('[ScheduleForm] Failed:', e);
       }
     },
-    [selectedDate, timezone, editingSeries, onSave, reset, defaultValues]
+    [
+      selectedDate,
+      timezone,
+      editingSeries,
+      onSave,
+      reset,
+      defaultValues,
+      setError,
+      t,
+    ]
   );
 
   const handleCancel = React.useCallback(() => {

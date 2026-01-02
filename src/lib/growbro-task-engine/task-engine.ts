@@ -55,7 +55,18 @@ function buildPlantSettings(params: {
     plant.geneticLean ?? metadata.geneticLean ?? 'unknown';
   let plantedAt: Date;
   if (plant.plantedAt) {
-    plantedAt = new Date(plant.plantedAt);
+    const parsed = new Date(plant.plantedAt);
+    if (isNaN(parsed.getTime())) {
+      console.error(
+        `[TaskEngine] Plant ${plant.id} has malformed plantedAt: "${plant.plantedAt}"`
+      );
+      console.warn(
+        `[TaskEngine] Plant ${plant.id} missing plantedAt, using current time. This may cause schedule drift.`
+      );
+      plantedAt = new Date();
+    } else {
+      plantedAt = parsed;
+    }
   } else {
     console.warn(
       `[TaskEngine] Plant ${plant.id} missing plantedAt, using current time. This may cause schedule drift.`

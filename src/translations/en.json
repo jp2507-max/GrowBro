@@ -669,6 +669,14 @@
       "sample_title": "💧 Water plants - Every 2 days",
       "title": "Start Your Grow Schedule"
     },
+    "errors": {
+      "failedIsoConversion": "Failed to convert {{label}} DateTime to ISO string",
+      "invalidDateTime": "Invalid {{label}} DateTime: {{reason}} - {{explanation}}",
+      "invalidHour": "Hour must be between 0 and 23, got {{hour}}",
+      "invalidMinute": "Minute must be between 0 and 59, got {{minute}}",
+      "invalidTimeFormat": "Invalid time format: {{timeString}}. Expected HH:mm",
+      "invalidTimeValues": "Invalid time values: hour={{hour}}, minute={{minute}}"
+    },
     "header": {
       "subtitle": "Your schedule",
       "today": "Today"

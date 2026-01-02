@@ -669,6 +669,14 @@
       "sample_title": "💧 Pflanzen gießen - Alle 2 Tage",
       "title": "Starte deinen Anbauplan"
     },
+    "errors": {
+      "failedIsoConversion": "Fehler beim Konvertieren der {{label}} DateTime in ISO-String",
+      "invalidDateTime": "Ungültige {{label}} DateTime: {{reason}} - {{explanation}}",
+      "invalidHour": "Stunde muss zwischen 0 und 23 liegen, erhalten: {{hour}}",
+      "invalidMinute": "Minute muss zwischen 0 und 59 liegen, erhalten: {{minute}}",
+      "invalidTimeFormat": "Ungültiges Zeitformat: {{timeString}}. Erwartet HH:mm",
+      "invalidTimeValues": "Ungültige Zeitwerte: Stunde={{hour}}, Minute={{minute}}"
+    },
     "header": {
       "subtitle": "Dein Zeitplan",
       "today": "Heute"
