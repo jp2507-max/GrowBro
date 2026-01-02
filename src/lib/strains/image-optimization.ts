@@ -13,10 +13,16 @@ import { Platform } from 'react-native';
 export const STRAIN_IMAGE_BLURHASH = 'L6PZfSi_.AyE_3t7t7R**0o#DgR4';
 
 /**
- * Default placeholder image URL
+ * Default placeholder image for strain images
+ * Uses blurhash for lightweight placeholder rendering
+ * Note: expo-image handles blurhash natively
  */
-export const DEFAULT_STRAIN_IMAGE =
-  'https://placehold.co/400x400/e5e7eb/6b7280?text=No+Image';
+export const DEFAULT_STRAIN_PLACEHOLDER = STRAIN_IMAGE_BLURHASH;
+
+/**
+ * Type for image source - can be either a URI string or undefined (uses placeholder)
+ */
+export type ImageSource = { uri: string } | undefined;
 
 /**
  * Image size configurations
@@ -28,28 +34,42 @@ export const IMAGE_SIZES = {
 } as const;
 
 /**
+ * Generate image source for expo-image
+ * Returns URI object for remote images or undefined to use placeholder
+ */
+export function getImageSource(
+  originalUri: string | undefined | null
+): ImageSource {
+  if (
+    originalUri &&
+    typeof originalUri === 'string' &&
+    originalUri.length > 0
+  ) {
+    return { uri: originalUri };
+  }
+  return undefined;
+}
+
+/**
  * Generate optimized image URI with size parameters
- * This allows CDN/proxy to serve appropriately sized images
+ * @deprecated Use getImageSource() instead for proper type handling
+ * NOTE: This function is kept for backward compatibility but size param is ignored.
+ * Returns the original URI unchanged or empty string (not the placeholder).
  */
 export function getOptimizedImageUri(
   originalUri: string,
-  size: keyof typeof IMAGE_SIZES
+  _size: keyof typeof IMAGE_SIZES
 ): string {
-  if (!originalUri || originalUri === DEFAULT_STRAIN_IMAGE) {
-    return originalUri;
-  }
-
-  const { width, height } = IMAGE_SIZES[size];
-
-  // If the URI already has query params, append with &
-  const separator = originalUri.includes('?') ? '&' : '?';
-
-  return `${originalUri}${separator}w=${width}&h=${height}&fit=cover&q=85`;
+  return originalUri || '';
 }
 
 /**
  * Prefetch images for visible-next items
  * Call this when items are about to become visible
+ *
+ * Optimized for fast scrolling:
+ * - Larger batch size (6) for parallel prefetching
+ * - No awaiting between batches for faster throughput
  */
 export async function prefetchStrainImages(
   imageUris: string[],
@@ -57,15 +77,22 @@ export async function prefetchStrainImages(
 ): Promise<void> {
   try {
     const optimizedUris = imageUris
-      .filter((uri) => uri && uri !== DEFAULT_STRAIN_IMAGE)
+      .filter((uri) => uri && uri.length > 0)
       .map((uri) => getOptimizedImageUri(uri, size));
 
-    // Prefetch in parallel with a limit
-    const BATCH_SIZE = 3;
+    // Prefetch in parallel with larger batches for faster pre-loading
+    // Using Promise.allSettled to not fail if individual images fail
+    const BATCH_SIZE = 6;
+    const batches: Promise<PromiseSettledResult<boolean>[]>[] = [];
+
     for (let i = 0; i < optimizedUris.length; i += BATCH_SIZE) {
       const batch = optimizedUris.slice(i, i + BATCH_SIZE);
-      await Promise.all(batch.map((uri) => Image.prefetch(uri)));
+      // Fire batches concurrently, don't await each batch sequentially
+      batches.push(Promise.allSettled(batch.map((uri) => Image.prefetch(uri))));
     }
+
+    // Wait for all batches to complete
+    await Promise.all(batches);
   } catch (error) {
     console.debug('[prefetchStrainImages] Prefetch failed:', error);
   }
@@ -131,7 +158,7 @@ export const IMAGE_CONFIG = {
  */
 export function getListImageProps(strainId: string, imageUrl: string) {
   return {
-    source: { uri: getOptimizedImageUri(imageUrl, 'thumbnail') },
+    source: getImageSource(imageUrl),
     placeholder: IMAGE_CONFIG.placeholder,
     cachePolicy: IMAGE_CONFIG.cachePolicy,
     recyclingKey: IMAGE_CONFIG.recyclingKey(strainId),
@@ -145,7 +172,7 @@ export function getListImageProps(strainId: string, imageUrl: string) {
  */
 export function getDetailImageProps(strainId: string, imageUrl: string) {
   return {
-    source: { uri: getOptimizedImageUri(imageUrl, 'detail') },
+    source: getImageSource(imageUrl),
     placeholder: IMAGE_CONFIG.placeholder,
     cachePolicy: IMAGE_CONFIG.cachePolicy,
     recyclingKey: IMAGE_CONFIG.recyclingKey(strainId),

@@ -3,6 +3,7 @@ import '../../global.css';
 
 import { Env } from '@env';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+import { DatabaseProvider } from '@nozbe/watermelondb/react';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { ThemeProvider } from '@react-navigation/native';
 import * as Sentry from '@sentry/react-native';
@@ -30,6 +31,7 @@ import {
   useAgeGate,
   useAuth,
   useIsFirstTime,
+  useSystemThemeListener,
 } from '@/lib';
 import { NoopAnalytics } from '@/lib/analytics';
 import { clearAuthStorage, initAuthStorage } from '@/lib/auth/auth-storage';
@@ -60,7 +62,6 @@ import { trackOnboardingStart } from '@/lib/compliance/onboarding-telemetry';
 import { useRootStartup } from '@/lib/hooks/use-root-startup';
 import { initializeJanitor } from '@/lib/media/photo-janitor';
 import { getReferencedPhotoUris } from '@/lib/media/photo-storage-helpers';
-import { NativeWindThemeProvider } from '@/lib/nativewind-theme-provider';
 import {
   initializeSentryPerformance,
   isSentryPerformanceInitialized,
@@ -73,6 +74,7 @@ import { hydrateFavorites } from '@/lib/strains/use-favorites';
 // Install AI consent hooks to handle withdrawal cascades
 import { installAiConsentHooks } from '@/lib/uploads/ai-images';
 import { useThemeConfig } from '@/lib/use-theme-config';
+import { database } from '@/lib/watermelon';
 global.Buffer = global.Buffer ?? Buffer;
 
 // Type definitions for Localization API
@@ -348,14 +350,12 @@ function usePhotoJanitorSetup(isI18nReady: boolean): void {
 function RootLayout(): React.ReactElement {
   const [isFirstTime] = useIsFirstTime();
 
-  // eslint-disable-next-line react-compiler/react-compiler -- createSelectors generates hooks as methods
+  /* eslint-disable react-compiler/react-compiler -- Zustand createSelectors pattern creates hook accessors */
   const ageGateStatus = useAgeGate.status();
-  // eslint-disable-next-line react-compiler/react-compiler -- createSelectors generates hooks as methods
   const sessionId = useAgeGate.sessionId();
-  // eslint-disable-next-line react-compiler/react-compiler -- createSelectors generates hooks as methods
   const onboardingStatus = useOnboardingState.status();
-  // eslint-disable-next-line react-compiler/react-compiler -- createSelectors generates hooks as methods
   const currentOnboardingStep = useOnboardingState.currentStep();
+  /* eslint-enable react-compiler/react-compiler */
   const [isI18nReady, setIsI18nReady] = React.useState(false);
   const [isAuthReady, setIsAuthReady] = React.useState(false);
   const [showConsent, setShowConsent] = React.useState(false);
@@ -529,7 +529,9 @@ async function initializeAuthAndStates(): Promise<void> {
 }
 
 function BootSplash(): React.ReactElement {
-  return <View className="flex-1 items-center justify-center bg-background" />;
+  return (
+    <View className="flex-1 items-center justify-center bg-neutral-50 dark:bg-charcoal-950" />
+  );
 }
 
 function AppStack(): React.ReactElement {
@@ -543,6 +545,7 @@ function AppStack(): React.ReactElement {
     <Stack>
       <Stack.Screen name="(app)" options={{ headerShown: false }} />
       <Stack.Screen name="(modals)" options={{ headerShown: false }} />
+      <Stack.Screen name="plants" options={{ headerShown: false }} />
       <Stack.Screen name="age-gate" options={{ headerShown: false }} />
       <Stack.Screen name="onboarding" options={{ headerShown: false }} />
       <Stack.Screen
@@ -566,23 +569,25 @@ interface ProvidersProps {
 
 function Providers({ children }: ProvidersProps): React.ReactElement {
   const theme = useThemeConfig();
+  // Listen for device theme changes when user has 'system' mode selected
+  useSystemThemeListener();
   return (
     <GestureHandlerRootView
       style={styles.container}
       className={theme.dark ? `dark` : undefined}
     >
-      <NativeWindThemeProvider>
-        <KeyboardProvider>
-          <ThemeProvider value={theme}>
-            <APIProvider>
+      <KeyboardProvider>
+        <ThemeProvider value={theme}>
+          <APIProvider>
+            <DatabaseProvider database={database}>
               <BottomSheetModalProvider>
                 {children}
                 <FlashMessage position="top" />
               </BottomSheetModalProvider>
-            </APIProvider>
-          </ThemeProvider>
-        </KeyboardProvider>
-      </NativeWindThemeProvider>
+            </DatabaseProvider>
+          </APIProvider>
+        </ThemeProvider>
+      </KeyboardProvider>
     </GestureHandlerRootView>
   );
 }

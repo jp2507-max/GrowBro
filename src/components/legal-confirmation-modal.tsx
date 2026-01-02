@@ -62,7 +62,7 @@ function LegalDocumentSection({
     <View className="mb-6" testID={`legal-section-${documentType}`}>
       <View className="mb-3 flex-row items-center justify-between">
         <View className="flex-1 pr-4">
-          <Text className="text-base font-semibold text-text-primary">
+          <Text className="text-base font-semibold text-charcoal-900 dark:text-neutral-100">
             {title}
           </Text>
         </View>
@@ -75,7 +75,9 @@ function LegalDocumentSection({
           accessibilityHint={translate('accessibility.common.toggleHint')}
         />
       </View>
-      <Text className="text-sm text-text-secondary">{summary}</Text>
+      <Text className="text-sm text-neutral-600 dark:text-neutral-400">
+        {summary}
+      </Text>
     </View>
   );
 }
@@ -86,14 +88,14 @@ function LegalConfirmationHeader(): React.ReactElement {
       <Animated.View
         entering={createStaggeredFadeInUp(0, onboardingMotion.stagger.header)}
       >
-        <Text className="text-2xl font-bold text-text-primary">
+        <Text className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
           {translate('cannabis.legal_confirmation_title')}
         </Text>
       </Animated.View>
       <Animated.View
         entering={createStaggeredFadeInUp(1, onboardingMotion.stagger.header)}
       >
-        <Text className="mt-2 text-base text-text-secondary">
+        <Text className="mt-2 text-base text-neutral-600 dark:text-neutral-400">
           {translate('cannabis.legal_confirmation_subtitle')}
         </Text>
       </Animated.View>
@@ -180,7 +182,10 @@ export function LegalConfirmationModal({
   if (!isVisible) return null;
 
   return (
-    <View className="flex-1 bg-background" testID="legal-confirmation-modal">
+    <View
+      className="flex-1 bg-neutral-50 dark:bg-charcoal-950"
+      testID="legal-confirmation-modal"
+    >
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={styles.scrollContent}

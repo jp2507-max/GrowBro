@@ -45,7 +45,7 @@ const StrainCardContent = React.memo<{
 }>(({ strain, scaledSizes, isLargeTextMode }) => (
   <View className="gap-1 px-4 pb-4 pt-3">
     <Text
-      className="font-bold text-text-primary"
+      className="font-bold text-charcoal-900 dark:text-neutral-100"
       style={{ fontSize: scaledSizes.xl }}
       numberOfLines={isLargeTextMode ? 3 : 1}
       allowFontScaling={true}
@@ -56,7 +56,7 @@ const StrainCardContent = React.memo<{
     {strain.description?.[0] && (
       <Text
         numberOfLines={2}
-        className="leading-tight text-text-secondary"
+        className="leading-tight text-neutral-600 dark:text-neutral-400"
         style={{ fontSize: scaledSizes.sm }}
         allowFontScaling={true}
         maxFontSizeMultiplier={1.5}
@@ -107,7 +107,7 @@ export const StrainCard = React.memo<Props>(({ strain, testID }) => {
         thc_display: strain.thc_display,
         difficulty: strain.grow.difficulty,
       }),
-    [strain]
+    [strain.name, strain.race, strain.thc_display, strain.grow.difficulty]
   );
 
   const imageProps = React.useMemo(
@@ -128,10 +128,10 @@ export const StrainCard = React.memo<Props>(({ strain, testID }) => {
         style={animatedStyle}
       >
         <View
-          className="overflow-hidden rounded-3xl bg-card shadow-sm"
+          className="overflow-hidden rounded-3xl bg-white shadow-sm dark:bg-charcoal-900"
           style={styles.card}
         >
-          <View className="relative h-52 w-full bg-card">
+          <View className="relative h-52 w-full bg-white">
             <AnimatedImage
               className="size-full"
               contentFit="cover"

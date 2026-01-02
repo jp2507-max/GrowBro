@@ -54,7 +54,7 @@ export function ConflictResolutionModal({
                 <Text className="mb-1 text-xs font-medium text-primary-600 dark:text-primary-400">
                   {translate('sync.conflict.yourVersion')}
                 </Text>
-                <View className="dark:bg-primary-950 rounded bg-primary-50 p-2">
+                <View className="rounded bg-primary-50 p-2 dark:bg-primary-950">
                   <Text className="font-mono text-xs text-neutral-800 dark:text-neutral-200">
                     {formatValue(conflict.localRecord?.[field])}
                   </Text>

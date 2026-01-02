@@ -54,7 +54,7 @@ export function ScheduleBulkEditPanel({
 
   return (
     <View
-      className="dark:bg-primary-950 rounded-lg border border-primary-200 bg-primary-50 p-4 dark:border-primary-800"
+      className="rounded-lg border border-primary-200 bg-primary-50 p-4 dark:border-primary-800 dark:bg-primary-950"
       testID={testID}
     >
       <Text className="mb-3 text-base font-semibold text-primary-900 dark:text-primary-100">

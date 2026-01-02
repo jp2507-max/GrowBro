@@ -154,7 +154,7 @@ export function PlaybookAdjustmentCard({
       <Pressable
         accessibilityRole="button"
         onPress={toggleExpanded}
-        className="dark:bg-primary-950 rounded-lg border border-primary-200 bg-primary-50 p-4 active:opacity-70 dark:border-primary-700"
+        className="rounded-lg border border-primary-200 bg-primary-50 p-4 active:opacity-70 dark:border-primary-700 dark:bg-primary-950"
         testID={`${testID}-header`}
       >
         <View className="flex-row items-center justify-between">

@@ -5,4 +5,4 @@
  */
 
 export * from './harvest-error-banner';
-export * from './harvest-modal';
+export * from './harvest-form';

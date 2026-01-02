@@ -23,7 +23,7 @@ export function FormSection({
       entering={FadeIn.delay(delay)
         .duration(300)
         .reduceMotion(ReduceMotion.System)}
-      className="gap-2"
+      className="mt-8 gap-3"
       testID={testID}
     >
       {/* Section Header */}

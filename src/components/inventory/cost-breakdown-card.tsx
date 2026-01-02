@@ -67,7 +67,7 @@ export const CostBreakdownCard = ({
         {t('inventory.costBreakdown.title')}
       </Text>
 
-      <View className="dark:bg-primary-950 mb-4 rounded-lg bg-primary-50 p-3">
+      <View className="mb-4 rounded-lg bg-primary-50 p-3 dark:bg-primary-950">
         <Text className="text-xs text-primary-700 dark:text-primary-300">
           {t('inventory.costBreakdown.totalCost')}
         </Text>

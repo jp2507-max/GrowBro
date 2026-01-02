@@ -46,7 +46,7 @@ export default function LicensesScreen() {
       <>
         <FocusAwareStatusBar />
         <View className="flex-1">
-          <View className="border-b border-neutral-200 bg-white px-4 py-3 dark:border-neutral-700 dark:bg-neutral-900">
+          <View className="border-b border-neutral-200 bg-white px-4 py-3 dark:border-charcoal-700 dark:bg-charcoal-900">
             <Pressable
               accessibilityRole="button"
               accessibilityHint="Go back"
@@ -57,7 +57,7 @@ export default function LicensesScreen() {
                 ← {translate('common.back')}
               </Text>
             </Pressable>
-            <Text className="mt-2 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+            <Text className="mt-2 text-lg font-semibold text-charcoal-900 dark:text-neutral-100">
               {selectedLicense.name}
             </Text>
             <Text className="text-xs text-neutral-600 dark:text-neutral-400">
@@ -67,13 +67,13 @@ export default function LicensesScreen() {
           </View>
 
           <ScrollView className="flex-1 p-4">
-            <Text className="font-mono text-xs text-neutral-800 dark:text-neutral-200">
+            <Text className="font-mono text-xs text-neutral-900 dark:text-neutral-100">
               {selectedLicense.licenseText}
             </Text>
 
             {selectedLicense.repository && (
               <View className="mt-4">
-                <Text className="text-xs font-medium text-neutral-700 dark:text-neutral-300">
+                <Text className="text-xs font-medium text-neutral-600 dark:text-neutral-400">
                   {translate('settings.legal.licenses.repository')}:
                 </Text>
                 <Text className="mt-1 text-xs text-primary-600 dark:text-primary-400">
@@ -97,7 +97,7 @@ export default function LicensesScreen() {
 
       <View className="flex-1">
         {/* Search Bar */}
-        <View className="border-b border-neutral-200 bg-white px-4 py-3 dark:border-neutral-700 dark:bg-neutral-900">
+        <View className="border-b border-neutral-200 bg-white px-4 py-3 dark:border-white/10 dark:bg-charcoal-900">
           <TextInput
             accessibilityLabel={translate('settings.legal.licenses.search')}
             accessibilityHint="Filter licenses by name or package"
@@ -106,7 +106,7 @@ export default function LicensesScreen() {
             placeholderTextColor={colors.neutral[400]}
             value={searchQuery}
             onChangeText={setSearchQuery}
-            className="rounded-lg border border-neutral-300 bg-neutral-50 px-4 py-2 text-neutral-900 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100"
+            className="rounded-lg border border-neutral-200 bg-white px-4 py-2 text-neutral-900 dark:border-white/10 dark:bg-white/10 dark:text-neutral-100"
           />
           <Text className="mt-2 text-xs text-neutral-600 dark:text-neutral-400">
             {translate('settings.legal.licenses.count', {
@@ -133,9 +133,9 @@ export default function LicensesScreen() {
                 accessibilityHint="Filter licenses by type"
                 key={type}
                 onPress={() => setSearchQuery(type)}
-                className="rounded-full border border-neutral-300 bg-white px-4 py-2 dark:border-neutral-600 dark:bg-neutral-800"
+                className="rounded-full border border-neutral-200 bg-white px-4 py-2 dark:border-white/10 dark:bg-charcoal-900"
               >
-                <Text className="text-xs font-medium text-neutral-700 dark:text-neutral-300">
+                <Text className="text-xs font-medium text-neutral-600 dark:text-neutral-400">
                   {type}
                 </Text>
               </Pressable>
@@ -153,7 +153,7 @@ export default function LicensesScreen() {
                 accessibilityHint={`Open details for ${license.name}`}
                 key={`${license.name}-${index}`}
                 onPress={() => setSelectedLicense(license)}
-                className="mb-2 rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-neutral-800"
+                className="mb-2 rounded-lg border border-neutral-200 bg-white p-4 dark:border-white/10 dark:bg-charcoal-900"
               >
                 <View className="flex-row items-start justify-between">
                   <View className="flex-1">
@@ -185,7 +185,7 @@ export default function LicensesScreen() {
         </ScrollView>
 
         {/* Build Note */}
-        <View className="border-t border-neutral-200 bg-neutral-50 px-4 py-3 dark:border-neutral-700 dark:bg-neutral-800">
+        <View className="border-t border-neutral-200 bg-white px-4 py-3 dark:border-white/10 dark:bg-charcoal-900">
           <Text className="text-center text-xs text-neutral-600 dark:text-neutral-400">
             {translate('settings.legal.licenses.note')}
           </Text>

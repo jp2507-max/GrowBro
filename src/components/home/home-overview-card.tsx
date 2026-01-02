@@ -18,7 +18,8 @@ export function HomeOverviewCard({
   className,
   testID,
 }: Props): React.ReactElement {
-  const baseClassName = 'gap-2 rounded-2xl border border-border bg-card p-4';
+  const baseClassName =
+    'gap-2 rounded-2xl border border-neutral-200 dark:border-charcoal-700 bg-white dark:bg-charcoal-900 p-4';
   const containerClassName = className
     ? `${baseClassName} ${className}`
     : baseClassName;
@@ -30,12 +31,17 @@ export function HomeOverviewCard({
       accessibilityRole="summary"
     >
       <Text
-        className="text-xs font-semibold uppercase tracking-wide text-text-secondary"
+        className="text-xs font-semibold uppercase tracking-wide text-neutral-600 dark:text-neutral-400"
         tx={titleTx}
       />
-      <Text className="text-2xl font-semibold text-text-primary">{value}</Text>
+      <Text className="text-2xl font-semibold text-charcoal-900 dark:text-neutral-100">
+        {value}
+      </Text>
       {descriptionTx ? (
-        <Text className="text-xs text-text-secondary" tx={descriptionTx} />
+        <Text
+          className="text-xs text-neutral-600 dark:text-neutral-400"
+          tx={descriptionTx}
+        />
       ) : null}
     </View>
   );

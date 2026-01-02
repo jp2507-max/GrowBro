@@ -35,7 +35,7 @@ export default function InventoryItemDetailScreen(): React.ReactElement {
   if (isLoading) {
     return (
       <View className="flex-1 items-center justify-center">
-        <Text className="text-sm text-neutral-600 dark:text-neutral-300">
+        <Text className="text-sm text-neutral-600 dark:text-neutral-400">
           {t('common.loading')}
         </Text>
       </View>
@@ -61,7 +61,7 @@ export default function InventoryItemDetailScreen(): React.ReactElement {
       <ScrollView className="flex-1">
         {/* Header */}
         <View className="border-b border-neutral-200 bg-white p-4 dark:border-charcoal-700 dark:bg-charcoal-900">
-          <Text className="text-2xl font-bold text-charcoal-950 dark:text-white">
+          <Text className="text-2xl font-bold text-charcoal-900 dark:text-neutral-100">
             {item.name}
           </Text>
           <Text className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
@@ -70,21 +70,21 @@ export default function InventoryItemDetailScreen(): React.ReactElement {
         </View>
 
         {/* Stock Info */}
-        <View className="border-b border-neutral-200 bg-white p-4 dark:border-charcoal-700 dark:bg-charcoal-900">
+        <View className="border-b border-neutral-200 bg-white p-4 dark:border-white/10 dark:bg-charcoal-900">
           <View className="flex-row items-center justify-between">
             <View>
-              <Text className="text-sm text-neutral-600 dark:text-neutral-400">
+              <Text className="text-sm text-neutral-500 dark:text-neutral-400">
                 {t('inventory.current_stock')}
               </Text>
-              <Text className="mt-1 text-3xl font-bold text-charcoal-950 dark:text-white">
+              <Text className="mt-1 text-3xl font-bold text-neutral-900 dark:text-neutral-100">
                 {item.currentStock} {item.unitOfMeasure}
               </Text>
             </View>
             <View>
-              <Text className="text-sm text-neutral-600 dark:text-neutral-400">
+              <Text className="text-sm text-neutral-500 dark:text-neutral-400">
                 {t('inventory.total_value')}
               </Text>
-              <Text className="mt-1 text-2xl font-bold text-charcoal-950 dark:text-white">
+              <Text className="mt-1 text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                 ${(item.totalValue / 100).toFixed(2)}
               </Text>
             </View>
@@ -93,9 +93,9 @@ export default function InventoryItemDetailScreen(): React.ReactElement {
 
         {/* Consumption Trends */}
         {!forecastLoading && consumptionHistory.length > 0 && (
-          <View className="mt-4 border-b border-neutral-200 bg-white p-4 dark:border-charcoal-700 dark:bg-charcoal-900">
-            <Text className="mb-3 text-lg font-semibold text-charcoal-950 dark:text-white">
-              {t('inventory.charts.consumption_trend')}
+          <View className="mt-4 border-b border-neutral-200 bg-white p-4 dark:border-white/10 dark:bg-charcoal-900">
+            <Text className="mb-3 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+              {t('inventory.charts.consumptionTrend')}
             </Text>
             <ConsumptionTrendChart data={consumptionHistory} />
           </View>
@@ -113,7 +113,7 @@ export default function InventoryItemDetailScreen(): React.ReactElement {
 
         {/* Batches */}
         <View className="mt-4 px-4">
-          <Text className="mb-3 text-lg font-semibold text-charcoal-950 dark:text-white">
+          <Text className="mb-3 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
             {t('inventory.batches_title')}
           </Text>
           <BatchList batches={batches} itemId={id} />

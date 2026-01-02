@@ -33,7 +33,7 @@ import type { InventoryCategory } from '@/types/inventory';
 
 // Form schema and type
 const useAddItemSchema = () => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   return React.useMemo(
     () =>
       z.object({
@@ -65,7 +65,7 @@ const useAddItemSchema = () => {
         sku: z.string().max(50).optional(),
         barcode: z.string().max(50).optional(),
       }),
-    [t, i18n.language]
+    [t]
   );
 };
 
@@ -77,7 +77,7 @@ function FormHeader({ onCancel }: { onCancel: () => void }) {
   return (
     <View className="border-b border-neutral-200 bg-white px-4 pb-3 pt-4 dark:border-charcoal-700 dark:bg-charcoal-900">
       <View className="flex-row items-center justify-between">
-        <Text className="text-2xl font-bold text-charcoal-950 dark:text-white">
+        <Text className="text-2xl font-bold text-charcoal-900 dark:text-neutral-100">
           {t('inventory.add_item')}
         </Text>
         <Button
@@ -108,7 +108,7 @@ function NameField({
 
   return (
     <View className="mb-4">
-      <Text className="mb-2 text-sm font-medium text-charcoal-950 dark:text-white">
+      <Text className="mb-2 text-sm font-medium text-charcoal-900 dark:text-neutral-100">
         {t('inventory.form.name')}
       </Text>
       <ControlledInput
@@ -127,7 +127,7 @@ function CategoryField({ control }: { control: Control<AddItemFormData> }) {
 
   return (
     <View className="mb-4">
-      <Text className="mb-2 text-sm font-medium text-charcoal-950 dark:text-white">
+      <Text className="mb-2 text-sm font-medium text-charcoal-900 dark:text-neutral-100">
         {t('inventory.form.category')}
       </Text>
       <Controller
@@ -168,7 +168,7 @@ function UnitField({
 
   return (
     <View className="mb-4">
-      <Text className="mb-2 text-sm font-medium text-charcoal-950 dark:text-white">
+      <Text className="mb-2 text-sm font-medium text-charcoal-900 dark:text-neutral-100">
         {t('inventory.form.unit')}
       </Text>
       <ControlledInput
@@ -187,7 +187,7 @@ function TrackingModeField({ control }: { control: Control<AddItemFormData> }) {
 
   return (
     <View className="mb-4">
-      <Text className="mb-2 text-sm font-medium text-charcoal-950 dark:text-white">
+      <Text className="mb-2 text-sm font-medium text-charcoal-900 dark:text-neutral-100">
         {t('inventory.form.tracking_mode')}
       </Text>
       <Controller
@@ -227,7 +227,7 @@ function MinStockField({
 
   return (
     <View className="mb-4">
-      <Text className="mb-2 text-sm font-medium text-charcoal-950 dark:text-white">
+      <Text className="mb-2 text-sm font-medium text-charcoal-900 dark:text-neutral-100">
         {t('inventory.form.min_stock')}
       </Text>
       <Controller
@@ -274,7 +274,7 @@ function ReorderMultipleField({
 
   return (
     <View className="mb-4">
-      <Text className="mb-2 text-sm font-medium text-charcoal-950 dark:text-white">
+      <Text className="mb-2 text-sm font-medium text-charcoal-900 dark:text-neutral-100">
         {t('inventory.form.reorder_multiple')}
       </Text>
       <Controller
@@ -319,7 +319,7 @@ function LeadTimeField({
 
   return (
     <View className="mb-4">
-      <Text className="mb-2 text-sm font-medium text-charcoal-950 dark:text-white">
+      <Text className="mb-2 text-sm font-medium text-charcoal-900 dark:text-neutral-100">
         {t('inventory.form.lead_time_days')} ({t('common.optional')})
       </Text>
       <Controller
@@ -366,7 +366,7 @@ function SkuField({
 
   return (
     <View className="mb-4">
-      <Text className="mb-2 text-sm font-medium text-charcoal-950 dark:text-white">
+      <Text className="mb-2 text-sm font-medium text-charcoal-900 dark:text-neutral-100">
         {t('inventory.form.sku')} ({t('common.optional')})
       </Text>
       <Controller
@@ -403,7 +403,7 @@ function BarcodeField({
 
   return (
     <View className="mb-4">
-      <Text className="mb-2 text-sm font-medium text-charcoal-950 dark:text-white">
+      <Text className="mb-2 text-sm font-medium text-charcoal-900 dark:text-neutral-100">
         {t('inventory.form.barcode')} ({t('common.optional')})
       </Text>
       <Controller

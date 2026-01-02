@@ -11,14 +11,14 @@ import { useTranslation } from 'react-i18next';
 
 import type { CommunityTemplate } from '@/api/templates';
 import { TemplateListItem } from '@/components/playbooks';
-import { SafeAreaView, Text, View } from '@/components/ui';
+import { Text, View } from '@/components/ui';
 import { useAnalytics } from '@/lib/use-analytics';
 
 function TemplateHeader() {
   const { t } = useTranslation();
   return (
     <View className="px-4 py-6">
-      <Text className="text-3xl font-bold text-neutral-900 dark:text-neutral-100">
+      <Text className="text-3xl font-bold text-charcoal-900 dark:text-neutral-100">
         {t('playbooks.communityTemplates')}
       </Text>
       <Text className="mt-2 text-base text-neutral-600 dark:text-neutral-400">
@@ -41,7 +41,7 @@ function EmptyState({ message }: { message: string }) {
 function LoadingState({ message }: { message: string }) {
   return (
     <View className="flex-1 items-center justify-center">
-      <Text className="text-neutral-600 dark:text-neutral-400">{message}</Text>
+      <Text className="text-neutral-500 dark:text-neutral-400">{message}</Text>
     </View>
   );
 }
@@ -132,7 +132,7 @@ export default function CommunityTemplatesScreen() {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
+    <View className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
       <View className="flex-1">
         <TemplateHeader />
         {loading ? (
@@ -146,9 +146,10 @@ export default function CommunityTemplatesScreen() {
             keyExtractor={keyExtractor}
             getItemType={getItemType}
             contentContainerClassName="px-4 pb-4"
+            contentInsetAdjustmentBehavior="automatic"
           />
         )}
       </View>
-    </SafeAreaView>
+    </View>
   );
 }

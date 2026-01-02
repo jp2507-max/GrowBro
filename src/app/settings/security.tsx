@@ -2,7 +2,6 @@ import type { AuthMFAEnrollTOTPResponse } from '@supabase/auth-js';
 import type { UseMutationResult } from '@tanstack/react-query';
 import { Stack, useRouter } from 'expo-router';
 import * as React from 'react';
-import { Alert } from 'react-native';
 
 import {
   useMfaChallengeAndVerify,
@@ -18,7 +17,7 @@ import { BiometricToggleSection } from '@/components/settings/biometric-toggle-s
 import { DangerZoneWarning } from '@/components/settings/danger-zone-warning';
 import { Item } from '@/components/settings/item';
 import { ItemsContainer } from '@/components/settings/items-container';
-import { MfaSetupModal } from '@/components/settings/mfa-setup-modal';
+import { MfaSetupModal, useModal } from '@/components/settings/mfa-setup-modal';
 import {
   Button,
   FocusAwareStatusBar,
@@ -28,146 +27,7 @@ import {
 } from '@/components/ui';
 import { Lock, Shield, Trash } from '@/components/ui/icons';
 import { translate } from '@/lib';
-import { useAuth } from '@/lib/auth';
-import { supabase } from '@/lib/supabase';
-
-type PendingMfaEnrollment = {
-  factorId: string;
-  secret: string;
-  uri: string;
-  friendlyName: string | null;
-};
-
-/**
- * Custom hook to handle MFA enrollment and verification logic
- */
-function useMfaHandlers({
-  enrollTotp,
-  verifyTotp,
-  unenrollTotp,
-  refetchMfaFactors,
-  activeFactor,
-}: {
-  enrollTotp: ReturnType<typeof useMfaEnrollTotp>;
-  verifyTotp: ReturnType<typeof useMfaChallengeAndVerify>;
-  unenrollTotp: ReturnType<typeof useMfaUnenroll>;
-  refetchMfaFactors: () => void;
-  activeFactor: { id: string } | undefined;
-}) {
-  const [mfaModalVisible, setMfaModalVisible] = React.useState(false);
-  const [pendingEnrollment, setPendingEnrollment] =
-    React.useState<PendingMfaEnrollment | null>(null);
-  const [verificationCode, setVerificationCode] = React.useState('');
-
-  const handleStartEnableMfa = async () => {
-    try {
-      const enrollment = await enrollTotp.mutateAsync({
-        friendlyName: translate('auth.security.primary_mfa_label'),
-      });
-      setPendingEnrollment({
-        factorId: enrollment.id,
-        secret: enrollment.totp.secret,
-        uri: enrollment.totp.uri,
-        friendlyName: enrollment.friendly_name ?? null,
-      });
-      setVerificationCode('');
-      setMfaModalVisible(true);
-    } catch (error) {
-      Alert.alert(
-        translate('common.error'),
-        error instanceof Error ? error.message : String(error)
-      );
-    }
-  };
-
-  const handleVerifyMfa = async () => {
-    if (!pendingEnrollment) return;
-    const code = verificationCode.trim();
-    if (code.length < 6) {
-      Alert.alert(
-        translate('common.error'),
-        translate('auth.security.mfa_code_required')
-      );
-      return;
-    }
-    try {
-      await verifyTotp.mutateAsync({
-        factorId: pendingEnrollment.factorId,
-        code,
-      });
-      const sessionResponse = await supabase.auth.getSession();
-      if (sessionResponse.data.session) {
-        const { updateSession } = useAuth.getState();
-        updateSession(sessionResponse.data.session);
-      }
-      await refetchMfaFactors();
-      setPendingEnrollment(null);
-      setVerificationCode('');
-      setMfaModalVisible(false);
-      Alert.alert(
-        translate('auth.security.mfa_verification_success'),
-        undefined
-      );
-    } catch (error) {
-      Alert.alert(
-        translate('common.error'),
-        error instanceof Error
-          ? error.message
-          : translate('auth.security.mfa_verification_error')
-      );
-    }
-  };
-
-  const handleDisableMfa = () => {
-    if (!activeFactor) return;
-    Alert.alert(
-      translate('auth.security.mfa_disable_confirm_title'),
-      translate('auth.security.mfa_disable_confirm_message'),
-      [
-        {
-          text: translate('common.cancel'),
-          style: 'cancel',
-        },
-        {
-          text: translate('common.confirm'),
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await unenrollTotp.mutateAsync({ factorId: activeFactor.id });
-              await refetchMfaFactors();
-              Alert.alert(
-                translate('auth.security.mfa_disabled_toast'),
-                undefined
-              );
-            } catch (error) {
-              Alert.alert(
-                translate('common.error'),
-                error instanceof Error ? error.message : String(error)
-              );
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const handleCloseMfaModal = () => {
-    setMfaModalVisible(false);
-    setPendingEnrollment(null);
-    setVerificationCode('');
-  };
-
-  return {
-    mfaModalVisible,
-    pendingEnrollment,
-    verificationCode,
-    setVerificationCode,
-    handleStartEnableMfa,
-    handleVerifyMfa,
-    handleDisableMfa,
-    handleCloseMfaModal,
-  };
-}
+import { useMfaHandlers } from '@/lib/auth/use-mfa-handlers';
 
 type MfaSectionProps = {
   isMfaEnabled: boolean;
@@ -265,6 +125,7 @@ export default function SecuritySettingsScreen() {
   const router = useRouter();
   const { ref: changePasswordModalRef, present: presentChangePasswordModal } =
     useChangePasswordModal();
+  const mfaModal = useModal();
   const {
     data: mfaFactors,
     isLoading: isMfaLoading,
@@ -282,7 +143,6 @@ export default function SecuritySettingsScreen() {
   const isMfaEnabled = totpFactors.length > 0;
 
   const {
-    mfaModalVisible,
     pendingEnrollment,
     verificationCode,
     setVerificationCode,
@@ -296,6 +156,7 @@ export default function SecuritySettingsScreen() {
     unenrollTotp,
     refetchMfaFactors,
     activeFactor,
+    mfaModal,
   });
 
   const handleChangePassword = () => {
@@ -312,7 +173,7 @@ export default function SecuritySettingsScreen() {
       />
       <FocusAwareStatusBar />
 
-      <ScrollView className="flex-1 bg-white dark:bg-charcoal-950">
+      <ScrollView className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
         <View className="px-4 py-6">
           <Text className="mb-2 text-xl font-bold">
             {translate('auth.security.title')}
@@ -365,7 +226,7 @@ export default function SecuritySettingsScreen() {
       <ChangePasswordModal ref={changePasswordModalRef} />
 
       <MfaSetupModal
-        visible={mfaModalVisible}
+        ref={mfaModal.ref}
         pendingEnrollment={pendingEnrollment}
         verificationCode={verificationCode}
         onVerificationCodeChange={setVerificationCode}

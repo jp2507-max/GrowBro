@@ -104,6 +104,7 @@ export type ConsistencyError = ClassifiedError & {
  */
 export const BUSINESS_LOGIC_ERROR_CODES = {
   INVALID_STAGE_TRANSITION: 'INVALID_STAGE_TRANSITION',
+  MISSING_DRY_WEIGHT: 'MISSING_DRY_WEIGHT',
   MISSING_REQUIRED_FIELD: 'MISSING_REQUIRED_FIELD',
   INVALID_OPERATION: 'INVALID_OPERATION',
   BUSINESS_RULE_VIOLATION: 'BUSINESS_RULE_VIOLATION',
@@ -180,6 +181,7 @@ export type ErrorHandlerResult = {
   shouldShowInline: boolean;
   toastMessage?: string;
   bannerMessage?: string;
+  inlineErrors?: Record<string, string[]>;
   actions?: ErrorAction[];
   auditNote?: string;
 };

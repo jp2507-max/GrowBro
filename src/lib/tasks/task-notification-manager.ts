@@ -1,7 +1,13 @@
 import { DateTime } from 'luxon';
 
 import { LocalNotificationService } from '@/lib/notifications/local-service';
+import { getItem, removeItem, setItem } from '@/lib/storage';
 import type { TaskModel } from '@/lib/watermelon-models/task';
+
+const TASK_NOTIFICATION_STORAGE_KEY =
+  '@growbro/notifications/task-reminder-ids';
+
+type TaskNotificationMap = Record<string, string>;
 
 /**
  * Manages notification scheduling for cultivation task reminders.
@@ -15,6 +21,18 @@ export class TaskNotificationManager {
    */
   private static getNotificationId(taskId: string): string {
     return `task_${taskId}`;
+  }
+
+  private static loadNotificationMap(): TaskNotificationMap {
+    return getItem<TaskNotificationMap>(TASK_NOTIFICATION_STORAGE_KEY) ?? {};
+  }
+
+  private static saveNotificationMap(map: TaskNotificationMap): void {
+    if (Object.keys(map).length === 0) {
+      removeItem(TASK_NOTIFICATION_STORAGE_KEY);
+      return;
+    }
+    setItem(TASK_NOTIFICATION_STORAGE_KEY, map);
   }
 
   /**
@@ -41,7 +59,7 @@ export class TaskNotificationManager {
     try {
       const notificationId =
         await LocalNotificationService.scheduleExactNotification({
-          idTag: task.id,
+          idTag: this.getNotificationId(task.id),
           title: task.title || 'Task Reminder',
           body: task.description || 'You have a task due soon',
           data: {
@@ -53,6 +71,10 @@ export class TaskNotificationManager {
           androidChannelKey: 'cultivation.reminders',
           threadId: `task_${task.id}`,
         });
+
+      const map = this.loadNotificationMap();
+      map[task.id] = notificationId;
+      this.saveNotificationMap(map);
 
       return notificationId;
     } catch (error) {
@@ -70,14 +92,18 @@ export class TaskNotificationManager {
    * @returns Promise resolving when cancellation completes
    */
   static async cancelReminderForTask(taskId: string): Promise<void> {
-    const notificationId = this.getNotificationId(taskId);
-
+    const map = this.loadNotificationMap();
+    const notificationId = map[taskId];
+    if (!notificationId) return;
     try {
       await LocalNotificationService.cancelScheduledNotification(
         notificationId
       );
     } catch (error) {
       console.error(`Failed to cancel notification for task ${taskId}:`, error);
+    } finally {
+      delete map[taskId];
+      this.saveNotificationMap(map);
     }
   }
 

@@ -6,6 +6,7 @@ import { RefreshControl, StyleSheet } from 'react-native';
 import { NotificationRow } from '@/components/notifications/notification-row';
 import { NotificationSectionHeader } from '@/components/notifications/notification-section-header';
 import { ActivityIndicator, Pressable, Text, View } from '@/components/ui';
+import { getMediumFlashListConfig } from '@/lib/flashlist-config';
 import i18n, { translate, type TxKeyPath } from '@/lib/i18n';
 import {
   buildNotificationListItems,
@@ -171,10 +172,10 @@ function ErrorState({
 }): React.ReactElement {
   return (
     <View className="flex-1 items-center justify-center gap-3 px-8">
-      <Text className="text-center text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+      <Text className="text-center text-lg font-semibold text-charcoal-900 dark:text-neutral-100">
         {translate('notifications.inbox.error.title')}
       </Text>
-      <Text className="text-center text-sm text-neutral-600 dark:text-neutral-300">
+      <Text className="text-center text-sm text-neutral-600 dark:text-neutral-400">
         {translate('notifications.inbox.error.body')}
       </Text>
       <Pressable
@@ -210,7 +211,7 @@ function EmptyState({
       <Text className="text-center text-lg font-semibold text-neutral-900 dark:text-neutral-100">
         {translate(titleKey)}
       </Text>
-      <Text className="text-center text-sm text-neutral-600 dark:text-neutral-300">
+      <Text className="text-center text-sm text-neutral-600 dark:text-neutral-400">
         {translate(bodyKey)}
       </Text>
     </View>
@@ -412,6 +413,9 @@ function NotificationListView({
     []
   );
 
+  // Get optimized FlashList configuration for medium-sized lists
+  const flashListConfig = React.useMemo(() => getMediumFlashListConfig(), []);
+
   return (
     <FlashList
       data={items}
@@ -423,6 +427,12 @@ function NotificationListView({
       renderItem={renderItem}
       onEndReached={onLoadMore}
       showsVerticalScrollIndicator={false}
+      // Performance optimizations from device-adaptive config
+      scrollEventThrottle={flashListConfig.scrollEventThrottle}
+      removeClippedSubviews={flashListConfig.removeClippedSubviews}
+      drawDistance={flashListConfig.drawDistance}
+      maxToRenderPerBatch={flashListConfig.maxToRenderPerBatch}
+      windowSize={flashListConfig.windowSize}
       contentContainerStyle={listContentStyles.content}
       ListFooterComponent={<FooterLoader isVisible={isLoadingMore} />}
       testID="notifications-list"

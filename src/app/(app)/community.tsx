@@ -24,6 +24,7 @@ import { translate, useAnalytics } from '@/lib';
 import { sanitizeCommunityErrorType } from '@/lib/analytics';
 import { useAnimatedScrollList } from '@/lib/animations/animated-scroll-list-provider';
 import { useBottomTabBarHeight } from '@/lib/animations/use-bottom-tab-bar-height';
+import { getOptimizedFlashListConfig } from '@/lib/flashlist-config';
 import { useScreenErrorLogger } from '@/lib/hooks';
 import type { TxKeyPath } from '@/lib/i18n';
 import { useAgeGatedFeed } from '@/lib/moderation/use-age-gated-feed';
@@ -399,6 +400,12 @@ function CommunityListView({
     return item.media_uri ? 'post-with-media' : 'post-text-only';
   }, []);
 
+  // Get optimized FlashList configuration for device capabilities
+  const flashListConfig = React.useMemo(
+    () => getOptimizedFlashListConfig(),
+    []
+  );
+
   return (
     <View className="flex-1" testID="community-screen">
       <FocusAwareStatusBar />
@@ -412,7 +419,13 @@ function CommunityListView({
         onEndReached={onEndReached}
         onEndReachedThreshold={0.4}
         onScroll={scrollHandler}
-        scrollEventThrottle={16}
+        scrollEventThrottle={flashListConfig.scrollEventThrottle}
+        // Performance optimizations for fast scrolling
+        removeClippedSubviews={flashListConfig.removeClippedSubviews}
+        drawDistance={flashListConfig.drawDistance}
+        maxToRenderPerBatch={flashListConfig.maxToRenderPerBatch}
+        windowSize={flashListConfig.windowSize}
+        updateCellsBatchingPeriod={flashListConfig.updateCellsBatchingPeriod}
         refreshing={isRefreshing}
         onRefresh={onRefresh}
         contentContainerStyle={{ paddingBottom: grossHeight + 16 }}

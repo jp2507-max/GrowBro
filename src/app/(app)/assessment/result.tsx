@@ -6,9 +6,10 @@ import { ScrollView } from 'react-native';
 import {
   CommunityCTAButton,
   RetakeGuidanceModal,
+  type RetakeGuidanceModalRef,
   UncertaintyResultCard,
 } from '@/components/assessment';
-import { Button, Text, View } from '@/components/ui';
+import { Button, Text, useModal, View } from '@/components/ui';
 import { shouldShowCommunityCTA } from '@/lib/assessment/community-cta';
 import type { AssessmentSession } from '@/lib/assessment/current-assessment-store';
 import {
@@ -36,6 +37,11 @@ function getQualityScores(
 export default function AssessmentResultScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
+  const {
+    ref: retakeModalRef,
+    present: retakeModalPresent,
+    dismiss: retakeModalDismiss,
+  } = useModal();
 
   const assessmentIdParam = params.assessmentId;
   const assessmentId =
@@ -47,8 +53,6 @@ export default function AssessmentResultScreen() {
     }
     return getAssessmentSession(assessmentId);
   }, [assessmentId]);
-
-  const [showRetakeModal, setShowRetakeModal] = React.useState(false);
 
   const qualityScores = React.useMemo(
     () => getQualityScores(session?.result),
@@ -68,7 +72,7 @@ export default function AssessmentResultScreen() {
   }, [qualityScores]);
 
   const handleRetake = React.useCallback(() => {
-    setShowRetakeModal(false);
+    retakeModalDismiss();
     if (assessmentId && session?.plantContext?.id) {
       clearAssessmentSession(assessmentId);
       router.replace({
@@ -78,15 +82,11 @@ export default function AssessmentResultScreen() {
     } else {
       router.replace('/assessment/capture');
     }
-  }, [assessmentId, router, session?.plantContext?.id]);
+  }, [assessmentId, retakeModalDismiss, router, session?.plantContext?.id]);
 
   const handleOpenRetakeModal = React.useCallback(() => {
-    setShowRetakeModal(true);
-  }, []);
-
-  const handleCloseRetakeModal = React.useCallback(() => {
-    setShowRetakeModal(false);
-  }, []);
+    retakeModalPresent();
+  }, [retakeModalPresent]);
 
   const handleDismiss = React.useCallback(() => {
     router.replace('/');
@@ -109,11 +109,11 @@ export default function AssessmentResultScreen() {
       confidencePercent={confidencePercent}
       onRetake={handleRetake}
       onOpenRetakeModal={handleOpenRetakeModal}
-      onCloseRetakeModal={handleCloseRetakeModal}
-      showRetakeModal={showRetakeModal}
       retakeRecommended={retakeRecommended}
       guidance={guidance}
       qualityScores={qualityScores}
+      retakeModalRef={retakeModalRef}
+      retakeModalDismiss={retakeModalDismiss}
     />
   );
 }
@@ -126,11 +126,11 @@ type AssessmentResultLayoutProps = {
   confidencePercent: number;
   onRetake: () => void;
   onOpenRetakeModal: () => void;
-  onCloseRetakeModal: () => void;
-  showRetakeModal: boolean;
   retakeRecommended: boolean;
   guidance: ReturnType<typeof generateRetakeGuidance> | null;
   qualityScores: QualityResult[];
+  retakeModalRef: React.RefObject<RetakeGuidanceModalRef | null>;
+  retakeModalDismiss: () => void;
 };
 
 function AssessmentResultLayout({
@@ -141,19 +141,19 @@ function AssessmentResultLayout({
   confidencePercent,
   onRetake,
   onOpenRetakeModal,
-  onCloseRetakeModal,
-  showRetakeModal,
   retakeRecommended,
   guidance,
   qualityScores,
+  retakeModalRef,
+  retakeModalDismiss,
 }: AssessmentResultLayoutProps) {
   const { t } = useTranslation();
 
   return (
     <>
-      <Stack.Screen options={{ title: 'Assessment Result' }} />
+      <Stack.Screen options={{ title: t('assessment.result.screenTitle') }} />
       <ScrollView
-        className="flex-1 bg-neutral-50 dark:bg-neutral-950"
+        className="flex-1 bg-neutral-50 dark:bg-charcoal-950"
         contentContainerClassName="pb-16"
       >
         <View className="px-4 pt-4">
@@ -165,14 +165,14 @@ function AssessmentResultLayout({
               onRetake={onRetake}
             />
           ) : (
-            <View className="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-700 dark:bg-neutral-900">
-              <Text className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+            <View className="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-charcoal-700 dark:bg-charcoal-900">
+              <Text className="text-xl font-semibold text-charcoal-900 dark:text-neutral-100">
                 {result.topClass.name}
               </Text>
               <Text className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
                 {t('assessment.result.confidence', { confidencePercent })}
               </Text>
-              <Text className="mt-3 text-sm text-neutral-700 dark:text-neutral-300">
+              <Text className="mt-3 text-sm text-neutral-600 dark:text-neutral-400">
                 {result.topClass.description ||
                   t('assessment.result.noDescription')}
               </Text>
@@ -186,25 +186,26 @@ function AssessmentResultLayout({
                 label={t('assessment.result.retakePhotos')}
                 onPress={onRetake}
                 variant="outline"
+                testID="result-retake-photos-button"
               />
             </View>
           )}
 
-          <View className="mt-6 rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-neutral-900">
+          <View className="mt-6 rounded-xl border border-neutral-200 bg-white p-4 dark:border-white/10 dark:bg-charcoal-900">
             <Text className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
               {t('assessment.result.details')}
             </Text>
-            <Text className="mt-2 text-sm text-neutral-700 dark:text-neutral-300">
+            <Text className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
               {t('assessment.result.modelVersion', {
                 modelVersion: result.modelVersion,
               })}
             </Text>
-            <Text className="mt-1 text-sm text-neutral-700 dark:text-neutral-300">
+            <Text className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
               {t('assessment.result.processingTime', {
                 processingTimeMs: result.processingTimeMs,
               })}
             </Text>
-            <Text className="mt-1 text-sm text-neutral-700 dark:text-neutral-300">
+            <Text className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
               {t('assessment.result.plantId', {
                 plantId: plantContext.id || t('assessment.result.unknown'),
               })}
@@ -224,6 +225,7 @@ function AssessmentResultLayout({
                 label={t('assessment.result.viewPhotoTips')}
                 onPress={onOpenRetakeModal}
                 variant="outline"
+                testID="result-view-photo-tips-button"
               />
             </View>
           )}
@@ -231,8 +233,8 @@ function AssessmentResultLayout({
       </ScrollView>
 
       <RetakeGuidanceModal
-        visible={showRetakeModal}
-        onClose={onCloseRetakeModal}
+        ref={retakeModalRef}
+        onClose={retakeModalDismiss}
         onRetake={onRetake}
         qualityScores={qualityScores}
         plantContext={plantContext}
@@ -251,12 +253,16 @@ function MissingAssessmentSession({
   const { t } = useTranslation();
 
   return (
-    <View className="flex-1 items-center justify-center bg-charcoal-950 px-6">
-      <Stack.Screen options={{ title: 'Assessment Result' }} />
-      <Text className="mb-6 text-center text-lg text-neutral-100">
+    <View className="flex-1 items-center justify-center bg-neutral-50 px-6 dark:bg-charcoal-950">
+      <Stack.Screen options={{ title: t('assessment.result.screenTitle') }} />
+      <Text className="mb-6 text-center text-lg text-neutral-900 dark:text-neutral-100">
         {t('assessment.result.dataUnavailable')}
       </Text>
-      <Button label={t('assessment.result.backToHome')} onPress={onDismiss} />
+      <Button
+        label={t('assessment.result.backToHome')}
+        onPress={onDismiss}
+        testID="missing-session-dismiss-button"
+      />
     </View>
   );
 }

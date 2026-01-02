@@ -8,7 +8,8 @@
  * - `title` (string | undefined): Optional title for the modal header.
  *
  * Usage Example:
- * import { Modal, useModal } from '@gorhom/bottom-sheet';
+ * import { Modal, useModal, type ModalRef } from '@/components/ui';
+ * import { BottomSheetScrollView } from '@/components/ui/modal'; // for scrollable content
  *
  * function DisplayModal() {
  *   const { ref, present, dismiss } = useModal();
@@ -34,10 +35,13 @@ import type {
 } from '@gorhom/bottom-sheet';
 import {
   BottomSheetModal,
+  BottomSheetScrollView,
+  BottomSheetView,
   useBottomSheet,
   useBottomSheetTimingConfigs,
 } from '@gorhom/bottom-sheet';
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, {
   FadeIn,
@@ -50,12 +54,16 @@ import colors from '@/components/ui/colors';
 
 import { Text } from './text';
 
+// Re-export for cleaner imports in modal components
+export type ModalRef = BottomSheetModal;
+export { BottomSheetScrollView, BottomSheetView };
+
 type ModalProps = BottomSheetModalProps & {
   title?: string;
   testID?: string;
 };
 
-type ModalRef = React.ForwardedRef<BottomSheetModal>;
+type ModalForwardedRef = React.ForwardedRef<BottomSheetModal>;
 
 type ModalHeaderProps = {
   title?: string;
@@ -83,7 +91,7 @@ export const Modal = React.forwardRef(
       handleIndicatorStyle,
       ...props
     }: ModalProps,
-    ref: ModalRef
+    ref: ModalForwardedRef
   ) => {
     const detachedProps = React.useMemo(
       () => getDetachedProps(detached),
@@ -134,6 +142,7 @@ export const Modal = React.forwardRef(
 
 const CustomBackdrop = ({ style }: BottomSheetBackdropProps) => {
   const { close } = useBottomSheet();
+  const { t } = useTranslation();
   return (
     <Animated.View
       entering={FadeIn.duration(50).reduceMotion(ReduceMotion.System)}
@@ -144,8 +153,8 @@ const CustomBackdrop = ({ style }: BottomSheetBackdropProps) => {
         onPress={() => close()}
         style={StyleSheet.absoluteFill}
         accessibilityRole="button"
-        accessibilityLabel="Close modal"
-        accessibilityHint="Tap to dismiss the modal"
+        accessibilityLabel={t('accessibility.modal.backdrop_label')}
+        accessibilityHint={t('accessibility.modal.backdrop_hint')}
       />
     </Animated.View>
   );
@@ -198,14 +207,15 @@ const ModalHeader = React.memo(({ title, dismiss }: ModalHeaderProps) => {
 });
 
 const CloseButton = ({ close }: { close: () => void }) => {
+  const { t } = useTranslation();
   return (
     <Pressable
       onPress={close}
       className="absolute right-3 top-3 size-[24px] items-center justify-center "
       hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
-      accessibilityLabel="close modal"
+      accessibilityLabel={t('accessibility.modal.close_label')}
       accessibilityRole="button"
-      accessibilityHint="Double tap to close the modal and return to the previous screen"
+      accessibilityHint={t('accessibility.modal.close_hint')}
     >
       <Svg
         className="fill-neutral-300 dark:fill-white"

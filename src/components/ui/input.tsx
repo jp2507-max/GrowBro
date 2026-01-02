@@ -21,16 +21,17 @@ import { Text } from './text';
 
 const inputTv = tv({
   slots: {
-    container: 'mb-2',
-    label: 'text-grey-100 mb-1 text-lg dark:text-neutral-100',
+    container: 'mb-4',
+    label:
+      'mb-2 ml-1 text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400',
     input:
-      'mt-0 rounded-xl border-[0.5px] border-neutral-300 bg-neutral-100 px-4 py-3 font-inter text-base  font-medium leading-5 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white',
+      'mt-0 rounded-2xl border-2 border-neutral-200 bg-white px-5 py-4 font-inter text-base font-medium leading-5 text-charcoal-900 dark:border-white/10 dark:bg-white/10 dark:text-neutral-100',
   },
 
   variants: {
     focused: {
       true: {
-        input: 'border-neutral-400 dark:border-neutral-300',
+        input: 'border-primary-600 dark:border-primary-400',
       },
     },
     error: {
@@ -41,7 +42,12 @@ const inputTv = tv({
     },
     disabled: {
       true: {
-        input: 'bg-neutral-200',
+        input: 'opacity-60',
+      },
+    },
+    chunky: {
+      true: {
+        input: 'text-lg',
       },
     },
   },
@@ -49,6 +55,7 @@ const inputTv = tv({
     focused: false,
     error: false,
     disabled: false,
+    chunky: false,
   },
 });
 
@@ -57,6 +64,7 @@ export interface NInputProps extends TextInputProps {
   disabled?: boolean;
   error?: string;
   errorTx?: string;
+  chunky?: boolean;
 }
 
 type TRule<T extends FieldValues> =
@@ -78,7 +86,7 @@ interface ControlledInputProps<T extends FieldValues>
     InputControllerType<T> {}
 
 export const Input = React.forwardRef<NTextInput, NInputProps>((props, ref) => {
-  const { label, error, errorTx, testID, ...inputProps } = props;
+  const { label, error, errorTx, testID, chunky, ...inputProps } = props;
   const {
     accessibilityLabel: inputAccessibilityLabel,
     accessibilityHint: inputAccessibilityHint,
@@ -95,8 +103,9 @@ export const Input = React.forwardRef<NTextInput, NInputProps>((props, ref) => {
         error: Boolean(errorTx || error),
         focused: isFocussed,
         disabled: Boolean(props.disabled),
+        chunky: Boolean(chunky),
       }),
-    [error, errorTx, isFocussed, props.disabled]
+    [error, errorTx, isFocussed, props.disabled, chunky]
   );
 
   return (

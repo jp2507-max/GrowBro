@@ -1,6 +1,6 @@
 import { useFocusEffect } from '@react-navigation/native';
-import { useNavigation, useRouter } from 'expo-router';
-import React, { useCallback, useLayoutEffect } from 'react';
+import { useRouter } from 'expo-router';
+import React, { useCallback } from 'react';
 import { ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -8,11 +8,9 @@ import type { Plant } from '@/api';
 import { usePlantsInfinite } from '@/api';
 import { ActivationChecklist } from '@/components/home/activation-checklist';
 import { AddPlantFab } from '@/components/home/add-plant-fab';
-import { useTaskSnapshot } from '@/components/home/home-dashboard';
 import { HomeEmptyState } from '@/components/home/home-empty-state';
 import { HomeHeader } from '@/components/home/home-header';
 import { PlantsSection } from '@/components/home/plants-section';
-import { TaskBanner } from '@/components/home/task-banner';
 import { PlantsErrorCard } from '@/components/plants';
 import { FocusAwareStatusBar, View } from '@/components/ui';
 import { useAnimatedScrollList } from '@/lib/animations/animated-scroll-list-provider';
@@ -22,6 +20,7 @@ import {
   completeActivationAction,
   hydrateActivationState,
 } from '@/lib/compliance/activation-state';
+import { usePlantsAttention } from '@/lib/hooks/use-plants-attention';
 
 const BOTTOM_PADDING_EXTRA = 24;
 
@@ -45,11 +44,9 @@ function usePlantsData() {
 
 export default function Feed() {
   const router = useRouter();
-  const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const { grossHeight } = useBottomTabBarHeight();
   const { resetScrollState } = useAnimatedScrollList();
-  const { snapshot, isLoading: isTaskLoading } = useTaskSnapshot();
   const {
     plants,
     isLoading: isPlantsLoading,
@@ -83,18 +80,6 @@ export default function Feed() {
     [router]
   );
 
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      header: () => (
-        <HomeHeader
-          plantCount={plants.length}
-          taskCount={snapshot.today + snapshot.overdue}
-          insets={insets}
-        />
-      ),
-    });
-  }, [insets, navigation, plants.length, snapshot.overdue, snapshot.today]);
-
   const contentPaddingBottom = React.useMemo(
     () => ({ paddingBottom: grossHeight + BOTTOM_PADDING_EXTRA }),
     [grossHeight]
@@ -104,38 +89,62 @@ export default function Feed() {
   const hasPlantsError = isPlantsError && !isLoading && plants.length > 0;
   const isEmpty = !isLoading && plants.length === 0;
 
+  // Task count for header (derived from plants with pending tasks)
+  const plantIds = React.useMemo(
+    () => plants.map((plant) => plant.id),
+    [plants]
+  );
+  const { attentionMap } = usePlantsAttention(plantIds);
+
+  const taskCount = React.useMemo(() => {
+    return Object.values(attentionMap).reduce(
+      (total, status) =>
+        total + (status.overdueCount || 0) + (status.dueTodayCount || 0),
+      0
+    );
+  }, [attentionMap]);
+
   return (
-    <View className="flex-1 bg-background" testID="feed-screen">
+    <View
+      className="flex-1 bg-neutral-50 dark:bg-charcoal-950"
+      testID="feed-screen"
+    >
       <FocusAwareStatusBar />
 
-      <ScrollView
-        contentContainerStyle={contentPaddingBottom}
-        showsVerticalScrollIndicator={false}
-      >
-        <View className="gap-4 px-4 pb-4">
-          <ActivationChecklist onActionComplete={onActivationActionComplete} />
+      {/* Header rendered directly in screen for shared stacking context */}
+      <HomeHeader
+        plantCount={plants.length}
+        taskCount={taskCount}
+        insets={insets}
+      />
 
-          <TaskBanner
-            overdue={snapshot.overdue}
-            today={snapshot.today}
-            isLoading={isTaskLoading}
-          />
-
-          {hasPlantsError ? (
-            <PlantsErrorCard onRetry={refetchPlants} className="mb-2" />
-          ) : null}
-
-          {isEmpty ? (
-            <HomeEmptyState />
-          ) : (
-            <PlantsSection
-              plants={plants}
-              isLoading={isLoading}
-              onPlantPress={onPlantPress}
+      {/* Overlapping content sheet - z-10 on wrapper, not ScrollView */}
+      <View className="z-10 -mt-10 flex-1">
+        <ScrollView
+          contentContainerStyle={contentPaddingBottom}
+          showsVerticalScrollIndicator={false}
+        >
+          <View className="gap-4 px-4 pb-4">
+            <ActivationChecklist
+              onActionComplete={onActivationActionComplete}
             />
-          )}
-        </View>
-      </ScrollView>
+
+            {hasPlantsError ? (
+              <PlantsErrorCard onRetry={refetchPlants} className="mb-2" />
+            ) : null}
+
+            {isEmpty ? (
+              <HomeEmptyState />
+            ) : (
+              <PlantsSection
+                plants={plants}
+                isLoading={isLoading}
+                onPlantPress={onPlantPress}
+              />
+            )}
+          </View>
+        </ScrollView>
+      </View>
       <AddPlantFab />
     </View>
   );

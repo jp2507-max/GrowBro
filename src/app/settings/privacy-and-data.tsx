@@ -152,11 +152,11 @@ function WebDeletionSection(): React.ReactElement | null {
   }
 
   return (
-    <View className="gap-2 rounded-lg bg-neutral-100 p-4 dark:bg-charcoal-800">
-      <Text className="text-sm font-semibold text-charcoal-900 dark:text-charcoal-100">
+    <View className="gap-2 rounded-lg bg-white p-4 dark:bg-charcoal-900">
+      <Text className="text-sm font-semibold text-charcoal-900 dark:text-neutral-100">
         {translate('privacy.webDeletionHeading')}
       </Text>
-      <Text className="text-sm text-charcoal-700 dark:text-charcoal-300">
+      <Text className="text-sm text-neutral-600 dark:text-neutral-400">
         {translate('privacy.webDeletionPrompt', {
           url: webDeletionLabel,
         })}
@@ -232,7 +232,7 @@ export default function PrivacyAndDataScreen(): React.ReactElement {
             <Text className="text-xl font-bold">
               {translate('settings.privacy_and_data')}
             </Text>
-            <Text className="text-sm text-charcoal-600 dark:text-charcoal-300">
+            <Text className="text-sm text-neutral-600 dark:text-neutral-400">
               {translate('privacy.manageDataDescription')}
             </Text>
           </View>

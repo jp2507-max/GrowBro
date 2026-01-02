@@ -66,23 +66,23 @@ export function BatchListItem({
 
   return (
     <View
-      className="rounded-xl border border-border bg-card p-4"
+      className="rounded-xl border border-neutral-200 bg-white p-4 dark:border-charcoal-700 dark:bg-charcoal-900"
       testID={`batch-item-${batch.id}`}
     >
       <View className="flex-row items-start justify-between">
         {/* Left: Lot number and quantity */}
         <View className="flex-1">
-          <Text className="text-base font-semibold text-text-primary">
+          <Text className="text-base font-semibold text-charcoal-900 dark:text-neutral-100">
             {t('inventory.batch_lot', { lot: batch.lotNumber })}
           </Text>
-          <Text className="mt-1 text-sm text-text-secondary">
+          <Text className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
             {t('inventory.batch_quantity_cost', {
               quantity: batch.quantity,
               costPerUnit: (batch.costPerUnitMinor / 100).toFixed(2),
             })}
           </Text>
           {formattedDate && (
-            <Text className="mt-1 text-xs text-text-secondary">
+            <Text className="mt-1 text-xs text-neutral-600 dark:text-neutral-400">
               {t('inventory.expires_on', { date: formattedDate })}
             </Text>
           )}

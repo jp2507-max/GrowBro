@@ -77,6 +77,47 @@ export async function markPlantsAsSynced(
   });
 }
 
+/** Update existing plant record from remote data */
+async function updatePlantFromRemote(
+  current: PlantModel,
+  remote: RemotePlant,
+  remoteUpdatedMs: number
+): Promise<void> {
+  await current.update((record) => {
+    record.userId = remote.user_id ?? null;
+    record.name = remote.name;
+    record.stage = remote.stage ?? null;
+    record.strain = remote.strain ?? null;
+    record.plantedAt = remote.planted_at ?? null;
+    record.expectedHarvestAt = remote.expected_harvest_at ?? null;
+    record.lastWateredAt = remote.last_watered_at ?? null;
+    record.lastFedAt = remote.last_fed_at ?? null;
+    record.health = remote.health ?? null;
+    record.environment = remote.environment ?? null;
+    record.photoperiodType = remote.photoperiod_type ?? null;
+    record.geneticLean = remote.genetic_lean ?? null;
+    // Preserve local file:// URI if remote is null/empty
+    const hasValidLocalPhoto = current.imageUrl?.startsWith('file://');
+    const remoteHasPhoto =
+      remote.image_url && !remote.image_url.startsWith('file://');
+    if (remoteHasPhoto || !hasValidLocalPhoto) {
+      record.imageUrl = remote.image_url ?? null;
+    }
+    if (remoteHasPhoto) {
+      const meta = (record.metadata ?? {}) as Record<string, unknown>;
+      meta.remoteImagePath = remote.image_url;
+      record.metadata = meta;
+    }
+    record.notes = remote.notes ?? null;
+    if (remote.metadata) {
+      const existingMeta = (record.metadata ?? {}) as Record<string, unknown>;
+      record.metadata = { ...existingMeta, ...remote.metadata };
+    }
+    record.updatedAt = toDate(remote.updated_at ?? Date.now());
+    record.serverUpdatedAtMs = remoteUpdatedMs || Date.now();
+  });
+}
+
 export async function upsertRemotePlants(
   plants: RemotePlant[]
 ): Promise<{ applied: number }> {
@@ -94,28 +135,8 @@ export async function upsertRemotePlants(
 
       if (current) {
         const localUpdatedMs = current.updatedAt?.getTime() ?? 0;
-        if (remoteUpdatedMs <= localUpdatedMs) {
-          continue;
-        }
-        await current.update((record) => {
-          record.userId = remote.user_id ?? null;
-          record.name = remote.name;
-          record.stage = remote.stage ?? null;
-          record.strain = remote.strain ?? null;
-          record.plantedAt = remote.planted_at ?? null;
-          record.expectedHarvestAt = remote.expected_harvest_at ?? null;
-          record.lastWateredAt = remote.last_watered_at ?? null;
-          record.lastFedAt = remote.last_fed_at ?? null;
-          record.health = remote.health ?? null;
-          record.environment = remote.environment ?? null;
-          record.photoperiodType = remote.photoperiod_type ?? null;
-          record.geneticLean = remote.genetic_lean ?? null;
-          record.imageUrl = remote.image_url ?? null;
-          record.notes = remote.notes ?? null;
-          record.metadata = remote.metadata ?? undefined;
-          record.updatedAt = toDate(remote.updated_at ?? Date.now());
-          record.serverUpdatedAtMs = remoteUpdatedMs || Date.now();
-        });
+        if (remoteUpdatedMs <= localUpdatedMs) continue;
+        await updatePlantFromRemote(current, remote, remoteUpdatedMs);
       } else {
         await collection.create((record) => {
           record._raw.id = remote.id;

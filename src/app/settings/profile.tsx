@@ -160,14 +160,14 @@ function ProfileFormFields({
       />
 
       <View className="my-4">
-        <Text className="mb-2 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+        <Text className="mb-2 text-lg font-semibold text-charcoal-900 dark:text-neutral-100">
           {t('profile.privacy.title')}
         </Text>
 
         <Pressable
           accessibilityRole="switch"
           accessibilityState={{ checked: showProfileToCommunity }}
-          className="mb-3 flex-row items-center justify-between rounded-xl bg-neutral-100 p-4 dark:bg-neutral-800"
+          className="mb-3 flex-row items-center justify-between rounded-xl bg-white p-4 dark:bg-white/10"
           onPress={() => setShowProfileToCommunity(!showProfileToCommunity)}
         >
           <Text className="flex-1 text-neutral-900 dark:text-neutral-100">
@@ -181,7 +181,7 @@ function ProfileFormFields({
         <Pressable
           accessibilityRole="switch"
           accessibilityState={{ checked: allowDirectMessages }}
-          className="flex-row items-center justify-between rounded-xl bg-neutral-100 p-4 dark:bg-neutral-800"
+          className="flex-row items-center justify-between rounded-xl bg-white p-4 dark:bg-white/10"
           onPress={() => setAllowDirectMessages(!allowDirectMessages)}
         >
           <Text className="flex-1 text-neutral-900 dark:text-neutral-100">
@@ -226,7 +226,7 @@ function StatisticsPanel({
         <View className="flex-row flex-wrap gap-3">
           <Pressable
             accessibilityRole="button"
-            className="flex-1 rounded-xl bg-neutral-100 p-4 dark:bg-neutral-800"
+            className="flex-1 rounded-xl bg-white p-4 dark:bg-charcoal-900"
             onPress={navigateToPlants}
           >
             <Text className="text-2xl font-bold text-primary-600">
@@ -239,7 +239,7 @@ function StatisticsPanel({
 
           <Pressable
             accessibilityRole="button"
-            className="flex-1 rounded-xl bg-neutral-100 p-4 dark:bg-neutral-800"
+            className="flex-1 rounded-xl bg-white p-4 dark:bg-charcoal-900"
             onPress={navigateToHarvests}
           >
             <Text className="text-2xl font-bold text-primary-600">
@@ -250,7 +250,7 @@ function StatisticsPanel({
             </Text>
           </Pressable>
 
-          <View className="flex-1 rounded-xl bg-neutral-100 p-4 dark:bg-neutral-800">
+          <View className="flex-1 rounded-xl bg-white p-4 dark:bg-charcoal-900">
             <Text className="text-2xl font-bold text-primary-600">
               {statistics.postsCount}
             </Text>
@@ -259,7 +259,7 @@ function StatisticsPanel({
             </Text>
           </View>
 
-          <View className="flex-1 rounded-xl bg-neutral-100 p-4 dark:bg-neutral-800">
+          <View className="flex-1 rounded-xl bg-white p-4 dark:bg-charcoal-900">
             <Text className="text-2xl font-bold text-primary-600">
               {statistics.likesReceived}
             </Text>
@@ -537,8 +537,9 @@ export default function ProfileScreen() {
   );
 
   // Navigate to relevant sections - Requirements: 10.3
+  // Plants are displayed on the home screen, so we route to root
   const navigateToPlants = useCallback(() => {
-    router.push('/plants');
+    router.push('/');
   }, [router]);
 
   const navigateToHarvests = useCallback(() => {
@@ -550,7 +551,7 @@ export default function ProfileScreen() {
       <FocusAwareStatusBar />
       <Animated.ScrollView
         entering={withRM(FadeIn.duration(motion.dur.md))}
-        className="flex-1 bg-white dark:bg-charcoal-950"
+        className="flex-1 bg-neutral-50 dark:bg-charcoal-950"
       >
         <View className="p-4">
           {/* Avatar Section - Requirements: 9.4, 9.5 */}

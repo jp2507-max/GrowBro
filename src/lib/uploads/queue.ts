@@ -10,6 +10,9 @@ import type { ImageUploadQueueModel } from '@/lib/watermelon-models/image-upload
 import type { TaskModel } from '@/lib/watermelon-models/task';
 import type { TaskMetadata } from '@/types';
 
+/** Maximum retry attempts before marking as permanently failed */
+const MAX_UPLOAD_RETRIES = 10;
+
 type QueueItemRaw = {
   id: string;
   localUri: string;
@@ -29,91 +32,6 @@ type QueueItemRaw = {
   createdAt: number;
   updatedAt: number;
 };
-
-function generateDeterministicFilename(params: {
-  localUri: string;
-  plantId: string;
-  taskId?: string;
-  mimeType?: string;
-}): string {
-  // Create a simple hash of the localUri for stability
-  let hash = 0;
-  for (let i = 0; i < params.localUri.length; i++) {
-    const char = params.localUri.charCodeAt(i);
-    hash = (hash << 5) - hash + char;
-    hash |= 0; // Convert to 32-bit integer
-  }
-  const uriHash = Math.abs(hash).toString(16).slice(0, 8);
-
-  // Use taskId or a fixed token
-  const taskToken = params.taskId ?? 'notask';
-
-  // Determine extension from mimeType or localUri
-  let extension = 'jpg'; // default
-  if (params.mimeType) {
-    const mimeToExt: Record<string, string> = {
-      'image/jpeg': 'jpg',
-      'image/jpg': 'jpg',
-      'image/png': 'png',
-      'image/gif': 'gif',
-      'image/webp': 'webp',
-      'image/heic': 'heic',
-      'image/heif': 'heif',
-    };
-    extension = mimeToExt[params.mimeType] ?? 'jpg';
-  } else if (params.localUri.includes('.')) {
-    // Extract extension from localUri as fallback
-    const uriParts = params.localUri.split('.');
-    if (uriParts.length > 1) {
-      extension = uriParts[uriParts.length - 1].toLowerCase();
-      // Remove query parameters if present
-      extension = extension.split('?')[0];
-    }
-  }
-
-  // Construct deterministic filename
-  return `${params.plantId}_${taskToken}_${uriHash}.${extension}`;
-}
-
-export async function enqueueImage(params: {
-  localUri: string;
-  plantId: string;
-  taskId?: string;
-  filename?: string;
-  mimeType?: string;
-}): Promise<string> {
-  // Generate deterministic filename if not provided
-  const finalFilename =
-    params.filename ??
-    generateDeterministicFilename({
-      localUri: params.localUri,
-      plantId: params.plantId,
-      taskId: params.taskId,
-      mimeType: params.mimeType,
-    });
-
-  const coll =
-    database.collections.get<ImageUploadQueueModel>('image_upload_queue');
-  await database.write(async () =>
-    coll.create((rec) => {
-      rec.localUri = params.localUri;
-      rec.remotePath = undefined;
-      rec.taskId = params.taskId ?? undefined;
-      rec.plantId = params.plantId;
-      rec.harvestId = undefined;
-      rec.variant = undefined;
-      rec.hash = undefined;
-      rec.extension = undefined;
-      rec.filename = finalFilename;
-      rec.mimeType = params.mimeType ?? 'image/jpeg';
-      rec.status = 'pending';
-      rec.lastError = undefined;
-      rec.createdAt = new Date();
-      rec.updatedAt = new Date();
-    })
-  );
-  return finalFilename;
-}
 
 /**
  * Enqueue harvest photo variant for upload
@@ -196,46 +114,97 @@ async function updateHarvestWithRemotePath(
   }
 }
 
+/** Timeout in ms after which 'uploading' status is considered stale and reset to 'pending' */
+const STALE_UPLOADING_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+
+/**
+ * Reset stale 'uploading' items back to 'pending'.
+ * This recovers from app crashes or JS process deaths during upload.
+ */
+async function resetStaleUploadingItems(): Promise<number> {
+  const coll =
+    database.collections.get<ImageUploadQueueModel>('image_upload_queue');
+  const now = Date.now();
+  const staleThreshold = now - STALE_UPLOADING_TIMEOUT_MS;
+
+  const staleRows = await coll.query(Q.where('status', 'uploading')).fetch();
+
+  const toReset = staleRows.filter(
+    (row) => row.updatedAt.getTime() < staleThreshold
+  );
+
+  if (toReset.length === 0) return 0;
+
+  await database.write(async () => {
+    for (const row of toReset) {
+      await row.update((rec) => {
+        rec.status = 'pending';
+        rec.lastError = 'Reset from stale uploading state';
+        rec.updatedAt = new Date();
+      });
+    }
+  });
+
+  console.log(`[Queue] Reset ${toReset.length} stale uploading items`);
+  return toReset.length;
+}
+
 // Fetch a batch of pending upload queue items that are due for processing
-// This function retrieves items with status 'pending' and either no next_attempt_at
-// or next_attempt_at <= current time, limited to the specified batch size
-//
-// TODO: Optimize by filtering at database level instead of fetching all rows
-// Suggested improvement: Use WatermelonDB Q.where() queries to filter status='pending'
-// and apply time-based conditions directly in the query before fetching
+// Filters at DB level to avoid starvation issues
 async function fetchDueBatch(limit = 5): Promise<QueueItemRaw[]> {
   const coll =
     database.collections.get<ImageUploadQueueModel>('image_upload_queue');
+  const now = Date.now();
+
+  // Query items that are pending AND (no next_attempt_at OR next_attempt_at <= now)
   const rows = await coll
     .query(
       Q.where('status', 'pending'),
+      Q.or(
+        Q.where('next_attempt_at', null),
+        Q.where('next_attempt_at', Q.lte(now))
+      ),
       Q.sortBy('next_attempt_at', 'asc'),
       Q.take(limit)
     )
     .fetch();
-  const now = Date.now();
-  const due: QueueItemRaw[] = rows
-    .filter((row) => !row.nextAttemptAt || row.nextAttemptAt <= now)
-    .map((row) => ({
-      id: row.id,
-      localUri: row.localUri,
-      remotePath: row.remotePath ?? null,
-      taskId: row.taskId ?? null,
-      plantId: row.plantId ?? null,
-      harvestId: row.harvestId ?? null,
-      variant: row.variant as PhotoVariant | null,
-      hash: row.hash ?? null,
-      extension: row.extension ?? null,
-      filename: row.filename ?? null,
-      mimeType: row.mimeType ?? null,
-      status: row.status,
-      retryCount: row.retryCount ?? null,
-      lastError: row.lastError ?? null,
-      nextAttemptAt: row.nextAttemptAt ?? null,
-      createdAt: row.createdAt.getTime(),
-      updatedAt: row.updatedAt.getTime(),
-    }));
+
+  const due: QueueItemRaw[] = rows.map((row) => ({
+    id: row.id,
+    localUri: row.localUri,
+    remotePath: row.remotePath ?? null,
+    taskId: row.taskId ?? null,
+    plantId: row.plantId ?? null,
+    harvestId: row.harvestId ?? null,
+    variant: row.variant as PhotoVariant | null,
+    hash: row.hash ?? null,
+    extension: row.extension ?? null,
+    filename: row.filename ?? null,
+    mimeType: row.mimeType ?? null,
+    status: row.status,
+    retryCount: row.retryCount ?? null,
+    lastError: row.lastError ?? null,
+    nextAttemptAt: row.nextAttemptAt ?? null,
+    createdAt: row.createdAt.getTime(),
+    updatedAt: row.updatedAt.getTime(),
+  }));
   return due;
+}
+
+/**
+ * Check if an error indicates the file already exists in storage.
+ * This is treated as success for content-addressed uploads.
+ */
+function isAlreadyExistsError(error: unknown): boolean {
+  if (error instanceof Error) {
+    const msg = error.message.toLowerCase();
+    return (
+      msg.includes('already exists') ||
+      msg.includes('duplicate') ||
+      msg.includes('the resource already exists')
+    );
+  }
+  return false;
 }
 
 async function markUploading(id: string): Promise<void> {
@@ -268,6 +237,16 @@ async function markFailure(
   attempt: number,
   err: unknown
 ): Promise<void> {
+  // Check if max retries exceeded
+  if (attempt >= MAX_UPLOAD_RETRIES) {
+    const reason = `Max retries (${MAX_UPLOAD_RETRIES}) exceeded: ${
+      err instanceof Error ? err.message : String(err)
+    }`;
+    console.warn(`[Queue] ${reason}`);
+    await markFailed(id, reason);
+    return;
+  }
+
   const coll =
     database.collections.get<ImageUploadQueueModel>('image_upload_queue');
   const row = await coll.find(id);
@@ -315,21 +294,43 @@ async function processHarvestPhotoUpload(item: QueueItemRaw): Promise<boolean> {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    await markFailed(item.id, 'User not authenticated');
+    // Treat as retryable - user may log in later
+    const attempt = (item.retryCount ?? 0) + 1;
+    await markFailure(item.id, attempt, new Error('User not authenticated'));
     return false;
   }
 
   await markUploading(item.id);
 
-  const result = await uploadHarvestPhoto({
-    userId: user.id,
-    harvestId: item.harvestId,
-    localUri: item.localUri,
-    variant: item.variant as PhotoVariant,
-    hash: item.hash,
-    extension: item.extension,
-    mimeType: item.mimeType ?? 'image/jpeg',
-  });
+  let result;
+  try {
+    result = await uploadHarvestPhoto({
+      userId: user.id,
+      harvestId: item.harvestId,
+      localUri: item.localUri,
+      variant: item.variant as PhotoVariant,
+      hash: item.hash,
+      extension: item.extension,
+      mimeType: item.mimeType ?? 'image/jpeg',
+    });
+  } catch (uploadError) {
+    // If file already exists, treat as success (content-addressed = same content)
+    if (isAlreadyExistsError(uploadError)) {
+      console.log(
+        `[Queue] Harvest photo already exists, treating as success: ${item.hash}`
+      );
+      // Construct expected path for metadata update
+      const expectedPath = `${item.harvestId}/${item.hash}_${item.variant}.${item.extension}`;
+      await updateHarvestWithRemotePath(
+        item.harvestId,
+        item.variant as PhotoVariant,
+        expectedPath
+      );
+      await markCompleted(item.id, expectedPath);
+      return true;
+    }
+    throw uploadError;
+  }
 
   // Update harvest record with remote path
   await updateHarvestWithRemotePath(
@@ -352,21 +353,63 @@ async function processPlantImageUpload(item: QueueItemRaw): Promise<boolean> {
     return false;
   }
 
+  // Get user ID from auth (required for RLS-safe upload path)
+  const { supabase } = await import('@/lib/supabase');
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    // Treat as retryable - user may log in later
+    const attempt = (item.retryCount ?? 0) + 1;
+    await markFailure(item.id, attempt, new Error('User not authenticated'));
+    return false;
+  }
+
   await markUploading(item.id);
-  const { bucket, path } = await uploadImageWithProgress({
-    plantId: item.plantId,
-    filename:
-      item.filename ??
-      generateDeterministicFilename({
-        localUri: item.localUri,
-        plantId: item.plantId,
-        taskId: item.taskId ?? undefined,
-        mimeType: item.mimeType ?? undefined,
-      }),
-    localUri: item.localUri,
-    mimeType: item.mimeType ?? 'image/jpeg',
-    onProgress: () => {},
-  });
+
+  // Filename is required for content-addressed uploads
+  if (!item.filename) {
+    await markFailed(
+      item.id,
+      'Missing filename - use enqueuePlantProfilePhoto'
+    );
+    return false;
+  }
+
+  let bucket: string;
+  let path: string;
+  try {
+    const uploadResult = await uploadImageWithProgress({
+      userId: user.id,
+      plantId: item.plantId,
+      filename: item.filename,
+      localUri: item.localUri,
+      mimeType: item.mimeType ?? 'image/jpeg',
+      onProgress: () => {},
+    });
+    bucket = uploadResult.bucket;
+    path = uploadResult.path;
+  } catch (uploadError) {
+    // If file already exists, treat as success (content-addressed = same content)
+    if (isAlreadyExistsError(uploadError)) {
+      console.log(
+        `[Queue] Plant photo already exists, treating as success: ${item.hash}`
+      );
+      // Construct expected path for metadata update
+      bucket = 'plant-images';
+      path = `${user.id}/${item.plantId}/${item.filename}`;
+    } else {
+      throw uploadError;
+    }
+  }
+
+  // Update plant metadata with remote path (pass hash to guard against stale overwrites)
+  await updatePlantWithRemotePath(
+    item.plantId,
+    `${bucket}/${path}`,
+    item.hash ?? undefined
+  );
 
   // Backfill to task metadata if task present
   if (item.taskId) {
@@ -382,6 +425,9 @@ export async function processImageQueueOnce(
 ): Promise<{ processed: number }> {
   const allowed = await canSyncLargeFiles();
   if (!allowed) return { processed: 0 };
+
+  // First, recover any stale 'uploading' items from previous crashes
+  await resetStaleUploadingItems();
 
   const due = await fetchDueBatch(maxBatch);
   let processed = 0;
@@ -427,4 +473,212 @@ export async function backfillTaskRemotePath(
   // If direct remote update is absolutely required in the future, implement a server-side
   // JSONB merge operation (e.g., SQL UPDATE with jsonb_set or an RPC function) instead
   // of replacing the entire metadata object.
+}
+
+/**
+ * Update plant metadata with remote image path after successful upload.
+ * Guards against stale overwrites by verifying the current imageUrl hash matches.
+ *
+ * @param plantId - Plant ID
+ * @param remotePath - Remote storage path (e.g., 'plant-images/userId/plantId/hash.jpg')
+ * @param expectedHash - Hash of the uploaded file (to verify we're not overwriting newer photo)
+ */
+async function updatePlantWithRemotePath(
+  plantId: string,
+  remotePath: string,
+  expectedHash?: string
+): Promise<void> {
+  try {
+    // Use inline type for plant record since we only need a few fields
+    type PlantRecord = {
+      imageUrl?: string | null;
+      metadata?: Record<string, unknown> | null;
+      updatedAt: Date;
+    };
+    const coll = database.collections.get<
+      PlantRecord & {
+        update: (fn: (rec: PlantRecord) => void) => Promise<void>;
+      }
+    >('plants');
+    const row = await coll.find(plantId);
+
+    // Guard against stale overwrites: verify the current imageUrl contains the expected hash
+    if (expectedHash && row.imageUrl) {
+      const currentFilename = row.imageUrl.split('/').pop() ?? '';
+      const currentHash = currentFilename.split('.')[0];
+      if (currentHash && currentHash !== expectedHash) {
+        console.log(
+          `[Queue] Skipping stale upload for plant ${plantId}: ` +
+            `expected hash ${expectedHash}, current is ${currentHash}`
+        );
+        return; // Don't overwrite - user has already set a newer photo
+      }
+    }
+
+    await database.write(async () =>
+      row.update((rec) => {
+        const meta = (rec.metadata ?? {}) as Record<string, unknown>;
+        rec.metadata = { ...meta, remoteImagePath: remotePath };
+        rec.updatedAt = new Date();
+      })
+    );
+
+    // Trigger plant sync to push the remote path to Supabase
+    try {
+      const { syncPlantsToCloud } = await import('@/lib/plants/plants-sync');
+      void syncPlantsToCloud().catch((err) => {
+        console.warn('[Queue] Plant sync after upload failed:', err);
+      });
+    } catch (syncImportError) {
+      console.warn('[Queue] Failed to import plants-sync:', syncImportError);
+    }
+  } catch (error) {
+    console.warn(
+      `[Queue] Failed to update plant ${plantId} with remote path:`,
+      error
+    );
+    // Don't throw - the photo is already uploaded, just the metadata update failed
+  }
+}
+
+/**
+ * Enqueue plant profile photo for background upload.
+ *
+ * @param params - Queue parameters
+ * @returns Queue item ID
+ */
+export async function enqueuePlantProfilePhoto(params: {
+  localUri: string;
+  plantId: string;
+  hash: string;
+  extension: string;
+}): Promise<string> {
+  const { localUri, plantId, hash, extension } = params;
+  const filename = `${hash}.${extension}`;
+  const mimeType = extension === 'png' ? 'image/png' : 'image/jpeg';
+
+  const coll =
+    database.collections.get<ImageUploadQueueModel>('image_upload_queue');
+
+  // Dedupe check: don't enqueue if identical pending/uploading entry exists
+  const existing = await coll
+    .query(
+      Q.where('plant_id', plantId),
+      Q.where('hash', hash),
+      Q.where('status', Q.oneOf(['pending', 'uploading']))
+    )
+    .fetch();
+
+  if (existing.length > 0) {
+    console.log(
+      `[Queue] Skipping duplicate enqueue: plantId=${plantId}, hash=${hash}`
+    );
+    return existing[0].id;
+  }
+
+  let queueId = '';
+
+  await database.write(async () => {
+    const rec = await coll.create((r) => {
+      r.localUri = localUri;
+      r.remotePath = undefined;
+      r.taskId = undefined;
+      r.plantId = plantId;
+      r.harvestId = undefined;
+      r.variant = undefined;
+      r.hash = hash;
+      r.extension = extension;
+      r.filename = filename;
+      r.mimeType = mimeType;
+      r.status = 'pending';
+      r.lastError = undefined;
+      r.createdAt = new Date();
+      r.updatedAt = new Date();
+    });
+    queueId = rec.id;
+  });
+
+  console.log(
+    `[Queue] Enqueued plant profile photo: plantId=${plantId}, hash=${hash}`
+  );
+
+  // Opportunistic: try to process immediately if network conditions allow
+  // This is non-blocking - if it fails or conditions don't allow, the queue will be
+  // processed later by background sync or connectivity restore handlers
+  void processImageQueueOnce(1).catch((err) => {
+    console.log('[Queue] Opportunistic upload skipped:', err?.message ?? err);
+  });
+
+  return queueId;
+}
+
+/**
+ * Clean up completed queue items older than specified duration.
+ * Should be called periodically to prevent database bloat.
+ *
+ * @param olderThanMs - Delete completed items older than this (default: 24 hours)
+ * @returns Number of items deleted
+ */
+export async function cleanupCompletedQueueItems(
+  olderThanMs = 24 * 60 * 60 * 1000
+): Promise<number> {
+  const coll =
+    database.collections.get<ImageUploadQueueModel>('image_upload_queue');
+  const threshold = Date.now() - olderThanMs;
+
+  const completed = await coll
+    .query(
+      Q.where('status', 'completed'),
+      Q.where('updated_at', Q.lt(threshold))
+    )
+    .fetch();
+
+  if (completed.length === 0) return 0;
+
+  await database.write(async () => {
+    for (const row of completed) {
+      await row.destroyPermanently();
+    }
+  });
+
+  console.log(`[Queue] Cleaned up ${completed.length} completed queue items`);
+  return completed.length;
+}
+
+/**
+ * Cancel pending queue entries for a specific plant.
+ * Call this when a plant is deleted to prevent orphaned uploads.
+ *
+ * @param plantId - Plant ID
+ * @returns Number of entries cancelled
+ */
+export async function cancelQueueEntriesForPlant(
+  plantId: string
+): Promise<number> {
+  const coll =
+    database.collections.get<ImageUploadQueueModel>('image_upload_queue');
+
+  const pending = await coll
+    .query(
+      Q.where('plant_id', plantId),
+      Q.where('status', Q.oneOf(['pending', 'uploading']))
+    )
+    .fetch();
+
+  if (pending.length === 0) return 0;
+
+  await database.write(async () => {
+    for (const row of pending) {
+      await row.update((rec) => {
+        rec.status = 'failed';
+        rec.lastError = 'Plant deleted';
+        rec.updatedAt = new Date();
+      });
+    }
+  });
+
+  console.log(
+    `[Queue] Cancelled ${pending.length} queue entries for deleted plant ${plantId}`
+  );
+  return pending.length;
 }

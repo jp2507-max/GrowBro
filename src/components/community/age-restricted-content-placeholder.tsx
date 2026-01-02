@@ -39,7 +39,7 @@ export function AgeRestrictedContentPlaceholder({
 
   return (
     <View
-      className="my-2 rounded-xl border border-border bg-card p-6"
+      className="my-2 rounded-xl border border-neutral-200 bg-white p-6 dark:border-charcoal-700 dark:bg-charcoal-900"
       style={styles.container}
       testID="age-restricted-content-placeholder"
     >
@@ -47,10 +47,10 @@ export function AgeRestrictedContentPlaceholder({
         <View className="mb-3 size-16 items-center justify-center rounded-full bg-neutral-200 dark:bg-neutral-800">
           <Text className="text-3xl">🔒</Text>
         </View>
-        <Text className="mb-2 text-center text-base font-semibold text-text-primary">
+        <Text className="mb-2 text-center text-base font-semibold text-charcoal-900 dark:text-neutral-100">
           {translate('community.age_restricted.title')}
         </Text>
-        <Text className="text-center text-sm text-text-secondary">
+        <Text className="text-center text-sm text-neutral-600 dark:text-neutral-400">
           {translate('community.age_restricted.message', {
             contentType: translate(
               `community.content_type.${contentType}` as
@@ -72,7 +72,7 @@ export function AgeRestrictedContentPlaceholder({
         />
       )}
 
-      <Text className="mt-3 text-center text-xs text-text-secondary">
+      <Text className="mt-3 text-center text-xs text-neutral-600 dark:text-neutral-400">
         {translate('community.age_restricted.privacy_notice')}
       </Text>
     </View>

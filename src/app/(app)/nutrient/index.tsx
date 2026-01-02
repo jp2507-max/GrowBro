@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 import { useFetchReadings } from '@/api/ph-ec-readings';
 import { PhEcReadingList } from '@/components/nutrient/ph-ec-reading-list';
-import { Button, SafeAreaView, Text, View } from '@/components/ui';
+import { Button, Text, View } from '@/components/ui';
 import type { PhEcReading } from '@/lib/nutrient-engine/types';
 
 /**
@@ -31,17 +31,17 @@ export default function NutrientReadingsScreen(): React.ReactElement {
   }, []);
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <View className="flex-1 bg-white dark:bg-charcoal-950">
       <View className="flex-1">
         {/* Header */}
-        <View className="border-b border-neutral-200 p-4">
+        <View className="border-b border-neutral-200 p-4 dark:border-charcoal-700">
           <View className="flex-row items-center justify-between">
             <View className="flex-1">
-              <Text className="text-2xl font-bold text-neutral-900">
+              <Text className="text-2xl font-bold text-neutral-900 dark:text-neutral-50">
                 {t('nutrient.reading_history')}
               </Text>
               {data && data.total > 0 && (
-                <Text className="mt-1 text-sm text-neutral-600">
+                <Text className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
                   {data.total}{' '}
                   {t('nutrient.readings_count', { count: data.total })}
                 </Text>
@@ -78,6 +78,6 @@ export default function NutrientReadingsScreen(): React.ReactElement {
           />
         )}
       </View>
-    </SafeAreaView>
+    </View>
   );
 }

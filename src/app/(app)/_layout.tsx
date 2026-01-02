@@ -170,7 +170,7 @@ export default function TabLayout() {
               title: translate('tabs.home'),
               tabBarIcon: ({ color }) => <HomeIcon color={color} />,
               tabBarButtonTestID: 'home-tab',
-              header: renderSharedHeader,
+              headerShown: false,
             }}
           />
           <Tabs.Screen
@@ -179,7 +179,7 @@ export default function TabLayout() {
               title: translate('tabs.calendar'),
               tabBarIcon: ({ color }) => <CalendarIcon color={color} />,
               tabBarButtonTestID: 'calendar-tab',
-              header: renderSharedHeader,
+              headerShown: false,
             }}
           />
           <Tabs.Screen

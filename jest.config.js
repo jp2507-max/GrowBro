@@ -59,5 +59,8 @@ module.exports = {
     '^minimatch$': '<rootDir>/__mocks__/minimatch.ts',
     '^react-native-gesture-handler$':
       '<rootDir>/__mocks__/react-native-gesture-handler.ts',
+    // Mock asset files
+    '^@/assets/images/strain-placeholder\\.svg$':
+      '<rootDir>/__mocks__/assets/images/strain-placeholder.svg',
   },
 };

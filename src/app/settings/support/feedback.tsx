@@ -117,7 +117,7 @@ export default function FeedbackScreen() {
 
           {/* Category */}
           <View className="mb-4">
-            <Text className="mb-2 text-sm font-medium text-neutral-900 dark:text-neutral-100">
+            <Text className="mb-2 text-sm font-medium text-charcoal-900 dark:text-neutral-100">
               {translate('settings.support.feedback.category_label')}
             </Text>
             <Controller
@@ -184,7 +184,7 @@ export default function FeedbackScreen() {
               className={`mt-1 text-right text-xs ${
                 characterCount > characterLimit
                   ? 'text-danger-600 dark:text-danger-400'
-                  : 'text-neutral-500 dark:text-neutral-400'
+                  : 'text-neutral-600 dark:text-neutral-400'
               }`}
             >
               {characterCount} / {characterLimit}

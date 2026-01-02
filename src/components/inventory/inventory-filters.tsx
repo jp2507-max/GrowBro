@@ -240,7 +240,7 @@ export function InventoryFilters({
                 testID={`${testID}-sort-${value}`}
                 className={`flex-row items-center justify-between rounded-lg border p-3 ${
                   isActive
-                    ? 'dark:bg-primary-950 border-primary-600 bg-primary-50'
+                    ? 'border-primary-600 bg-primary-50 dark:bg-primary-950'
                     : 'border-neutral-300 bg-white dark:border-neutral-600 dark:bg-charcoal-900'
                 }`}
               >

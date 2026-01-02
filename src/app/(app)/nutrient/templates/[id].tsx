@@ -14,7 +14,7 @@ import { ScrollView } from 'react-native';
 import { showMessage } from 'react-native-flash-message';
 
 import { FeedingTemplateForm } from '@/components/nutrient-engine/feeding-template-form';
-import { SafeAreaView, Text, View } from '@/components/ui';
+import { Text, View } from '@/components/ui';
 import type { FeedingTemplateFormData } from '@/lib/nutrient-engine/schemas/feeding-template-schema';
 import {
   createTemplate,
@@ -119,21 +119,20 @@ export default function TemplateDetailScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 bg-white dark:bg-charcoal-950">
-        <View className="flex-1 items-center justify-center">
-          <Text className="text-neutral-600 dark:text-neutral-400">
-            {t('common.loading')}
-          </Text>
-        </View>
-      </SafeAreaView>
+      <View className="flex-1 items-center justify-center bg-neutral-50 dark:bg-charcoal-950">
+        <Text className="text-neutral-600 dark:text-neutral-400">
+          {t('common.loading')}
+        </Text>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white dark:bg-charcoal-950">
+    <View className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
       <ScrollView
         className="flex-1"
         contentContainerClassName="p-4"
+        contentInsetAdjustmentBehavior="automatic"
         keyboardShouldPersistTaps="handled"
       >
         <FeedingTemplateForm
@@ -142,6 +141,6 @@ export default function TemplateDetailScreen() {
           onCancel={handleCancel}
         />
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }

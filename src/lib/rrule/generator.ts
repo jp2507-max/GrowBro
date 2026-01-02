@@ -279,6 +279,90 @@ export class RRULEGenerator {
   }
 
   /**
+   * Parse weekdays from an RRULE string
+   */
+  parseWeekdaysFromRRULE(rruleString: string): WeekDay[] {
+    try {
+      const parsed = rrulestr(rruleString, { forceset: false });
+      const opts: Partial<RRuleOptions> =
+        parsed.origOptions || parsed.options || {};
+
+      if (opts.byweekday) {
+        // Convert rrule.js weekday objects back to our WeekDay format
+        const weekdays = Array.isArray(opts.byweekday)
+          ? opts.byweekday
+          : [opts.byweekday];
+        return weekdays.map((wd: Weekday) => {
+          // Map rrule.js weekday constants to our string format
+          switch (wd) {
+            case RRule.MO:
+              return 'MO';
+            case RRule.TU:
+              return 'TU';
+            case RRule.WE:
+              return 'WE';
+            case RRule.TH:
+              return 'TH';
+            case RRule.FR:
+              return 'FR';
+            case RRule.SA:
+              return 'SA';
+            case RRule.SU:
+              return 'SU';
+            default:
+              return 'MO'; // fallback
+          }
+        });
+      }
+      return [];
+    } catch {
+      return [];
+    }
+  }
+
+  /**
+   * Parse FREQ from an RRULE string and map to our recurrence pattern strings
+   */
+  parseFrequencyFromRRULE(
+    rruleString: string
+  ): 'daily' | 'weekly' | 'custom' | null {
+    try {
+      const parsed = rrulestr(rruleString, { forceset: false });
+      const opts: Partial<RRuleOptions> =
+        parsed.origOptions || parsed.options || {};
+      const freq = opts.freq;
+      if (freq === RRule.DAILY) return 'daily';
+      if (freq === RRule.WEEKLY) return 'weekly';
+      if (typeof freq === 'number') return 'custom';
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Parse INTERVAL from an RRULE string. Returns null if not present or invalid.
+   */
+  parseIntervalFromRRULE(rruleString: string): number | null {
+    try {
+      const parsed = rrulestr(rruleString, { forceset: false });
+      const opts: Partial<RRuleOptions> =
+        parsed.origOptions || parsed.options || {};
+      const interval = opts.interval;
+      if (interval === undefined || interval === null) return null;
+      if (
+        typeof interval !== 'number' ||
+        !Number.isFinite(interval) ||
+        interval <= 0
+      )
+        return null;
+      return Math.floor(interval);
+    } catch {
+      return null;
+    }
+  }
+
+  /**
    * Get anchor date from plant or phase start date
    */
   getAnchorDate(

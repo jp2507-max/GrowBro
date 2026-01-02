@@ -24,6 +24,11 @@ function nextWeekly(current: Date, interval: number, zone: string): Date {
   return addDaysLocal(current, interval * 7, zone);
 }
 
+function nextMonthly(current: Date, interval: number, zone: string): Date {
+  const dt = DateTime.fromJSDate(current, { zone });
+  return dt.plus({ months: interval }).toJSDate();
+}
+
 function enumerateWeeklyByDays(
   anchor: Date,
   byweekday: number[],
@@ -96,9 +101,10 @@ function* processWeekly(
       // If date is after UNTIL, stop processing this week (don't count it)
       if (config.until && localDT.toUTC().toJSDate() > config.until) break;
 
+      if (config.count !== undefined && produced >= config.count) return;
+
       // Increment counter for valid occurrences only
       produced++;
-      if (config.count !== undefined && produced >= config.count) break;
       if (isWithinRange(localJS, range)) {
         const overridden = applyOverrides(localJS, overrides, zone);
         if (overridden) yield overridden;
@@ -115,6 +121,29 @@ function* processWeekly(
   }
 }
 
+function* processMonthly(
+  config: RRuleConfig,
+  overrides: OccurrenceOverride[],
+  context: { range: Range; zone: string; dtstartLocal: DateTime }
+) {
+  const { range, zone } = context;
+  let produced = 0;
+  let cursorLocal = context.dtstartLocal;
+
+  while (!shouldStopIteration(config, { cursorLocal, range, produced })) {
+    const local = cursorLocal.toJSDate();
+    produced++;
+    if (isWithinRange(local, range)) {
+      const overridden = applyOverrides(local, overrides, zone);
+      if (overridden) yield overridden;
+    }
+    cursorLocal = DateTime.fromJSDate(
+      nextMonthly(local, config.interval, zone),
+      { zone }
+    );
+  }
+}
+
 /**
  * Determines whether the iteration should stop based on the RRule configuration and current context.
  * Checks for range end, count limit, and until date conditions.
@@ -125,10 +154,8 @@ function shouldStopIteration(
 ): boolean {
   const { cursorLocal, range, produced } = context;
 
-  // If no count or until specified, stop when cursor exceeds range end
-  if (!config.count && !config.until) {
-    if (cursorLocal.toJSDate() > range.end) return true;
-  }
+  // Always stop when cursor exceeds range end
+  if (cursorLocal.toJSDate() > range.end) return true;
 
   // Stop if the produced count reaches or exceeds the specified count
   if (config.count !== undefined && produced >= config.count) return true;
@@ -165,6 +192,8 @@ export function* buildIterator(params: {
     yield* processDaily(config, overrides, { range, zone, dtstartLocal });
   } else if (config.freq === 'WEEKLY') {
     yield* processWeekly(config, overrides, { range, zone, dtstartLocal });
+  } else if (config.freq === 'MONTHLY') {
+    yield* processMonthly(config, overrides, { range, zone, dtstartLocal });
   }
 }
 

@@ -2,6 +2,8 @@
  * Unit tests for harvest photo upload service
  */
 
+import * as FileSystem from 'expo-file-system';
+
 import { stripExifAndGeolocation } from '@/lib/media/exif';
 import { supabase } from '@/lib/supabase';
 
@@ -23,8 +25,20 @@ jest.mock('@/lib/media/exif', () => ({
   stripExifAndGeolocation: jest.fn(),
 }));
 
-// Mock global fetch
-global.fetch = jest.fn() as jest.Mock;
+jest.mock('expo-file-system', () => ({
+  readAsStringAsync: jest.fn(),
+  EncodingType: {
+    Base64: 'base64',
+  },
+}));
+
+jest.mock('base64-arraybuffer', () => ({
+  decode: jest.fn((_base64: string) => {
+    // Create a mock ArrayBuffer from base64
+    // 'ZmFrZSBpbWFnZSBkYXRh' decodes to 'fake image data' (15 bytes)
+    return new ArrayBuffer(15);
+  }),
+}));
 
 describe('generateHarvestPhotoPath', () => {
   beforeEach(() => {
@@ -131,7 +145,10 @@ describe('uploadHarvestPhoto', () => {
   const mockStripExif = stripExifAndGeolocation as jest.MockedFunction<
     typeof stripExifAndGeolocation
   >;
-  const mockFetch = global.fetch as jest.Mock;
+  const mockReadAsStringAsync =
+    FileSystem.readAsStringAsync as jest.MockedFunction<
+      typeof FileSystem.readAsStringAsync
+    >;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -145,11 +162,9 @@ describe('uploadHarvestPhoto', () => {
       didStrip: false,
     });
 
-    // Mock fetch to return blob
-    const mockBlob = new Blob(['fake image data'], { type: 'image/jpeg' });
-    mockFetch.mockResolvedValue({
-      blob: async () => mockBlob,
-    });
+    // Mock FileSystem.readAsStringAsync to return base64 encoded data
+    // 'ZmFrZSBpbWFnZSBkYXRh' is base64 for 'fake image data'
+    mockReadAsStringAsync.mockResolvedValue('ZmFrZSBpbWFnZSBkYXRh');
   });
 
   test('uploads photo successfully with correct parameters', async () => {
@@ -174,6 +189,10 @@ describe('uploadHarvestPhoto', () => {
       'harvest-photos/user123/harvest456/abc123_original.jpg'
     );
     expect(mockStripExif).toHaveBeenCalledWith('file:///photos/abc123.jpg');
+    expect(mockReadAsStringAsync).toHaveBeenCalledWith(
+      'file:///photos/stripped.jpg',
+      { encoding: 'base64' }
+    );
     expect(supabase.storage.from).toHaveBeenCalledWith('harvest-photos');
     expect(mockUpload).toHaveBeenCalledWith(
       'user123/harvest456/abc123_original.jpg',
@@ -220,7 +239,7 @@ describe('uploadHarvestPhoto', () => {
     ).rejects.toThrow('EXIF processing failed');
   });
 
-  test('converts blob to ArrayBuffer correctly', async () => {
+  test('converts base64 to ArrayBuffer correctly', async () => {
     mockUpload.mockResolvedValue({
       data: { path: 'user123/harvest456/abc123_original.jpg' },
       error: null,
@@ -237,9 +256,9 @@ describe('uploadHarvestPhoto', () => {
     });
 
     const uploadCall = mockUpload.mock.calls[0];
-    const arrayBuffer = uploadCall[1] as ArrayBuffer;
+    const buffer = uploadCall[1] as ArrayBuffer;
 
-    expect(arrayBuffer).toBeInstanceOf(ArrayBuffer);
+    expect(buffer).toBeInstanceOf(ArrayBuffer);
   });
 
   test('uses correct mime type for PNG', async () => {

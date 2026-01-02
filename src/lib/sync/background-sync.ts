@@ -60,6 +60,23 @@ if (process.env.NODE_ENV !== 'test') {
       }
 
       const result = await runSyncWithRetry(3, { trigger: 'background' });
+
+      // Process image upload queue after successful sync
+      try {
+        const { processImageQueueOnce } = await import('@/lib/uploads/queue');
+        const uploadResult = await processImageQueueOnce(5);
+        if (uploadResult.processed > 0) {
+          console.log(
+            `[background-sync] Processed ${uploadResult.processed} image uploads`
+          );
+        }
+      } catch (uploadError) {
+        console.warn(
+          '[background-sync] Image queue processing failed:',
+          uploadError
+        );
+      }
+
       await NoopAnalytics.track('background_worker_metrics', {
         worker: 'sync',
         trigger: 'background_task',

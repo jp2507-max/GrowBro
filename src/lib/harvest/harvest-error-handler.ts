@@ -74,10 +74,23 @@ export function classifyError(error: unknown): ClassifiedError {
     return createClassified({ category: ERROR_CATEGORY.VALIDATION });
 
   if (isBusinessLogicError(error))
-    return createClassified({ category: ERROR_CATEGORY.BUSINESS_LOGIC });
+    return createClassified({
+      category: ERROR_CATEGORY.BUSINESS_LOGIC,
+      // preserve original string code if present so handlers can react to it
+      code:
+        typeof (error as Record<string, unknown>).code === 'string'
+          ? ((error as Record<string, unknown>).code as string)
+          : undefined,
+    });
 
   if (isConsistencyError(error))
-    return createClassified({ category: ERROR_CATEGORY.CONSISTENCY });
+    return createClassified({
+      category: ERROR_CATEGORY.CONSISTENCY,
+      code:
+        typeof (error as Record<string, unknown>).code === 'string'
+          ? ((error as Record<string, unknown>).code as string)
+          : undefined,
+    });
 
   return createClassified({});
 }
@@ -87,12 +100,68 @@ export function classifyError(error: unknown): ClassifiedError {
  * Requirement 17.1: Inline validation messages for form inputs
  */
 export function handleValidationError(
-  _error: ValidationError | ValidationError[]
+  error: ValidationError | ValidationError[] | unknown
 ): ErrorHandlerResult {
+  const inlineErrors: Record<string, string[]> = {};
+
+  // Handle ZodError-like structure
+  if (error && typeof error === 'object') {
+    // Check for ZodError with issues array
+    if ('issues' in error && Array.isArray(error.issues)) {
+      const zodError = error as {
+        issues: { path: (string | number)[]; message: string }[];
+      };
+
+      for (const issue of zodError.issues) {
+        // Join path segments to create field name (e.g., ['dryWeight'] -> 'dryWeight')
+        const fieldName = Array.isArray(issue.path)
+          ? issue.path.map(String).join('.')
+          : 'general';
+
+        if (!inlineErrors[fieldName]) {
+          inlineErrors[fieldName] = [];
+        }
+        inlineErrors[fieldName].push(issue.message);
+      }
+    }
+    // Handle array of ValidationErrors
+    else if (Array.isArray(error)) {
+      for (const validationError of error) {
+        if (
+          validationError &&
+          typeof validationError === 'object' &&
+          'field' in validationError &&
+          'message' in validationError
+        ) {
+          const field = String(validationError.field);
+          if (!inlineErrors[field]) {
+            inlineErrors[field] = [];
+          }
+          inlineErrors[field].push(String(validationError.message));
+        }
+      }
+    }
+    // Handle single ValidationError
+    else if ('field' in error && 'message' in error) {
+      const field = String(error.field);
+      inlineErrors[field] = [String(error.message)];
+    }
+  }
+
+  // If no field-specific errors were extracted, create a general error
+  if (Object.keys(inlineErrors).length === 0) {
+    const message =
+      error && typeof error === 'object' && 'message' in error
+        ? String(error.message)
+        : 'Validation failed';
+    inlineErrors.general = [message];
+  }
+
   return {
     shouldShowToast: false,
     shouldShowBanner: false,
     shouldShowInline: true,
+    inlineErrors,
   };
 }
 
@@ -102,7 +171,7 @@ export function handleValidationError(
  */
 export function handleNetworkError(
   error: NetworkError,
-  t: (key: string, options?: TOptions<any>) => string
+  t: (key: string, options?: TOptions<Record<string, unknown>>) => string
 ): ErrorHandlerResult {
   // Transient errors: show toast
   if (error.retryable) {
@@ -137,7 +206,7 @@ export function handleNetworkError(
  */
 export function handleBusinessLogicError(
   error: BusinessLogicError,
-  t: (key: string, options?: TOptions<any>) => string
+  t: (key: string, options?: TOptions<Record<string, unknown>>) => string
 ): ErrorHandlerResult {
   return {
     shouldShowToast: false,
@@ -153,7 +222,7 @@ export function handleBusinessLogicError(
  */
 export function handleConsistencyError(
   error: ConsistencyError,
-  t: (key: string, options?: TOptions<any>) => string
+  t: (key: string, options?: TOptions<Record<string, unknown>>) => string
 ): ErrorHandlerResult {
   return {
     shouldShowToast: false,
@@ -275,6 +344,24 @@ function isRetryableNetworkError(error: unknown): boolean {
   return false;
 }
 
+/**
+ * Type predicates to narrow a ClassifiedError to specific subtypes
+ * This avoids unchecked type assertions in handlers and makes narrowing explicit.
+ */
+function isNetworkClassified(e: ClassifiedError): e is NetworkError {
+  return e.category === ERROR_CATEGORY.NETWORK;
+}
+
+function isBusinessLogicClassified(
+  e: ClassifiedError
+): e is BusinessLogicError {
+  return e.category === ERROR_CATEGORY.BUSINESS_LOGIC;
+}
+
+function isConsistencyClassified(e: ClassifiedError): e is ConsistencyError {
+  return e.category === ERROR_CATEGORY.CONSISTENCY;
+}
+
 function getErrorCode(error: unknown): number | undefined {
   if (error && typeof error === 'object') {
     if (
@@ -332,7 +419,7 @@ function extractErrorMessage(error: unknown): string {
  */
 function getNetworkErrorActions(
   error: NetworkError,
-  t: (key: string) => string
+  t: (key: string, options?: TOptions<Record<string, unknown>>) => string
 ): ErrorHandlerResult['actions'] {
   const actions: ErrorHandlerResult['actions'] = [];
 
@@ -372,12 +459,13 @@ function getNetworkErrorActions(
 
 function getBusinessLogicActions(
   error: BusinessLogicError,
-  t: (key: string) => string
+  t: (key: string, options?: TOptions<Record<string, unknown>>) => string
 ): ErrorHandlerResult['actions'] {
   const actions: ErrorHandlerResult['actions'] = [];
 
   // Missing dry weight
-  if (error.message.includes('dry weight')) {
+  // Prefer explicit error code checks over message matching (localization-safe)
+  if (String(error.code) === BUSINESS_LOGIC_ERROR_CODES.MISSING_DRY_WEIGHT) {
     actions.push({
       label: t('harvest.inventory.missing_dry_weight_cta'),
       action: 'update_weight',
@@ -404,32 +492,31 @@ function getBusinessLogicActions(
  */
 export function handleHarvestError(
   error: unknown,
-  t: (key: string, options?: TOptions<any>) => string
+  t: (key: string, options?: TOptions<Record<string, unknown>>) => string
 ): ErrorHandlerResult {
   const classified = classifyError(error);
 
-  switch (classified.category) {
-    case ERROR_CATEGORY.VALIDATION:
-      return handleValidationError({
-        field: 'general',
-        message: classified.message,
-      });
-
-    case ERROR_CATEGORY.NETWORK:
-      return handleNetworkError(classified as NetworkError, t);
-
-    case ERROR_CATEGORY.BUSINESS_LOGIC:
-      return handleBusinessLogicError(classified as BusinessLogicError, t);
-
-    case ERROR_CATEGORY.CONSISTENCY:
-      return handleConsistencyError(classified as ConsistencyError, t);
-
-    default:
-      return {
-        shouldShowToast: true,
-        shouldShowBanner: false,
-        shouldShowInline: false,
-        toastMessage: classified.message,
-      };
+  // Use explicit type predicates for safe narrowing instead of type assertions
+  if (classified.category === ERROR_CATEGORY.VALIDATION) {
+    return handleValidationError(classified.originalError);
   }
+
+  if (isNetworkClassified(classified)) {
+    return handleNetworkError(classified, t);
+  }
+
+  if (isBusinessLogicClassified(classified)) {
+    return handleBusinessLogicError(classified, t);
+  }
+
+  if (isConsistencyClassified(classified)) {
+    return handleConsistencyError(classified, t);
+  }
+
+  return {
+    shouldShowToast: true,
+    shouldShowBanner: false,
+    shouldShowInline: false,
+    toastMessage: classified.message,
+  };
 }

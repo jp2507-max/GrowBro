@@ -28,16 +28,17 @@ import { Text } from './text';
 const selectTv = tv({
   slots: {
     container: 'mb-4',
-    label: 'text-grey-100 mb-1 text-lg dark:text-neutral-100',
+    label:
+      'mb-2 ml-1 text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400',
     input:
-      'border-grey-50 mt-0 flex-row items-center justify-center rounded-xl border-[0.5px] p-3  dark:border-neutral-500 dark:bg-neutral-800',
-    inputValue: 'dark:text-neutral-100',
+      'mt-0 flex-row items-center justify-center rounded-2xl border-2 border-neutral-200 bg-white px-5 py-4 dark:border-white/10 dark:bg-white/10',
+    inputValue: 'text-base font-medium text-charcoal-900 dark:text-neutral-100',
   },
 
   variants: {
     focused: {
       true: {
-        input: 'border-neutral-600',
+        input: 'border-primary-600 dark:border-primary-400',
       },
     },
     error: {
@@ -49,19 +50,31 @@ const selectTv = tv({
     },
     disabled: {
       true: {
-        input: 'bg-neutral-200',
+        input: 'opacity-60',
+      },
+    },
+    chunky: {
+      true: {
+        input:
+          'rounded-2xl border-2 border-neutral-200 bg-white px-6 py-5 dark:border-white/10 dark:bg-white/10',
+        inputValue: 'text-lg',
       },
     },
   },
   defaultVariants: {
     error: false,
     disabled: false,
+    chunky: false,
   },
 });
 
 const List = Platform.OS === 'web' ? FlashList : BottomSheetFlatList;
 
-export type OptionType = { label: string; value: string | number };
+export type OptionType = {
+  label: string;
+  value: string | number;
+  icon?: string;
+};
 
 type OptionsProps = {
   options: OptionType[];
@@ -78,6 +91,8 @@ function keyExtractor(item: OptionType) {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
+const listContentStyle = { gap: 8 };
+
 export const Options = React.forwardRef<BottomSheetModal, OptionsProps>(
   ({ options, onSelect, value, testID, onDismiss, title }, ref) => {
     const height = options.length * 64 + 140;
@@ -86,11 +101,31 @@ export const Options = React.forwardRef<BottomSheetModal, OptionsProps>(
     const isDark = colorScheme === 'dark';
     const { t } = useTranslation();
 
+    const backgroundStyle = React.useMemo(
+      () => ({
+        backgroundColor: isDark ? colors.darkSurface.card : colors.white,
+        borderTopLeftRadius: 35,
+        borderTopRightRadius: 35,
+      }),
+      [isDark]
+    );
+
+    const handleStyle = React.useMemo(
+      () => ({
+        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.2)' : '#D4D4D4',
+        width: 48,
+        height: 6,
+        borderRadius: 3,
+      }),
+      [isDark]
+    );
+
     const renderSelectItem = React.useCallback(
       ({ item }: { item: OptionType }) => (
         <Option
           key={`select-item-${item.value}`}
           label={item.label}
+          icon={item.icon}
           selected={value === item.value}
           onPress={() => onSelect(item)}
           accessibilityHint={t('accessibility.common.select_option_hint', {
@@ -109,16 +144,8 @@ export const Options = React.forwardRef<BottomSheetModal, OptionsProps>(
         index={0}
         snapPoints={snapPoints}
         onDismiss={onDismiss}
-        backgroundStyle={{
-          backgroundColor: isDark ? colors.charcoal[900] : colors.neutral[50],
-          borderTopLeftRadius: 24,
-          borderTopRightRadius: 24,
-        }}
-        handleIndicatorStyle={{
-          backgroundColor: isDark ? colors.charcoal[600] : colors.neutral[400],
-          width: 40,
-          height: 5,
-        }}
+        backgroundStyle={backgroundStyle}
+        handleIndicatorStyle={handleStyle}
       >
         {title && (
           <View className="px-5 pb-3 pt-1">
@@ -127,13 +154,13 @@ export const Options = React.forwardRef<BottomSheetModal, OptionsProps>(
             </Text>
           </View>
         )}
-        <View className="px-4 pb-6">
+        <View className="px-6 pb-10">
           <List
             data={options}
             keyExtractor={keyExtractor}
             renderItem={renderSelectItem}
             testID={testID ? `${testID}-modal` : undefined}
-            contentContainerStyle={{ gap: 8 }}
+            contentContainerStyle={listContentStyle}
           />
         </View>
       </Modal>
@@ -144,6 +171,7 @@ export const Options = React.forwardRef<BottomSheetModal, OptionsProps>(
 const Option = React.memo(
   ({
     label,
+    icon,
     selected = false,
     accessibilityHint,
     accessibilityRole = 'menuitem',
@@ -152,6 +180,7 @@ const Option = React.memo(
   }: PressableProps & {
     selected?: boolean;
     label: string;
+    icon?: string;
   }) => {
     const scale = useSharedValue(1);
 
@@ -170,10 +199,10 @@ const Option = React.memo(
     return (
       <AnimatedPressable
         style={animatedStyle}
-        className={`flex-row items-center rounded-xl px-4 py-3.5 ${
+        className={`flex-row items-center justify-between rounded-2xl p-4 ${
           selected
-            ? 'bg-primary-600 dark:bg-primary-700'
-            : 'bg-white dark:bg-charcoal-800'
+            ? 'border border-primary-600 bg-primary-100 dark:border-primary-400 dark:bg-primary-900/30'
+            : ''
         }`}
         accessibilityLabel={label}
         accessibilityRole={accessibilityRole}
@@ -184,14 +213,29 @@ const Option = React.memo(
         onPress={onPress}
         {...props}
       >
-        <Text
-          className={`flex-1 text-base font-medium ${
-            selected ? 'text-white' : 'text-charcoal-800 dark:text-neutral-100'
-          }`}
-        >
-          {label}
-        </Text>
-        {selected && <Check selected />}
+        <View className="flex-1 flex-row items-center">
+          {icon && (
+            <View
+              className={`mr-3 size-8 items-center justify-center rounded-full ${
+                selected
+                  ? 'bg-white dark:bg-neutral-800'
+                  : 'bg-neutral-100 dark:bg-white/10'
+              }`}
+            >
+              <Text className="text-base">{icon}</Text>
+            </View>
+          )}
+          <Text
+            className={`text-lg ${
+              selected
+                ? 'font-bold text-primary-900 dark:text-primary-100'
+                : 'font-medium text-neutral-600 dark:text-neutral-300'
+            }`}
+          >
+            {label}
+          </Text>
+        </View>
+        {selected && <Check />}
       </AnimatedPressable>
     );
   }
@@ -206,10 +250,26 @@ export interface SelectProps {
   onSelect?: (value: string | number) => void;
   placeholder?: string;
   testID?: string;
+  chunky?: boolean;
 }
 interface ControlledSelectProps<T extends FieldValues>
   extends SelectProps,
     InputControllerType<T> {}
+
+/** Hook to compute the selected option's label */
+function useSelectedLabel(
+  value: string | number | undefined,
+  options: OptionType[],
+  placeholder: string
+): string {
+  return React.useMemo(
+    () =>
+      value !== undefined
+        ? (options?.find((opt) => opt.value === value)?.label ?? placeholder)
+        : placeholder,
+    [value, options, placeholder]
+  );
+}
 
 export const Select = (props: SelectProps) => {
   const {
@@ -221,6 +281,7 @@ export const Select = (props: SelectProps) => {
     disabled = false,
     onSelect,
     testID,
+    chunky,
   } = props;
   const modal = useModal();
   const { t } = useTranslation();
@@ -231,9 +292,7 @@ export const Select = (props: SelectProps) => {
   }, []);
 
   const openModal = React.useCallback(() => {
-    if (disabled) {
-      return;
-    }
+    if (disabled) return;
     setIsOpen(true);
     modal.present();
   }, [disabled, modal]);
@@ -242,27 +301,22 @@ export const Select = (props: SelectProps) => {
     (option: OptionType) => {
       onSelect?.(option.value);
       modal.dismiss();
-      setIsOpen(false);
     },
     [modal, onSelect]
   );
 
   const styles = React.useMemo(
     () =>
-      selectTv({
-        error: Boolean(error),
-        disabled,
-      }),
-    [error, disabled]
+      selectTv({ error: Boolean(error), disabled, chunky: Boolean(chunky) }),
+    [error, disabled, chunky]
   );
 
-  const textValue = React.useMemo(
-    () =>
-      value !== undefined
-        ? (options?.filter((t) => t.value === value)?.[0]?.label ?? placeholder)
-        : placeholder,
-    [value, options, placeholder]
-  );
+  const textValue = useSelectedLabel(value, options, placeholder);
+  const accessibilityHint = disabled
+    ? undefined
+    : t('accessibility.common.select_open_hint', {
+        label: label ?? placeholder,
+      });
 
   return (
     <>
@@ -281,13 +335,7 @@ export const Select = (props: SelectProps) => {
           onPress={openModal}
           accessibilityRole="button"
           accessibilityLabel={label ?? placeholder}
-          accessibilityHint={
-            disabled
-              ? undefined
-              : t('accessibility.common.select_open_hint', {
-                  label: label ?? placeholder,
-                })
-          }
+          accessibilityHint={accessibilityHint}
           accessibilityState={{ disabled, expanded: isOpen }}
           testID={testID ? `${testID}-trigger` : undefined}
         >
@@ -321,7 +369,14 @@ export const Select = (props: SelectProps) => {
 export function ControlledSelect<T extends FieldValues>(
   props: ControlledSelectProps<T>
 ) {
-  const { name, control, rules, onSelect: onNSelect, ...selectProps } = props;
+  const {
+    name,
+    control,
+    rules,
+    onSelect: onNSelect,
+    chunky,
+    ...selectProps
+  } = props;
 
   const { field, fieldState } = useController({ control, name, rules });
   const onSelect = React.useCallback(
@@ -336,19 +391,20 @@ export function ControlledSelect<T extends FieldValues>(
       onSelect={onSelect}
       value={field.value}
       error={fieldState.error?.message}
+      chunky={chunky}
       {...selectProps}
     />
   );
 }
 
-const Check = ({ selected, ...props }: SvgProps & { selected?: boolean }) => (
+const Check = ({ ...props }: SvgProps) => (
   <Svg
     width={22}
     height={22}
     fill="none"
     viewBox="0 0 25 24"
     {...props}
-    className={selected ? 'stroke-white' : 'stroke-primary-600'}
+    className="stroke-primary-600 dark:stroke-primary-400"
   >
     <Path
       d="m20.256 6.75-10.5 10.5L4.506 12"

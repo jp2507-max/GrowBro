@@ -7,7 +7,7 @@ import {
   HeaderIconButton,
   ScreenHeaderBase,
 } from '@/components/navigation/screen-header-base';
-import { Input, View } from '@/components/ui';
+import { Input, Text, View } from '@/components/ui';
 import colors from '@/components/ui/colors';
 import { Rate, Settings } from '@/components/ui/icons';
 import { haptics } from '@/lib/haptics';
@@ -48,8 +48,13 @@ export function StrainsHeader({
   return (
     <ScreenHeaderBase
       insets={insets}
-      title={translate('shared_header.strains.title')}
+      title=""
       showBottomBorder={false}
+      topRowLeft={
+        <Text className="text-2xl font-bold text-white">
+          {translate('shared_header.strains.title')}
+        </Text>
+      }
       topRowRight={
         <View className="flex-row items-center gap-1">
           <HeaderIconButton
@@ -105,7 +110,7 @@ export function StrainsHeader({
         accessibilityLabel={translate('strains.search_placeholder')}
         accessibilityHint={translate('accessibility.strains.search_hint')}
         testID="strains-search-input"
-        className="h-12 rounded-2xl border-0 bg-white px-4 font-medium text-neutral-900 shadow-sm dark:bg-neutral-900 dark:text-white"
+        className="h-12 rounded-2xl border-0 bg-white/90 px-4 font-medium text-neutral-900 shadow-sm dark:bg-neutral-900/90 dark:text-white"
         placeholderTextColor={colors.neutral[400]}
       />
     </ScreenHeaderBase>

@@ -1,10 +1,6 @@
 /* eslint-disable simple-import-sort/imports */
 import React from 'react';
-import {
-  StyleSheet,
-  type LayoutChangeEvent,
-  type ListRenderItemInfo,
-} from 'react-native';
+import { StyleSheet, type LayoutChangeEvent } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -13,20 +9,22 @@ import Animated, {
 // @ts-expect-error - Reanimated 4.x type exports issue
 import { interpolate } from 'react-native-reanimated';
 
-import { useColorScheme } from 'nativewind';
-
 import type { Plant } from '@/api';
 import { Image, Pressable, Text, View } from '@/components/ui';
 import { ArrowRight } from '@/components/ui/icons/arrow-right';
+import colors from '@/components/ui/colors';
 import { useAnimatedScrollList } from '@/lib/animations/animated-scroll-list-provider';
 import { haptics } from '@/lib/haptics';
+import { usePlantPhotoSync } from '@/lib/plants/plant-photo-sync';
 import { translate } from '@/lib/i18n';
 import type { TxKeyPath } from '@/lib/i18n/utils';
+import { useReduceMotionEnabled } from '@/lib/strains/accessibility';
 
 export type PlantCardProps = {
   plant: Plant;
   onPress: (id: string) => void;
   itemY?: SharedValue<number>;
+  needsAttention?: boolean;
 };
 
 type StageColors = {
@@ -37,64 +35,64 @@ type StageColors = {
   icon: string;
 };
 
-// Vibrant pastel colors with better visibility
+// Stage colors using design tokens
 function getStageColors(stage?: string): StageColors {
   switch (stage) {
     case 'seedling':
       return {
-        bg: '#C6F6D5', // Vibrant Mint Green
-        text: '#14532d', // green-900
-        badgeBg: '#F0FDF4', // lighter green
-        badgeText: '#166534', // green-800
-        icon: '#86EFAC',
+        bg: colors.success[200],
+        text: colors.success[900],
+        badgeBg: colors.success[50],
+        badgeText: colors.success[800],
+        icon: colors.success[300],
       };
     case 'vegetative':
       return {
-        bg: '#BAE6FD', // Vibrant Sky Blue
-        text: '#0c4a6e', // sky-900
-        badgeBg: '#F0F9FF',
-        badgeText: '#075985', // sky-800
-        icon: '#7DD3FC',
+        bg: colors.sky[200],
+        text: colors.sky[900],
+        badgeBg: colors.sky[50],
+        badgeText: colors.sky[800],
+        icon: colors.sky[300],
       };
     case 'flowering':
       return {
-        bg: '#E9D5FF', // Vibrant Purple
-        text: '#581c87', // purple-900
-        badgeBg: '#FAF5FF',
-        badgeText: '#6b21a8', // purple-800
-        icon: '#D8B4FE',
+        bg: colors.indigo[200],
+        text: colors.indigo[900],
+        badgeBg: colors.indigo[50],
+        badgeText: colors.indigo[800],
+        icon: colors.indigo[300],
       };
     case 'harvesting':
       return {
-        bg: '#FED7AA', // Vibrant Orange
-        text: '#7c2d12', // orange-900
-        badgeBg: '#FFF7ED',
-        badgeText: '#9a3412', // orange-800
-        icon: '#FDBA74',
+        bg: colors.terracotta[200],
+        text: colors.terracotta[900],
+        badgeBg: colors.terracotta[50],
+        badgeText: colors.terracotta[800],
+        icon: colors.terracotta[300],
       };
     case 'curing':
       return {
-        bg: '#FDE68A', // Vibrant Amber
-        text: '#78350f', // amber-900
-        badgeBg: '#FFFBEB',
-        badgeText: '#92400e', // amber-800
-        icon: '#FCD34D',
+        bg: colors.warning[200],
+        text: colors.warning[900],
+        badgeBg: colors.warning[50],
+        badgeText: colors.warning[800],
+        icon: colors.warning[300],
       };
     case 'ready':
       return {
-        bg: '#A7F3D0', // Vibrant Emerald
-        text: '#064e3b', // emerald-900
-        badgeBg: '#ECFDF5',
-        badgeText: '#065f46', // emerald-800
-        icon: '#6EE7B7',
+        bg: colors.primary[200],
+        text: colors.primary[900],
+        badgeBg: colors.primary[50],
+        badgeText: colors.primary[800],
+        icon: colors.primary[300],
       };
     default:
       return {
-        bg: '#E5E7EB', // Neutral Gray
-        text: '#171717', // neutral-900
-        badgeBg: '#F9FAFB',
-        badgeText: '#262626', // neutral-800
-        icon: '#D4D4D4',
+        bg: colors.neutral[200],
+        text: colors.neutral[900],
+        badgeBg: colors.neutral[50],
+        badgeText: colors.neutral[900],
+        icon: colors.neutral[300],
       };
   }
 }
@@ -106,12 +104,32 @@ function translateStage(stage?: string): string | null {
   return typeof label === 'string' && label.length > 0 ? label : stage;
 }
 
+// Stage progress percentages for gamification
+function getStageProgress(stage?: string): number {
+  switch (stage) {
+    case 'seedling':
+      return 15;
+    case 'vegetative':
+      return 35;
+    case 'flowering':
+      return 65;
+    case 'harvesting':
+      return 85;
+    case 'curing':
+      return 95;
+    case 'ready':
+      return 100;
+    default:
+      return 0;
+  }
+}
+
 const cardStyles = StyleSheet.create({
   shadow: {
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 8,
   },
 });
 
@@ -121,15 +139,18 @@ function PlantCardImage({
 }: {
   plant: Plant;
   colors: StageColors;
-}) {
+}): React.ReactElement {
+  // Auto-sync plant photo from remote if missing locally
+  const { resolvedLocalUri } = usePlantPhotoSync(plant);
+
   return (
     <View
-      className="size-28 overflow-hidden rounded-2xl"
+      className="size-16 overflow-hidden rounded-xl border border-neutral-100 bg-white dark:border-neutral-700"
       style={{ backgroundColor: colors.badgeBg }}
     >
-      {plant.imageUrl ? (
+      {resolvedLocalUri ? (
         <Image
-          source={{ uri: plant.imageUrl }}
+          source={{ uri: resolvedLocalUri }}
           className="size-full"
           contentFit="cover"
           testID={`plant-card-${plant.id}-image`}
@@ -139,8 +160,113 @@ function PlantCardImage({
           className="size-full items-center justify-center"
           testID={`plant-card-${plant.id}-placeholder`}
         >
-          <Text className="text-4xl">🌱</Text>
+          <Text className="text-2xl">🌱</Text>
         </View>
+      )}
+    </View>
+  );
+}
+
+function PlantCardHeader({
+  plant,
+  stageLabel,
+  colors,
+}: {
+  plant: Plant;
+  stageLabel: string | null;
+  colors: StageColors;
+}): React.ReactElement {
+  return (
+    <View className="flex-row items-start justify-between p-4 pb-3">
+      <View className="flex-1 pr-3">
+        {stageLabel ? (
+          <Text
+            className="mb-1 text-xs font-bold uppercase tracking-widest text-neutral-500 dark:text-neutral-400"
+            testID={`plant-card-${plant.id}-stage-label`}
+          >
+            {stageLabel}
+          </Text>
+        ) : null}
+        <Text
+          className="text-2xl font-bold tracking-tight text-charcoal-900 dark:text-neutral-100"
+          numberOfLines={1}
+        >
+          {plant.name}
+        </Text>
+        {plant.strain ? (
+          <Text
+            className="mt-0.5 text-base font-medium text-neutral-600 dark:text-neutral-400"
+            numberOfLines={1}
+          >
+            {plant.strain}
+          </Text>
+        ) : null}
+      </View>
+      <PlantCardImage plant={plant} colors={colors} />
+    </View>
+  );
+}
+
+function PlantCardProgress({
+  plantId,
+  progress,
+}: {
+  plantId: string;
+  progress: number;
+}): React.ReactElement {
+  return (
+    <View className="px-4 pb-3">
+      <View className="h-1.5 w-full overflow-hidden rounded-full bg-neutral-100 dark:bg-neutral-800">
+        <View
+          className="h-full rounded-full bg-primary-600"
+          style={{ width: `${progress}%` }}
+          testID={`plant-card-${plantId}-progress`}
+        />
+      </View>
+      <Text className="mt-1.5 text-right text-[10px] font-medium text-neutral-500 dark:text-neutral-400">
+        {translate('plants.card.progress' as TxKeyPath, { percent: progress })}
+      </Text>
+    </View>
+  );
+}
+
+function PlantCardFooter({
+  needsAttention,
+}: {
+  needsAttention: boolean;
+}): React.ReactElement {
+  return (
+    <View
+      className={`flex-row items-center justify-between px-4 py-3 ${needsAttention ? 'bg-terracotta-50 dark:bg-terracotta-900/20' : 'bg-neutral-50 dark:bg-charcoal-950'}`}
+    >
+      {needsAttention ? (
+        <>
+          <View className="flex-row items-center gap-2">
+            <Text className="text-base">💧</Text>
+            <Text className="text-sm font-bold text-terracotta-600 dark:text-terracotta-400">
+              {translate('plants.card.needs_water' as TxKeyPath)}
+            </Text>
+          </View>
+          <View className="rounded-xl bg-terracotta-500 px-4 py-2 shadow-sm">
+            <Text className="text-xs font-bold text-white">
+              {translate('plants.card.water_action' as TxKeyPath)}
+            </Text>
+          </View>
+        </>
+      ) : (
+        <>
+          <View className="flex-row items-center gap-2">
+            <Text className="text-base">✓</Text>
+            <Text className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
+              {translate('plants.card.all_good' as TxKeyPath)}
+            </Text>
+          </View>
+          <ArrowRight
+            width={10}
+            height={16}
+            className="text-neutral-500 opacity-40 dark:text-neutral-400"
+          />
+        </>
       )}
     </View>
   );
@@ -149,27 +275,28 @@ function PlantCardImage({
 function PlantCardContent({
   plant,
   onPress,
+  needsAttention = false,
 }: {
   plant: Plant;
   onPress: (id: string) => void;
-}) {
-  const { colorScheme } = useColorScheme();
-
+  needsAttention?: boolean;
+}): React.ReactElement {
   const handlePress = React.useCallback(() => {
     haptics.selection();
     onPress(plant.id);
   }, [onPress, plant.id]);
-
   const stageLabel = React.useMemo(
     () => translateStage(plant.stage),
     [plant.stage]
   );
-
   const colors = React.useMemo(
     () => getStageColors(plant.stage),
     [plant.stage]
   );
-
+  const progress = React.useMemo(
+    () => getStageProgress(plant.stage),
+    [plant.stage]
+  );
   const accessibilityLabel = React.useMemo(
     () =>
       [plant.name, stageLabel, plant.strain].filter(Boolean).join(', ') ||
@@ -179,64 +306,17 @@ function PlantCardContent({
 
   return (
     <Pressable
-      className="mb-3 overflow-hidden rounded-3xl border border-neutral-200 bg-white shadow-sm active:scale-[0.98] active:opacity-95 dark:border-charcoal-700 dark:bg-charcoal-850"
-      style={[
-        cardStyles.shadow,
-        // { backgroundColor: colors.bg, shadowColor: colors.text }, // Removed for clean look
-      ]}
+      className="mb-3 overflow-hidden rounded-3xl border border-neutral-200 bg-white active:scale-[0.98] active:opacity-95 dark:border-charcoal-700 dark:bg-charcoal-900"
+      style={[cardStyles.shadow]}
       testID={`plant-card-${plant.id}`}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       accessibilityHint={translate('accessibility.plants.open_detail_hint')}
       onPress={handlePress}
     >
-      <View className="flex-row items-center p-6">
-        {/* Left content: Name, strain, stage badge */}
-        <View className="flex-1 justify-between pr-4">
-          <View>
-            <Text
-              className="text-2xl font-bold tracking-tight text-ink-900 dark:text-charcoal-100"
-              numberOfLines={1}
-            >
-              {plant.name}
-            </Text>
-            {plant.strain ? (
-              <Text
-                className="mt-1 text-base font-medium text-ink-700 opacity-60 dark:text-charcoal-400"
-                numberOfLines={1}
-              >
-                {plant.strain}
-              </Text>
-            ) : null}
-          </View>
-
-          {stageLabel ? (
-            <View
-              testID={`plant-card-${plant.id}-stage`}
-              className="mt-4 self-start rounded-full px-4 py-1.5"
-              style={{ backgroundColor: colors.badgeBg }}
-            >
-              <Text
-                className="text-sm font-semibold"
-                style={{ color: colors.badgeText }}
-              >
-                {stageLabel}
-              </Text>
-            </View>
-          ) : null}
-        </View>
-
-        {/* Right content: Image + Arrow */}
-        <View className="flex-row items-center gap-4">
-          <PlantCardImage plant={plant} colors={colors} />
-          <ArrowRight
-            color={colorScheme === 'dark' ? '#9CA3AF' : '#1E1E1E'} // neutral-400 or ink-900
-            width={12}
-            height={18}
-            className="opacity-20"
-          />
-        </View>
-      </View>
+      <PlantCardHeader plant={plant} stageLabel={stageLabel} colors={colors} />
+      <PlantCardProgress plantId={plant.id} progress={progress} />
+      <PlantCardFooter needsAttention={needsAttention} />
     </Pressable>
   );
 }
@@ -245,14 +325,21 @@ export function PlantCard({
   plant,
   onPress,
   itemY,
+  needsAttention = false,
 }: PlantCardProps): React.ReactElement {
   const { listOffsetY } = useAnimatedScrollList();
   const localItemY = useSharedValue(0);
   const effItemY = itemY ?? localItemY;
   const measuredHeight = useSharedValue(0);
+  const reduceMotion = useReduceMotionEnabled();
 
   const containerStyle = useAnimatedStyle(() => {
     'worklet';
+
+    if (reduceMotion) {
+      return { transform: [{ translateY: 0 }, { scale: 1 }] };
+    }
+
     const h = Math.max(measuredHeight.value, 1);
     const start = effItemY.value - 1;
     const mid = effItemY.value;
@@ -268,7 +355,7 @@ export function PlantCard({
       [0, 0, 1]
     );
     return { transform: [{ translateY }, { scale }] };
-  }, []);
+  });
 
   const onLayout = React.useCallback(
     (e: LayoutChangeEvent) => {
@@ -285,19 +372,12 @@ export function PlantCard({
   );
 
   return (
-    <Animated.View style={[styles.wrapper, containerStyle]} onLayout={onLayout}>
-      <PlantCardContent plant={plant} onPress={onPress} />
+    <Animated.View style={containerStyle} onLayout={onLayout}>
+      <PlantCardContent
+        plant={plant}
+        onPress={onPress}
+        needsAttention={needsAttention}
+      />
     </Animated.View>
   );
-}
-
-const styles = StyleSheet.create({
-  wrapper: {},
-});
-
-export function renderPlantItem(
-  { item }: ListRenderItemInfo<Plant>,
-  onPress: (id: string) => void
-): React.ReactElement {
-  return <PlantCard plant={item} onPress={onPress} />;
 }

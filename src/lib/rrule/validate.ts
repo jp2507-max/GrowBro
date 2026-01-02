@@ -8,8 +8,12 @@ export function validate(config: RRuleParse): ValidationResult {
     errors.push('dtstart must be a valid Date');
   }
 
-  if (config.freq !== 'DAILY' && config.freq !== 'WEEKLY') {
-    errors.push('freq must be DAILY or WEEKLY');
+  if (
+    config.freq !== 'DAILY' &&
+    config.freq !== 'WEEKLY' &&
+    config.freq !== 'MONTHLY'
+  ) {
+    errors.push('freq must be DAILY, WEEKLY, or MONTHLY');
   }
 
   if (
@@ -55,9 +59,21 @@ export function validate(config: RRuleParse): ValidationResult {
     errors.push('byweekday must contain ISO weekdays 1..7');
   }
 
-  // BYDAY is only applicable to WEEKLY; not required. If provided for DAILY, reject.
+  // BYDAY is only applicable to WEEKLY; not required. If provided for DAILY or MONTHLY, reject.
   if (config.freq === 'DAILY' && config.byweekday && config.byweekday.length) {
     errors.push('byweekday is only allowed with WEEKLY');
+  }
+
+  // MONTHLY with BYDAY requires positional notation (e.g., "1FR" for first Friday)
+  // which is not yet supported in v1.2. Reject to prevent silent misconfiguration.
+  if (
+    config.freq === 'MONTHLY' &&
+    config.byweekday &&
+    config.byweekday.length
+  ) {
+    errors.push(
+      'byweekday with MONTHLY is not supported in v1.2 (requires positional BYDAY per RFC 5545)'
+    );
   }
 
   return {

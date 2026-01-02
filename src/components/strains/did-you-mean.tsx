@@ -20,7 +20,7 @@ export function DidYouMean({
 
   return (
     <View
-      className="dark:bg-primary-950 mb-3 flex-row items-center rounded-lg bg-primary-50 p-3"
+      className="mb-3 flex-row items-center rounded-lg bg-primary-50 p-3 dark:bg-primary-950"
       testID={testID}
     >
       <Text className="text-sm text-neutral-700 dark:text-neutral-300">

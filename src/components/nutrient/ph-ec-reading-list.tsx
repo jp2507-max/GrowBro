@@ -123,6 +123,7 @@ export function PhEcReadingList({
       keyExtractor={keyExtractor}
       getItemType={getItemType}
       ItemSeparatorComponent={ItemSeparatorComponent}
+      contentInsetAdjustmentBehavior="automatic"
       testID={testID}
     />
   );

@@ -1250,5 +1250,38 @@ export const migrations = schemaMigrations({
         },
       ],
     },
+    {
+      toVersion: 36,
+      steps: [
+        addColumns({
+          table: 'series',
+          columns: [{ name: 'origin', type: 'string', isOptional: true }],
+        }),
+      ],
+    },
+    // Migration from version 36 to 37: Backfill origin column for existing series
+    // ✅ DATA MIGRATION IMPLEMENTED:
+    // This migration backfills the `origin` column for existing series rows that were created before version 36.
+    // Without this backfill, the cleanup logic in task-engine.ts would skip legacy series (origin = null),
+    // causing duplicate schedules to be created when a user changes a plant's stage.
+    {
+      toVersion: 37,
+      steps: [
+        {
+          type: 'sql',
+          sql: `UPDATE series SET origin = 'growbro' WHERE origin IS NULL AND deleted_at IS NULL;`,
+        },
+      ],
+    },
+    // Migration from version 37 to 38: Add metadata column to series
+    {
+      toVersion: 38,
+      steps: [
+        addColumns({
+          table: 'series',
+          columns: [{ name: 'metadata', type: 'string', isOptional: true }],
+        }),
+      ],
+    },
   ],
 });

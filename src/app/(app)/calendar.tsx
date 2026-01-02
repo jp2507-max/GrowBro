@@ -1,131 +1,223 @@
-import React from 'react';
+import { DateTime } from 'luxon';
+import React, { useCallback, useMemo } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AgendaList } from '@/components/calendar/agenda-list';
-import { CalendarEmptyState } from '@/components/calendar/calendar-empty-state';
-import { DragDropProvider } from '@/components/calendar/drag-drop-provider';
-import { DraggableAgendaItem } from '@/components/calendar/draggable-agenda-item';
-import { Button, FocusAwareStatusBar, Text, View } from '@/components/ui';
-import type { AgendaItem } from '@/types/agenda';
+import { CalendarHeader } from '@/components/calendar/calendar-header';
+import type { PlantInfo } from '@/components/calendar/calendar-list-items';
+import {
+  buildCalendarListData,
+  createRenderItem,
+  getItemKey,
+  getItemType,
+} from '@/components/calendar/calendar-list-items';
+import { FocusAwareStatusBar, List, View } from '@/components/ui';
+import { useBottomTabBarHeight } from '@/lib/animations/use-bottom-tab-bar-height';
+import {
+  completeRecurringInstance,
+  completeTask,
+  getCompletedTasksByDateRange,
+  getTasksByDateRange,
+} from '@/lib/task-manager';
+import { database } from '@/lib/watermelon';
+import type { PlantModel } from '@/lib/watermelon-models/plant';
+import type { Task } from '@/types/calendar';
 
-function useTodayAgenda(currentDate: Date): {
-  items: AgendaItem[];
+const BOTTOM_PADDING_EXTRA = 24;
+
+// -----------------------------------------------------------------------------
+// Utility functions
+// -----------------------------------------------------------------------------
+
+function isEphemeralTask(task: Task): boolean {
+  return task.id.startsWith('series:') || task.metadata?.ephemeral === true;
+}
+
+function parseEphemeralTaskInfo(
+  taskId: string
+): { seriesId: string; localDate: string } | null {
+  if (!taskId.startsWith('series:')) return null;
+  const parts = taskId.split(':');
+  if (parts.length !== 3) return null;
+  return { seriesId: parts[1], localDate: parts[2] };
+}
+
+// -----------------------------------------------------------------------------
+// Hook: useDayTasks
+// -----------------------------------------------------------------------------
+
+function useDayTasks(selectedDate: DateTime): {
+  pendingTasks: Task[];
+  completedTasks: Task[];
+  plantMap: Map<string, PlantInfo>;
   isLoading: boolean;
+  refetch: () => Promise<void>;
 } {
-  const todayId = currentDate.toISOString().slice(0, 10);
-  const items = React.useMemo<AgendaItem[]>(
-    () => [
-      {
-        id: `header-${todayId}`,
-        type: 'date-header',
-        date: currentDate,
-        height: 32,
-      },
-    ],
-    [currentDate, todayId]
+  const [pendingTasks, setPendingTasks] = React.useState<Task[]>([]);
+  const [completedTasks, setCompletedTasks] = React.useState<Task[]>([]);
+  const [plantMap, setPlantMap] = React.useState<Map<string, PlantInfo>>(
+    new Map()
   );
-  return { items, isLoading: false };
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  const loadTasks = React.useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const startOfDay = selectedDate.startOf('day').toJSDate();
+      const endOfDay = selectedDate.endOf('day').toJSDate();
+
+      const [pending, completed] = await Promise.all([
+        getTasksByDateRange(startOfDay, endOfDay),
+        getCompletedTasksByDateRange(startOfDay, endOfDay),
+      ]);
+
+      // Collect unique plant IDs from all tasks
+      const plantIds = new Set<string>();
+      for (const task of [...pending, ...completed]) {
+        if (task.plantId) {
+          plantIds.add(task.plantId);
+        }
+      }
+
+      // Fetch plant info for all relevant plant IDs
+      const newPlantMap = new Map<string, PlantInfo>();
+      if (plantIds.size > 0) {
+        const plantsCollection = database.get<PlantModel>('plants');
+        const plantIdsArray = Array.from(plantIds);
+
+        // Fetch plants in parallel batches
+        const plantPromises = plantIdsArray.map(async (id) => {
+          try {
+            const plant = await plantsCollection.find(id);
+            return {
+              id: plant.id,
+              name: plant.name,
+              imageUrl: plant.imageUrl,
+            };
+          } catch {
+            // Plant not found, skip
+            return null;
+          }
+        });
+
+        const plants = await Promise.all(plantPromises);
+        for (const plant of plants) {
+          if (plant) {
+            newPlantMap.set(plant.id, plant);
+          }
+        }
+      }
+
+      setPendingTasks(pending);
+      setCompletedTasks(completed);
+      setPlantMap(newPlantMap);
+    } catch (error) {
+      console.warn('[CalendarScreen] Failed to load tasks:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [selectedDate]);
+
+  React.useEffect(() => {
+    loadTasks();
+  }, [loadTasks]);
+
+  return {
+    pendingTasks,
+    completedTasks,
+    plantMap,
+    isLoading,
+    refetch: loadTasks,
+  };
 }
 
-function Header({
-  date,
-  onPrev,
-  onNext,
-}: {
-  date: Date;
-  onPrev: () => void;
-  onNext: () => void;
-}) {
-  return (
-    <View
-      className="flex-row items-center justify-between p-4"
-      testID="calendar-header"
-    >
-      <Button
-        variant="outline"
-        size="sm"
-        label="Prev"
-        onPress={onPrev}
-        className="w-24"
-        testID="calendar-prev-button"
-      />
-      <Text className="text-lg font-semibold">
-        {date.toLocaleDateString(undefined, {
-          weekday: 'short',
-          month: 'short',
-          day: 'numeric',
-        })}
-      </Text>
-      <Button
-        variant="outline"
-        size="sm"
-        label="Next"
-        onPress={onNext}
-        className="w-24"
-        testID="calendar-next-button"
-      />
-    </View>
-  );
-}
+// -----------------------------------------------------------------------------
+// Main Screen Component
+// -----------------------------------------------------------------------------
 
 export default function CalendarScreen(): React.ReactElement {
-  const [currentDate, setCurrentDate] = React.useState<Date>(new Date());
-  const { items, isLoading } = useTodayAgenda(currentDate);
+  const insets = useSafeAreaInsets();
+  const { grossHeight } = useBottomTabBarHeight();
+  const [selectedDate, setSelectedDate] = React.useState<DateTime>(
+    DateTime.now().startOf('day')
+  );
 
-  const onPrev = React.useCallback(() => {
-    setCurrentDate(
-      (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1)
-    );
-  }, []);
-  const onNext = React.useCallback(() => {
-    setCurrentDate(
-      (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1)
-    );
-  }, []);
+  const { pendingTasks, completedTasks, plantMap, isLoading, refetch } =
+    useDayTasks(selectedDate);
 
-  const onConvertToTask = React.useCallback(() => {
-    // TODO: Navigate to task creation screen or open task creation modal
-    console.log('Convert sample task to real task');
+  const onDateSelect = useCallback((date: DateTime) => {
+    setSelectedDate(date.startOf('day'));
   }, []);
 
-  const renderItem = React.useCallback(({ item }: { item: AgendaItem }) => {
-    if (item.type === 'date-header') {
-      return (
-        <View className="px-4 py-2">
-          <Text
-            className="text-xs uppercase text-neutral-500"
-            tx="calendar.today"
-          />
-        </View>
-      );
-    }
-    if (item.type === 'task' && item.task) {
-      return (
-        <DraggableAgendaItem
-          task={item.task}
-          testID={`agenda-item-row-${item.task.id}`}
-        />
-      );
-    }
-    return null;
-  }, []);
+  const handleCompleteTask = useCallback(
+    async (task: Task) => {
+      try {
+        if (isEphemeralTask(task)) {
+          const info = parseEphemeralTaskInfo(task.id);
+          if (info) {
+            const occurrenceDate = DateTime.fromISO(info.localDate, {
+              zone: task.timezone || 'UTC',
+            }).toJSDate();
+            await completeRecurringInstance(info.seriesId, occurrenceDate);
+          } else {
+            await completeTask(task.id);
+          }
+        } else {
+          await completeTask(task.id);
+        }
+        await refetch();
+      } catch (error) {
+        console.error('[CalendarScreen] Failed to complete task:', error);
+      }
+    },
+    [refetch]
+  );
 
-  const hasNoTasks = items.length === 1 && items[0].type === 'date-header';
+  const listData = useMemo(
+    () =>
+      buildCalendarListData({
+        pendingTasks,
+        completedTasks,
+        isLoading,
+        plantMap,
+      }),
+    [pendingTasks, completedTasks, isLoading, plantMap]
+  );
+
+  const renderItem = useMemo(
+    () => createRenderItem(handleCompleteTask),
+    [handleCompleteTask]
+  );
+
+  const contentContainerStyle = useMemo(
+    () => ({
+      paddingBottom: grossHeight + BOTTOM_PADDING_EXTRA,
+      paddingHorizontal: 16,
+      gap: 8,
+    }),
+    [grossHeight]
+  );
 
   return (
-    <DragDropProvider>
-      <View className="flex-1" testID="calendar-screen">
-        <FocusAwareStatusBar />
-        <Header date={currentDate} onPrev={onPrev} onNext={onNext} />
-        {hasNoTasks && !isLoading ? (
-          <CalendarEmptyState onConvertToTask={onConvertToTask} />
-        ) : (
-          <AgendaList
-            data={items}
-            isLoading={isLoading}
-            renderItem={renderItem}
-          />
-        )}
-      </View>
-    </DragDropProvider>
+    <View
+      className="flex-1 bg-neutral-50 dark:bg-charcoal-950"
+      testID="calendar-screen"
+    >
+      <FocusAwareStatusBar />
+      <CalendarHeader
+        selectedDate={selectedDate}
+        onDateSelect={onDateSelect}
+        insets={insets}
+      />
+
+      <List
+        data={listData}
+        renderItem={renderItem}
+        keyExtractor={getItemKey}
+        getItemType={getItemType}
+        contentContainerStyle={contentContainerStyle}
+        contentInsetAdjustmentBehavior="automatic"
+        showsVerticalScrollIndicator={false}
+      />
+    </View>
   );
 }

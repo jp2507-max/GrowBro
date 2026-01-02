@@ -21,7 +21,13 @@ import type {
   SyncRejection,
   ValidationError,
 } from './harvest-error-types';
-import { ERROR_CATEGORY } from './harvest-error-types';
+import {
+  BUSINESS_LOGIC_ERROR_CODES,
+  BusinessLogicErrorClass,
+  CONSISTENCY_ERROR_CODES,
+  ConsistencyErrorClass,
+  ERROR_CATEGORY,
+} from './harvest-error-types';
 
 jest.mock('react-native-flash-message', () => ({
   showMessage: jest.fn(),
@@ -96,7 +102,10 @@ describe('classifyError', () => {
   });
 
   it('should classify business logic errors', () => {
-    const error = new Error('Invalid stage transition');
+    const error = new BusinessLogicErrorClass(
+      BUSINESS_LOGIC_ERROR_CODES.INVALID_STAGE_TRANSITION,
+      'Invalid stage transition'
+    );
 
     const result = classifyError(error);
 
@@ -105,7 +114,10 @@ describe('classifyError', () => {
   });
 
   it('should classify consistency errors', () => {
-    const error = new Error('Concurrent modification conflict');
+    const error = new ConsistencyErrorClass(
+      CONSISTENCY_ERROR_CODES.CONCURRENT_MODIFICATION,
+      'Concurrent modification conflict'
+    );
 
     const result = classifyError(error);
 
@@ -148,7 +160,9 @@ describe('handleValidationError', () => {
     expect(result.shouldShowToast).toBe(false);
     expect(result.shouldShowBanner).toBe(false);
     expect(result.shouldShowInline).toBe(true);
-    expect(result.bannerMessage).toBe('Weight must be positive');
+    expect(result.inlineErrors).toEqual({
+      wetWeight: ['Weight must be positive'],
+    });
   });
 
   it('should combine multiple validation errors', () => {
@@ -160,8 +174,10 @@ describe('handleValidationError', () => {
     const result = handleValidationError(errors);
 
     expect(result.shouldShowInline).toBe(true);
-    expect(result.bannerMessage).toContain('Weight required');
-    expect(result.bannerMessage).toContain('Must be less than wet weight');
+    expect(result.inlineErrors).toEqual({
+      wetWeight: ['Weight required'],
+      dryWeight: ['Must be less than wet weight'],
+    });
   });
 });
 

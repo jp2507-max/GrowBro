@@ -12,9 +12,9 @@ import React, { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Platform } from 'react-native';
 
+import colors from '@/components/ui/colors';
 import { useFavorites } from '@/lib/strains/use-favorites';
 import { useFavoritesAutoSync } from '@/lib/strains/use-favorites-auto-sync';
-import { themeRoles } from '@/lib/theme-tokens';
 
 export default function StrainsLayout(): React.ReactElement {
   const { t } = useTranslation();
@@ -34,34 +34,24 @@ export default function StrainsLayout(): React.ReactElement {
     () => ({
       headerShown: true,
       headerStyle: {
-        backgroundColor: isDark
-          ? themeRoles.surface.dark.background
-          : themeRoles.surface.light.background,
+        backgroundColor: isDark ? colors.charcoal[950] : colors.neutral[50],
       },
-      headerTintColor: isDark
-        ? themeRoles.text.dark.primary
-        : themeRoles.text.light.primary,
+      headerTintColor: isDark ? colors.neutral[100] : colors.charcoal[900],
       headerTitleStyle: {
         fontFamily: Platform.select({ ios: 'Inter', android: 'Inter' }),
         fontWeight: '600' as const,
         fontSize: 17,
-        color: isDark
-          ? themeRoles.text.dark.primary
-          : themeRoles.text.light.primary,
+        color: isDark ? colors.neutral[100] : colors.charcoal[900],
       },
       headerLargeTitleStyle: {
         fontFamily: Platform.select({ ios: 'Inter', android: 'Inter' }),
         fontWeight: '700' as const,
-        color: isDark
-          ? themeRoles.text.dark.primary
-          : themeRoles.text.light.primary,
+        color: isDark ? colors.neutral[100] : colors.charcoal[900],
       },
       headerShadowVisible: false,
       headerBackTitleVisible: false,
       contentStyle: {
-        backgroundColor: isDark
-          ? themeRoles.surface.dark.background
-          : themeRoles.surface.light.background,
+        backgroundColor: isDark ? colors.charcoal[950] : colors.neutral[50],
       },
     }),
     [isDark]

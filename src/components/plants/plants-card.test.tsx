@@ -4,7 +4,10 @@ import type { Plant } from '@/api';
 import { PlantCard } from '@/components/plants';
 import { cleanup, screen, setup } from '@/lib/test-utils';
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  jest.clearAllMocks();
+});
 
 const basePlant: Plant = {
   id: 'plant-1',
@@ -22,9 +25,9 @@ describe('PlantCard', () => {
     expect(await screen.findByTestId('plant-card-plant-1')).toBeOnTheScreen();
     expect(screen.getByText('Bobby')).toBeOnTheScreen();
     expect(screen.getByText('OG Kush')).toBeOnTheScreen();
-    expect(screen.getByTestId('plant-card-plant-1-stage')).toHaveTextContent(
-      'Harvesting'
-    );
+    expect(
+      screen.getByTestId('plant-card-plant-1-stage-label')
+    ).toHaveTextContent('Harvesting');
     expect(
       screen.getByTestId('plant-card-plant-1-placeholder')
     ).toBeOnTheScreen();
@@ -55,5 +58,33 @@ describe('PlantCard', () => {
 
     expect(onPress).toHaveBeenCalledTimes(1);
     expect(onPress).toHaveBeenCalledWith('plant-1');
+  });
+
+  test('shows attention indicator when needsAttention is true', async () => {
+    setup(
+      <PlantCard plant={basePlant} onPress={jest.fn()} needsAttention={true} />
+    );
+
+    expect(await screen.findByTestId('plant-card-plant-1')).toBeOnTheScreen();
+    // Footer should show attention state with water icon
+    expect(screen.getByText('💧')).toBeOnTheScreen();
+  });
+
+  test('shows all good state when needsAttention is false', async () => {
+    setup(
+      <PlantCard plant={basePlant} onPress={jest.fn()} needsAttention={false} />
+    );
+
+    expect(await screen.findByTestId('plant-card-plant-1')).toBeOnTheScreen();
+    // Footer should show checkmark for all good state
+    expect(screen.getByText('✓')).toBeOnTheScreen();
+  });
+
+  test('defaults to false when needsAttention is not provided', async () => {
+    setup(<PlantCard plant={basePlant} onPress={jest.fn()} />);
+
+    expect(await screen.findByTestId('plant-card-plant-1')).toBeOnTheScreen();
+    // Footer should show checkmark for all good state (default)
+    expect(screen.getByText('✓')).toBeOnTheScreen();
   });
 });

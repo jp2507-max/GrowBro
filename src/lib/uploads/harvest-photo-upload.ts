@@ -8,6 +8,9 @@
  * - Task 6.1: Upload 3 variants to harvest-photos bucket
  */
 
+import { decode } from 'base64-arraybuffer';
+import * as FileSystem from 'expo-file-system/legacy';
+
 import { stripExifAndGeolocation } from '@/lib/media/exif';
 import { supabase } from '@/lib/supabase';
 
@@ -81,18 +84,20 @@ export async function uploadHarvestPhoto(
     params;
 
   try {
-    // Strip EXIF/GPS and read the file as blob
+    // Strip EXIF/GPS and read the file
     const stripped = await stripExifAndGeolocation(localUri);
-    const response = await fetch(stripped.uri);
-    const blob = await response.blob();
 
     // If EXIF was stripped, the image was re-encoded to JPEG
     const didStrip = stripped.didStrip;
     const finalMimeType = didStrip ? 'image/jpeg' : mimeType;
     const finalExtension = didStrip ? 'jpg' : extension;
 
-    // Convert blob to ArrayBuffer for Supabase upload
-    const arrayBuffer = await blob.arrayBuffer();
+    // Read file as base64 and decode to ArrayBuffer for Supabase upload
+    // (blob.arrayBuffer() is not available in React Native)
+    const base64 = await FileSystem.readAsStringAsync(stripped.uri, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+    const arrayBuffer = decode(base64);
 
     // Generate remote path
     const path = generateHarvestPhotoPath({

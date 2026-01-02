@@ -78,6 +78,7 @@
       "targets_hint": "Zeigt die pH- und EC-Zielwerte dieser Aufgabe."
     },
     "common": {
+      "back_hint": "Navigiert zurück zum vorherigen Bildschirm",
       "confirm_date_hint": "Bestätigt das ausgewählte Datum.",
       "go_back": "Zurück",
       "loading_hint": "Inhalt wird geladen, bitte warten",
@@ -124,23 +125,42 @@
       "quick_action_hint": "Öffnet die Schnellaktion {{action}}.",
       "share_update_hint": "Öffnet den Bildschirm zum Erstellen eines Beitrags."
     },
+    "modal": {
+      "backdrop_hint": "Tippen, um das Modal zu schließen",
+      "backdrop_label": "Modal schließen",
+      "close_hint": "Doppeltippen, um das Modal zu schließen und zum vorherigen Bildschirm zurückzukehren",
+      "close_label": "Modal schließen",
+      "input_label": "{{label}}-Eingabe"
+    },
+    "plant_hero_image": "Pflanzenbild",
     "plants": {
       "assessmentHistory": {
         "empty": "Noch keine Bewertungen",
         "emptyDescription": "Verwende das KI-Bewertungstool, um die Pflanzengesundheit zu analysieren"
       },
+      "detail": {
+        "title": "Pflanzendetails"
+      },
       "error_card_hint": "Informiert, dass Pflanzen nicht geladen werden konnten.",
+      "form": {
+        "title": "Pflanze hinzufügen"
+      },
       "offline_banner_hint": "Zeigt gespeicherte Pflanzen im Offline-Modus an.",
       "open_detail_hint": "Öffnet die Pflanzendetails.",
       "search_hint": "Filtert die Pflanzenliste während der Eingabe."
     },
     "strains": {
+      "about_title": "Über diese Sorte",
       "clear_search_hint": "Leert das Suchfeld",
       "clear_search_history_hint": "Entfernt alle gespeicherten Suchen",
       "clear_search_history_label": "Gesamten Suchverlauf löschen",
       "clear_search_label": "Suche löschen",
       "error_card_hint": "Informiert, dass Sorten nicht geladen werden konnten.",
+      "facts_difficulty": "Anbau",
+      "facts_flowering": "Blüte",
+      "facts_yield": "Ertrag",
       "favorite_hint": "Doppeltippen, um den Favoriten-Status zu wechseln.",
+      "loading_label": "Sorten werden geladen",
       "offline_banner_hint": "Zeigt gespeicherte Sorten im Offline-Modus an.",
       "open_detail_hint": "Öffnet die Sortendetails.",
       "open_filters_hint": "Öffnet Filteroptionen.",
@@ -377,9 +397,22 @@
     },
     "result": {
       "askCommunity": "Community fragen",
+      "backToHome": "Zurück zur Startseite",
+      "confidence": "Vertrauen: {{confidencePercent}}%",
       "createTasks": "Aufgaben erstellen",
+      "dataUnavailable": "Analyse-Daten sind nicht mehr verfügbar.",
+      "details": "Analyse-Details",
+      "modelVersion": "Modell-Version: {{modelVersion}}",
+      "noDescription": "Keine zusätzliche Beschreibung verfügbar.",
+      "photoQualityTitle": "Foto-Qualität könnte verbessert werden",
+      "plantId": "Pflanzen-ID: {{plantId}}",
+      "processingTime": "Verarbeitungszeit: {{processingTimeMs}} ms",
       "retake": "Wiederholen",
-      "viewHistory": "Verlauf anzeigen"
+      "retakePhotos": "Fotos erneut aufnehmen",
+      "screenTitle": "Analyseergebnis",
+      "unknown": "Unbekannt",
+      "viewHistory": "Verlauf anzeigen",
+      "viewPhotoTips": "Foto-Tipps anzeigen"
     },
     "retake": {
       "cancel": "Abbrechen",
@@ -593,6 +626,8 @@
       "revoke_error_message": "Fehler beim Widerrufen der Sitzung. Bitte versuche es erneut.",
       "revoke_error_title": "Fehler",
       "revoke_hint": "Zugriff für {{device}} widerrufen",
+      "revoke_success_message": "Sitzung wurde erfolgreich widerrufen.",
+      "revoke_success_title": "Erfolg",
       "session_revoked_from_device": "Deine Sitzung wurde von einem anderen Gerät widerrufen",
       "title": "Aktive Sitzungen"
     },
@@ -634,6 +669,19 @@
       "sample_title": "💧 Pflanzen gießen - Alle 2 Tage",
       "title": "Starte deinen Anbauplan"
     },
+    "errors": {
+      "failedIsoConversion": "Fehler beim Konvertieren der {{label}} DateTime in ISO-String",
+      "invalidDateTime": "Ungültige {{label}} DateTime: {{reason}} - {{explanation}}",
+      "invalidHour": "Stunde muss zwischen 0 und 23 liegen, erhalten: {{hour}}",
+      "invalidMinute": "Minute muss zwischen 0 und 59 liegen, erhalten: {{minute}}",
+      "invalidTimeFormat": "Ungültiges Zeitformat: {{timeString}}. Erwartet HH:mm",
+      "invalidTimeValues": "Ungültige Zeitwerte: Stunde={{hour}}, Minute={{minute}}",
+      "selectWeeklyDay": "Bitte wähle mindestens einen Tag für die wöchentliche Wiederholung aus"
+    },
+    "header": {
+      "subtitle": "Dein Zeitplan",
+      "today": "Heute"
+    },
     "log_ph_ec": "pH/EC protokollieren",
     "move": "Verschieben",
     "move_to_date": "Auf Datum verschieben",
@@ -642,12 +690,55 @@
     "out_of_range": "außerhalb des Bereichs",
     "out_of_range_label": "Letzter pH/EC außerhalb des Zielbereichs",
     "ph_range": "pH‑Ziel: {{min}}–{{max}}",
+    "recurrence": {
+      "daily": "Täglich",
+      "weekly": "Wöchentlich"
+    },
     "review": "prüfen",
+    "schedule_editor": {
+      "add_title": "Zeitplan hinzufügen",
+      "cancel": "Abbrechen",
+      "edit_title": "Zeitplan bearbeiten",
+      "interval_label": "Alle",
+      "recurrence_label": "Wiederholen",
+      "save": "Speichern",
+      "save_failed": "Zeitplan konnte nicht gespeichert werden. Bitte versuche es erneut.",
+      "saving": "Speichert...",
+      "title_label": "Aufgabentitel",
+      "title_placeholder": "z.B. Pflanzen gießen",
+      "weekdays_label": "An Tagen"
+    },
+    "sections": {
+      "empty_history": "Keine erledigten Aufgaben für diesen Tag",
+      "empty_plan": "Keine Aufgaben für diesen Tag geplant",
+      "history": "Erledigt",
+      "plan": "Geplant"
+    },
     "targets_title": "Zielbereiche",
     "taskCount": "{{count}} Aufgabe",
     "taskCount_plural": "{{count}} Aufgaben",
+    "task_row": {
+      "complete": "Als erledigt markieren",
+      "complete_hint": "Doppeltippen, um diese Aufgabe als erledigt zu markieren",
+      "completed": "Aufgabe erledigt",
+      "recurring": "Wiederkehrend",
+      "task_hint": "Doppeltippen, um Aufgabendetails anzuzeigen"
+    },
     "today": "Heute",
     "tomorrow": "Morgen",
+    "week_strip": {
+      "select_day_hint": "Doppeltippen, um Aufgaben für diesen Tag anzuzeigen",
+      "today": "Heute"
+    },
+    "weekday": {
+      "fri": "Fr",
+      "mon": "Mo",
+      "sat": "Sa",
+      "sun": "So",
+      "thu": "Do",
+      "tue": "Di",
+      "wed": "Mi"
+    },
     "yesterday": "Gestern"
   },
   "cannabis": {
@@ -699,6 +790,7 @@
     "go_back": "Zurück",
     "loading": "Lädt...",
     "na": "k.A.",
+    "no": "Nein",
     "notSelected": "nicht ausgewählt",
     "null": "null",
     "off": "AUS",
@@ -715,7 +807,8 @@
     "saving": "Speichert...",
     "select_date": "Datum wählen",
     "selected": "ausgewählt",
-    "undo": "Rückgängig"
+    "undo": "Rückgängig",
+    "yes": "Ja"
   },
   "community": {
     "adopt": {
@@ -1415,6 +1508,7 @@
         "select_failed": "Foto konnte nicht ausgewählt werden",
         "selection_failed": "Foto konnte nicht ausgewählt werden",
         "storage_failed": "Foto konnte nicht gespeichert werden",
+        "unknown_error": "Ein unbekannter Fehler ist aufgetreten",
         "upload_failed": "Foto konnte nicht hochgeladen werden",
         "upload_missing_metadata": "Foto-Metadaten sind unvollständig",
         "upload_not_authenticated": "Sie müssen angemeldet sein, um Fotos hochzuladen"
@@ -1563,6 +1657,35 @@
     "accept_terms_label": "Nutzungsbedingungen akzeptieren",
     "checkbox_label": "Kontrollkästchen",
     "switch_label": "Schalter"
+  },
+  "inventory": {
+    "add_item": "Artikel hinzufügen",
+    "form": {
+      "barcode": "Barcode",
+      "barcode_placeholder": "Barcode eingeben",
+      "category": "Kategorie",
+      "lead_time_days": "Lieferzeit (Tage)",
+      "min_stock": "Mindestbestand",
+      "name": "Name",
+      "name_placeholder": "Artikelname eingeben",
+      "reorder_multiple": "Nachbestellmenge",
+      "sku": "Artikelnummer",
+      "sku_placeholder": "Artikelnummer eingeben",
+      "submit": "Artikel hinzufügen",
+      "tracking_batched": "Chargenweise",
+      "tracking_mode": "Verfolgungsmodus",
+      "tracking_simple": "Einfach",
+      "unit": "Mengeneinheit",
+      "unit_placeholder": "z.B. ml, g, Stk",
+      "validation": {
+        "minStockPositive": "Mindestbestand muss 0 oder größer sein",
+        "nameMaxLength": "Name darf maximal 100 Zeichen lang sein",
+        "nameRequired": "Name ist erforderlich",
+        "reorderMultipleMin": "Nachbestellmenge muss mindestens 1 sein",
+        "unitMaxLength": "Einheit darf maximal 20 Zeichen lang sein",
+        "unitRequired": "Einheit ist erforderlich"
+      }
+    }
   },
   "list": {
     "empty": {
@@ -1992,11 +2115,13 @@
     "no_events_description": "Beginne Reservoir-Ereignisse zu protokollieren, um deine Änderungen zu verfolgen",
     "no_events_title": "Keine Ereignisse aufgezeichnet",
     "no_readings": "Keine Messwerte verfügbar",
+    "notes": "Notizen",
     "performance_report": "Leistungsbericht",
     "ph": "pH",
     "phTrend": "pH-Verlauf",
     "ppm": "PPM",
     "ppm_scale_label": "PPM-Skala",
+    "publishPrivately": "Privat veröffentlichen",
     "reservoir": {
       "max": "Max",
       "medium": "Anbaumedium",
@@ -2016,8 +2141,13 @@
       },
       "volume": "Volumen (L)"
     },
+    "saveStrainProfile": "Sortenprofil speichern",
     "save_reading": "Messung speichern",
     "start_logging_ph_ec": "Starte pH/EC-Messungen",
+    "strainName": "Sortenname",
+    "strainNamePlaceholder": "Gib einen Namen für dein Sortenprofil ein",
+    "strainNotesPlaceholder": "Füge Notizen zu deinem Sortenprofil hinzu...",
+    "strainProfileDescription": "Speichere deine benutzerdefinierten Nährstoffeinstellungen als Sortenprofil für spätere Verwendung.",
     "targetMax": "Max",
     "targetMin": "Min",
     "targetRange": "Zielbereich",
@@ -2150,6 +2280,9 @@
       "title": "Bewertungsverlauf"
     },
     "card": {
+      "all_good": "Alles in Ordnung",
+      "growing_well": "Wächst gut",
+      "harvest_ready": "Erntereif",
       "health": {
         "excellent": "Ausgezeichnet",
         "fair": "Mittelmäßig",
@@ -2157,10 +2290,25 @@
         "poor": "Schlecht"
       },
       "health_label": "Gesundheit",
-      "no_photo": "Foto hinzufügen"
+      "needs_water": "Braucht Wasser!",
+      "no_photo": "Foto hinzufügen",
+      "progress": "{{percent}}% bis Ernte",
+      "progress_label": "abgeschlossen",
+      "water_action": "Gießen"
     },
     "completionProgress": {
       "percentComplete": "{{percent}}% Abgeschlossen"
+    },
+    "detail": {
+      "action_hub_title": "Heutige Aufgaben",
+      "all_good_message": "Alles im grünen Bereich – Keine Aufgaben heute.",
+      "no_tasks": "Keine anstehenden Aufgaben",
+      "start_harvest": "Ernte starten",
+      "stats_day": "Tag",
+      "stats_height": "Höhe",
+      "stats_phase": "Phase",
+      "strain_profile_link": "Sortenprofil & Details",
+      "water_needed": "Gießen nötig"
     },
     "empty_state": "Keine Pflanzen in deinem Inventar",
     "error": "Pflanzen konnten nicht geladen werden. Bitte erneut versuchen.",
@@ -2173,6 +2321,7 @@
       "cancel": "Abbrechen",
       "completion": "{{percent}}% Abgeschlossen",
       "create_cta": "Pflanze erstellen",
+      "create_title": "Neue Pflanze",
       "default_water_desc": "Kurze Erinnerung zum Gießen nach dem Umtopfen.",
       "default_water_title": "Diese Pflanze gießen",
       "delete_button": "Pflanze löschen",
@@ -2191,6 +2340,7 @@
       "error_body": "Bitte Verbindung prüfen und erneut versuchen.",
       "error_title": "Pflanze konnte nicht gespeichert werden",
       "errors": {
+        "height_invalid": "Höhe muss 0 oder größer sein",
         "light_hours": "Lichtstunden zwischen 0-24 eingeben",
         "name_length": "Name muss unter 120 Zeichen bleiben",
         "name_required": "Name ist erforderlich",
@@ -2206,6 +2356,8 @@
       "genetic_label": "Genetik",
       "genetic_placeholder": "Genetik auswählen",
       "go_to_schedule": "Zum Kalender",
+      "height_label": "Pflanzenhöhe",
+      "height_placeholder": "z. B. 45 cm",
       "invalid_id": "Ungültige Pflanzen-ID",
       "keep_adding": "Weitere Pflanzen hinzufügen",
       "light_hours_label": "Lichtstunden",
@@ -2226,6 +2378,8 @@
       "name_placeholder": "Meine Northern Lights",
       "notes_label": "Notizen",
       "notes_placeholder": "Fütterungsplan, Pheno-Notizen…",
+      "photo_save_error": "Foto konnte nicht gespeichert werden",
+      "photo_saved": "Foto aktualisiert",
       "photoperiod": {
         "autoflower": "Autoflower",
         "photoperiod": "Photoperiodisch (12/12 Wechsel)"
@@ -2419,6 +2573,12 @@
     },
     "outcomes": "Ergebnisse",
     "overdue": "Überfällig",
+    "phases": {
+      "flower": "Blüte",
+      "harvest": "Ernte",
+      "seedling": "Sämling",
+      "veg": "Vegetativ"
+    },
     "preview": "Playbook-Vorschau",
     "progress": {
       "careChanges": "Pflegeanforderungen werden sich ändern",
@@ -3206,6 +3366,7 @@
       "headline": "⚠️ Nur Bildungsinhalte"
     },
     "detail": {
+      "about": "Über diese Sorte",
       "back_hint": "Navigiert zurück zum vorherigen Bildschirm",
       "cbd": "CBD",
       "description_title": "Beschreibung",
@@ -3245,8 +3406,11 @@
     "did_you_mean_suffix": "?",
     "difficulty": {
       "advanced": "Fortgeschritten",
+      "advanced_hint": "Zeigt an, dass diese Sorte umfangreiche Erfahrung und präzise Umgebungskontrolle erfordert",
       "beginner": "Anfänger",
-      "intermediate": "Mittel"
+      "beginner_hint": "Zeigt an, dass diese Sorte einfach zu growen und tolerant gegenüber Fehlern ist",
+      "intermediate": "Mittel",
+      "intermediate_hint": "Zeigt an, dass diese Sorte etwas Erfahrung und moderate Umgebungskontrolle erfordert"
     },
     "effects": {
       "creative": "Kreativ",
@@ -3327,6 +3491,11 @@
       "spicy": "Würzig",
       "sweet": "Süß",
       "woody": "Holzig"
+    },
+    "hardFacts": {
+      "cultivation": "Anbau",
+      "floweringTime": "Blütezeit",
+      "yield": "Ertrag"
     },
     "no_results": "Keine Sorten gefunden",
     "offline_notice": "Gespeicherte Sorten werden angezeigt",
@@ -3611,6 +3780,89 @@
     "plants": "Pflanzen",
     "strains": "Sorten"
   },
+  "tasks": {
+    "burp_jars_week1": {
+      "description": "Gläser für 15-30 Minuten öffnen, um Feuchtigkeit abzulassen und Luft zu erneuern. Auf Schimmel oder Ammoniakgeruch prüfen.",
+      "description_rich": "Glas öffnen & 15 Min lüften. Auf Schimmel oder Ammoniakgeruch prüfen.",
+      "title": "Gläser lüften"
+    },
+    "burp_jars_week3": {
+      "description": "Gläser kurz öffnen, um die Luftfeuchtigkeit aufrechtzuerhalten. Weniger häufiges Lüften ist nötig, je weiter die Aushärtung fortschreitet.",
+      "description_rich": "Glas öffnen & 15 Min lüften. Weniger häufig bei fortgeschrittener Aushärtung.",
+      "title": "Gläser lüften"
+    },
+    "change_reservoir": {
+      "description": "Vollständiger Wasserwechsel, um Nährstoffansammlung zu verhindern und Frische zu erhalten.",
+      "title": "Reservoirwasser wechseln"
+    },
+    "check_humidity_dome": {
+      "description": "Sicherstellen, dass die Feuchtigkeitshaube vorhanden ist und die Feuchtigkeitswerte für den Sämling ausreichend sind.",
+      "title": "Feuchtigkeitshaube prüfen"
+    },
+    "check_light_distance": {
+      "description": "Sativa-dominante Pflanzen können sich erheblich strecken. Ausreichenden Abstand zwischen Lampen und Kronendach sicherstellen, um Lichtbrand zu vermeiden.",
+      "title": "Lichtabstand prüfen (Streckwarnung)"
+    },
+    "check_ph_ec": {
+      "description": "Reservoir-pH (5,5-6,5) und EC-Werte überwachen. Bei Bedarf für optimale Nährstoffaufnahme anpassen.",
+      "title": "pH & EC prüfen"
+    },
+    "check_preflowers": {
+      "description": "Nach weißen Stempeln an den Knoten suchen - ein Zeichen dafür, dass deine Autoflower in die Blüte übergeht. Erwäge den Wechsel zur Blütephase, wenn bestätigt.",
+      "title": "Auf Vorblüten prüfen (weiße Stempel)"
+    },
+    "check_stem_snap": {
+      "description": "Kleinen Stängel biegen - wenn er sauber bricht (nicht biegt), sind die Blüten bereit zum Aushärten. Täglich prüfen, bis trocken.",
+      "title": "Stängelbruch prüfen"
+    },
+    "check_water_need": {
+      "description_coco": "Ca. {{min}}-{{max}}L – **NUR wenn die oberen 2-3cm Medium trocken sind!** Ablauf EC/pH prüfen.",
+      "description_soil": "Ca. {{min}}-{{max}}L – **NUR wenn die oberen 2-3cm Erde trocken sind!** Bis leichtem Ablauf gießen.",
+      "title": "Wasserbedarf prüfen"
+    },
+    "check_water_temp": {
+      "description": "Reservoirtemperatur zwischen 18-22°C (65-72°F) halten, um Wurzelprobleme zu vermeiden.",
+      "title": "Wassertemperatur prüfen"
+    },
+    "climate_check": {
+      "description_flower": "Temp: 22-28°C? Luftfeuchte: ~45%? Zu hohe Feuchte = Schimmelrisiko!",
+      "description_veg": "Temp: 22-28°C? Luftfeuchte: ~60%? Optimales Wachstumsklima prüfen.",
+      "title": "Klima-Check"
+    },
+    "feed_plant": {
+      "description_coco": "Bei jeder Bewässerung in Kokos düngen. EC/pH des Ablaufs überwachen.",
+      "description_coco_flower": "Blüte-Schema (Phosphor/Kalium). Bei jeder Bewässerung düngen, EC/pH überwachen.",
+      "description_coco_flower_safe": "Blüte-Dünger. Auf gelbe Blattspitzen (Überdüngung) achten. EC/pH überwachen.",
+      "description_coco_veg": "Wachstums-Schema (Stickstoff/N-betont). Bei jeder Bewässerung düngen, EC/pH überwachen.",
+      "description_coco_veg_safe": "Wachstums-Dünger. **Tipp: Starte mit 50% der Hersteller-Dosierung.** EC/pH überwachen.",
+      "description_soil": "Nährstoffe gemäß deinem Düngeplan anwenden. Basierend auf Pflanzenreaktion anpassen.",
+      "description_soil_flower": "Blüte-Schema (Phosphor/Kalium). Nährstoffe nach Pflanzenreaktion anpassen.",
+      "description_soil_flower_safe": "Blüte-Dünger. Auf gelbe Blattspitzen (Überdüngung) achten.",
+      "description_soil_veg": "Wachstums-Schema (Stickstoff/N-betont). Nährstoffe nach Pflanzenreaktion anpassen.",
+      "description_soil_veg_safe": "Wachstums-Dünger. **Tipp: Starte mit 50% der Hersteller-Dosierung.**",
+      "title": "Nährstoffe geben"
+    },
+    "start_flushing": {
+      "description": "Spülphase beginnen - nur pH-ausgeglichenes Wasser verwenden. Dies hilft, überschüssige Nährstoffe zu entfernen und verbessert den Endgeschmack.",
+      "description_rich": "Nur Wasser! Keinen Dünger mehr. pH-ausgeglichenes Wasser verwenden, um überschüssige Salze auszuspülen.",
+      "title": "Spülen beginnen (nur Wasser)"
+    },
+    "switch_lights": {
+      "description": "Lichtplan auf 12 Stunden an, 12 Stunden aus einstellen, um die Blüte auszulösen und aufrechtzuerhalten.",
+      "title": "Lampen auf 12/12 umstellen"
+    },
+    "top_dressing": {
+      "description": "Organische Zusätze auf die Bodenoberfläche geben für langsam freisetzende Nährstoffe.",
+      "title": "Oberflächendüngung"
+    },
+    "water_plant": {
+      "description_coco": "Gießen bis ~10-20% Ablauf. Kokos trocknet schnell - täglich prüfen.",
+      "description_coco_rich": "Ca. {{min}}-{{max}}L gießen (wenn Medium trocken). Ablauf EC/pH prüfen.",
+      "description_soil": "Gießen bis ~10-20% Ablauf. Bodenfeuchtigkeit vor dem Gießen prüfen.",
+      "description_soil_rich": "Ca. {{min}}-{{max}}L gießen (wenn Erde trocken). Bis leichtem Ablauf gießen.",
+      "title": "Pflanze gießen"
+    }
+  },
   "trichome": {
     "amber": "Bernstein",
     "amberLabel": "Bernstein-Trichome (%)",
@@ -3656,6 +3908,9 @@
   "units": {
     "celsius": "°C",
     "ms_per_cm": "mS/cm"
+  },
+  "validation": {
+    "strainNameRequired": "Sortenname ist erforderlich"
   },
   "welcome": "Willkommen bei der GrowBro App"
 }

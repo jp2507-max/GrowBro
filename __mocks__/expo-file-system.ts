@@ -1,9 +1,19 @@
 /**
  * Mock for expo-file-system (SDK 54 File API)
+ *
+ * NOTE: Paths.document.uri and Paths.cache.uri do NOT have trailing slashes
+ * in production to match the actual SDK 54 behavior. The helper functions
+ * in @/lib/fs/paths ensure trailing slashes are added for path concatenation.
  */
 
-export const cacheDirectory = 'file:///cache/';
-export const documentDirectory = 'file:///documents/';
+export const cacheDirectory = 'file:///cache';
+export const documentDirectory = 'file:///documents';
+
+// EncodingType enum for base64/utf8 encoding options
+export const EncodingType = {
+  UTF8: 'utf8',
+  Base64: 'base64',
+} as const;
 
 // Create a mock Directory constructor that can be used in tests
 export const Directory = jest
@@ -12,8 +22,8 @@ export const Directory = jest
     (parent: { uri: string } | null | undefined, name: string) => ({
       uri:
         parent && typeof parent.uri === 'string'
-          ? `${parent.uri}${name}/`
-          : `file:///${name}/`,
+          ? `${parent.uri.endsWith('/') ? parent.uri : parent.uri + '/'}${name}`
+          : `file:///${name}`,
       exists: true,
       create: jest.fn(),
       list: jest.fn().mockReturnValue([]),
@@ -57,6 +67,16 @@ export class File {
   copy(_target: File) {
     // Mock implementation
   }
+
+  async delete() {
+    // Mock implementation
+    this.exists = false;
+  }
+
+  async arrayBuffer(): Promise<ArrayBuffer> {
+    // Mock implementation - return empty buffer
+    return new ArrayBuffer(0);
+  }
 }
 
 // Provide simple Path objects with `uri` shape to match SDK 54 Paths API
@@ -91,6 +111,7 @@ export const getTotalDiskCapacityAsync = jest
 export default {
   cacheDirectory,
   documentDirectory,
+  EncodingType,
   getInfoAsync,
   makeDirectoryAsync,
   writeAsStringAsync,

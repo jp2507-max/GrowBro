@@ -32,22 +32,31 @@ export function FormRow({
 
   const content = (
     <View
-      className="flex-row items-center justify-between rounded-xl bg-card px-4 py-3.5"
+      className="flex-row items-center justify-between rounded-xl bg-white px-4 py-3.5 dark:bg-charcoal-900"
       testID={testID}
     >
       <View className="flex-1 flex-row items-center gap-3">
         {icon ? <Text className="text-xl">{icon}</Text> : null}
-        <Text className="text-base font-medium text-text-primary">{label}</Text>
+        <Text className="text-base font-medium text-charcoal-900 dark:text-neutral-100">
+          {label}
+        </Text>
       </View>
 
       <View className="flex-row items-center gap-2">
         {displayValue ? (
-          <Text className="text-base text-text-secondary" numberOfLines={1}>
+          <Text
+            className="text-base text-neutral-600 dark:text-neutral-400"
+            numberOfLines={1}
+          >
             {displayValue}
           </Text>
         ) : null}
         {showArrow && onPress ? (
-          <ArrowRight width={20} height={20} className="text-text-secondary" />
+          <ArrowRight
+            width={20}
+            height={20}
+            className="text-neutral-600 dark:text-neutral-400"
+          />
         ) : null}
       </View>
     </View>

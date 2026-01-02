@@ -12,6 +12,7 @@ import type {
 import { getOptionalAuthenticatedUserId } from '@/lib/auth';
 import { toPlant, updatePlantFromForm } from '@/lib/plants/plant-service';
 import { syncPlantsToCloud } from '@/lib/plants/plants-sync';
+import { captureExceptionIfConsented } from '@/lib/settings/privacy-runtime';
 
 export type UpdatePlantVariables = {
   id: string;
@@ -52,7 +53,13 @@ export const useUpdatePlant = createMutation<
       { userId: userId ?? undefined }
     );
     const plant = toPlant(model);
-    void syncPlantsToCloud().catch(() => {});
+    void syncPlantsToCloud().catch((syncError) => {
+      console.error('[UpdatePlant] sync to cloud failed', syncError);
+      captureExceptionIfConsented(
+        syncError instanceof Error ? syncError : new Error(String(syncError)),
+        { context: 'plant-update-sync', plantId: id }
+      );
+    });
     return plant;
   },
 });

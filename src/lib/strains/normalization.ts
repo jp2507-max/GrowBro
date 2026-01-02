@@ -21,7 +21,6 @@ import {
   DEFAULT_FLOWERING_TIME,
   DEFAULT_HEIGHT,
   DEFAULT_YIELD,
-  FALLBACK_IMAGE_URL,
   NOT_REPORTED,
 } from './constants';
 
@@ -721,9 +720,7 @@ export function normalizeStrain(
       : slugify(String(apiStrain.name || 'unknown')),
     synonyms: normalizeSynonyms(apiStrain.synonyms),
     link: String(apiStrain.link || ''),
-    imageUrl: String(
-      apiStrain.imageUrl || apiStrain.image_url || FALLBACK_IMAGE_URL
-    ),
+    imageUrl: String(apiStrain.imageUrl || apiStrain.image_url || ''),
     description: normalizeDescription(apiStrain.description),
     genetics: {
       parents: extractParents(apiStrain.genetics, apiStrain.parents),

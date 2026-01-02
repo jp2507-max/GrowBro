@@ -14,7 +14,7 @@ import {
   PlaybookSelectionList,
   usePlaybookOnboarding,
 } from '@/components/playbooks';
-import { SafeAreaView, Text, View } from '@/components/ui';
+import { Text, View } from '@/components/ui';
 import { usePlaybookService } from '@/lib/playbooks';
 import type { PlaybookPreview } from '@/types/playbook';
 
@@ -22,7 +22,7 @@ function PlaybooksHeader() {
   const { t } = useTranslation();
   return (
     <View className="px-4 py-6">
-      <Text className="text-3xl font-bold text-neutral-900 dark:text-neutral-100">
+      <Text className="text-3xl font-bold text-charcoal-900 dark:text-neutral-100">
         {t('playbooks.title')}
       </Text>
       <Text className="mt-2 text-base text-neutral-600 dark:text-neutral-400">
@@ -143,9 +143,9 @@ export default function PlaybooksScreen() {
 
   if (onboardingLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
+      <View className="flex-1 items-center justify-center bg-neutral-50 dark:bg-charcoal-950">
         <CenteredMessage message={t('common.loading')} />
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -159,7 +159,7 @@ export default function PlaybooksScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
+    <View className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
       <View className="flex-1">
         <PlaybooksHeader />
         {loading ? (
@@ -173,6 +173,6 @@ export default function PlaybooksScreen() {
           />
         )}
       </View>
-    </SafeAreaView>
+    </View>
   );
 }

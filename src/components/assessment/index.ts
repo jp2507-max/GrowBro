@@ -14,7 +14,10 @@ export { ResultActionPanel } from './result-action-panel';
 // Community integration components
 export { CommunityCTAButton } from './community-cta-button';
 export { DiagnosticChecklist } from './diagnostic-checklist';
-export { RetakeGuidanceModal } from './retake-guidance-modal';
+export {
+  RetakeGuidanceModal,
+  type RetakeGuidanceModalRef,
+} from './retake-guidance-modal';
 export { UncertaintyResultCard } from './uncertainty-result-card';
 
 // Existing assessment components

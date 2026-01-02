@@ -88,6 +88,7 @@ export function calculateCompletion(values: Record<string, unknown>): number {
     'plantedAt',
     'medium',
     'potSize',
+    'height',
     'lightSchedule',
     'lightHours',
     'notes',

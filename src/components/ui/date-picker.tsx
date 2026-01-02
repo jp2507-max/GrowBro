@@ -24,16 +24,17 @@ import { Text } from './text';
 const datePickerTv = tv({
   slots: {
     container: 'mb-4',
-    label: 'text-grey-100 mb-1 text-lg dark:text-neutral-100',
+    label:
+      'mb-2 ml-1 text-xs font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500',
     input:
-      'border-grey-50 mt-0 flex-row items-center justify-between rounded-xl border-[0.5px] p-3 dark:border-neutral-500 dark:bg-neutral-800',
-    inputValue: 'dark:text-neutral-100',
+      'mt-0 flex-row items-center justify-between rounded-2xl border-2 border-transparent bg-neutral-100 px-5 py-4 dark:bg-neutral-800',
+    inputValue: 'text-base font-medium text-neutral-800 dark:text-neutral-100',
     placeholder: 'text-neutral-400',
   },
   variants: {
     focused: {
       true: {
-        input: 'border-neutral-600',
+        input: 'border-primary-600 dark:border-primary-400',
       },
     },
     error: {
@@ -45,7 +46,7 @@ const datePickerTv = tv({
     },
     disabled: {
       true: {
-        input: 'bg-neutral-200',
+        input: 'bg-neutral-200 dark:bg-neutral-700',
       },
     },
   },
@@ -218,23 +219,21 @@ function IOSDatePickerModal({
 }: IOSDatePickerModalProps) {
   const { t } = useTranslation();
 
-  const backgroundStyle = React.useMemo(
-    () => ({
-      backgroundColor: isDark ? colors.charcoal[900] : colors.neutral[50],
+  const backgroundStyle = React.useMemo(() => {
+    return {
+      backgroundColor: isDark ? colors.charcoal[900] : colors.white,
       borderTopLeftRadius: 24,
       borderTopRightRadius: 24,
-    }),
-    [isDark]
-  );
+    };
+  }, [isDark]);
 
-  const handleStyle = React.useMemo(
-    () => ({
-      backgroundColor: isDark ? colors.charcoal[600] : colors.neutral[400],
+  const handleStyle = React.useMemo(() => {
+    return {
+      backgroundColor: isDark ? colors.charcoal[700] : colors.neutral[200],
       width: 40,
       height: 5,
-    }),
-    [isDark]
-  );
+    };
+  }, [isDark]);
 
   return (
     <Modal
@@ -316,7 +315,11 @@ function useDatePickerState(props: DatePickerProps) {
   }, [parsedDate]);
 
   const styles = React.useMemo(
-    () => datePickerTv({ error: Boolean(error), disabled }),
+    () =>
+      datePickerTv({
+        error: Boolean(error),
+        disabled,
+      }),
     [error, disabled]
   );
 

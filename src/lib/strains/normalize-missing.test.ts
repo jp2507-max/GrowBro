@@ -2,7 +2,7 @@
  * Unit tests for normalizeStrain - missing fields
  */
 
-import { DEFAULT_DESCRIPTION, FALLBACK_IMAGE_URL } from './constants';
+import { DEFAULT_DESCRIPTION } from './constants';
 import { normalizeStrain } from './normalization';
 
 describe('normalizeStrain - missing fields', () => {
@@ -16,9 +16,9 @@ describe('normalizeStrain - missing fields', () => {
     expect(result.name).toBe('Unknown Strain');
   });
 
-  test('uses fallback image URL', () => {
+  test('uses empty string for missing image URL', () => {
     const result = normalizeStrain({});
-    expect(result.imageUrl).toBe(FALLBACK_IMAGE_URL);
+    expect(result.imageUrl).toBe('');
   });
 
   test('uses default description', () => {

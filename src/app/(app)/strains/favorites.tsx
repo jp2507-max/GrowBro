@@ -147,6 +147,63 @@ function FavoriteItem({ item }: { item: FavoriteStrain }) {
   return <StrainCard strain={strain} testID={`favorite-card-${item.id}`} />;
 }
 
+type FavoritesHeaderProps = {
+  iconColor: string;
+  onBack: () => void;
+  onSort: () => void;
+  isOffline: boolean;
+};
+
+function FavoritesHeader({
+  iconColor,
+  onBack,
+  onSort,
+  isOffline,
+}: FavoritesHeaderProps) {
+  return (
+    <View className="px-4 py-2">
+      <View className="flex-row items-center pb-2">
+        <Pressable
+          onPress={onBack}
+          className="size-10 items-center justify-center rounded-full bg-white shadow-sm active:bg-white dark:bg-charcoal-900"
+          accessibilityRole="button"
+          accessibilityLabel={translate('common.back')}
+          accessibilityHint={translate('accessibility.common.back_hint')}
+          testID="favorites-back-button"
+        >
+          <ArrowLeft
+            color={iconColor}
+            width={16}
+            height={16}
+            className="text-charcoal-900 dark:text-neutral-100"
+          />
+        </Pressable>
+      </View>
+      <View className="flex-row items-center justify-between pb-4">
+        <Text className="text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
+          {translate('strains.favorites.title')}
+        </Text>
+        <Pressable
+          onPress={onSort}
+          className="size-10 items-center justify-center rounded-full bg-white shadow-sm active:bg-white dark:bg-charcoal-900"
+          accessibilityRole="button"
+          accessibilityLabel={translate('strains.favorites.sort.title')}
+          accessibilityHint={translate('strains.favorites.sort.hint')}
+          testID="favorites-sort-button"
+        >
+          <Settings
+            color={iconColor}
+            width={20}
+            height={20}
+            className="text-neutral-900 dark:text-neutral-100"
+          />
+        </Pressable>
+      </View>
+      <StrainsOfflineBanner isVisible={isOffline} />
+    </View>
+  );
+}
+
 export default function FavoritesScreen(): React.ReactElement {
   const { listRef: sharedListRef, scrollHandler } = useAnimatedScrollList();
   const listRef = React.useMemo(
@@ -220,65 +277,29 @@ export default function FavoritesScreen(): React.ReactElement {
     [grossHeight]
   );
 
+  const handleBack = React.useCallback(() => {
+    haptics.selection();
+    router.back();
+  }, [router]);
+
+  const handleOpenSort = React.useCallback(() => {
+    haptics.selection();
+    sortMenu.openSort();
+  }, [sortMenu]);
+
   return (
     <View
-      className="flex-1 bg-neutral-50 dark:bg-neutral-950"
+      className="flex-1 bg-neutral-50 dark:bg-charcoal-950"
       testID="favorites-screen"
       style={{ paddingTop: insets.top }}
     >
       <FocusAwareStatusBar />
-
-      <View className="px-4 py-2">
-        {/* Back Button Row */}
-        <View className="flex-row items-center pb-2">
-          <Pressable
-            onPress={() => {
-              haptics.selection();
-              router.back();
-            }}
-            className="size-10 items-center justify-center rounded-full bg-white shadow-sm active:bg-neutral-100 dark:bg-neutral-900 dark:active:bg-neutral-800"
-            accessibilityRole="button"
-            accessibilityLabel={translate('common.back')}
-            accessibilityHint="Go back to previous screen"
-            testID="favorites-back-button"
-          >
-            <ArrowLeft
-              color={iconColor}
-              width={16}
-              height={16}
-              className="text-neutral-900 dark:text-white"
-            />
-          </Pressable>
-        </View>
-
-        {/* Title and Sort Row */}
-        <View className="flex-row items-center justify-between pb-4">
-          <Text className="text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-white">
-            {translate('strains.favorites.title')}
-          </Text>
-
-          <Pressable
-            onPress={() => {
-              haptics.selection();
-              sortMenu.openSort();
-            }}
-            className="size-10 items-center justify-center rounded-full bg-white shadow-sm active:bg-neutral-100 dark:bg-neutral-900 dark:active:bg-neutral-800"
-            accessibilityRole="button"
-            accessibilityLabel={translate('strains.favorites.sort.title')}
-            accessibilityHint={translate('strains.favorites.sort.hint')}
-            testID="favorites-sort-button"
-          >
-            <Settings
-              color={iconColor}
-              width={20}
-              height={20}
-              className="text-neutral-900 dark:text-white"
-            />
-          </Pressable>
-        </View>
-
-        <StrainsOfflineBanner isVisible={isOffline} />
-      </View>
+      <FavoritesHeader
+        iconColor={iconColor}
+        onBack={handleBack}
+        onSort={handleOpenSort}
+        isOffline={isOffline}
+      />
 
       <AnimatedFlashList
         ref={listRef}

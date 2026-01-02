@@ -1,4 +1,6 @@
-import { stripExifAndGeolocation } from '@/lib/media/exif';
+import { decode } from 'base64-arraybuffer';
+import * as FileSystem from 'expo-file-system/legacy';
+
 import { supabase } from '@/lib/supabase';
 
 export interface UploadProgressCallback {
@@ -10,34 +12,40 @@ export interface UploadResult {
   path: string;
 }
 
+/**
+ * Upload a plant image to Supabase Storage with RLS-safe path.
+ *
+ * The path follows the RLS policy: plant-images/${userId}/${plantId}/${filename}
+ */
 export async function uploadImageWithProgress(params: {
+  userId: string;
   plantId: string;
   filename: string;
   localUri: string;
   mimeType: string;
   onProgress?: UploadProgressCallback;
 }): Promise<UploadResult> {
-  const { plantId, filename, localUri, mimeType, onProgress } = params;
+  const { userId, plantId, filename, localUri, mimeType, onProgress } = params;
 
   try {
-    // Strip EXIF/GPS and read the file as blob
-    const stripped = await stripExifAndGeolocation(localUri);
-    const response = await fetch(stripped.uri);
-    const blob = await response.blob();
+    // NOTE: EXIF/GPS is already stripped at storage time (storePlantPhotoLocally)
+    // so we upload the file as-is to avoid double-processing and hash mismatches
 
-    // If EXIF was stripped, the image was re-encoded to JPEG
-    const didStrip = stripped.didStrip;
-    const finalMimeType = didStrip ? 'image/jpeg' : mimeType;
-    const finalFilename = didStrip
-      ? filename.replace(/\.[^.]+$/, '.jpg')
-      : filename;
+    // Use the provided mime type and filename directly
+    // (they were determined at store time when EXIF was stripped)
+    const finalMimeType = mimeType;
+    const finalFilename = filename;
 
-    // Convert blob to ArrayBuffer for Supabase upload
-    const arrayBuffer = await blob.arrayBuffer();
+    // Read file as base64 and decode to ArrayBuffer for Supabase upload
+    // (blob.arrayBuffer() is not available in React Native)
+    const base64 = await FileSystem.readAsStringAsync(localUri, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+    const arrayBuffer = decode(base64);
 
-    // Create the file path in Supabase storage
+    // Create the RLS-safe file path: userId/plantId/filename
     const bucket = 'plant-images';
-    const path = `${plantId}/${finalFilename}`;
+    const path = makeObjectPath({ userId, plantId, filename: finalFilename });
 
     // Upload to Supabase storage
     const { data, error } = await supabase.storage

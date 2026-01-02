@@ -22,12 +22,12 @@ export default function AddBatchScreen(): React.ReactElement {
 
   return (
     <View
-      className="flex-1 bg-white dark:bg-charcoal-950"
+      className="flex-1 bg-neutral-50 dark:bg-charcoal-950"
       testID="add-batch-screen"
     >
       <FocusAwareStatusBar />
       <View className="flex-1 items-center justify-center p-6">
-        <Text className="text-center text-lg font-semibold text-charcoal-950 dark:text-white">
+        <Text className="text-center text-lg font-semibold text-charcoal-900 dark:text-neutral-100">
           {t('inventory.add_batch')}
         </Text>
         <Text className="mt-2 text-center text-sm text-neutral-600 dark:text-neutral-400">

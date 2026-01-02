@@ -78,6 +78,7 @@
       "targets_hint": "Shows the pH and EC targets for this task."
     },
     "common": {
+      "back_hint": "Navigates back to the previous screen",
       "confirm_date_hint": "Confirms the selected date.",
       "go_back": "Go back",
       "loading_hint": "Content is loading, please wait",
@@ -124,23 +125,42 @@
       "quick_action_hint": "Opens the {{action}} quick action.",
       "share_update_hint": "Opens the Create Post screen."
     },
+    "modal": {
+      "backdrop_hint": "Tap to dismiss the modal",
+      "backdrop_label": "Close modal",
+      "close_hint": "Double-tap to close the modal and return to the previous screen",
+      "close_label": "Close modal",
+      "input_label": "{{label}} input"
+    },
+    "plant_hero_image": "Plant hero image",
     "plants": {
       "assessmentHistory": {
         "empty": "No assessments yet",
         "emptyDescription": "Use the AI assessment tool to analyze plant health"
       },
+      "detail": {
+        "title": "Plant Detail"
+      },
       "error_card_hint": "Informs that plants failed to load.",
+      "form": {
+        "title": "Add Plant"
+      },
       "offline_banner_hint": "Shows saved plants while offline.",
       "open_detail_hint": "Opens plant details.",
       "search_hint": "Filters plants as you type."
     },
     "strains": {
+      "about_title": "About this strain",
       "clear_search_hint": "Clears the search input",
       "clear_search_history_hint": "Removes all saved searches",
       "clear_search_history_label": "Clear all search history",
       "clear_search_label": "Clear search",
       "error_card_hint": "Informs that strains failed to load.",
+      "facts_difficulty": "Difficulty",
+      "facts_flowering": "Flowering",
+      "facts_yield": "Yield",
       "favorite_hint": "Double-tap to toggle favorite status for this strain.",
+      "loading_label": "Loading strains",
       "offline_banner_hint": "Shows saved strains while offline.",
       "open_detail_hint": "Opens strain details.",
       "open_filters_hint": "Opens filter options.",
@@ -377,9 +397,22 @@
     },
     "result": {
       "askCommunity": "Ask Community",
+      "backToHome": "Back to home",
+      "confidence": "Confidence: {{confidencePercent}}%",
       "createTasks": "Create Tasks",
+      "dataUnavailable": "Assessment data is no longer available.",
+      "details": "Assessment details",
+      "modelVersion": "Model version: {{modelVersion}}",
+      "noDescription": "No additional description available.",
+      "photoQualityTitle": "Photo quality could be improved",
+      "plantId": "Plant ID: {{plantId}}",
+      "processingTime": "Processing time: {{processingTimeMs}} ms",
       "retake": "Retake",
-      "viewHistory": "View History"
+      "retakePhotos": "Retake photos",
+      "screenTitle": "Assessment Result",
+      "unknown": "Unknown",
+      "viewHistory": "View History",
+      "viewPhotoTips": "View photo tips"
     },
     "retake": {
       "cancel": "Cancel",
@@ -593,6 +626,8 @@
       "revoke_error_message": "Failed to revoke session. Please try again.",
       "revoke_error_title": "Error",
       "revoke_hint": "Revoke access for {{device}}",
+      "revoke_success_message": "Session has been revoked successfully.",
+      "revoke_success_title": "Success",
       "session_revoked_from_device": "Your session was revoked from another device",
       "title": "Active Sessions"
     },
@@ -634,6 +669,19 @@
       "sample_title": "💧 Water plants - Every 2 days",
       "title": "Start Your Grow Schedule"
     },
+    "errors": {
+      "failedIsoConversion": "Failed to convert {{label}} DateTime to ISO string",
+      "invalidDateTime": "Invalid {{label}} DateTime: {{reason}} - {{explanation}}",
+      "invalidHour": "Hour must be between 0 and 23, got {{hour}}",
+      "invalidMinute": "Minute must be between 0 and 59, got {{minute}}",
+      "invalidTimeFormat": "Invalid time format: {{timeString}}. Expected HH:mm",
+      "invalidTimeValues": "Invalid time values: hour={{hour}}, minute={{minute}}",
+      "selectWeeklyDay": "Please select at least one day for weekly recurrence"
+    },
+    "header": {
+      "subtitle": "Your schedule",
+      "today": "Today"
+    },
     "log_ph_ec": "Log pH/EC",
     "move": "Move",
     "move_to_date": "Move to date",
@@ -642,12 +690,55 @@
     "out_of_range": "out of range",
     "out_of_range_label": "Latest pH/EC out of target range",
     "ph_range": "pH target: {{min}}–{{max}}",
+    "recurrence": {
+      "daily": "Daily",
+      "weekly": "Weekly"
+    },
     "review": "review",
+    "schedule_editor": {
+      "add_title": "Add Schedule",
+      "cancel": "Cancel",
+      "edit_title": "Edit Schedule",
+      "interval_label": "Every",
+      "recurrence_label": "Repeat",
+      "save": "Save",
+      "save_failed": "Failed to save schedule. Please try again.",
+      "saving": "Saving...",
+      "title_label": "Task Title",
+      "title_placeholder": "e.g., Water plants",
+      "weekdays_label": "On days"
+    },
+    "sections": {
+      "empty_history": "No completed tasks for this day",
+      "empty_plan": "No tasks scheduled for this day",
+      "history": "History",
+      "plan": "Plan"
+    },
     "targets_title": "Targets",
     "taskCount": "{{count}} task",
     "taskCount_plural": "{{count}} tasks",
+    "task_row": {
+      "complete": "Mark as complete",
+      "complete_hint": "Double-tap to mark this task as complete",
+      "completed": "Task completed",
+      "recurring": "Recurring",
+      "task_hint": "Double-tap to view task details"
+    },
     "today": "Today",
     "tomorrow": "Tomorrow",
+    "week_strip": {
+      "select_day_hint": "Double-tap to view tasks for this day",
+      "today": "Today"
+    },
+    "weekday": {
+      "fri": "Fri",
+      "mon": "Mon",
+      "sat": "Sat",
+      "sun": "Sun",
+      "thu": "Thu",
+      "tue": "Tue",
+      "wed": "Wed"
+    },
     "yesterday": "Yesterday"
   },
   "cannabis": {
@@ -699,6 +790,7 @@
     "go_back": "Go back",
     "loading": "Loading...",
     "na": "N/A",
+    "no": "No",
     "notSelected": "not selected",
     "null": "null",
     "off": "OFF",
@@ -715,7 +807,8 @@
     "saving": "Saving...",
     "select_date": "Select date",
     "selected": "selected",
-    "undo": "Undo"
+    "undo": "Undo",
+    "yes": "Yes"
   },
   "community": {
     "adopt": {
@@ -1415,6 +1508,7 @@
         "select_failed": "Failed to select photo",
         "selection_failed": "Failed to select photo",
         "storage_failed": "Failed to store photo",
+        "unknown_error": "An unknown error occurred",
         "upload_failed": "Failed to upload photo",
         "upload_missing_metadata": "Photo metadata is incomplete",
         "upload_not_authenticated": "You must be logged in to upload photos"
@@ -1563,6 +1657,35 @@
     "accept_terms_label": "Accept terms and conditions",
     "checkbox_label": "Checkbox",
     "switch_label": "Switch"
+  },
+  "inventory": {
+    "add_item": "Add Item",
+    "form": {
+      "barcode": "Barcode",
+      "barcode_placeholder": "Enter barcode",
+      "category": "Category",
+      "lead_time_days": "Lead Time (Days)",
+      "min_stock": "Minimum Stock",
+      "name": "Name",
+      "name_placeholder": "Enter item name",
+      "reorder_multiple": "Reorder Multiple",
+      "sku": "SKU",
+      "sku_placeholder": "Enter SKU",
+      "submit": "Add Item",
+      "tracking_batched": "Batched",
+      "tracking_mode": "Tracking Mode",
+      "tracking_simple": "Simple",
+      "unit": "Unit of Measure",
+      "unit_placeholder": "e.g., ml, g, pcs",
+      "validation": {
+        "minStockPositive": "Minimum stock must be 0 or greater",
+        "nameMaxLength": "Name must be 100 characters or less",
+        "nameRequired": "Name is required",
+        "reorderMultipleMin": "Reorder multiple must be at least 1",
+        "unitMaxLength": "Unit must be 20 characters or less",
+        "unitRequired": "Unit is required"
+      }
+    }
   },
   "list": {
     "empty": {
@@ -1992,11 +2115,13 @@
     "no_events_description": "Start logging reservoir events to track your changes",
     "no_events_title": "No Events Recorded",
     "no_readings": "No readings available",
+    "notes": "Notes",
     "performance_report": "Performance Report",
     "ph": "pH",
     "phTrend": "pH Trend",
     "ppm": "PPM",
     "ppm_scale_label": "PPM Scale",
+    "publishPrivately": "Publish privately",
     "reservoir": {
       "max": "Max",
       "medium": "Growing Medium",
@@ -2016,8 +2141,13 @@
       },
       "volume": "Volume (L)"
     },
+    "saveStrainProfile": "Save Strain Profile",
     "save_reading": "Save Reading",
     "start_logging_ph_ec": "Start logging pH/EC measurements",
+    "strainName": "Strain Name",
+    "strainNamePlaceholder": "Enter a name for your strain profile",
+    "strainNotesPlaceholder": "Add notes about your strain profile...",
+    "strainProfileDescription": "Save your custom nutrient settings as a strain profile for future use.",
     "targetMax": "Max",
     "targetMin": "Min",
     "targetRange": "Target",
@@ -2150,6 +2280,9 @@
       "title": "Assessment History"
     },
     "card": {
+      "all_good": "All good",
+      "growing_well": "Growing well",
+      "harvest_ready": "Ready for harvest",
       "health": {
         "excellent": "Excellent",
         "fair": "Fair",
@@ -2157,10 +2290,25 @@
         "poor": "Poor"
       },
       "health_label": "Health",
-      "no_photo": "Add photo"
+      "needs_water": "Needs watering!",
+      "no_photo": "Add photo",
+      "progress": "{{percent}}% to harvest",
+      "progress_label": "complete",
+      "water_action": "Water"
     },
     "completionProgress": {
       "percentComplete": "{{percent}}% Complete"
+    },
+    "detail": {
+      "action_hub_title": "Today's Tasks",
+      "all_good_message": "All good – No tasks today.",
+      "no_tasks": "No pending tasks",
+      "start_harvest": "Start Harvest",
+      "stats_day": "Day",
+      "stats_height": "Height",
+      "stats_phase": "Phase",
+      "strain_profile_link": "Strain Profile & Details",
+      "water_needed": "Watering Needed"
     },
     "empty_state": "No plants in your inventory",
     "error": "Failed to load plants. Try again.",
@@ -2173,6 +2321,7 @@
       "cancel": "Cancel",
       "completion": "{{percent}}% Complete",
       "create_cta": "Create plant",
+      "create_title": "New Plant",
       "default_water_desc": "Quick reminder to water after transplanting.",
       "default_water_title": "Water this plant",
       "delete_button": "Delete Plant",
@@ -2191,13 +2340,13 @@
       "error_body": "Please check your connection and try again.",
       "error_title": "Could not save plant",
       "errors": {
+        "height_invalid": "Height must be 0 or greater",
         "light_hours": "Enter hours between 0-24",
         "name_length": "Name must be under 120 characters",
         "name_required": "Name is required",
         "strain_length": "Strain must be under 120 characters",
         "strain_required": "Strain is required"
       },
-
       "genetic": {
         "balanced": "Balanced hybrid",
         "indica": "Indica-dominant",
@@ -2207,6 +2356,8 @@
       "genetic_label": "Genetic lean",
       "genetic_placeholder": "Select genetic lean",
       "go_to_schedule": "Go to Schedule",
+      "height_label": "Plant height",
+      "height_placeholder": "e.g., 45 cm",
       "invalid_id": "Invalid Plant ID",
       "keep_adding": "Keep adding plants",
       "light_hours_label": "Hours of light",
@@ -2227,6 +2378,8 @@
       "name_placeholder": "My Northern Lights",
       "notes_label": "Notes",
       "notes_placeholder": "Feeding plan, phenotype notes…",
+      "photo_save_error": "Failed to save photo",
+      "photo_saved": "Photo updated",
       "photoperiod": {
         "autoflower": "Autoflower",
         "photoperiod": "Photoperiod (12/12 flip)"
@@ -2420,6 +2573,12 @@
     },
     "outcomes": "Outcomes",
     "overdue": "Overdue",
+    "phases": {
+      "flower": "Flowering",
+      "harvest": "Harvest",
+      "seedling": "Seedling",
+      "veg": "Vegetative"
+    },
     "preview": "Playbook Preview",
     "progress": {
       "careChanges": "Care requirements will change",
@@ -3207,6 +3366,7 @@
       "headline": "⚠️ Educational Content Only"
     },
     "detail": {
+      "about": "About this strain",
       "back_hint": "Navigates back to the previous screen",
       "cbd": "CBD",
       "description_title": "Description",
@@ -3246,8 +3406,11 @@
     "did_you_mean_suffix": "?",
     "difficulty": {
       "advanced": "Advanced",
+      "advanced_hint": "Indicates this strain requires extensive grow experience and precise environment control",
       "beginner": "Beginner",
-      "intermediate": "Intermediate"
+      "beginner_hint": "Indicates this strain is easy to grow and tolerant of common mistakes",
+      "intermediate": "Intermediate",
+      "intermediate_hint": "Indicates this strain requires some experience and moderate environment control"
     },
     "effects": {
       "creative": "Creative",
@@ -3328,6 +3491,11 @@
       "spicy": "Spicy",
       "sweet": "Sweet",
       "woody": "Woody"
+    },
+    "hardFacts": {
+      "cultivation": "Cultivation",
+      "floweringTime": "Flowering",
+      "yield": "Yield"
     },
     "no_results": "No strains found",
     "offline_notice": "Showing saved strains",
@@ -3612,6 +3780,89 @@
     "plants": "Plants",
     "strains": "Strains"
   },
+  "tasks": {
+    "burp_jars_week1": {
+      "description": "Open jars for 15-30 minutes to release moisture and refresh air. Check for mold or ammonia smell.",
+      "description_rich": "Open jar & air for 15 min. Check for mold or ammonia smell.",
+      "title": "Burp Jars"
+    },
+    "burp_jars_week3": {
+      "description": "Open jars briefly to maintain proper humidity levels. Less frequent burping is needed as cure progresses.",
+      "description_rich": "Open jar & air for 15 min. Less frequent as cure progresses.",
+      "title": "Burp Jars"
+    },
+    "change_reservoir": {
+      "description": "Complete water change to prevent nutrient buildup and maintain freshness.",
+      "title": "Change Reservoir Water"
+    },
+    "check_humidity_dome": {
+      "description": "Ensure humidity dome is in place and moisture levels are adequate for seedling.",
+      "title": "Check Humidity Dome"
+    },
+    "check_light_distance": {
+      "description": "Sativa-dominant plants may stretch significantly. Ensure adequate distance between lights and canopy to prevent light burn.",
+      "title": "Check Light Distance (Stretch Warning)"
+    },
+    "check_ph_ec": {
+      "description": "Monitor reservoir pH (5.5-6.5) and EC levels. Adjust as needed for optimal nutrient uptake.",
+      "title": "Check pH & EC"
+    },
+    "check_preflowers": {
+      "description": "Look for white pistils emerging at nodes - a sign your autoflower is transitioning to flower. Consider switching to flowering stage when confirmed.",
+      "title": "Check for Pre-flowers (White Pistils)"
+    },
+    "check_stem_snap": {
+      "description": "Bend a small stem - if it snaps cleanly (not bends), buds are ready for curing. Check daily until dry.",
+      "title": "Check Stem Snap"
+    },
+    "check_water_need": {
+      "description_coco": "~{{min}}-{{max}}L – **ONLY if the top 2-3cm of medium is dry!** Check runoff EC/pH.",
+      "description_soil": "~{{min}}-{{max}}L – **ONLY if the top 2-3cm of soil is dry!** Water until slight runoff.",
+      "title": "Check Water Need"
+    },
+    "check_water_temp": {
+      "description": "Maintain reservoir temperature between 18-22°C (65-72°F) to prevent root issues.",
+      "title": "Check Water Temperature"
+    },
+    "climate_check": {
+      "description_flower": "Temp: 22-28°C? Humidity: ~45%? High humidity = mold risk!",
+      "description_veg": "Temp: 22-28°C? Humidity: ~60%? Check for optimal growth conditions.",
+      "title": "Climate Check"
+    },
+    "feed_plant": {
+      "description_coco": "Feed with every watering in coco. Monitor EC/pH of runoff.",
+      "description_coco_flower": "Bloom schedule (P/K-heavy). Feed with every watering, monitor EC/pH.",
+      "description_coco_flower_safe": "Bloom nutrients. Watch for yellow leaf tips (nutrient burn). Monitor EC/pH.",
+      "description_coco_veg": "Veg schedule (N-heavy). Feed with every watering, monitor EC/pH.",
+      "description_coco_veg_safe": "Veg nutrients. **Tip: Start with 50% of manufacturer's dosage.** Monitor EC/pH.",
+      "description_soil": "Apply nutrients according to your feeding schedule. Adjust based on plant response.",
+      "description_soil_flower": "Bloom schedule (P/K-heavy). Apply nutrients based on plant response.",
+      "description_soil_flower_safe": "Bloom nutrients. Watch for yellow leaf tips (nutrient burn).",
+      "description_soil_veg": "Veg schedule (N-heavy). Apply nutrients based on plant response.",
+      "description_soil_veg_safe": "Veg nutrients. **Tip: Start with 50% of manufacturer's dosage.**",
+      "title": "Feed Plant"
+    },
+    "start_flushing": {
+      "description": "Begin the flush period - use plain pH-balanced water only. This helps remove excess nutrients and improves final taste.",
+      "description_rich": "Water only! No more nutrients. Use pH-balanced water to flush excess salts.",
+      "title": "Start Flushing (Water Only)"
+    },
+    "switch_lights": {
+      "description": "Set light schedule to 12 hours on, 12 hours off to trigger and maintain flowering.",
+      "title": "Switch Lights to 12/12"
+    },
+    "top_dressing": {
+      "description": "Add organic amendments to the soil surface for slow-release nutrients.",
+      "title": "Top Dressing"
+    },
+    "water_plant": {
+      "description_coco": "Water until ~10-20% runoff. Coco dries quickly - check daily.",
+      "description_coco_rich": "~{{min}}-{{max}}L to water (when medium is dry). Check runoff EC/pH.",
+      "description_soil": "Water until ~10-20% runoff. Check soil moisture before watering.",
+      "description_soil_rich": "~{{min}}-{{max}}L to water (when soil is dry). Water until slight runoff.",
+      "title": "Water Plant"
+    }
+  },
   "trichome": {
     "amber": "Amber",
     "amberLabel": "Amber Trichomes (%)",
@@ -3657,6 +3908,9 @@
   "units": {
     "celsius": "°C",
     "ms_per_cm": "mS/cm"
+  },
+  "validation": {
+    "strainNameRequired": "Strain name is required"
   },
   "welcome": "Welcome to GrowBro app site"
 }

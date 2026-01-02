@@ -9,10 +9,11 @@ import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, ScrollView } from 'react-native';
 import { showMessage } from 'react-native-flash-message';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { client } from '@/api/common';
 import type { Plant as ApiPlant } from '@/api/plants/types';
-import { Button, SafeAreaView, Text, View } from '@/components/ui';
+import { Button, Text, View } from '@/components/ui';
 import { usePlaybookService } from '@/lib/playbooks';
 
 type Plant = {
@@ -40,8 +41,8 @@ function PlantSelectionList({
           key={plant.id}
           className={`rounded-xl border-2 p-4 ${
             selectedId === plant.id
-              ? 'dark:bg-primary-950 border-primary-600 bg-primary-50 dark:border-primary-500'
-              : 'border-neutral-200 bg-white dark:border-charcoal-800 dark:bg-charcoal-900'
+              ? 'border-primary-600 bg-primary-50 dark:border-primary-500 dark:bg-primary-950'
+              : 'border-neutral-200 bg-white dark:border-charcoal-700 dark:bg-charcoal-900'
           }`}
           onPress={() => onSelect(plant.id)}
           accessibilityRole="button"
@@ -52,7 +53,7 @@ function PlantSelectionList({
           testID={`plant-option-${plant.id}`}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Text className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+          <Text className="text-lg font-semibold text-charcoal-900 dark:text-neutral-100">
             {plant.name}
           </Text>
           {plant.strain && (
@@ -234,15 +235,16 @@ function ApplyContent({
   onCreatePlant: () => void;
 }) {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
 
   return (
-    <SafeAreaView className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
-      <ScrollView className="flex-1">
+    <View className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
+      <ScrollView className="flex-1" contentInsetAdjustmentBehavior="automatic">
         <View className="p-4">
           <Text className="mb-2 text-2xl font-bold text-neutral-900 dark:text-neutral-100">
             {t('playbooks.selectPlant')}
           </Text>
-          <Text className="mb-6 text-base text-neutral-600 dark:text-neutral-400">
+          <Text className="mb-6 text-base text-neutral-500 dark:text-neutral-400">
             {t('playbooks.selectPlantDescription')}
           </Text>
 
@@ -259,7 +261,10 @@ function ApplyContent({
       </ScrollView>
 
       {plants.length > 0 && (
-        <View className="border-t border-neutral-200 bg-white p-4 dark:border-charcoal-800 dark:bg-charcoal-900">
+        <View
+          className="border-t border-neutral-200 bg-white p-4 dark:border-white/10 dark:bg-charcoal-900"
+          style={{ paddingBottom: Math.max(insets.bottom, 16) }}
+        >
           <Button
             label={
               applying ? t('playbooks.applying') : t('playbooks.applyPlaybook')
@@ -270,7 +275,7 @@ function ApplyContent({
           />
         </View>
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -306,11 +311,9 @@ function ApplyPlaybookScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" />
-        </View>
-      </SafeAreaView>
+      <View className="flex-1 items-center justify-center bg-neutral-50 dark:bg-charcoal-950">
+        <ActivityIndicator size="large" />
+      </View>
     );
   }
 

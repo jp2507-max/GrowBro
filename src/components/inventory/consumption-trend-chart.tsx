@@ -190,7 +190,7 @@ const ConsumptionTrendChartComponent = ({
       </Text>
 
       {predictionInterval && (
-        <View className="dark:bg-primary-950 mt-3 rounded-lg bg-primary-50 p-3">
+        <View className="mt-3 rounded-lg bg-primary-50 p-3 dark:bg-primary-950">
           <Text className="font-inter-medium text-xs text-primary-800 dark:text-primary-200">
             {t('inventory.charts.predictionInterval')}:{' '}
             {predictionInterval[0].toFixed(1)} -{' '}
