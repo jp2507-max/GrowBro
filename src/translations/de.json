@@ -701,6 +701,8 @@
       "interval_label": "Alle",
       "recurrence_label": "Wiederholen",
       "save": "Speichern",
+      "save_failed": "Zeitplan konnte nicht gespeichert werden. Bitte versuche es erneut.",
+      "saving": "Speichert...",
       "title_label": "Aufgabentitel",
       "title_placeholder": "z.B. Pflanzen gießen",
       "weekdays_label": "An Tagen"

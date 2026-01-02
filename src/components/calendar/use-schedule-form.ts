@@ -3,6 +3,7 @@ import React from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
+import { showErrorMessage } from '@/lib/flash-message';
 import { rruleGenerator, type WeekDay } from '@/lib/rrule/generator';
 import { createSeries, createTask, updateSeries } from '@/lib/task-manager';
 import type { Series } from '@/types/calendar';
@@ -215,6 +216,8 @@ export function useScheduleForm({
         reset(defaultValues);
       } catch (e) {
         console.error('[ScheduleForm] Failed:', e);
+        showErrorMessage(t('calendar.schedule_editor.save_failed'));
+        throw e;
       }
     },
     [

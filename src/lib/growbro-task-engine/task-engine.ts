@@ -57,11 +57,8 @@ function buildPlantSettings(params: {
   if (plant.plantedAt) {
     const parsed = new Date(plant.plantedAt);
     if (isNaN(parsed.getTime())) {
-      console.error(
-        `[TaskEngine] Plant ${plant.id} has malformed plantedAt: "${plant.plantedAt}"`
-      );
       console.warn(
-        `[TaskEngine] Plant ${plant.id} missing plantedAt, using current time. This may cause schedule drift.`
+        `[TaskEngine] Plant ${plant.id} has malformed plantedAt: "${plant.plantedAt}". Using current time as fallback. This may cause schedule drift.`
       );
       plantedAt = new Date();
     } else {
@@ -241,32 +238,7 @@ export class TaskEngine {
           .fetch();
 
         for (const task of futureTasks) {
-          const parsedDt = DateTime.fromISO(task.dueAtLocal);
-          if (!parsedDt.isValid) {
-            console.warn(
-              `[TaskEngine] Invalid dueAtLocal for task ${task.id}: ${task.dueAtLocal} - deleting orphaned task`
-            );
-            try {
-              await task.update((record) => {
-                record.deletedAt = now;
-                record.updatedAt = now;
-              });
-            } catch (error) {
-              console.error(
-                `[TaskEngine] Failed to delete invalid task ${task.id}:`,
-                error
-              );
-            }
-            continue;
-          }
-          const taskDueAt = parsedDt.toJSDate();
-          // Only delete tasks that are strictly in the future (not overdue from earlier today)
-          if (taskDueAt > now) {
-            await task.update((record) => {
-              record.deletedAt = now;
-              record.updatedAt = now;
-            });
-          }
+          await this.deleteFutureOrInvalidTask(task, now);
         }
       })
       .catch((error) => {
@@ -280,6 +252,48 @@ export class TaskEngine {
     console.log(
       `[TaskEngine] Cleaned up ${seriesToDelete.length} series for plant ${plantId}`
     );
+  }
+
+  /**
+   * Helper to delete a task if it's in the future or has invalid date.
+   * MUST be called within a database.write() block.
+   */
+  private async deleteFutureOrInvalidTask(
+    task: TaskModel,
+    now: Date
+  ): Promise<boolean> {
+    const parsedDt = DateTime.fromISO(task.dueAtLocal);
+
+    if (!parsedDt.isValid) {
+      console.warn(
+        `[TaskEngine] Invalid dueAtLocal for task ${task.id}: ${task.dueAtLocal} - deleting orphaned task`
+      );
+      try {
+        await task.update((record) => {
+          record.deletedAt = now;
+          record.updatedAt = now;
+        });
+        return true;
+      } catch (error) {
+        console.error(
+          `[TaskEngine] Failed to delete invalid task ${task.id}:`,
+          error
+        );
+        return false;
+      }
+    }
+
+    const taskDueAt = parsedDt.toJSDate();
+    // Only delete tasks that are strictly in the future (not overdue from earlier today)
+    if (taskDueAt > now) {
+      await task.update((record) => {
+        record.deletedAt = now;
+        record.updatedAt = now;
+      });
+      return true;
+    }
+
+    return false;
   }
 
   /**

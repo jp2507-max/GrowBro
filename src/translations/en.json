@@ -701,6 +701,8 @@
       "interval_label": "Every",
       "recurrence_label": "Repeat",
       "save": "Save",
+      "save_failed": "Failed to save schedule. Please try again.",
+      "saving": "Saving...",
       "title_label": "Task Title",
       "title_placeholder": "e.g., Water plants",
       "weekdays_label": "On days"
