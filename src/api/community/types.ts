@@ -8,6 +8,17 @@ import type {
   PostLike,
 } from '@/types/community';
 
+export type CommunityPostSort = 'new' | 'top_7d';
+
+export type CommunityPostsDiscoverParams = {
+  query?: string;
+  cursor?: string;
+  limit?: number;
+  sort?: CommunityPostSort;
+  photosOnly?: boolean;
+  mineOnly?: boolean;
+};
+
 // Re-export for convenience
 export type { PaginateQuery };
 
@@ -81,6 +92,9 @@ export interface CommunityAPI {
   // Posts
   getPost(postId: string): Promise<Post>;
   getPosts(cursor?: string, limit?: number): Promise<PaginateQuery<Post>>;
+  getPostsDiscover(
+    params: CommunityPostsDiscoverParams
+  ): Promise<PaginateQuery<Post>>;
   createPost(
     data: CreatePostData,
     idempotencyKey?: string,

@@ -1,6 +1,7 @@
 import { createInfiniteQuery } from 'react-query-kit';
 
 import type { PaginateQuery } from '@/api/types';
+import { communityUserPostsKey } from '@/lib/community/query-keys';
 
 import { getCommunityApiClient } from './client';
 import type { Post } from './types';
@@ -14,8 +15,8 @@ export const useUserPosts = createInfiniteQuery<
   Error,
   string | undefined
 >({
-  queryKey: ['user-posts'],
-  fetcher: async (variables, { pageParam }) => {
+  queryKey: communityUserPostsKey(),
+  fetcher: async (variables, { pageParam }): Promise<Response> => {
     const client = getCommunityApiClient();
     return client.getUserPosts(
       variables.userId,
@@ -23,6 +24,7 @@ export const useUserPosts = createInfiniteQuery<
       variables.limit ?? 20
     );
   },
-  getNextPageParam: (lastPage) => lastPage.next ?? undefined,
+  getNextPageParam: (lastPage): string | undefined =>
+    lastPage.next ?? undefined,
   initialPageParam: undefined,
 });

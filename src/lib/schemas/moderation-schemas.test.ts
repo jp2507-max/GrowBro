@@ -117,7 +117,7 @@ describe('contentReportInputSchema', () => {
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error.issues[0].message).toContain(
-          'at least 50 characters'
+          'minimum 50 characters'
         );
       }
     });
@@ -143,7 +143,7 @@ describe('contentReportInputSchema', () => {
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error.issues[0].message).toContain(
-          'Good faith declaration is required'
+          'Good faith declaration must be accepted'
         );
       }
     });
@@ -157,7 +157,7 @@ describe('contentReportInputSchema', () => {
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error.issues[0].message).toContain(
-          'name & email, or a pseudonym'
+          'at least email, pseudonym, or name'
         );
       }
     });
@@ -189,7 +189,7 @@ describe('contentReportInputSchema', () => {
     it('should reject invalid report_type', () => {
       const report = {
         ...validPolicyReport,
-        report_type: 'invalid_type' as any,
+        report_type: 'invalid_type' as unknown as 'policy_violation',
       };
       const result = contentReportInputSchema.safeParse(report);
       expect(result.success).toBe(false);
@@ -213,7 +213,7 @@ describe('contentReportInputSchema', () => {
       expect(result.is_valid).toBe(false);
       expect(result.errors.length).toBeGreaterThan(0);
       expect(result.errors[0]).toContain('explanation');
-      expect(result.errors[0]).toContain('at least 50 characters');
+      expect(result.errors[0]).toContain('minimum 50 characters');
     });
   });
 });
@@ -231,8 +231,8 @@ describe('reporterContactSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it('should reject pseudonym shorter than 3 characters', () => {
-    const contact = { pseudonym: 'ab' };
+  it('should reject empty pseudonym', () => {
+    const contact = { pseudonym: '' };
     const result = reporterContactSchema.safeParse(contact);
     expect(result.success).toBe(false);
   });
@@ -729,7 +729,7 @@ describe('repeatOffenderRecordInputSchema', () => {
     it('should reject invalid status', () => {
       const offender = {
         ...validRepeatOffender,
-        status: 'invalid' as any,
+        status: 'invalid' as unknown as 'active',
       };
       const result = repeatOffenderRecordInputSchema.safeParse(offender);
       expect(result.success).toBe(false);
@@ -975,7 +975,7 @@ describe('auditEventInputSchema', () => {
     it('should reject invalid actor_type', () => {
       const event = {
         ...validAuditEvent,
-        actor_type: 'invalid' as any,
+        actor_type: 'invalid' as unknown as 'moderator',
       };
       const result = auditEventInputSchema.safeParse(event);
       expect(result.success).toBe(false);

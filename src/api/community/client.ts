@@ -9,6 +9,7 @@ import { supabase } from '@/lib/supabase';
 
 import type {
   CommunityAPI,
+  CommunityPostsDiscoverParams,
   ConflictResponse,
   CreateCommentData,
   CreatePostData,
@@ -91,6 +92,70 @@ function sleep(ms: number): Promise<void> {
 }
 
 /**
+ * Parse a composite cursor for top_7d sort: "like_count:created_at"
+ * Returns null if cursor is invalid or not in composite format.
+ */
+function parseTopSortCursor(
+  cursor: string
+): { likeCount: number; createdAt: string } | null {
+  const [likeCountStr, createdAt] = cursor.split(':');
+  const likeCount = parseInt(likeCountStr, 10);
+  if (isNaN(likeCount) || !createdAt) {
+    return null;
+  }
+  return { likeCount, createdAt };
+}
+
+/**
+ * Generate a composite cursor for top_7d sort from a post's like_count and created_at.
+ */
+function generateTopSortCursor(likeCount: number, createdAt: string): string {
+  return `${likeCount}:${createdAt}`;
+}
+
+/** Context for applying discover filters */
+type DiscoverFilterContext = {
+  trimmedQuery?: string;
+  photosOnly?: boolean;
+  mineOnly?: boolean;
+  userId?: string;
+  sort: 'new' | 'top_7d';
+  sevenDaysAgo: Date;
+  cursor?: string;
+};
+
+/**
+ * Apply discover filters to a posts query builder.
+ * Extracted to reduce getPostsDiscover method length.
+ */
+function applyDiscoverFilters<
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  T extends PostgrestFilterBuilder<any, any, any, any[], any, any, any>,
+>(builder: T, ctx: DiscoverFilterContext): T {
+  let b = builder.is('deleted_at', null).is('hidden_at', null);
+
+  if (ctx.trimmedQuery) {
+    b = b.ilike('body', `%${ctx.trimmedQuery}%`);
+  }
+  if (ctx.photosOnly) {
+    b = b.or(
+      'media_uri.not.is.null,media_resized_uri.not.is.null,media_thumbnail_uri.not.is.null'
+    );
+  }
+  if (ctx.mineOnly && ctx.userId) {
+    b = b.eq('user_id', ctx.userId);
+  }
+  if (ctx.sort === 'top_7d') {
+    b = b.gte('created_at', ctx.sevenDaysAgo.toISOString());
+  }
+  // For 'new' sort, apply simple created_at cursor; for 'top_7d', composite cursor handled separately
+  if (ctx.cursor && ctx.sort !== 'top_7d') {
+    b = b.lt('created_at', ctx.cursor);
+  }
+  return b;
+}
+
+/**
  * Community API client implementation
  * Provides CRUD operations for posts, comments, likes, and profiles
  * All mutating operations support idempotency
@@ -151,6 +216,89 @@ export class CommunityApiClient implements CommunityAPI {
     const posts = await this.getPostsWithCounts(query);
     const next =
       posts.length === limit ? posts[posts.length - 1].created_at : null;
+
+    return {
+      results: posts,
+      count: count || 0,
+      next,
+      previous: null,
+    };
+  }
+
+  async getPostsDiscover(
+    params: CommunityPostsDiscoverParams
+  ): Promise<PaginateQuery<Post>> {
+    const {
+      cursor,
+      limit = 20,
+      query,
+      sort = 'new',
+      photosOnly,
+      mineOnly,
+    } = params;
+
+    const { data: session } = await this.client.auth.getSession();
+    const userId = session?.session?.user?.id;
+
+    if (mineOnly && !userId) {
+      return { results: [], count: 0, next: null, previous: null };
+    }
+
+    // Build base filter context (shared by count and data queries)
+    const baseFilterCtx: DiscoverFilterContext = {
+      trimmedQuery: query?.trim(),
+      photosOnly,
+      mineOnly,
+      userId,
+      sort,
+      sevenDaysAgo: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+    };
+
+    // Count query uses filters WITHOUT cursor to get total matching posts
+    const { count } = await applyDiscoverFilters(
+      this.client.from('posts').select('*', { count: 'exact', head: true }),
+      baseFilterCtx
+    );
+
+    // Data query uses filters WITH cursor for pagination
+    const dataFilterCtx: DiscoverFilterContext = { ...baseFilterCtx, cursor };
+    let queryBuilder = applyDiscoverFilters(
+      this.client.from('posts').select('*'),
+      dataFilterCtx
+    );
+
+    if (sort === 'top_7d') {
+      queryBuilder = queryBuilder
+        .order('like_count', { ascending: false })
+        .order('created_at', { ascending: false });
+
+      // Apply composite cursor for top_7d sort
+      if (cursor) {
+        const parsed = parseTopSortCursor(cursor);
+        if (parsed) {
+          // Rows come after cursor if: like_count < cursor OR (like_count == cursor AND created_at < cursor)
+          queryBuilder = queryBuilder.or(
+            `like_count.lt.${parsed.likeCount},and(like_count.eq.${parsed.likeCount},created_at.lt.${parsed.createdAt})`
+          );
+        }
+      }
+    } else {
+      queryBuilder = queryBuilder.order('created_at', { ascending: false });
+    }
+
+    queryBuilder = queryBuilder.limit(limit);
+
+    const posts = await this.getPostsWithCounts(queryBuilder);
+
+    // Generate next cursor based on sort type
+    let next: string | null = null;
+    if (posts.length === limit) {
+      const lastPost = posts[posts.length - 1];
+      next =
+        sort === 'top_7d'
+          ? generateTopSortCursor(lastPost.like_count ?? 0, lastPost.created_at)
+          : lastPost.created_at;
+    }
 
     return {
       results: posts,

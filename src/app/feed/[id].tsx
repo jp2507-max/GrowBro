@@ -8,7 +8,6 @@ import { CannabisEducationalBanner } from '@/components/cannabis-educational-ban
 import { CommentForm } from '@/components/community/comment-form';
 import { CommentList } from '@/components/community/comment-list';
 import { PostCard } from '@/components/community/post-card';
-import { ModerationActions } from '@/components/moderation-actions';
 import {
   ActivityIndicator,
   FocusAwareStatusBar,
@@ -16,12 +15,23 @@ import {
   View,
 } from '@/components/ui';
 import { normalizePostUserId } from '@/lib/community/post-utils';
+import { isCommunityCommentsKey } from '@/lib/community/query-keys';
+import {
+  createOutboxAdapter,
+  useCommunityFeedRealtime,
+} from '@/lib/community/use-community-feed-realtime';
 import { translate, type TxKeyPath } from '@/lib/i18n';
+import { database } from '@/lib/watermelon';
 
-export default function Post() {
+export default function Post(): React.ReactElement {
   const local = useLocalSearchParams<{ id: string; commentId?: string }>();
   const scrollViewRef = React.useRef<ScrollView>(null);
   const queryClient = useQueryClient();
+  const outboxAdapter = React.useMemo(() => createOutboxAdapter(database), []);
+  useCommunityFeedRealtime({ outboxAdapter, postId: local.id });
+  const [highlightedCommentId, setHighlightedCommentId] = React.useState<
+    string | undefined
+  >(undefined);
   // Note: Comment scrolling would require CommentList component to be updated
   // to support forwardRef and scrollToComment method
 
@@ -41,16 +51,20 @@ export default function Post() {
 
   const handleCommentCreated = React.useCallback(() => {
     void refetch();
-    void queryClient.invalidateQueries({ queryKey: ['comments', local.id] });
+    void queryClient.invalidateQueries({
+      predicate: (query) =>
+        isCommunityCommentsKey(query.queryKey) &&
+        query.queryKey[1] === local.id,
+    });
   }, [refetch, queryClient, local.id]);
 
-  // TODO: Implement comment scrolling when CommentList supports it
-  // Requires updating CommentList component to expose scrollToComment via ref
   React.useEffect(() => {
-    if (local.commentId && !isLoadingComments) {
-      // Placeholder for future scroll-to-comment functionality
-      console.log('Navigate to comment:', local.commentId);
-    }
+    if (!local.commentId || isLoadingComments) return;
+    setHighlightedCommentId(local.commentId);
+    const timeout = setTimeout(() => {
+      setHighlightedCommentId(undefined);
+    }, 4000);
+    return () => clearTimeout(timeout);
   }, [local.commentId, isLoadingComments]);
 
   if (isPending) {
@@ -88,7 +102,7 @@ export default function Post() {
   const comments = commentsData?.results ?? [];
 
   return (
-    <View className="flex-1">
+    <View className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
       <Stack.Screen
         options={{
           title: translate('nav.post'),
@@ -97,15 +111,9 @@ export default function Post() {
       />
       <FocusAwareStatusBar />
       <ScrollView ref={scrollViewRef} className="flex-1">
-        <View className="p-3">
-          <CannabisEducationalBanner className="mb-4" />
+        <View className="px-1 pt-3">
+          <CannabisEducationalBanner className="mx-3 mb-4" />
           <PostCard post={normalizePostUserId(post)} />
-          <View className="mt-4">
-            <ModerationActions
-              contentId={post.id}
-              authorId={String(post.userId || post.user_id || '')}
-            />
-          </View>
         </View>
 
         <View className="mt-6 border-t border-neutral-200 dark:border-neutral-800">
@@ -113,7 +121,11 @@ export default function Post() {
             <Text className="mb-4 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
               {translate('community.comments' as TxKeyPath)}
             </Text>
-            <CommentList comments={comments} isLoading={isLoadingComments} />
+            <CommentList
+              comments={comments}
+              isLoading={isLoadingComments}
+              highlightedCommentId={highlightedCommentId}
+            />
           </View>
         </View>
       </ScrollView>

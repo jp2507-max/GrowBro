@@ -22,6 +22,8 @@ import {
 import * as privacyConsent from '@/lib/privacy-consent';
 import { supabase } from '@/lib/supabase';
 
+import { isCustomSchemeLink, isUniversalLink } from './redirect-uri';
+
 /**
  * Parsed deep link result
  */
@@ -34,6 +36,8 @@ export type ParsedDeepLink = {
 /**
  * Parse a deep link URL into components
  *
+ * Supports both custom scheme (growbro://) and Universal Links (https://growbro.app)
+ *
  * @param url - The deep link URL to parse
  * @returns Parsed link data or null if invalid
  */
@@ -45,26 +49,41 @@ export function parseDeepLink(url: string): ParsedDeepLink {
   try {
     const parsed = new URL(url);
 
-    // Only handle growbro:// scheme for security
-    if (parsed.protocol !== 'growbro:') {
-      // Log error to Sentry if consent granted
-      if (privacyConsent.hasConsent('crashReporting')) {
-        Sentry.captureException(new Error('Invalid deep link protocol'), {
-          tags: { feature: 'deep-link-parsing' },
-          extra: {
-            url: sanitizeDeepLinkUrl(url),
-            protocol: parsed.protocol,
-          },
-        });
-      }
-      return null;
+    // Handle Universal Links (https://growbro.app/...)
+    if (isUniversalLink(url)) {
+      // For Universal Links, the path becomes the host in our internal format
+      // e.g., https://growbro.app/verify-email?token_hash=... -> host: 'verify-email'
+      const pathParts = parsed.pathname.split('/').filter(Boolean);
+      const host = pathParts[0] || '';
+      const remainingPath = pathParts.slice(1).join('/');
+
+      return {
+        host,
+        path: remainingPath ? `/${remainingPath}` : '',
+        params: parsed.searchParams,
+      };
     }
 
-    return {
-      host: parsed.hostname,
-      path: parsed.pathname === '/' ? '' : parsed.pathname,
-      params: parsed.searchParams,
-    };
+    // Handle custom scheme (growbro://, growbro-dev://, growbro-staging://)
+    if (isCustomSchemeLink(url)) {
+      return {
+        host: parsed.hostname,
+        path: parsed.pathname === '/' ? '' : parsed.pathname,
+        params: parsed.searchParams,
+      };
+    }
+
+    // Unknown scheme - reject for security
+    if (privacyConsent.hasConsent('crashReporting')) {
+      Sentry.captureException(new Error('Invalid deep link protocol'), {
+        tags: { feature: 'deep-link-parsing' },
+        extra: {
+          url: sanitizeDeepLinkUrl(url),
+          protocol: parsed.protocol,
+        },
+      });
+    }
+    return null;
   } catch (error) {
     // Log error to Sentry if consent granted
     if (privacyConsent.hasConsent('crashReporting')) {

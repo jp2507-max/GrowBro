@@ -2,12 +2,18 @@
 [auth]
 site_url = "https://growbro.app"
 additional_redirect_urls = [
+  # Custom scheme redirects (production)
   "growbro://auth/callback",
   "growbro://verify-email",
   "growbro://reset-password",
+  # Custom scheme redirects (development)
   "growbro-dev://auth/callback",
   "growbro-dev://verify-email",
-  "growbro-dev://reset-password"
+  "growbro-dev://reset-password",
+  # Custom scheme redirects (staging)
+  "growbro-staging://auth/callback",
+  "growbro-staging://verify-email",
+  "growbro-staging://reset-password"
 ]
 enable_signup = true
 jwt_expiry = 300  # 5 minutes access-token lifetime to tighten session revocation window

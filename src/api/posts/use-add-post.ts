@@ -350,7 +350,7 @@ export const useAddPost = createMutation<Response, Variables, AxiosError>({
 
     try {
       return await client({
-        url: 'posts/add',
+        url: 'create-post',
         method: 'POST',
         data: {
           title: variables.title,

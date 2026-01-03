@@ -6,9 +6,16 @@
  * Requirements: 7.2, 7.6, 10.3
  */
 
+import type { UseMutationResult } from '@tanstack/react-query';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { v4 as uuidv4 } from 'uuid';
 
+import {
+  communityPostKey,
+  isCommunityCommentsKey,
+  isCommunityPostsInfiniteKey,
+  isCommunityUserPostsKey,
+} from '@/lib/community/query-keys';
 import { database } from '@/lib/watermelon';
 import type { OutboxModel } from '@/lib/watermelon-models/outbox';
 
@@ -57,20 +64,31 @@ async function hideContent({
   };
 }
 
-export function useHideContent() {
+export function useHideContent(): UseMutationResult<
+  HideContentResult,
+  Error,
+  HideContentParams
+> {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: hideContent,
-    onSuccess: (_, variables) => {
+    onSuccess: (_data, variables): void => {
       // Invalidate relevant queries
       if (variables.contentType === 'post') {
-        void queryClient.invalidateQueries({ queryKey: ['posts'] });
         void queryClient.invalidateQueries({
-          queryKey: ['post', variables.contentId],
+          predicate: (query) => isCommunityPostsInfiniteKey(query.queryKey),
+        });
+        void queryClient.invalidateQueries({
+          predicate: (query) => isCommunityUserPostsKey(query.queryKey),
+        });
+        void queryClient.invalidateQueries({
+          queryKey: communityPostKey(variables.contentId),
         });
       } else {
-        void queryClient.invalidateQueries({ queryKey: ['comments'] });
+        void queryClient.invalidateQueries({
+          predicate: (query) => isCommunityCommentsKey(query.queryKey),
+        });
       }
     },
   });

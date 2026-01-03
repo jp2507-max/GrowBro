@@ -1,11 +1,11 @@
-import { Link, Redirect, SplashScreen, Tabs } from 'expo-router';
+import { Redirect, SplashScreen, Tabs } from 'expo-router';
 import React from 'react';
 
 import { CustomTabBar } from '@/components/navigation/custom-tab-bar';
 import { SharedHeader } from '@/components/navigation/shared-header';
 import { LegalUpdateBanner } from '@/components/settings/legal-update-banner';
 import { RestoreAccountBanner } from '@/components/settings/restore-account-banner';
-import { Pressable, Text, View } from '@/components/ui';
+import { View } from '@/components/ui';
 import {
   Calendar as CalendarIcon,
   Feed as FeedIcon,
@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/icons';
 import { useAgeGate, useAuth, useIsFirstTime } from '@/lib';
 import { AnimatedScrollListProvider } from '@/lib/animations/animated-scroll-list-provider';
+import { useCommunitySync } from '@/lib/community/use-community-sync';
 import { checkLegalVersionBumps } from '@/lib/compliance/legal-acceptances';
 import { usePendingDeletion } from '@/lib/hooks/use-pending-deletion';
 import { translate } from '@/lib/i18n';
@@ -115,6 +116,7 @@ export default function TabLayout() {
   const { count: lowStockCount } = useInventoryLowStockCount();
   const { pendingDeletion, hasPendingDeletion } = usePendingDeletion();
   useSplashScreenHide();
+  useCommunitySync();
 
   // Check for legal version bumps that need notification (minor/patch updates)
   const legalVersionCheck = checkLegalVersionBumps();
@@ -187,9 +189,8 @@ export default function TabLayout() {
             options={{
               title: translate('tabs.community'),
               tabBarIcon: ({ color }) => <FeedIcon color={color} />,
-              headerRight: () => <CreateNewPostLink />,
               tabBarButtonTestID: 'community-tab',
-              header: renderSharedHeader,
+              headerShown: false,
             }}
           />
           <Tabs.Screen
@@ -216,25 +217,3 @@ export default function TabLayout() {
     </AnimatedScrollListProvider>
   );
 }
-
-// Header right components
-const CreateNewPostLink = () => {
-  const createPostLabel = translate('community.create_post');
-  const createPostHint = translate('accessibility.community.create_post_hint');
-  return (
-    <Link href="/add-post" asChild>
-      <Pressable
-        className="ml-3 h-12 flex-row items-center rounded-full bg-primary-600 px-5"
-        accessibilityRole="button"
-        accessibilityLabel={createPostLabel}
-        accessibilityHint={createPostHint}
-        testID="community-header-create"
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-      >
-        <Text className="text-sm font-semibold text-neutral-50">
-          {createPostLabel}
-        </Text>
-      </Pressable>
-    </Link>
-  );
-};

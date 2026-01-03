@@ -8,11 +8,19 @@
  * - Rollback on failure
  */
 
+import type { QueryKey, UseMutationResult } from '@tanstack/react-query';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { showMessage } from 'react-native-flash-message';
 import { v4 as uuidv4 } from 'uuid';
 
 import type { PaginateQuery } from '@/api/types';
+import {
+  communityPostKey,
+  isCommunityCommentsKey,
+  isCommunityPostsInfiniteKey,
+  isCommunityUserPostsKey,
+} from '@/lib/community/query-keys';
+import { translate } from '@/lib/i18n';
 import { database } from '@/lib/watermelon';
 import type { OutboxModel } from '@/lib/watermelon-models/outbox';
 import type { PostComment } from '@/types/community';
@@ -28,7 +36,7 @@ interface DeleteCommentVariables {
 }
 
 interface DeleteCommentContext {
-  previousComments?: PaginateQuery<PostComment>;
+  previousComments?: [QueryKey, PaginateQuery<PostComment> | undefined][];
 }
 
 // Outbox creation utility
@@ -56,20 +64,28 @@ function optimisticallyRemoveComment(
   queryClient: ReturnType<typeof useQueryClient>,
   postId: string,
   commentId: string
-): PaginateQuery<PostComment> | undefined {
-  const previousComments = queryClient.getQueryData<PaginateQuery<PostComment>>(
-    ['comments', postId]
-  );
+): [QueryKey, PaginateQuery<PostComment> | undefined][] {
+  const previousComments = queryClient.getQueriesData<
+    PaginateQuery<PostComment>
+  >({
+    predicate: (query) =>
+      isCommunityCommentsKey(query.queryKey) && query.queryKey[1] === postId,
+  });
 
-  if (previousComments) {
-    queryClient.setQueryData<PaginateQuery<PostComment>>(['comments', postId], {
-      ...previousComments,
-      results: previousComments.results.filter(
-        (comment) => comment.id !== commentId
-      ),
-      count: Math.max((previousComments.count || 0) - 1, 0),
-    });
-  }
+  queryClient.setQueriesData<PaginateQuery<PostComment>>(
+    {
+      predicate: (query) =>
+        isCommunityCommentsKey(query.queryKey) && query.queryKey[1] === postId,
+    },
+    (current) => {
+      if (!current) return current;
+      return {
+        ...current,
+        results: current.results.filter((comment) => comment.id !== commentId),
+        count: Math.max((current.count || 0) - 1, 0),
+      };
+    }
+  );
 
   return previousComments;
 }
@@ -81,8 +97,10 @@ function showDeleteSuccessMessage(undoExpiresAt: string): void {
     Math.ceil((new Date(undoExpiresAt).getTime() - Date.now()) / 1000)
   );
   showMessage({
-    message: 'Comment deleted',
-    description: `Undo available for ${secondsRemaining}s`,
+    message: translate('community.comment_deleted'),
+    description: translate('community.undo_expires', {
+      seconds: secondsRemaining,
+    }),
     type: 'success',
     duration: 3000,
   });
@@ -92,15 +110,20 @@ function showDeleteSuccessMessage(undoExpiresAt: string): void {
 function handleDeleteError(
   queryClient: ReturnType<typeof useQueryClient>,
   postId: string,
-  context: { error: Error; previousComments?: PaginateQuery<PostComment> }
+  context: {
+    error: Error;
+    previousComments?: [QueryKey, PaginateQuery<PostComment> | undefined][];
+  }
 ): void {
   const { error, previousComments } = context;
   if (previousComments) {
-    queryClient.setQueryData(['comments', postId], previousComments);
+    previousComments.forEach(([key, data]) => {
+      queryClient.setQueryData(key, data);
+    });
   }
 
   showMessage({
-    message: 'Failed to delete comment',
+    message: translate('community.comment_delete_failed'),
     description: error.message,
     type: 'danger',
     duration: 3000,
@@ -110,7 +133,12 @@ function handleDeleteError(
 /**
  * Optimistically delete a comment
  */
-export function useDeleteComment() {
+export function useDeleteComment(): UseMutationResult<
+  DeleteResponse,
+  Error,
+  DeleteCommentVariables,
+  DeleteCommentContext
+> {
   const queryClient = useQueryClient();
 
   return useMutation<
@@ -119,7 +147,7 @@ export function useDeleteComment() {
     DeleteCommentVariables,
     DeleteCommentContext
   >({
-    mutationFn: async ({ commentId }) => {
+    mutationFn: async ({ commentId }): Promise<DeleteResponse> => {
       const idempotencyKey = uuidv4();
       const clientTxId = uuidv4();
 
@@ -134,8 +162,12 @@ export function useDeleteComment() {
       return response;
     },
 
-    onMutate: async ({ commentId, postId }) => {
-      await queryClient.cancelQueries({ queryKey: ['comments', postId] });
+    onMutate: async ({ commentId, postId }): Promise<DeleteCommentContext> => {
+      await queryClient.cancelQueries({
+        predicate: (query) =>
+          isCommunityCommentsKey(query.queryKey) &&
+          query.queryKey[1] === postId,
+      });
 
       const previousComments = optimisticallyRemoveComment(
         queryClient,
@@ -146,22 +178,32 @@ export function useDeleteComment() {
       return { previousComments };
     },
 
-    onSuccess: (data) => {
+    onSuccess: (data): void => {
       showDeleteSuccessMessage(data.undo_expires_at);
     },
 
-    onError: (error, variables, context) => {
+    onError: (error, variables, context): void => {
       handleDeleteError(queryClient, variables.postId, {
         error,
         previousComments: context?.previousComments,
       });
     },
 
-    onSettled: (data, error, variables) => {
+    onSettled: (_data, _error, variables): void => {
       queryClient.invalidateQueries({
-        queryKey: ['comments', variables.postId],
+        predicate: (query) =>
+          isCommunityCommentsKey(query.queryKey) &&
+          query.queryKey[1] === variables.postId,
       });
-      queryClient.invalidateQueries({ queryKey: ['posts'] });
+      queryClient.invalidateQueries({
+        predicate: (query) => isCommunityPostsInfiniteKey(query.queryKey),
+      });
+      queryClient.invalidateQueries({
+        predicate: (query) => isCommunityUserPostsKey(query.queryKey),
+      });
+      queryClient.invalidateQueries({
+        queryKey: communityPostKey(variables.postId),
+      });
     },
   });
 }

@@ -5,9 +5,16 @@
  * Requirements: 7.2, 7.6, 10.3
  */
 
+import type { UseMutationResult } from '@tanstack/react-query';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { randomUUID } from 'expo-crypto';
 
+import {
+  communityPostKey,
+  isCommunityCommentsKey,
+  isCommunityPostsInfiniteKey,
+  isCommunityUserPostsKey,
+} from '@/lib/community/query-keys';
 import { supabase } from '@/lib/supabase';
 
 type UnhideContentParams = {
@@ -47,22 +54,30 @@ async function unhideContent({
   };
 }
 
-export function useUnhideContent() {
+export function useUnhideContent(): UseMutationResult<
+  UnhideContentResult,
+  Error,
+  UnhideContentParams
+> {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: unhideContent,
-    onSuccess: (_, variables) => {
+    onSuccess: (_data, variables): void => {
       // Invalidate relevant queries
       if (variables.contentType === 'post') {
-        void queryClient.invalidateQueries({ queryKey: ['posts'] });
         void queryClient.invalidateQueries({
-          queryKey: ['post', variables.contentId],
+          predicate: (query) => isCommunityPostsInfiniteKey(query.queryKey),
+        });
+        void queryClient.invalidateQueries({
+          predicate: (query) => isCommunityUserPostsKey(query.queryKey),
+        });
+        void queryClient.invalidateQueries({
+          queryKey: communityPostKey(variables.contentId),
         });
       } else {
-        void queryClient.invalidateQueries({ queryKey: ['comments'] });
         void queryClient.invalidateQueries({
-          queryKey: ['comment', variables.contentId],
+          predicate: (query) => isCommunityCommentsKey(query.queryKey),
         });
       }
     },

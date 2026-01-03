@@ -431,8 +431,6 @@ function NotificationListView({
       scrollEventThrottle={flashListConfig.scrollEventThrottle}
       removeClippedSubviews={flashListConfig.removeClippedSubviews}
       drawDistance={flashListConfig.drawDistance}
-      maxToRenderPerBatch={flashListConfig.maxToRenderPerBatch}
-      windowSize={flashListConfig.windowSize}
       contentContainerStyle={listContentStyles.content}
       ListFooterComponent={<FooterLoader isVisible={isLoadingMore} />}
       testID="notifications-list"

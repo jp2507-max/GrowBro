@@ -42,6 +42,7 @@ export class RealtimeConnectionManager {
   private pollingTimer: ReturnType<typeof setTimeout> | null = null;
   private isPolling = false;
   private postIdFilter?: string;
+  private isActive = false;
 
   // Exponential backoff: 1s, 2s, 4s, 8s, 16s, 32s (max)
   private getBackoffDelay(): number {
@@ -78,6 +79,7 @@ export class RealtimeConnectionManager {
 
     this.callbacks = callbacks;
     this.postIdFilter = postId;
+    this.isActive = true;
     this.connect();
   }
 
@@ -152,6 +154,7 @@ export class RealtimeConnectionManager {
    * Handle subscription status changes
    */
   private handleSubscriptionStatus(status: string): void {
+    if (!this.isActive) return;
     if (status === 'SUBSCRIBED') {
       this.setConnectionState('connected');
       this.reconnectAttempts = 0;
@@ -179,6 +182,7 @@ export class RealtimeConnectionManager {
    * Establish WebSocket connection and set up subscriptions
    */
   private connect(): void {
+    if (!this.isActive) return;
     if (this.channel) {
       console.warn('Already connected or connecting to realtime');
       return;
@@ -206,6 +210,7 @@ export class RealtimeConnectionManager {
    * Handle connection errors with exponential backoff and fallback to polling
    */
   private handleConnectionError(): void {
+    if (!this.isActive) return;
     // Clear existing reconnect timer
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
@@ -381,6 +386,7 @@ export class RealtimeConnectionManager {
    * Unsubscribe from all real-time updates and cleanup
    */
   unsubscribe(): void {
+    this.isActive = false;
     // Clear timers
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);

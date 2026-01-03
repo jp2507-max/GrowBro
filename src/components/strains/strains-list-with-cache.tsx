@@ -9,6 +9,7 @@ import {
 } from '@shopify/flash-list';
 import React, { useCallback, useMemo } from 'react';
 import Animated from 'react-native-reanimated';
+import type { ReanimatedScrollEvent } from 'react-native-reanimated/lib/typescript/hook/commonTypes';
 
 import type { Strain } from '@/api';
 import type { StrainFilters } from '@/api/strains/types';
@@ -26,14 +27,18 @@ import { useScrollRestoration } from '@/lib/strains/use-scroll-restoration';
 import { useStrainListPerformance } from '@/lib/strains/use-strain-list-performance';
 import { useStrainListState } from '@/lib/strains/use-strain-list-state';
 
+/**
+ * Direct type alias for the animated scroll handler from Reanimated.
+ */
+type AnimatedScrollHandler = (event: ReanimatedScrollEvent) => void;
+
+type AnimatedFlashListProps = Omit<FlashListProps<Strain>, 'onScroll'> & {
+  onScroll?: AnimatedScrollHandler;
+};
+
 const AnimatedFlashList = Animated.createAnimatedComponent(
   FlashList
-) as React.ComponentClass<FlashListProps<Strain>>;
-
-/**
- * Direct type alias for the animated scroll handler from FlashListProps.
- */
-type AnimatedScrollHandler = FlashListProps<Strain>['onScroll'];
+) as React.ComponentClass<AnimatedFlashListProps>;
 
 /**
  * Event type for the scroll callback, derived from AnimatedScrollHandler.
@@ -41,7 +46,7 @@ type AnimatedScrollHandler = FlashListProps<Strain>['onScroll'];
  */
 type ScrollEventType = Parameters<NonNullable<AnimatedScrollHandler>>[0];
 
-interface StrainsListWithCacheProps {
+export type StrainsListWithCacheProps = {
   searchQuery?: string;
   filters?: StrainFilters;
   sortBy?: string;
@@ -60,7 +65,7 @@ interface StrainsListWithCacheProps {
     isFetchingNextPage: boolean;
     hasNextPage: boolean;
   }) => void;
-}
+};
 
 export function StrainsListWithCache({
   searchQuery = '',

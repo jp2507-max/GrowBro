@@ -8,11 +8,19 @@
  * - Pending retry UI on failure
  */
 
+import type { QueryKey, UseMutationResult } from '@tanstack/react-query';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { showMessage } from 'react-native-flash-message';
 import { v4 as uuidv4 } from 'uuid';
 
 import type { PaginateQuery } from '@/api/types';
+import {
+  communityPostKey,
+  isCommunityCommentsKey,
+  isCommunityPostsInfiniteKey,
+  isCommunityUserPostsKey,
+} from '@/lib/community/query-keys';
+import { translate, type TxKeyPath } from '@/lib/i18n';
 import { database } from '@/lib/watermelon';
 import type { OutboxModel } from '@/lib/watermelon-models/outbox';
 import type { PostComment } from '@/types/community';
@@ -27,18 +35,18 @@ interface CreateCommentVariables {
 }
 
 interface CreateCommentContext {
-  previousComments?: PaginateQuery<PostComment>;
+  previousComments?: [QueryKey, PaginateQuery<PostComment> | undefined][];
   tempComment: PostComment;
 }
 
 // Validation utilities
 function validateCommentBody(body: string): void {
   if (!body || body.trim().length === 0) {
-    throw new ValidationError('Comment body cannot be empty');
+    throw new ValidationError('community.comment_body_empty');
   }
 
   if (body.length > 500) {
-    throw new ValidationError('Comment cannot exceed 500 characters');
+    throw new ValidationError('community.comment_too_long');
   }
 }
 
@@ -100,24 +108,28 @@ function optimisticallyAddComment(
   postId: string,
   tempComment: PostComment
 ): void {
-  const previousComments = queryClient.getQueryData<PaginateQuery<PostComment>>(
-    ['comments', postId]
-  );
+  queryClient.setQueriesData<PaginateQuery<PostComment>>(
+    {
+      predicate: (query) =>
+        isCommunityCommentsKey(query.queryKey) && query.queryKey[1] === postId,
+    },
+    (previousComments) => {
+      if (previousComments) {
+        return {
+          ...previousComments,
+          results: [...previousComments.results, tempComment],
+          count: (previousComments.count || 0) + 1,
+        };
+      }
 
-  if (previousComments) {
-    queryClient.setQueryData<PaginateQuery<PostComment>>(['comments', postId], {
-      ...previousComments,
-      results: [...previousComments.results, tempComment],
-      count: (previousComments.count || 0) + 1,
-    });
-  } else {
-    queryClient.setQueryData<PaginateQuery<PostComment>>(['comments', postId], {
-      results: [tempComment],
-      count: 1,
-      next: null,
-      previous: null,
-    });
-  }
+      return {
+        results: [tempComment],
+        count: 1,
+        next: null,
+        previous: null,
+      };
+    }
+  );
 }
 
 // Success handling utility
@@ -127,19 +139,21 @@ function replaceTempCommentWithServerComment(
   context: { tempComment: PostComment; newComment: PostComment }
 ): void {
   const { tempComment, newComment } = context;
-  const currentComments = queryClient.getQueryData<PaginateQuery<PostComment>>([
-    'comments',
-    postId,
-  ]);
-
-  if (currentComments) {
-    queryClient.setQueryData<PaginateQuery<PostComment>>(['comments', postId], {
-      ...currentComments,
-      results: currentComments.results.map((comment) =>
-        comment.id === tempComment.id ? newComment : comment
-      ),
-    });
-  }
+  queryClient.setQueriesData<PaginateQuery<PostComment>>(
+    {
+      predicate: (query) =>
+        isCommunityCommentsKey(query.queryKey) && query.queryKey[1] === postId,
+    },
+    (currentComments) => {
+      if (!currentComments) return currentComments;
+      return {
+        ...currentComments,
+        results: currentComments.results.map((comment) =>
+          comment.id === tempComment.id ? newComment : comment
+        ),
+      };
+    }
+  );
 }
 
 // Error handling utilities
@@ -148,17 +162,19 @@ function handleValidationError(
   postId: string,
   context: {
     error: ValidationError;
-    previousComments?: PaginateQuery<PostComment>;
+    previousComments?: [QueryKey, PaginateQuery<PostComment> | undefined][];
   }
 ): void {
   const { error, previousComments } = context;
   if (previousComments) {
-    queryClient.setQueryData(['comments', postId], previousComments);
+    previousComments.forEach(([key, data]) => {
+      queryClient.setQueryData(key, data);
+    });
   }
 
   showMessage({
-    message: 'Invalid comment',
-    description: error.message,
+    message: translate('community.invalid_comment'),
+    description: translate(error.message as TxKeyPath),
     type: 'danger',
     duration: 3000,
   });
@@ -166,17 +182,58 @@ function handleValidationError(
 
 function handleNetworkError(): void {
   showMessage({
-    message: 'Comment queued for retry',
-    description: 'Will automatically retry when connection is restored',
+    message: translate('community.comment_queued'),
+    description: translate('community.comment_queued_description'),
     type: 'warning',
     duration: 3000,
+  });
+}
+
+function handleOutboxQueueError(
+  context: CreateCommentContext | undefined,
+  queryClient: ReturnType<typeof useQueryClient>
+): void {
+  if (context?.previousComments) {
+    context.previousComments.forEach(([key, data]) => {
+      queryClient.setQueryData(key, data);
+    });
+  }
+  showMessage({
+    message: translate('community.comment_offline_failed'),
+    description: translate('community.comment_offline_failed_description'),
+    type: 'danger',
+    duration: 3000,
+  });
+}
+
+function invalidateCommentRelatedQueries(
+  queryClient: ReturnType<typeof useQueryClient>,
+  postId: string
+): void {
+  queryClient.invalidateQueries({
+    predicate: (query) =>
+      isCommunityCommentsKey(query.queryKey) && query.queryKey[1] === postId,
+  });
+  queryClient.invalidateQueries({
+    predicate: (query) => isCommunityPostsInfiniteKey(query.queryKey),
+  });
+  queryClient.invalidateQueries({
+    predicate: (query) => isCommunityUserPostsKey(query.queryKey),
+  });
+  queryClient.invalidateQueries({
+    queryKey: communityPostKey(postId),
   });
 }
 
 /**
  * Optimistically create a comment
  */
-export function useCreateComment() {
+export function useCreateComment(): UseMutationResult<
+  PostComment,
+  Error,
+  CreateCommentVariables,
+  CreateCommentContext
+> {
   const queryClient = useQueryClient();
 
   return useMutation<
@@ -185,37 +242,37 @@ export function useCreateComment() {
     CreateCommentVariables,
     CreateCommentContext
   >({
-    mutationFn: async ({ postId, body }) => {
+    mutationFn: async ({ postId, body }): Promise<PostComment> => {
       validateCommentBody(body);
-
       const idempotencyKey = uuidv4();
       const clientTxId = uuidv4();
-
       await queueCommentInOutbox({ postId, body, clientTxId, idempotencyKey });
-
-      const comment = await apiClient.createComment(
+      return apiClient.createComment(
         { postId, body },
         idempotencyKey,
         clientTxId
       );
-
-      return comment;
     },
 
-    onMutate: async ({ postId, body }) => {
-      await queryClient.cancelQueries({ queryKey: ['comments', postId] });
-
-      const previousComments = queryClient.getQueryData<
+    onMutate: async ({ postId, body }): Promise<CreateCommentContext> => {
+      await queryClient.cancelQueries({
+        predicate: (query) =>
+          isCommunityCommentsKey(query.queryKey) &&
+          query.queryKey[1] === postId,
+      });
+      const previousComments = queryClient.getQueriesData<
         PaginateQuery<PostComment>
-      >(['comments', postId]);
+      >({
+        predicate: (query) =>
+          isCommunityCommentsKey(query.queryKey) &&
+          query.queryKey[1] === postId,
+      });
       const tempComment = createTempComment(postId, body);
-
       optimisticallyAddComment(queryClient, postId, tempComment);
-
       return { previousComments, tempComment };
     },
 
-    onSuccess: (newComment, variables, context) => {
+    onSuccess: (newComment, variables, context): void => {
       if (context) {
         replaceTempCommentWithServerComment(queryClient, variables.postId, {
           tempComment: context.tempComment,
@@ -224,35 +281,21 @@ export function useCreateComment() {
       }
     },
 
-    onError: (error, variables, context) => {
+    onError: (error, variables, context): void => {
       if (error instanceof ValidationError) {
         handleValidationError(queryClient, variables.postId, {
           error,
           previousComments: context?.previousComments,
         });
       } else if (hasErrorCode(error, OUTBOX_QUEUE_FAILED)) {
-        if (context?.previousComments) {
-          queryClient.setQueryData(
-            ['comments', variables.postId],
-            context.previousComments
-          );
-        }
-        showMessage({
-          message: 'Could not save comment offline',
-          description: 'Please try again.',
-          type: 'danger',
-          duration: 3000,
-        });
+        handleOutboxQueueError(context, queryClient);
       } else {
         handleNetworkError();
       }
     },
 
-    onSettled: (data, error, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: ['comments', variables.postId],
-      });
-      queryClient.invalidateQueries({ queryKey: ['posts'] });
+    onSettled: (_data, _error, variables): void => {
+      invalidateCommentRelatedQueries(queryClient, variables.postId);
     },
   });
 }
