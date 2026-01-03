@@ -85,7 +85,7 @@ async function capturePhoto(
       return;
     }
     const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       quality: 1,
     });
     if (!result.canceled && result.assets[0]?.uri) {
@@ -111,7 +111,7 @@ async function pickPhotoFromLibrary(
   try {
     const ImagePicker = await import('expo-image-picker');
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       quality: 1,
     });
     if (!result.canceled && result.assets[0]?.uri) {

@@ -79,7 +79,7 @@ function matchesQueryKeyPrefix(
 export function createQueryCacheAdapter<TStored, TCache = TStored>(
   queryClient: ReturnType<typeof useQueryClient>,
   options: {
-    queryKeyPrefix: string[];
+    queryKeyPrefix: readonly unknown[];
     keySelector: (row: TCache) => string;
     toStored?: (cached: TCache) => TStored;
     fromStored?: (stored: TStored, id: string) => TCache;
@@ -365,24 +365,10 @@ function createRealtimeCacheAdapters(
       keySelector: (comment) => comment.id,
     }
   );
-  const likesCache = createQueryCacheAdapter<PostLike, CachedPostLike>(
-    queryClient,
-    {
-      queryKeyPrefix: ['post-likes'],
-      keySelector: (like) => like.id,
-      toStored: (cached) => ({
-        post_id: cached.post_id,
-        user_id: cached.user_id,
-        created_at: cached.created_at,
-      }),
-      fromStored: (stored, id) => ({
-        id,
-        post_id: stored.post_id,
-        user_id: stored.user_id,
-        created_at: stored.created_at,
-      }),
-    }
-  );
+  const likesCache = createQueryCacheAdapter<CachedPostLike>(queryClient, {
+    queryKeyPrefix: ['post-likes'],
+    keySelector: (like) => like.id,
+  });
 
   return { postsInfiniteCache, userPostsCache, commentsCache, likesCache };
 }

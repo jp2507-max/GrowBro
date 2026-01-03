@@ -49,8 +49,8 @@ export function ScreenHeaderBase({
   return (
     <View
       className={twMerge(
-        'z-0 px-4 pb-16',
-        'rounded-b-[32px] shadow-lg',
+        'z-0 px-4 pb-6',
+        'shadow-lg',
         showBottomBorder &&
           'border-b border-neutral-200 dark:border-charcoal-700'
       )}

@@ -9,6 +9,11 @@ export default function PostCommentRedirect(): ReactElement {
 
   const postId = params.id;
   const commentId = params['comment-id'];
+
+  if (!postId) {
+    return <Redirect href="/feed" />;
+  }
+
   const href = commentId
     ? `/feed/${postId}?commentId=${commentId}`
     : `/feed/${postId}`;

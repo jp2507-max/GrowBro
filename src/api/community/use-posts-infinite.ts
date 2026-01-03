@@ -2,7 +2,6 @@ import { keepPreviousData } from '@tanstack/react-query';
 import { createInfiniteQuery } from 'react-query-kit';
 
 import type { PaginateQuery } from '@/api/types';
-import { communityPostsInfiniteKey } from '@/lib/community/query-keys';
 
 import { getCommunityApiClient } from './client';
 import type { CommunityPostSort, Post } from './types';
@@ -23,7 +22,7 @@ export const useCommunityPostsInfinite = createInfiniteQuery<
   Error,
   string | undefined
 >({
-  queryKey: communityPostsInfiniteKey(),
+  queryKey: ['community-posts', 'infinite'],
   fetcher: async (variables, { pageParam }): Promise<PostPage> => {
     const client = getCommunityApiClient();
     return client.getPostsDiscover({

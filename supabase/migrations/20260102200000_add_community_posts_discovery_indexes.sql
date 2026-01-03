@@ -14,5 +14,9 @@ create index if not exists idx_posts_visible_media_created_at
       or media_thumbnail_uri is not null
     );
 
--- idx_comments_post_visible covers post_id lookups for visible comments
-drop index if exists public.idx_comments_post;
+-- idx_post_comments_post_visible covers post_id lookups for visible comments
+create index concurrently if not exists idx_post_comments_post_visible
+  on public.post_comments (post_id)
+  where deleted_at is null and hidden_at is null;
+
+drop index if exists public.idx_post_comments_post_id;

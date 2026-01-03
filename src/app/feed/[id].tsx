@@ -8,7 +8,6 @@ import { CannabisEducationalBanner } from '@/components/cannabis-educational-ban
 import { CommentForm } from '@/components/community/comment-form';
 import { CommentList } from '@/components/community/comment-list';
 import { PostCard } from '@/components/community/post-card';
-import { ModerationActions } from '@/components/moderation-actions';
 import {
   ActivityIndicator,
   FocusAwareStatusBar,
@@ -103,7 +102,7 @@ export default function Post(): React.ReactElement {
   const comments = commentsData?.results ?? [];
 
   return (
-    <View className="flex-1">
+    <View className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
       <Stack.Screen
         options={{
           title: translate('nav.post'),
@@ -112,15 +111,9 @@ export default function Post(): React.ReactElement {
       />
       <FocusAwareStatusBar />
       <ScrollView ref={scrollViewRef} className="flex-1">
-        <View className="p-3">
-          <CannabisEducationalBanner className="mb-4" />
+        <View className="px-1 pt-3">
+          <CannabisEducationalBanner className="mx-3 mb-4" />
           <PostCard post={normalizePostUserId(post)} />
-          <View className="mt-4">
-            <ModerationActions
-              contentId={post.id}
-              authorId={String(post.userId || post.user_id || '')}
-            />
-          </View>
         </View>
 
         <View className="mt-6 border-t border-neutral-200 dark:border-neutral-800">

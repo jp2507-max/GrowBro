@@ -1,20 +1,17 @@
 /**
- * PostCard component
+ * PostCard component - Instagram-style clean design
  *
- * Card for displaying community posts in feed with:
- * - Like button with optimistic updates
- * - Comment count with navigation to thread
- * - Author profile linking
- * - Delete button for own posts with undo
- * - Media thumbnail support
+ * Visual-first card for community posts:
+ * - Clean, minimal user row (avatar + username only)
+ * - Large portrait image (4:5 or 1:1 aspect ratio)
+ * - Simple action bar (heart, comment) with terracotta active color
+ * - Caption with username prefix, truncated to 2 lines
  * - Optimized rendering with React.memo
- * - Image lazy loading and caching
- * - Enhanced accessibility
  */
 
 import { Link, useRouter } from 'expo-router';
 import React from 'react';
-import { Platform, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import Animated, {
   ReduceMotion,
   useAnimatedStyle,
@@ -25,6 +22,8 @@ import Animated, {
 import { useDeletePost } from '@/api/community';
 import type { Post as ApiPost } from '@/api/posts';
 import { OptimizedImage, Pressable, Text, View } from '@/components/ui';
+import colors from '@/components/ui/colors';
+import { MessageCircle, MoreHorizontal } from '@/components/ui/icons';
 import { getOptionalAuthenticatedUserId } from '@/lib/auth/user-utils';
 import { normalizePostUserId } from '@/lib/community/post-utils';
 import { haptics } from '@/lib/haptics';
@@ -33,26 +32,19 @@ import { translate } from '@/lib/i18n';
 import { LikeButton } from './like-button';
 
 const cardStyles = StyleSheet.create({
-  card: {
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 12,
-      },
-      android: {
-        elevation: 3,
-      },
-    }),
+  image: {
+    // 4:3 aspect ratio for Kitchen Stories style
+    aspectRatio: 4 / 3,
+    width: '100%' as const,
+    borderRadius: 16,
   },
 });
 
-interface PostCardProps {
+type PostCardProps = {
   post: ApiPost;
   onDelete?: (postId: number | string, undoExpiresAt: string) => void;
   testID?: string;
-}
+};
 
 function PostCardComponent({
   post,
@@ -69,17 +61,21 @@ function PostCardComponent({
   }, []);
 
   const normalizedPost = React.useMemo(() => normalizePostUserId(post), [post]);
+
   // Runtime validation: ensure userId is present and valid
   if (!normalizedPost.userId || normalizedPost.userId === 'invalid-user-id') {
     console.warn('Post has invalid userId, using fallback', {
       postId: normalizedPost.id,
     });
   }
+
   const postUserId =
     normalizedPost.userId === 'invalid-user-id'
       ? `unknown-user-${normalizedPost.id}`
       : String(normalizedPost.userId);
   const postId = normalizedPost.id;
+  const displayUsername = postUserId.slice(0, 8);
+
   const isOwnPost =
     currentUserId !== undefined &&
     currentUserId !== null &&
@@ -94,12 +90,6 @@ function PostCardComponent({
     [router, postId]
   );
 
-  const compositeLabel = React.useMemo(() => {
-    const badgeText = translate('cannabis.educational_badge');
-    const previewText = post.body?.slice(0, 100) || '';
-    return `${badgeText}. ${previewText}`;
-  }, [post.body]);
-
   const handleAuthorPress = React.useCallback(
     (e: { stopPropagation: () => void; preventDefault: () => void }) => {
       e.stopPropagation();
@@ -113,9 +103,9 @@ function PostCardComponent({
     <PostCardView
       post={post}
       postId={postId}
-      postUserId={postUserId}
+      _postUserId={postUserId}
+      displayUsername={displayUsername}
       isOwnPost={!!isOwnPost}
-      compositeLabel={compositeLabel}
       onDelete={onDelete}
       testID={testID}
       handleAuthorPress={handleAuthorPress}
@@ -124,14 +114,14 @@ function PostCardComponent({
   );
 }
 
-// Post card view component to satisfy max-lines-per-function
+// Post card view component - visual-first design matching strain cards
 // eslint-disable-next-line max-lines-per-function -- JSX-heavy component (150 limit per project rules)
 function PostCardView({
   post,
   postId,
-  postUserId,
+  _postUserId,
+  displayUsername,
   isOwnPost,
-  compositeLabel,
   onDelete,
   testID,
   handleAuthorPress,
@@ -139,9 +129,9 @@ function PostCardView({
 }: {
   post: ApiPost;
   postId: number | string;
-  postUserId: string;
+  _postUserId: string;
+  displayUsername: string;
   isOwnPost: boolean;
-  compositeLabel: string;
   onDelete?: (postId: number | string, undoExpiresAt: string) => void;
   testID: string;
   handleAuthorPress: (e: {
@@ -160,9 +150,9 @@ function PostCardView({
   }));
 
   const onPressIn = React.useCallback(() => {
-    scale.value = withSpring(0.97, {
-      damping: 10,
-      stiffness: 300,
+    scale.value = withSpring(0.98, {
+      damping: 15,
+      stiffness: 350,
       reduceMotion: ReduceMotion.System,
     });
     haptics.selection();
@@ -170,11 +160,13 @@ function PostCardView({
 
   const onPressOut = React.useCallback(() => {
     scale.value = withSpring(1, {
-      damping: 10,
-      stiffness: 300,
+      damping: 15,
+      stiffness: 350,
       reduceMotion: ReduceMotion.System,
     });
   }, [scale]);
+
+  const hasImage = Boolean(post.media_uri);
 
   return (
     <Animated.View style={animatedStyle}>
@@ -183,72 +175,101 @@ function PostCardView({
           accessibilityHint={translate(
             'accessibility.community.open_post_hint'
           )}
-          accessibilityLabel={compositeLabel}
+          accessibilityLabel={post.body?.slice(0, 100) || 'Community post'}
           accessibilityRole="link"
           testID={testID}
           onPressIn={onPressIn}
           onPressOut={onPressOut}
         >
-          <View
-            className="m-2 overflow-hidden rounded-3xl border border-neutral-200 bg-white dark:border-charcoal-700 dark:bg-charcoal-900"
-            style={cardStyles.card}
-          >
-            {post.media_uri && (
-              <OptimizedImage
-                className="h-56 w-full overflow-hidden rounded-t-xl"
-                uri={post.media_uri}
-                thumbnailUri={post.media_thumbnail_uri}
-                resizedUri={post.media_resized_uri}
-                blurhash={post.media_blurhash}
-                thumbhash={post.media_thumbhash}
-                recyclingKey={post.media_thumbnail_uri || post.media_uri}
-                accessibilityIgnoresInvertColors
-                accessibilityLabel={translate(
-                  'accessibility.community.post_image',
-                  { author: postUserId.slice(0, 8) }
-                )}
-                accessibilityHint={translate(
-                  'accessibility.community.post_image_hint'
-                )}
-                testID={`${testID}-image`}
-              />
+          <View className="mx-4 mb-8">
+            {/* Hero Image - Kitchen Stories style with 4:3 aspect ratio */}
+            {hasImage && (
+              <View className="relative">
+                <OptimizedImage
+                  className="w-full rounded-2xl"
+                  style={cardStyles.image}
+                  uri={post.media_uri!}
+                  thumbnailUri={post.media_thumbnail_uri}
+                  resizedUri={post.media_resized_uri}
+                  blurhash={post.media_blurhash}
+                  thumbhash={post.media_thumbhash}
+                  recyclingKey={post.media_thumbnail_uri || post.media_uri}
+                  accessibilityIgnoresInvertColors
+                  accessibilityLabel={translate(
+                    'accessibility.community.post_image',
+                    { author: displayUsername }
+                  )}
+                  accessibilityHint={translate(
+                    'accessibility.community.post_image_hint'
+                  )}
+                  testID={`${testID}-image`}
+                />
+
+                {/* Overlay 1 (Top Left): Dummy badge */}
+                <View className="absolute left-3 top-3 rounded-md bg-neutral-100/90 px-2 py-1 dark:bg-charcoal-800/90">
+                  <Text className="text-[10px] font-bold uppercase text-neutral-700 dark:text-neutral-200">
+                    Sativa
+                  </Text>
+                </View>
+
+                {/* Overlay 2 (Bottom Right): Heart/Like button */}
+                <View className="absolute bottom-3 right-3">
+                  <LikeButton
+                    postId={String(postId)}
+                    likeCount={post.like_count ?? 0}
+                    userHasLiked={post.user_has_liked ?? false}
+                    testID={`${testID}-like-button`}
+                    variant="overlay"
+                  />
+                </View>
+              </View>
             )}
-            <View className="p-4">
+
+            {/* Content Section - Kitchen Stories: title then author row */}
+            <View className="mt-3">
+              {/* Title */}
+              {post.body && (
+                <Text
+                  numberOfLines={2}
+                  className="text-lg font-bold leading-tight text-neutral-900 dark:text-neutral-50"
+                  testID={`${testID}-body`}
+                >
+                  {post.body}
+                </Text>
+              )}
+
+              {/* Author Row - avatar + name below title */}
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={translate(
                   'accessibility.community.view_author_profile',
-                  { author: postUserId.slice(0, 8) }
+                  { author: displayUsername }
                 )}
                 accessibilityHint={translate(
                   'accessibility.community.view_author_profile_hint'
                 )}
                 onPress={handleAuthorPress}
-                className="min-h-11 justify-center"
-                testID={`${testID}-author`}
+                className="mt-2 flex-row items-center gap-2"
               >
-                <Text className="mb-2 text-sm font-semibold text-primary-700 dark:text-primary-400">
-                  @{postUserId.slice(0, 8)}
+                <View className="size-6 items-center justify-center rounded-full bg-terracotta-100 dark:bg-terracotta-900">
+                  <Text className="text-[10px] font-bold text-terracotta-600 dark:text-terracotta-300">
+                    {displayUsername.charAt(0).toUpperCase()}
+                  </Text>
+                </View>
+                <Text className="text-xs font-medium text-terracotta-500">
+                  {displayUsername}
                 </Text>
               </Pressable>
-              <Text className="w-fit rounded-full bg-success-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-success-800 dark:bg-success-900/40 dark:text-success-200">
-                {translate('cannabis.educational_badge')}
-              </Text>
-              <Text
-                numberOfLines={5}
-                className="mt-3 text-base leading-snug text-neutral-900 dark:text-neutral-100"
-                testID={`${testID}-body`}
-              >
-                {post.body}
-              </Text>
+
+              {/* Action Bar - comment + more options */}
               <PostCardActions
                 post={post}
                 postId={postId}
-                _postUserId={postUserId}
                 isOwnPost={isOwnPost}
                 onDelete={onDelete}
                 testID={testID}
                 handleCommentPress={handleCommentPress}
+                showLikeButton={false}
               />
             </View>
           </View>
@@ -258,20 +279,18 @@ function PostCardView({
   );
 }
 
-// Small child component extracted to satisfy max-lines-per-function
-// and to make the actions area easier to test in isolation.
+// Clean action bar with heart and comment icons
 function PostCardActions({
   post,
   postId,
-  _postUserId,
   isOwnPost,
   onDelete,
   testID,
   handleCommentPress,
+  showLikeButton = true,
 }: {
   post: ApiPost;
   postId: number | string;
-  _postUserId: string;
   isOwnPost: boolean;
   onDelete?: (postId: number | string, undoExpiresAt: string) => void;
   testID: string;
@@ -279,6 +298,7 @@ function PostCardActions({
     stopPropagation: () => void;
     preventDefault: () => void;
   }) => void;
+  showLikeButton?: boolean;
 }) {
   const deleteMutation = useDeletePost();
 
@@ -286,6 +306,7 @@ function PostCardActions({
     async (e: { stopPropagation: () => void; preventDefault: () => void }) => {
       e.stopPropagation();
       e.preventDefault();
+      haptics.medium();
       try {
         const result = await deleteMutation.mutateAsync({
           postId: String(postId),
@@ -300,22 +321,28 @@ function PostCardActions({
 
   return (
     <View
-      className="mt-4 flex-row items-center justify-between"
+      className="flex-row items-center justify-between"
       testID={`${testID}-actions`}
     >
-      <View className="flex-row items-center gap-3">
-        <Pressable
-          accessibilityRole="button"
-          onPress={(e: { stopPropagation: () => void }) => e.stopPropagation()}
-        >
-          <LikeButton
-            postId={String(postId)}
-            likeCount={post.like_count ?? 0}
-            userHasLiked={post.user_has_liked ?? false}
-            testID={`${testID}-like-button`}
-          />
-        </Pressable>
+      <View className="flex-row items-center gap-4">
+        {/* Like Button - only show if not in overlay */}
+        {showLikeButton && (
+          <Pressable
+            accessibilityRole="button"
+            onPress={(e: { stopPropagation: () => void }) =>
+              e.stopPropagation()
+            }
+          >
+            <LikeButton
+              postId={String(postId)}
+              likeCount={post.like_count ?? 0}
+              userHasLiked={post.user_has_liked ?? false}
+              testID={`${testID}-like-button`}
+            />
+          </Pressable>
+        )}
 
+        {/* Comment Button */}
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={translate(
@@ -326,42 +353,35 @@ function PostCardActions({
             'accessibility.community.view_comments_hint'
           )}
           onPress={handleCommentPress}
-          className="min-h-11 min-w-11 justify-center"
+          className="flex-row items-center gap-1.5"
         >
-          <View className="flex-row items-center gap-1.5">
-            <Text className="text-sm text-neutral-700 dark:text-neutral-300">
-              💬
-            </Text>
+          <MessageCircle size={22} color={colors.neutral[400]} />
+          {(post.comment_count ?? 0) > 0 && (
             <Text
-              className="text-sm text-neutral-700 dark:text-neutral-300"
+              className="text-sm text-neutral-500 dark:text-neutral-400"
               testID={`${testID}-comment-count`}
             >
-              {post.comment_count ?? 0}
+              {post.comment_count}
             </Text>
-          </View>
+          )}
         </Pressable>
       </View>
 
+      {/* More options button for own posts */}
       {isOwnPost && (
         <Pressable
           onPress={handleDeletePress}
           disabled={deleteMutation.isPending}
           accessibilityRole="button"
-          accessibilityLabel={translate('accessibility.community.delete_post')}
+          accessibilityLabel={translate('accessibility.community.post_options')}
           accessibilityHint={translate(
-            'accessibility.community.delete_post_hint'
+            'accessibility.community.post_options_hint'
           )}
           accessibilityState={{ disabled: deleteMutation.isPending }}
-          className="min-h-11 justify-center px-2"
-          testID={`${testID}-delete-button`}
+          className="p-2"
+          testID={`${testID}-more-button`}
         >
-          <Text
-            className={`text-sm ${deleteMutation.isPending ? 'text-neutral-400 dark:text-neutral-600' : 'text-danger-600 dark:text-danger-400'}`}
-          >
-            {deleteMutation.isPending
-              ? translate('common.loading')
-              : `🗑️ ${translate('accessibility.community.delete')}`}
-          </Text>
+          <MoreHorizontal size={20} color={colors.neutral[400]} />
         </Pressable>
       )}
     </View>
@@ -369,7 +389,6 @@ function PostCardActions({
 }
 
 // Memoize PostCard to prevent unnecessary re-renders
-// Only re-render if post data, delete handler, or testID changes
 export const PostCard = React.memo(
   PostCardComponent,
   (prevProps, nextProps) => {

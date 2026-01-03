@@ -110,6 +110,8 @@
       "post_deleted": "Beitrag gelöscht",
       "post_image": "Bild von @{{author}}",
       "post_image_hint": "Teil des Beitragsinhalts.",
+      "post_options": "Beitragsoptionen",
+      "post_options_hint": "Doppeltippen, um Beitragsoptionen anzuzeigen.",
       "retry_comment_hint": "Versucht erneut, diesen Kommentar zu posten.",
       "retry_sync": "Synchronisation wiederholen",
       "undo_dismiss_hint": "Die Rückgängig-Snackbar schließen und die Aktion abbrechen",
@@ -757,6 +759,7 @@
     "educational_badge": "Nur Bildung",
     "educational_banner_body": "GrowBro unterstuetzt weder Verkauf noch Anbieter-Links, Abholung oder Lieferung. Alle Funktionen bleiben bildungsorientiert und richtlinienkonform.",
     "educational_banner_title": "Reine Bildungsinhalte zum Thema Cannabis",
+    "educational_short": "Nur Bildungsinhalte. Kein Verkauf.",
     "legal_confirmation_accept_all": "Ich stimme allen zu",
     "legal_confirmation_all_required": "Bitte akzeptiere alle Vereinbarungen, um fortzufahren",
     "legal_confirmation_cannabis_label": "Ich verstehe und stimme der Erklärung zur Verantwortung beim Cannabis-Anbau zu",
@@ -1124,10 +1127,15 @@
   },
   "feed": {
     "addPost": {
+      "capturePhoto": "Foto aufnehmen",
       "contentLabel": "Inhalt",
+      "removePhoto": "Foto entfernen",
+      "removePhotoHint": "Dieses Foto aus deinem Beitrag entfernen",
+      "selectPhoto": "Aus Mediathek wählen",
       "title": "Beitrag erstellen",
       "titleLabel": "Titel"
     },
+    "attachmentImageHint": "Foto zum Beitrag hinzugefügt",
     "prefilledImages": "Vorgefüllte Bilder",
     "title": "Feed"
   },

@@ -1,7 +1,9 @@
+import * as FileSystem from 'expo-file-system/legacy';
 import * as ImageManipulator from 'expo-image-manipulator';
 
 import { generatePhotoVariants } from '../photo-variants';
 
+jest.mock('expo-file-system/legacy');
 jest.mock('expo-image-manipulator');
 jest.mock('../exif', () => ({
   stripExifAndGeolocation: jest.fn((uri) =>
@@ -12,6 +14,16 @@ jest.mock('../exif', () => ({
 describe('photo-variants', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    (
+      FileSystem.getInfoAsync as jest.MockedFunction<
+        typeof FileSystem.getInfoAsync
+      >
+    ).mockResolvedValue({
+      exists: true,
+      isDirectory: false,
+      size: 1234,
+      uri: 'file:///test.jpg',
+    });
   });
 
   describe('generatePhotoVariants', () => {
@@ -44,6 +56,7 @@ describe('photo-variants', () => {
         metadata: {
           width: 4032,
           height: 3024,
+          fileSize: 1234,
           mimeType: 'image/jpeg',
           gpsStripped: true,
         },

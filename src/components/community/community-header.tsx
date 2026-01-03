@@ -1,15 +1,20 @@
-import { useColorScheme } from 'nativewind';
+/**
+ * CommunityHeader - Clean dark green header
+ *
+ * Features:
+ * - Standard app dark green header background
+ * - Large bold "Community" title
+ * - Glass-style search/filter icon button
+ * - Clean, minimal design matching Instagram-style feed
+ */
+
 import React from 'react';
 import type { EdgeInsets } from 'react-native-safe-area-context';
 
-import {
-  HeaderIconButton,
-  HeaderSettingsButton,
-  ScreenHeaderBase,
-} from '@/components/navigation/screen-header-base';
-import { Text, View } from '@/components/ui';
+import { ScreenHeaderBase } from '@/components/navigation/screen-header-base';
+import { Pressable, View } from '@/components/ui';
 import colors from '@/components/ui/colors';
-import { Settings } from '@/components/ui/icons';
+import { Search } from '@/components/ui/icons';
 import { haptics } from '@/lib/haptics';
 import { translate } from '@/lib/i18n';
 
@@ -20,33 +25,12 @@ type CommunityHeaderProps = {
   onFilterPress: () => void;
 };
 
-function HeaderSubtitle({
-  postsCount,
-}: {
-  postsCount: number;
-}): React.ReactElement {
-  const label =
-    postsCount > 0
-      ? translate('community.posts_count_other', { count: postsCount })
-      : translate('shared_header.community.subtitle');
-
-  return (
-    <Text className="text-lg font-medium text-primary-200 dark:text-primary-300">
-      {label}
-    </Text>
-  );
-}
-
 export function CommunityHeader({
   insets,
-  postsCount,
+  postsCount: _postsCount,
   hasActiveFilters,
   onFilterPress,
 }: CommunityHeaderProps): React.ReactElement {
-  const { colorScheme } = useColorScheme();
-  const isDark = colorScheme === 'dark';
-  const iconColor = isDark ? colors.white : colors.neutral[900];
-
   const handleFilterPress = React.useCallback(() => {
     haptics.selection();
     onFilterPress();
@@ -55,32 +39,25 @@ export function CommunityHeader({
   return (
     <ScreenHeaderBase
       insets={insets}
-      topRowLeft={<HeaderSubtitle postsCount={postsCount} />}
       topRowRight={
-        <View className="flex-row items-center gap-1">
-          <HeaderIconButton
-            icon={
-              <Settings
-                color={hasActiveFilters ? colors.primary[600] : iconColor}
-                width={20}
-                height={20}
-                className={
-                  hasActiveFilters
-                    ? 'text-primary-600 dark:text-primary-400'
-                    : 'text-neutral-900 dark:text-white'
-                }
-              />
-            }
+        <View className="relative">
+          <Pressable
             onPress={handleFilterPress}
+            accessibilityRole="button"
             accessibilityLabel={translate('community.filters_label')}
             accessibilityHint={translate('community.filters_hint')}
             testID="community-filter-button"
-            isActive={hasActiveFilters}
-          />
-          <HeaderSettingsButton />
+            className="size-10 items-center justify-center rounded-full bg-white/15 active:bg-white/25"
+          >
+            <Search size={20} color={colors.white} />
+          </Pressable>
+          {/* Active indicator dot */}
+          {hasActiveFilters && (
+            <View className="absolute -right-0.5 -top-0.5 size-3 rounded-full border-2 border-primary-800 bg-terracotta-500" />
+          )}
         </View>
       }
-      title={translate('shared_header.community.title')}
+      title={translate('community.title')}
       testID="community-header"
     />
   );

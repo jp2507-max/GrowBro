@@ -192,17 +192,18 @@ function PhotoAttachmentSection({
   onRemovePhoto,
 }: PhotoAttachmentSectionProps): React.JSX.Element {
   return (
-    <View className="mt-4">
+    <View className="mt-6">
       {attachments.length === 0 ? (
-        <View className="flex-row gap-3">
+        <View className="flex-row gap-4">
           <Button
             onPress={onCapturePhoto}
             variant="outline"
             size="sm"
-            className="flex-1"
+            className="flex-1 rounded-xl border border-primary-500/30 bg-white dark:bg-white/5"
+            textClassName="text-primary-500 dark:text-primary-400"
             testID="capture-photo-button"
           >
-            <Text className="text-sm">
+            <Text className="text-sm font-medium text-primary-500 dark:text-primary-400">
               {translateDynamic('feed.addPost.capturePhoto')}
             </Text>
           </Button>
@@ -210,10 +211,11 @@ function PhotoAttachmentSection({
             onPress={onSelectPhoto}
             variant="outline"
             size="sm"
-            className="flex-1"
+            className="flex-1 rounded-xl border border-primary-500/30 bg-white dark:bg-white/5"
+            textClassName="text-primary-500 dark:text-primary-400"
             testID="select-photo-button"
           >
-            <Text className="text-sm">
+            <Text className="text-sm font-medium text-primary-500 dark:text-primary-400">
               {translateDynamic('feed.addPost.selectPhoto')}
             </Text>
           </Button>
@@ -295,7 +297,7 @@ export default function AddPost(): React.JSX.Element {
       }
 
       const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         quality: 1,
         allowsEditing: false,
       });
@@ -319,7 +321,7 @@ export default function AddPost(): React.JSX.Element {
   const handleSelectPhoto = React.useCallback(async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         quality: 1,
         allowsMultipleSelection: false,
       });
@@ -371,14 +373,16 @@ export default function AddPost(): React.JSX.Element {
         options={{
           title: translateDynamic('feed.addPost.title'),
           headerBackTitle: translateDynamic('feed.title'),
+          headerStyle: { backgroundColor: 'transparent' },
+          headerTransparent: true,
         }}
       />
       <ScrollView
-        className="flex-1"
+        className="flex-1 bg-neutral-50 dark:bg-charcoal-950"
         contentInsetAdjustmentBehavior="automatic"
         testID="add-post-scroll"
       >
-        <View className="p-4">
+        <View className="gap-4 p-5 pt-6">
           <ControlledInput
             name="title"
             label={translateDynamic('feed.addPost.titleLabel')}
@@ -401,7 +405,8 @@ export default function AddPost(): React.JSX.Element {
           />
 
           <Button
-            className="mt-6"
+            className="mt-4 rounded-full bg-terracotta-500 py-4"
+            textClassName="font-bold text-white"
             label={t('feed.addPost')}
             loading={isPending}
             onPress={handleSubmit(onSubmit)}

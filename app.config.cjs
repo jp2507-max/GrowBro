@@ -256,13 +256,18 @@ function createExpoConfig(config) {
       'expo-system-ui',
       'expo-router',
       'expo-apple-authentication',
-      [
-        '@react-native-google-signin/google-signin',
-        {
-          iosUrlScheme:
-            'com.googleusercontent.apps.706160531301-45q4did3e81681uhhq046642r3voumt2',
-        },
-      ],
+      // Google Sign-In: derive iosUrlScheme from GOOGLE_IOS_CLIENT_ID env var
+      // The URL scheme is the reversed client ID: com.googleusercontent.apps.<client-id-prefix>
+      ...(Env.GOOGLE_IOS_CLIENT_ID
+        ? [
+            [
+              '@react-native-google-signin/google-signin',
+              {
+                iosUrlScheme: `com.googleusercontent.apps.${Env.GOOGLE_IOS_CLIENT_ID.replace('.apps.googleusercontent.com', '')}`,
+              },
+            ],
+          ]
+        : []),
       [
         'expo-build-properties',
         {
