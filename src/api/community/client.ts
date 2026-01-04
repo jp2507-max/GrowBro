@@ -94,15 +94,41 @@ function sleep(ms: number): Promise<void> {
 /**
  * Parse a composite cursor for top_7d sort: "like_count:created_at"
  * Returns null if cursor is invalid or not in composite format.
+ * Validates createdAt format to prevent SQL injection.
  */
 function parseTopSortCursor(
   cursor: string
 ): { likeCount: number; createdAt: string } | null {
-  const [likeCountStr, createdAt] = cursor.split(':');
+  const firstColonIndex = cursor.indexOf(':');
+  if (firstColonIndex === -1) return null;
+
+  const likeCountStr = cursor.substring(0, firstColonIndex);
+  const createdAt = cursor.substring(firstColonIndex + 1);
   const likeCount = parseInt(likeCountStr, 10);
+
   if (isNaN(likeCount) || !createdAt) {
     return null;
   }
+
+  // Validate createdAt is a proper ISO 8601 timestamp
+  // Use strict regex pattern for ISO 8601 format
+  const iso8601Regex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/;
+  if (!iso8601Regex.test(createdAt)) {
+    return null;
+  }
+
+  // Additional validation: ensure the date can be parsed and round-trips correctly
+  const parsedDate = Date.parse(createdAt);
+  if (isNaN(parsedDate)) {
+    return null;
+  }
+
+  // Verify the date round-trips to the same ISO string
+  const roundTripDate = new Date(parsedDate).toISOString();
+  if (roundTripDate !== createdAt) {
+    return null;
+  }
+
   return { likeCount, createdAt };
 }
 
@@ -122,6 +148,7 @@ type DiscoverFilterContext = {
   sort: 'new' | 'top_7d';
   sevenDaysAgo: Date;
   cursor?: string;
+  category?: string | null;
 };
 
 /**
@@ -151,6 +178,12 @@ function applyDiscoverFilters<
   // For 'new' sort, apply simple created_at cursor; for 'top_7d', composite cursor handled separately
   if (ctx.cursor && ctx.sort !== 'top_7d') {
     b = b.lt('created_at', ctx.cursor);
+  }
+  // Category filtering: null = standard posts (Showcase), string = specific category (Help Station)
+  if (ctx.category === null) {
+    b = b.is('category', null);
+  } else if (typeof ctx.category === 'string') {
+    b = b.eq('category', ctx.category);
   }
   return b;
 }
@@ -235,6 +268,7 @@ export class CommunityApiClient implements CommunityAPI {
       sort = 'new',
       photosOnly,
       mineOnly,
+      category,
     } = params;
 
     const { data: session } = await this.client.auth.getSession();
@@ -252,6 +286,7 @@ export class CommunityApiClient implements CommunityAPI {
       userId,
       sort,
       sevenDaysAgo: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+      category,
     };
 
     // Count query uses filters WITHOUT cursor to get total matching posts
@@ -344,6 +379,8 @@ export class CommunityApiClient implements CommunityAPI {
             user_id: userId,
             body: postData.body,
             media_uri: postData.media_uri,
+            strain: postData.strain,
+            category: postData.category,
             client_tx_id: headers['X-Client-Tx-Id'],
           })
           .select()

@@ -313,10 +313,39 @@ export class RRULEGenerator {
           const normalized = ((index % 7) + 7) % 7;
           return weekdayCodes[normalized] ?? null;
         }
-        return weekdays.map((wd) => toWeekday(wd) ?? 'MO');
+        const validWeekdays: WeekDay[] = [];
+        const invalidValues: unknown[] = [];
+
+        for (const wd of weekdays) {
+          const result = toWeekday(wd);
+          if (result !== null) {
+            validWeekdays.push(result);
+          } else {
+            invalidValues.push(wd);
+          }
+        }
+
+        // Log warnings for invalid weekday values
+        if (invalidValues.length > 0) {
+          console.warn(
+            'Invalid weekday values found in RRULE - these will be filtered out:',
+            {
+              rruleString,
+              invalidValues,
+              validCount: validWeekdays.length,
+              invalidCount: invalidValues.length,
+            }
+          );
+        }
+
+        return validWeekdays;
       }
       return [];
-    } catch {
+    } catch (err) {
+      console.error('Failed to parse weekdays from RRULE:', {
+        rruleString,
+        error: err instanceof Error ? err.message : String(err),
+      });
       return [];
     }
   }

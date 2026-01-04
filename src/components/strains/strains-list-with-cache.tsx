@@ -7,8 +7,14 @@ import {
   type FlashListProps,
   type FlashListRef,
 } from '@shopify/flash-list';
-import React, { useCallback, useMemo } from 'react';
-import Animated from 'react-native-reanimated';
+import React, { useMemo } from 'react';
+import Animated, {
+  runOnJS,
+  useAnimatedScrollHandler,
+} from 'react-native-reanimated';
+// @ts-expect-error - useComposedEventHandler is available in Reanimated 4 but types might be outdated
+// eslint-disable-next-line import/no-duplicates
+import { useComposedEventHandler } from 'react-native-reanimated';
 import type { ReanimatedScrollEvent } from 'react-native-reanimated/lib/typescript/hook/commonTypes';
 
 import type { Strain } from '@/api';
@@ -39,12 +45,6 @@ type AnimatedFlashListProps = Omit<FlashListProps<Strain>, 'onScroll'> & {
 const AnimatedFlashList = Animated.createAnimatedComponent(
   FlashList
 ) as React.ComponentClass<AnimatedFlashListProps>;
-
-/**
- * Event type for the scroll callback, derived from AnimatedScrollHandler.
- * Uses Parameters utility type to extract the first argument type.
- */
-type ScrollEventType = Parameters<NonNullable<AnimatedScrollHandler>>[0];
 
 export type StrainsListWithCacheProps = {
   searchQuery?: string;
@@ -131,6 +131,17 @@ export function StrainsListWithCache({
       listSize: strains.length,
     });
 
+  const perfScrollHandler = useAnimatedScrollHandler({
+    onScroll: () => {
+      runOnJS(handlePerfScroll)();
+    },
+  });
+
+  const composedScrollHandler = useComposedEventHandler([
+    onScroll,
+    perfScrollHandler,
+  ]);
+
   const { listEmpty, listHeader, listFooter } = useListComponents({
     isLoading,
     isError,
@@ -141,16 +152,6 @@ export function StrainsListWithCache({
     searchQuery,
     onRetry,
   });
-
-  const handleScroll = useCallback(
-    (event: ScrollEventType) => {
-      handlePerfScroll();
-      if (onScroll) {
-        onScroll(event);
-      }
-    },
-    [onScroll, handlePerfScroll]
-  );
 
   return (
     <AnimatedFlashList
@@ -164,7 +165,7 @@ export function StrainsListWithCache({
       overrideItemLayout={overrideStrainItemLayout}
       onEndReached={onEndReached}
       onEndReachedThreshold={0.7}
-      onScroll={handleScroll}
+      onScroll={composedScrollHandler}
       onBlankArea={onBlankArea}
       contentContainerStyle={contentContainerStyle}
       ListHeaderComponent={listHeader}

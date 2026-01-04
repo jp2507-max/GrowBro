@@ -3,7 +3,6 @@ import Constants from 'expo-constants';
 import * as Crypto from 'expo-crypto';
 import * as FileSystem from 'expo-file-system';
 import { Platform } from 'react-native';
-import { v4 as uuidv4 } from 'uuid';
 
 import { supabase } from '@/lib/supabase';
 import type { AssessmentResult, CapturedPhoto } from '@/types/assessment';
@@ -40,7 +39,7 @@ export class CloudInferenceClient {
 
     try {
       // Use provided idempotency key or generate new one
-      const requestIdempotencyKey = idempotencyKey || uuidv4();
+      const requestIdempotencyKey = idempotencyKey || Crypto.randomUUID();
 
       // Upload images to storage and get signed URLs
       const uploadedImages = await this.uploadImages(photos, assessmentId);

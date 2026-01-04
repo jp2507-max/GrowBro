@@ -22,6 +22,7 @@ import { supabase } from '@/lib/supabase';
 
 import { Button, ControlledInput, Text, View } from '../ui';
 import { Modal, useModal } from '../ui/modal';
+import ModalKeyboardAwareScrollView from '../ui/modal-keyboard-aware-scroll-view';
 
 const schema = z.object({
   password: z.string().min(1, 'auth.validation_password_required'),
@@ -95,7 +96,7 @@ export const ReAuthModal = React.forwardRef<BottomSheetModal, ReAuthModalProps>(
         title={title || t('auth.re_auth_title')}
         enableDismissOnClose
       >
-        <View className="flex-1 px-4 pb-4">
+        <ModalKeyboardAwareScrollView contentContainerClassName="flex-1 px-4 pb-4">
           <Text className="mb-4 text-neutral-600 dark:text-neutral-400">
             {description || t('auth.re_auth_description')}
           </Text>
@@ -136,7 +137,7 @@ export const ReAuthModal = React.forwardRef<BottomSheetModal, ReAuthModalProps>(
               className="flex-1"
             />
           </View>
-        </View>
+        </ModalKeyboardAwareScrollView>
       </Modal>
     );
   }

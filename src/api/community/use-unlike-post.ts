@@ -14,8 +14,8 @@ import type {
   UseMutationResult,
 } from '@tanstack/react-query';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { randomUUID } from 'expo-crypto';
 import { showMessage } from 'react-native-flash-message';
-import { v4 as uuidv4 } from 'uuid';
 
 import type { PaginateQuery } from '@/api/types';
 import {
@@ -206,8 +206,8 @@ export function useUnlikePost(): UseMutationResult<
 
   return useMutation<void, Error, UnlikePostVariables, UnlikePostContext>({
     mutationFn: async ({ postId }): Promise<void> => {
-      const idempotencyKey = uuidv4();
-      const clientTxId = uuidv4();
+      const idempotencyKey = randomUUID();
+      const clientTxId = randomUUID();
 
       await database.write(async () => {
         const outboxCollection = database.get<OutboxModel>('outbox');

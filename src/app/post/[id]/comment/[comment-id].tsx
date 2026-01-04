@@ -15,7 +15,7 @@ export default function PostCommentRedirect(): ReactElement {
   }
 
   const href = commentId
-    ? `/feed/${postId}?commentId=${commentId}`
+    ? `/feed/${postId}?commentId=${encodeURIComponent(commentId)}`
     : `/feed/${postId}`;
 
   return <Redirect href={href} />;

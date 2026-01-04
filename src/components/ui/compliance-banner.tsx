@@ -9,16 +9,13 @@
 
 import { useColorScheme } from 'nativewind';
 import React from 'react';
-import { MMKV } from 'react-native-mmkv';
 import Animated, { FadeOut, ReduceMotion } from 'react-native-reanimated';
 
 import { Pressable, Text, View } from '@/components/ui';
 import colors from '@/components/ui/colors';
 import { X } from '@/components/ui/icons';
 import { translate } from '@/lib/i18n';
-
-const STORAGE_KEY = 'compliance_banner_dismissed';
-const storage = new MMKV({ id: 'community-compliance' });
+import { storage, STORAGE_KEYS } from '@/lib/storage';
 
 type ComplianceBannerProps = {
   testID?: string;
@@ -31,11 +28,13 @@ export function ComplianceBanner({
   const isDark = colorScheme === 'dark';
 
   const [isDismissed, setIsDismissed] = React.useState(() => {
-    return storage.getBoolean(STORAGE_KEY) ?? false;
+    return (
+      storage.getBoolean(STORAGE_KEYS.COMMUNITY_COMPLIANCE_DISMISSED) ?? false
+    );
   });
 
   const handleDismiss = React.useCallback(() => {
-    storage.set(STORAGE_KEY, true);
+    storage.set(STORAGE_KEYS.COMMUNITY_COMPLIANCE_DISMISSED, true);
     setIsDismissed(true);
   }, []);
 
@@ -77,5 +76,5 @@ export function ComplianceBanner({
  * Reset the banner dismissed state (useful for testing or settings)
  */
 export function resetComplianceBanner(): void {
-  storage.delete(STORAGE_KEY);
+  storage.delete(STORAGE_KEYS.COMMUNITY_COMPLIANCE_DISMISSED);
 }

@@ -10,8 +10,8 @@
 
 import type { QueryKey, UseMutationResult } from '@tanstack/react-query';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { randomUUID } from 'expo-crypto';
 import { showMessage } from 'react-native-flash-message';
-import { v4 as uuidv4 } from 'uuid';
 
 import type { PaginateQuery } from '@/api/types';
 import {
@@ -92,7 +92,7 @@ async function queueCommentInOutbox(payload: {
 
 // Optimistic update utilities
 function createTempComment(postId: string, body: string): PostComment {
-  const tempId = `temp-${uuidv4()}`;
+  const tempId = `temp-${randomUUID()}`;
   return {
     id: tempId,
     post_id: postId,
@@ -244,8 +244,8 @@ export function useCreateComment(): UseMutationResult<
   >({
     mutationFn: async ({ postId, body }): Promise<PostComment> => {
       validateCommentBody(body);
-      const idempotencyKey = uuidv4();
-      const clientTxId = uuidv4();
+      const idempotencyKey = randomUUID();
+      const clientTxId = randomUUID();
       await queueCommentInOutbox({ postId, body, clientTxId, idempotencyKey });
       return apiClient.createComment(
         { postId, body },

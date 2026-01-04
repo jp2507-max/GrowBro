@@ -4,11 +4,16 @@ import Svg, { Circle, Path } from 'react-native-svg';
 
 import colors from '../colors';
 
+type IconProps = SvgProps & {
+  size?: number;
+};
+
 export const HelpCircle = ({
   color = colors.neutral[500],
+  size = 24,
   ...props
-}: SvgProps) => (
-  <Svg width={24} height={24} fill="none" viewBox="0 0 24 24" {...props}>
+}: IconProps) => (
+  <Svg width={size} height={size} fill="none" viewBox="0 0 24 24" {...props}>
     <Circle
       cx={12}
       cy={12}

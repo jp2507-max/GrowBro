@@ -11,8 +11,7 @@
 
 import React, { useRef } from 'react';
 
-import { Pressable, Text, View } from '@/components/ui';
-import { translate } from '@/lib/i18n';
+import { View } from '@/components/ui';
 import { communityIntegration } from '@/lib/moderation/community-integration';
 import type { PostComment } from '@/types/community';
 
@@ -60,9 +59,11 @@ export function ModeratedCommentItem({
     checkReportPermission();
   }, []);
 
-  const handleReportPress = React.useCallback(() => {
-    reportModalRef.current?.present();
-  }, []);
+  const handleLongPress = React.useCallback(() => {
+    if (canReport && status === 'processed') {
+      reportModalRef.current?.present();
+    }
+  }, [canReport, status]);
 
   const handleReportSuccess = React.useCallback(() => {
     console.log('Comment report submitted successfully');
@@ -76,36 +77,16 @@ export function ModeratedCommentItem({
 
   return (
     <View testID={testID}>
-      {/* Comment item */}
+      {/* Comment item - long press to report */}
       <CommentItem
         comment={comment}
         status={status}
         isHighlighted={isHighlighted}
         onRetry={onRetry}
         onCancel={onCancel}
+        onLongPress={handleLongPress}
         testID={`${testID}-comment`}
       />
-
-      {/* Report button (only for processed comments) */}
-      {canReport && status === 'processed' && (
-        <View className="ml-3 mt-1 border-l-2 border-transparent pl-3">
-          <Pressable
-            onPress={handleReportPress}
-            accessibilityRole="button"
-            accessibilityLabel={translate('moderation.report_comment')}
-            accessibilityHint={translate('moderation.report_comment_hint')}
-            className="min-h-11 flex-row items-center gap-1.5"
-            testID={`${testID}-report-button`}
-          >
-            <Text className="text-xs text-neutral-500 dark:text-neutral-400">
-              🚩
-            </Text>
-            <Text className="text-xs text-neutral-500 dark:text-neutral-400">
-              {translate('moderation.report')}
-            </Text>
-          </Pressable>
-        </View>
-      )}
 
       {/* Report modal */}
       <ReportContentModal

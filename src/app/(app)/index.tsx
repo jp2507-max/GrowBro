@@ -118,8 +118,13 @@ export default function Feed() {
         insets={insets}
       />
 
-      {/* Overlapping content sheet - z-10 on wrapper, not ScrollView */}
-      <View className="z-10 -mt-10 flex-1">
+      {/* Content Sheet - Overlapping header like Community */}
+      <View className="z-10 -mt-4 flex-1 overflow-hidden rounded-t-[28px] bg-neutral-50 dark:bg-stone-950">
+        {/* Drag indicator pill */}
+        <View className="w-full items-center py-3">
+          <View className="h-1 w-10 rounded-full bg-neutral-300 dark:bg-charcoal-700" />
+        </View>
+
         <ScrollView
           contentContainerStyle={contentPaddingBottom}
           showsVerticalScrollIndicator={false}

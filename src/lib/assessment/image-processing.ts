@@ -1,6 +1,6 @@
+import { randomUUID } from 'expo-crypto';
 import * as FileSystem from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
-import { v4 as uuidv4 } from 'uuid';
 
 import type { PhotoMetadata } from '@/types/assessment';
 
@@ -103,6 +103,6 @@ export async function readImageAsBase64(uri: string): Promise<string> {
  * Generate unique filename for image
  */
 export function generateImageFilename(extension: string = 'jpg'): string {
-  const id = uuidv4();
+  const id = randomUUID();
   return `${id}.${extension}`;
 }

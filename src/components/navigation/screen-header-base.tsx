@@ -11,6 +11,7 @@ import type { TxKeyPath } from '@/lib/i18n/utils';
 import { getHeaderColors } from '@/lib/theme-utils';
 
 const HEADER_PADDING_TOP = 12;
+const HEADER_PADDING_TOP_COMPACT = 8;
 
 type ScreenHeaderBaseProps = {
   /** Safe area insets */
@@ -27,6 +28,8 @@ type ScreenHeaderBaseProps = {
   showBottomBorder?: boolean;
   /** Test ID for the header container */
   testID?: string;
+  /** Compact mode for smaller headers (less padding, smaller title) */
+  compact?: boolean;
 };
 
 /**
@@ -39,23 +42,27 @@ export function ScreenHeaderBase({
   topRowRight,
   title,
   children,
-  showBottomBorder = false, // Disabled by default - we have rounded corners now
+  showBottomBorder = false, // Disabled by default
   testID,
+  compact = false,
 }: ScreenHeaderBaseProps): React.ReactElement {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
   const colors = getHeaderColors(isDark);
 
+  const paddingTop = compact ? HEADER_PADDING_TOP_COMPACT : HEADER_PADDING_TOP;
+
   return (
     <View
       className={twMerge(
-        'z-0 px-4 pb-6',
+        'z-0 px-4',
+        compact ? 'pb-4' : 'pb-6',
         'shadow-lg',
         showBottomBorder &&
           'border-b border-neutral-200 dark:border-charcoal-700'
       )}
       style={{
-        paddingTop: insets.top + HEADER_PADDING_TOP,
+        paddingTop: insets.top + paddingTop,
         backgroundColor: colors.background,
       }}
       testID={testID}
@@ -71,7 +78,10 @@ export function ScreenHeaderBase({
       {/* Main Title */}
       {title ? (
         <Text
-          className="text-3xl font-bold tracking-tight"
+          className={twMerge(
+            'font-bold tracking-tight',
+            compact ? 'text-2xl' : 'text-3xl'
+          )}
           style={{ color: colors.text }}
         >
           {title}
@@ -79,7 +89,9 @@ export function ScreenHeaderBase({
       ) : null}
 
       {/* Content below title */}
-      {children && <View className="mt-3">{children}</View>}
+      {children && (
+        <View className={compact ? 'mt-2' : 'mt-3'}>{children}</View>
+      )}
     </View>
   );
 }

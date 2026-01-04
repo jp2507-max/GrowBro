@@ -1,13 +1,13 @@
 import * as React from 'react';
 import type { SvgProps } from 'react-native-svg';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Circle, Path } from 'react-native-svg';
 
 type IconProps = SvgProps & {
   size?: number;
 };
 
-export function CaretDown({
-  size = 16,
+export function Camera({
+  size = 24,
   className,
   ...props
 }: IconProps): React.JSX.Element {
@@ -21,10 +21,11 @@ export function CaretDown({
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className={className ?? 'text-neutral-700 dark:text-neutral-300'}
+      className={className}
       {...props}
     >
-      <Path d="M6 9l6 6 6-6" />
+      <Path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
+      <Circle cx="12" cy="13" r="3" />
     </Svg>
   );
 }

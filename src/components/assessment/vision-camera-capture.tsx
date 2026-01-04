@@ -1,8 +1,8 @@
+import { randomUUID } from 'expo-crypto';
 import { type JSX, useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, StyleSheet } from 'react-native';
 import { Camera, useCameraDevice } from 'react-native-vision-camera';
-import { v4 as uuidv4 } from 'uuid';
 
 import { Button, Text, View } from '@/components/ui';
 import colors from '@/components/ui/colors';
@@ -60,7 +60,7 @@ export function VisionCameraCapture({
         await qualityAssessmentEngine.assessPhoto(processed.uri);
 
       const capturedPhoto: CapturedPhoto = {
-        id: uuidv4(),
+        id: randomUUID(),
         uri: processed.uri,
         timestamp: Date.now(),
         qualityScore: qualityResult,

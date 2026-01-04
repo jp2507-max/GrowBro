@@ -14,6 +14,7 @@ import { z } from 'zod';
 import { useChangePassword } from '@/api/auth';
 import { validatePassword } from '@/api/auth/use-sign-up';
 import { Button, ControlledInput, Modal, Text, View } from '@/components/ui';
+import ModalKeyboardAwareScrollView from '@/components/ui/modal-keyboard-aware-scroll-view';
 import {
   showErrorMessage,
   showSuccessMessage,
@@ -104,7 +105,7 @@ export const ChangePasswordModal = React.forwardRef<
       snapPoints={['85%']}
       onDismiss={handleDismiss}
     >
-      <View className="flex-1 px-4">
+      <ModalKeyboardAwareScrollView contentContainerClassName="flex-1 px-4">
         <Text className="mb-6 text-neutral-600 dark:text-neutral-400">
           {translate('auth.security.change_password_description')}
         </Text>
@@ -169,7 +170,7 @@ export const ChangePasswordModal = React.forwardRef<
             {translate('auth.security.change_password_warning')}
           </Text>
         </View>
-      </View>
+      </ModalKeyboardAwareScrollView>
     </Modal>
   );
 });

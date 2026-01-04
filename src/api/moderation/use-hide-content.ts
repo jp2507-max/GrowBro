@@ -8,7 +8,7 @@
 
 import type { UseMutationResult } from '@tanstack/react-query';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'expo-crypto';
 
 import {
   communityPostKey,
@@ -36,8 +36,8 @@ async function hideContent({
   reason,
 }: HideContentParams): Promise<HideContentResult> {
   // Generate client transaction ID and idempotency key
-  const clientTxId = uuidv4();
-  const idempotencyKey = uuidv4();
+  const clientTxId = randomUUID();
+  const idempotencyKey = randomUUID();
 
   // Queue moderation action in outbox for offline support
   await database.write(async () => {

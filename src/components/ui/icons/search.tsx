@@ -1,3 +1,4 @@
+import * as React from 'react';
 import type { SvgProps } from 'react-native-svg';
 import Svg, { Circle, Line } from 'react-native-svg';
 
@@ -5,7 +6,11 @@ type IconProps = SvgProps & {
   size?: number;
 };
 
-export function Search({ size = 24, className, ...props }: IconProps) {
+export function Search({
+  size = 24,
+  className,
+  ...props
+}: IconProps): React.JSX.Element {
   return (
     <Svg
       width={size}

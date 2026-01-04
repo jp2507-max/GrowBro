@@ -97,8 +97,10 @@ async function fetchAndCache(params: {
 // eslint-disable-next-line max-lines-per-function
 export function useStrainsInfiniteWithCache({
   variables,
+  enabled = true,
 }: {
   variables?: UseStrainsInfiniteWithCacheParams;
+  enabled?: boolean;
 } = {}) {
   return useInfiniteQuery({
     queryKey: [
@@ -109,6 +111,7 @@ export function useStrainsInfiniteWithCache({
       variables?.sortBy,
       variables?.sortDirection,
     ],
+    enabled,
     queryFn: async ({ pageParam = { index: 0 }, signal }) => {
       const client = getStrainsApiClient();
       const repo = getCacheRepository();

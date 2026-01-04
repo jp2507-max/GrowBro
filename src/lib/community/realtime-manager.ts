@@ -1,4 +1,5 @@
 import type { RealtimeChannel } from '@supabase/supabase-js';
+import { AppState, type AppStateStatus } from 'react-native';
 
 import { supabase } from '@/lib/supabase';
 import type {
@@ -43,6 +44,10 @@ export class RealtimeConnectionManager {
   private isPolling = false;
   private postIdFilter?: string;
   private isActive = false;
+  private appStateSubscription: ReturnType<
+    typeof AppState.addEventListener
+  > | null = null;
+  private wasConnectedBeforeBackground = false;
 
   // Exponential backoff: 1s, 2s, 4s, 8s, 16s, 32s (max)
   private getBackoffDelay(): number {
@@ -54,6 +59,38 @@ export class RealtimeConnectionManager {
     );
     return delay;
   }
+
+  /**
+   * Handle app state changes - disconnect when backgrounded, reconnect when foregrounded
+   * This prevents stale connections and reduces battery drain on mobile
+   */
+  private handleAppStateChange = (nextAppState: AppStateStatus): void => {
+    if (!this.isActive) return;
+
+    if (nextAppState === 'active') {
+      // App came to foreground - reconnect if we were connected before
+      if (this.wasConnectedBeforeBackground) {
+        console.log('[Realtime] App foregrounded, reconnecting...');
+        this.reconnectAttempts = 0; // Reset attempts for fresh start
+        this.connect();
+      }
+    } else if (nextAppState === 'background' || nextAppState === 'inactive') {
+      // App going to background - disconnect to save resources
+      this.wasConnectedBeforeBackground =
+        this.connectionState === 'connected' ||
+        this.connectionState === 'connecting';
+      if (this.wasConnectedBeforeBackground) {
+        console.log('[Realtime] App backgrounded, disconnecting...');
+        this.cleanup();
+        this.stopPolling();
+        if (this.reconnectTimer) {
+          clearTimeout(this.reconnectTimer);
+          this.reconnectTimer = null;
+        }
+        this.setConnectionState('disconnected');
+      }
+    }
+  };
 
   /**
    * Update connection state and notify listeners
@@ -80,6 +117,15 @@ export class RealtimeConnectionManager {
     this.callbacks = callbacks;
     this.postIdFilter = postId;
     this.isActive = true;
+
+    // Set up AppState listener for background/foreground handling
+    if (!this.appStateSubscription) {
+      this.appStateSubscription = AppState.addEventListener(
+        'change',
+        this.handleAppStateChange
+      );
+    }
+
     this.connect();
   }
 
@@ -153,7 +199,10 @@ export class RealtimeConnectionManager {
   /**
    * Handle subscription status changes
    */
-  private handleSubscriptionStatus(status: string): void {
+  private handleSubscriptionStatus(
+    status: string,
+    error?: Error | { message?: string }
+  ): void {
     if (!this.isActive) return;
     if (status === 'SUBSCRIBED') {
       this.setConnectionState('connected');
@@ -162,17 +211,31 @@ export class RealtimeConnectionManager {
       console.log('Connected to community feed realtime');
     } else if (status === 'CHANNEL_ERROR') {
       this.setConnectionState('error');
-      console.error('Realtime subscription error');
+      console.error('Realtime subscription error:', {
+        status,
+        errorMessage: error instanceof Error ? error.message : error?.message,
+        errorStack: error instanceof Error ? error.stack : undefined,
+        channelName: this.channel?.topic,
+        reconnectAttempts: this.reconnectAttempts,
+      });
       communityMetrics.recordReconnect();
       this.handleConnectionError();
     } else if (status === 'TIMED_OUT') {
       this.setConnectionState('error');
-      console.error('Realtime subscription timed out');
+      console.error('Realtime subscription timed out:', {
+        status,
+        channelName: this.channel?.topic,
+        reconnectAttempts: this.reconnectAttempts,
+      });
       communityMetrics.recordReconnect();
       this.handleConnectionError();
     } else if (status === 'CLOSED') {
       this.setConnectionState('disconnected');
-      console.log('Realtime connection closed');
+      console.log('Realtime connection closed:', {
+        status,
+        wasActive: this.isActive,
+        channelName: this.channel?.topic,
+      });
       communityMetrics.recordReconnect();
       this.handleConnectionError();
     }
@@ -200,9 +263,9 @@ export class RealtimeConnectionManager {
     // Set up all postgres_changes subscriptions
     this.setupSubscriptions();
 
-    // Subscribe with status callback
-    this.channel.subscribe((status) => {
-      this.handleSubscriptionStatus(status);
+    // Subscribe with status callback (includes error object when available)
+    this.channel.subscribe((status, error) => {
+      this.handleSubscriptionStatus(status, error);
     });
   }
 
@@ -393,11 +456,18 @@ export class RealtimeConnectionManager {
       this.reconnectTimer = null;
     }
 
+    // Remove AppState listener
+    if (this.appStateSubscription) {
+      this.appStateSubscription.remove();
+      this.appStateSubscription = null;
+    }
+
     this.stopPolling();
     this.cleanup();
 
     this.setConnectionState('disconnected');
     this.reconnectAttempts = 0;
+    this.wasConnectedBeforeBackground = false;
     this.callbacks = {};
     this.postIdFilter = undefined;
     console.log('Unsubscribed from community feed realtime');

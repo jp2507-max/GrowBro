@@ -20,12 +20,17 @@ registerCertificatePinningInterceptor(client);
 
 // Inject auth token from Supabase session
 client.interceptors.request.use(async (config) => {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  try {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
 
-  if (session?.access_token) {
-    config.headers.Authorization = `Bearer ${session.access_token}`;
+    if (session?.access_token) {
+      config.headers.Authorization = `Bearer ${session.access_token}`;
+    }
+  } catch (error) {
+    // Log session retrieval error but don't block the request
+    console.warn('Failed to retrieve Supabase session:', error);
   }
 
   return config;

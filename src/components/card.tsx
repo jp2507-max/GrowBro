@@ -4,7 +4,7 @@ import React from 'react';
 import type { Post } from '@/api';
 import { LikeButton } from '@/components/community/like-button';
 import { ModerationActions } from '@/components/moderation-actions';
-import { Image, Pressable, Text, View } from '@/components/ui';
+import { OptimizedImage, Pressable, Text, View } from '@/components/ui';
 import { translate } from '@/lib';
 
 type Props = Post;
@@ -40,6 +40,11 @@ export const Card = ({
     []
   );
 
+  const imageUri = React.useMemo(
+    () => images[Math.floor(Math.random() * images.length)],
+    []
+  );
+
   return (
     <Link href={`/feed/${id}`} asChild>
       <Pressable
@@ -48,12 +53,11 @@ export const Card = ({
         accessibilityRole="link"
       >
         <View className="m-2 overflow-hidden rounded-xl  border border-neutral-300 bg-white  dark:bg-neutral-900">
-          <Image
+          <OptimizedImage
             className="h-56 w-full overflow-hidden rounded-t-xl"
             contentFit="cover"
-            source={{
-              uri: images[Math.floor(Math.random() * images.length)],
-            }}
+            uri={imageUri}
+            recyclingKey={String(id)}
           />
 
           <View className="p-2">

@@ -1,3 +1,4 @@
+import React from 'react';
 import type { SvgProps } from 'react-native-svg';
 import Svg, { Path } from 'react-native-svg';
 
@@ -5,7 +6,11 @@ type IconProps = SvgProps & {
   size?: number;
 };
 
-export function MessageCircle({ size = 24, className, ...props }: IconProps) {
+export function MessageCircle({
+  size = 24,
+  className,
+  ...props
+}: IconProps): React.ReactElement {
   return (
     <Svg
       width={size}

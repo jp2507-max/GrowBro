@@ -58,7 +58,7 @@ export function CommentList({
   }
 
   return (
-    <View className="gap-2" testID={testID}>
+    <View testID={testID}>
       {comments.map((comment) => {
         // Determine status: use provided status map, fallback to temp- check, default to processed
         const status =

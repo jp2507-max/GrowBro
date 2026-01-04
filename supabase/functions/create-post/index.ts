@@ -30,6 +30,8 @@ interface CreatePostRequest {
   client_tx_id?: string;
   title?: string;
   sourceAssessmentId?: string;
+  strain?: string;
+  category?: string;
   media?:
     | {
         // Server-side processing (web/legacy)
@@ -279,6 +281,8 @@ Deno.serve(async (req: Request) => {
       user_id: user.id,
       body: requestBody.body,
       client_tx_id: requestBody.client_tx_id,
+      strain: requestBody.strain || null,
+      category: requestBody.category || null,
     };
 
     if (mediaProcessingResult) {

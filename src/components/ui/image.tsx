@@ -1,3 +1,13 @@
+/**
+ * Base Image Component
+ *
+ * Use this component for:
+ * - Local static assets (require('./image.png'))
+ * - Simple local images (camera captures, picked photos)
+ * - Situations where you explicitly DO NOT want the optimization/thumbnail logic
+ *
+ * This is a thin wrapper around expo-image that adds NativeWind (className) support.
+ */
 import type { ImageProps } from 'expo-image';
 import { Image as NImage } from 'expo-image';
 import { cssInterop } from 'nativewind';

@@ -24,6 +24,7 @@ interface CommentItemProps {
   isHighlighted?: boolean;
   onRetry?: () => void;
   onCancel?: () => void;
+  onLongPress?: () => void;
   testID?: string;
 }
 
@@ -83,26 +84,58 @@ function FailedActions({ onRetry, onCancel, testID }: FailedActionsProps) {
   );
 }
 
+type CommentAvatarProps = {
+  displayName: string;
+  onPress: () => void;
+};
+
+function CommentAvatar({ displayName, onPress }: CommentAvatarProps) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={translate(
+        'accessibility.community.view_author_profile',
+        {
+          author: displayName,
+        }
+      )}
+      accessibilityHint={translate(
+        'accessibility.community.view_author_profile_hint'
+      )}
+    >
+      <View className="size-9 items-center justify-center rounded-full bg-primary-100 dark:bg-primary-900/50">
+        <Text className="text-sm font-bold text-primary-700 dark:text-primary-300">
+          {displayName.charAt(0).toUpperCase()}
+        </Text>
+      </View>
+    </Pressable>
+  );
+}
+
 function CommentItemComponent({
   comment,
   status = 'processed',
   isHighlighted = false,
   onRetry,
   onCancel,
+  onLongPress,
   testID = 'comment-item',
 }: CommentItemProps): React.ReactElement {
   const router = useRouter();
   const isPending = status === 'pending';
   const isFailed = status === 'failed';
   const shouldHighlight = isHighlighted && status === 'processed';
-  const containerClasses = `border-l-2 py-3 pl-3 ${
+  const displayName = comment.user_id.slice(0, 8);
+
+  const containerClasses = `mb-4 flex-row items-start ${
     isFailed
-      ? 'dark:bg-danger-950/20 border-danger-500 bg-danger-50 dark:border-danger-600'
+      ? 'opacity-80'
       : isPending
-        ? 'border-neutral-300 opacity-60 dark:border-neutral-700'
+        ? 'opacity-60'
         : shouldHighlight
-          ? 'border-primary-500 bg-primary-50/70 dark:bg-primary-950/40'
-          : 'border-transparent'
+          ? 'bg-primary-50/50 dark:bg-primary-950/20 -mx-2 px-2 py-1 rounded-lg'
+          : ''
   }`;
 
   const handleAuthorPress = React.useCallback(() => {
@@ -115,58 +148,67 @@ function CommentItemComponent({
   );
 
   return (
-    <View className={containerClasses} testID={testID}>
-      <View className="flex-row items-start justify-between">
-        <View className="flex-1 gap-1">
-          <View className="flex-row items-center gap-2">
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={translate(
-                'accessibility.community.view_author_profile',
-                { author: comment.user_id.slice(0, 8) }
-              )}
-              accessibilityHint={translate(
-                'accessibility.community.view_author_profile_hint'
-              )}
-              onPress={handleAuthorPress}
-              className="min-h-11 justify-center"
-            >
-              <Text
-                className="text-sm font-semibold text-primary-700 dark:text-primary-400"
-                testID={`${testID}-author`}
-              >
-                @{comment.user_id.slice(0, 8)}
-              </Text>
-            </Pressable>
-            {formattedDate && (
-              <Text
-                className="text-xs text-neutral-500 dark:text-neutral-400"
-                testID={`${testID}-date`}
-              >
-                {formattedDate}
-              </Text>
-            )}
-            {isPending && (
-              <View className="flex-row items-center gap-1">
-                <ActivityIndicator size="small" testID={`${testID}-loading`} />
-                <Text className="text-xs text-neutral-500 dark:text-neutral-400">
-                  {translate('community.posting')}
-                </Text>
-              </View>
-            )}
-          </View>
+    <Pressable
+      onLongPress={onLongPress}
+      delayLongPress={500}
+      className={containerClasses}
+      testID={testID}
+      accessibilityRole="button"
+      accessibilityHint={
+        onLongPress
+          ? translate('accessibility.community.post_options_hint')
+          : undefined
+      }
+    >
+      {/* Avatar */}
+      <CommentAvatar displayName={displayName} onPress={handleAuthorPress} />
+
+      {/* Content Column */}
+      <View className="ml-3 flex-1">
+        {/* Row 1: Name + Time */}
+        <View className="flex-row items-center">
           <Text
-            className="text-sm leading-relaxed text-neutral-700 dark:text-neutral-300"
-            testID={`${testID}-body`}
+            className="text-sm font-bold text-neutral-900 dark:text-neutral-50"
+            testID={`${testID}-author`}
           >
-            {comment.body}
+            {displayName}
           </Text>
+          {formattedDate && (
+            <Text
+              className="ml-2 text-xs text-neutral-400"
+              testID={`${testID}-date`}
+            >
+              {formattedDate}
+            </Text>
+          )}
+          {isPending && (
+            <View className="ml-2 flex-row items-center gap-1">
+              <ActivityIndicator size="small" testID={`${testID}-loading`} />
+              <Text className="text-xs text-neutral-400">
+                {translate('community.posting')}
+              </Text>
+            </View>
+          )}
         </View>
+
+        {/* Row 2: Comment Text */}
+        <Text
+          className="mt-0.5 text-sm leading-snug text-neutral-700 dark:text-neutral-300"
+          testID={`${testID}-body`}
+        >
+          {comment.body}
+        </Text>
+
+        {/* Failed Actions */}
+        {isFailed && (
+          <FailedActions
+            onRetry={onRetry}
+            onCancel={onCancel}
+            testID={testID}
+          />
+        )}
       </View>
-      {isFailed && (
-        <FailedActions onRetry={onRetry} onCancel={onCancel} testID={testID} />
-      )}
-    </View>
+    </Pressable>
   );
 }
 
@@ -183,6 +225,7 @@ export const CommentItem = React.memo(
       prevProps.isHighlighted === nextProps.isHighlighted &&
       prevProps.onRetry === nextProps.onRetry &&
       prevProps.onCancel === nextProps.onCancel &&
+      prevProps.onLongPress === nextProps.onLongPress &&
       prevProps.testID === nextProps.testID
     );
   }

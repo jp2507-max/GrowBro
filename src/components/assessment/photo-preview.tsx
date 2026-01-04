@@ -1,8 +1,7 @@
-import { Image } from 'expo-image';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet } from 'react-native';
 
-import { Button, Text, View } from '@/components/ui';
+import { Button, Image, Text, View } from '@/components/ui';
 import type { CapturedPhoto, QualityIssue } from '@/types/assessment';
 
 type PhotoPreviewProps = {

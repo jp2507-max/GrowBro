@@ -40,6 +40,9 @@ export interface Post {
   hidden_at?: string;
   moderation_reason?: string;
   undo_expires_at?: string;
+  // Optional category/strain fields for future implementation
+  strain?: string;
+  category?: string;
   // Derived UI-only fields (not persisted)
   like_count?: number;
   comment_count?: number;
@@ -103,6 +106,8 @@ export interface RealtimeEvent<T> {
 export interface CreatePostData {
   body: string;
   media_uri?: string;
+  strain?: string;
+  category?: string;
 }
 
 export interface CreateCommentData {

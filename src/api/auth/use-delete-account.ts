@@ -14,10 +14,10 @@
 
 import { Directory, Paths } from 'expo-file-system';
 import * as SecureStore from 'expo-secure-store';
-import { MMKV } from 'react-native-mmkv';
 import { createMutation } from 'react-query-kit';
 
 import { useAuth } from '@/lib/auth';
+import { clearAuthStorage } from '@/lib/auth/auth-storage';
 import { logAuthError, trackAuthEvent } from '@/lib/auth/auth-telemetry';
 import { supabase } from '@/lib/supabase';
 import { database } from '@/lib/watermelon';
@@ -138,8 +138,7 @@ async function deleteLocalData(): Promise<void> {
 
     // 2. Clear MMKV auth storage
     console.log('Clearing MMKV storage...');
-    const mmkvStorage = new MMKV({ id: 'auth-storage' });
-    mmkvStorage.clearAll();
+    await clearAuthStorage();
     console.log('MMKV storage cleared');
 
     // 3. Clear SecureStore keys

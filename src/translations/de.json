@@ -98,7 +98,6 @@
       "comments": "Kommentare",
       "compose_hint": "Öffnet den Bildschirm zum Erstellen eines Beitrags.",
       "create_post_hint": "Öffnet den Bildschirm zum Erstellen eines Beitrags.",
-      "delete": "Löschen",
       "delete_post": "Beitrag löschen",
       "delete_post_hint": "Doppeltippen, um diesen Beitrag zu löschen. Du hast 15 Sekunden Zeit zum Rückgängig machen.",
       "error_card_hint": "Informiert, dass der Community-Feed nicht geladen werden konnte.",
@@ -114,6 +113,7 @@
       "post_options_hint": "Doppeltippen, um Beitragsoptionen anzuzeigen.",
       "retry_comment_hint": "Versucht erneut, diesen Kommentar zu posten.",
       "retry_sync": "Synchronisation wiederholen",
+      "share": "Diesen Beitrag teilen",
       "undo_dismiss_hint": "Die Rückgängig-Snackbar schließen und die Aktion abbrechen",
       "undo_expires": "Rückgängigmachen läuft in {{seconds}}s ab",
       "view_author_profile": "Profil von @{{author}} anzeigen",
@@ -885,6 +885,13 @@
     "footer": "Was meinst du? Jeder Rat ist willkommen!",
     "header": "🌱 Hilfe bei Pflanzendiagnose benötigt",
     "health": "Community-Gesundheit",
+    "help_mode": {
+      "empty_body": "Sei die oder der Erste und bitte die Community um Hilfe!",
+      "empty_cta": "Um Hilfe bitten",
+      "empty_title": "Noch keine Hilfe-Anfragen",
+      "fab_hint": "Öffnet den Bildschirm zum Erstellen eines Hilfe-Beitrags",
+      "fab_label": "Um Hilfe bitten"
+    },
     "https": "https://growbro.app/feed",
     "interaction": "Community-Interaktion",
     "interactions": "Community-Interaktionen",
@@ -919,6 +926,11 @@
       "title": "Community-Vorlagen",
       "trichome": "Trichom-Helfer"
     },
+    "postOptions": {
+      "delete": "Löschen",
+      "deleteHint": "Löscht diesen Beitrag mit einem 15-Sekunden-Rückgängig-Fenster",
+      "title": "Beitragsoptionen"
+    },
     "post_comment": "Kommentar posten",
     "post_deleted": "Beitrag gelöscht",
     "post_image": "Bild von @{{author}}",
@@ -939,6 +951,10 @@
     "search_hint": "Filtert Beiträge beim Tippen.",
     "search_label": "Community durchsuchen",
     "search_placeholder": "Community-Beiträge durchsuchen...",
+    "segments": {
+      "help_station": "Hilfe-Station",
+      "showcase": "Galerie"
+    },
     "sort_label": "Sortieren",
     "sort_newest": "Neueste",
     "sort_top_7d": "Top (7 Tage)",
@@ -1127,13 +1143,20 @@
   },
   "feed": {
     "addPost": {
+      "addPhoto": "Foto hinzufügen",
       "capturePhoto": "Foto aufnehmen",
       "contentLabel": "Inhalt",
+      "contentPlaceholder": "Teile deine Gedanken...",
+      "publishButton": "Beitrag veröffentlichen",
       "removePhoto": "Foto entfernen",
       "removePhotoHint": "Dieses Foto aus deinem Beitrag entfernen",
       "selectPhoto": "Aus Mediathek wählen",
-      "title": "Beitrag erstellen",
-      "titleLabel": "Titel"
+      "selectStrain": "Sorte auswählen",
+      "strainHint": "Tagge deinen Beitrag mit einer Sorte",
+      "strainLabel": "Sorte (optional)",
+      "title": "Neuer Beitrag",
+      "titleLabel": "Titel",
+      "titlePlaceholder": "Gib deinem Beitrag einen Titel..."
     },
     "attachmentImageHint": "Foto zum Beitrag hinzugefügt",
     "prefilledImages": "Vorgefüllte Bilder",

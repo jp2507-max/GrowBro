@@ -98,7 +98,6 @@
       "comments": "Comments",
       "compose_hint": "Opens the Create Post screen.",
       "create_post_hint": "Opens the Create Post screen.",
-      "delete": "Delete",
       "delete_post": "Delete post",
       "delete_post_hint": "Double-tap to delete this post. You will have 15 seconds to undo.",
       "error_card_hint": "Informs that the community feed failed to load.",
@@ -114,6 +113,7 @@
       "post_options_hint": "Double-tap to view post options.",
       "retry_comment_hint": "Retries posting this comment.",
       "retry_sync": "Retry sync",
+      "share": "Share this post",
       "undo_dismiss_hint": "Dismiss the undo snackbar and cancel the action",
       "undo_expires": "Undo expires in {{seconds}}s",
       "view_author_profile": "View profile of @{{author}}",
@@ -885,6 +885,13 @@
     "footer": "What do you think? Any advice appreciated!",
     "header": "🌱 Need help with plant diagnosis",
     "health": "Community health",
+    "help_mode": {
+      "empty_body": "Be the first to ask the community for help!",
+      "empty_cta": "Ask for Help",
+      "empty_title": "No help requests yet",
+      "fab_hint": "Opens the Create Post screen to ask for help",
+      "fab_label": "Ask for Help"
+    },
     "https": "https://growbro.app/feed",
     "interaction": "Community interaction",
     "interactions": "Community interactions",
@@ -919,6 +926,11 @@
       "title": "Community Templates",
       "trichome": "Trichome helper"
     },
+    "postOptions": {
+      "delete": "Delete",
+      "deleteHint": "Deletes this post with a 15 second undo window",
+      "title": "Post Options"
+    },
     "post_comment": "Post comment",
     "post_deleted": "Post deleted",
     "post_image": "Image from @{{author}}",
@@ -939,6 +951,10 @@
     "search_hint": "Filters posts as you type.",
     "search_label": "Search community posts",
     "search_placeholder": "Search community posts...",
+    "segments": {
+      "help_station": "Help Station",
+      "showcase": "Showcase"
+    },
     "sort_label": "Sort",
     "sort_newest": "Newest",
     "sort_top_7d": "Top (7d)",
@@ -1127,13 +1143,20 @@
   },
   "feed": {
     "addPost": {
+      "addPhoto": "Add Photo",
       "capturePhoto": "Take Photo",
       "contentLabel": "Content",
+      "contentPlaceholder": "Share your thoughts...",
+      "publishButton": "Publish Post",
       "removePhoto": "Remove Photo",
       "removePhotoHint": "Remove this photo from your post",
       "selectPhoto": "Choose from Library",
+      "selectStrain": "Select Strain",
+      "strainHint": "Tag your post with a strain",
+      "strainLabel": "Strain (optional)",
       "title": "Create Post",
-      "titleLabel": "Title"
+      "titleLabel": "Title",
+      "titlePlaceholder": "Give your post a title..."
     },
     "attachmentImageHint": "Photo attached to the post",
     "prefilledImages": "Prefilled images",

@@ -114,6 +114,8 @@ type Variables = {
   body: string;
   attachments?: AttachmentInput[];
   sourceAssessmentId?: string;
+  strain?: string;
+  category?: string;
 };
 type Response = Post;
 
@@ -357,6 +359,8 @@ export const useAddPost = createMutation<Response, Variables, AxiosError>({
           body: variables.body,
           media: mediaPayloads.length > 0 ? mediaPayloads[0] : undefined,
           sourceAssessmentId: variables.sourceAssessmentId,
+          strain: variables.strain,
+          category: variables.category,
         },
       }).then((response) => response.data);
     } catch (error) {

@@ -5,21 +5,33 @@ import * as React from 'react';
 import { useEffect } from 'react';
 import { useForm, type UseFormSetValue } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { ScrollView, StyleSheet } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  StyleSheet,
+  TouchableOpacity,
+} from 'react-native';
 import { showMessage } from 'react-native-flash-message';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
+import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
 
 import { type AttachmentInput, useAddPost } from '@/api';
+import { StrainPicker } from '@/components/community/strain-picker';
 import {
   Button,
-  ControlledInput,
   Image,
+  Input,
   showErrorMessage,
   Text,
   View,
 } from '@/components/ui';
+import { Camera } from '@/components/ui/icons';
 import { generateCommunityPostPrefill } from '@/lib/assessment/community-post-prefill';
 import { getAssessmentSession } from '@/lib/assessment/current-assessment-store';
+import { COMMUNITY_HELP_CATEGORY } from '@/lib/community/post-categories';
+import { haptics } from '@/lib/haptics';
 import { translateDynamic } from '@/lib/i18n/utils';
 import type { CapturedPhoto } from '@/types/assessment';
 
@@ -178,107 +190,242 @@ function useAssessmentPrefill({
   ]);
 }
 
-type PhotoAttachmentSectionProps = {
-  attachments: AttachmentInput[];
-  onCapturePhoto: () => void;
-  onSelectPhoto: () => void;
-  onRemovePhoto: () => void;
+// ---------------------------------------------------------------------------
+// CreatePostHeader
+// ---------------------------------------------------------------------------
+const HEADER_PADDING_TOP = 12;
+
+type CreatePostHeaderProps = {
+  insets: { top: number };
 };
 
-function PhotoAttachmentSection({
-  attachments,
-  onCapturePhoto,
-  onSelectPhoto,
-  onRemovePhoto,
-}: PhotoAttachmentSectionProps): React.JSX.Element {
+function CreatePostHeader({
+  insets,
+}: CreatePostHeaderProps): React.ReactElement {
+  const { t } = useTranslation();
+
   return (
-    <View className="mt-6">
-      {attachments.length === 0 ? (
-        <View className="flex-row gap-4">
-          <Button
-            onPress={onCapturePhoto}
-            variant="outline"
-            size="sm"
-            className="flex-1 rounded-xl border border-primary-500/30 bg-white dark:bg-white/5"
-            textClassName="text-primary-500 dark:text-primary-400"
-            testID="capture-photo-button"
-          >
-            <Text className="text-sm font-medium text-primary-500 dark:text-primary-400">
-              {translateDynamic('feed.addPost.capturePhoto')}
-            </Text>
-          </Button>
-          <Button
-            onPress={onSelectPhoto}
-            variant="outline"
-            size="sm"
-            className="flex-1 rounded-xl border border-primary-500/30 bg-white dark:bg-white/5"
-            textClassName="text-primary-500 dark:text-primary-400"
-            testID="select-photo-button"
-          >
-            <Text className="text-sm font-medium text-primary-500 dark:text-primary-400">
-              {translateDynamic('feed.addPost.selectPhoto')}
-            </Text>
-          </Button>
-        </View>
-      ) : (
-        <View>
-          <View className="mb-2 flex-row items-center justify-between">
-            <Text className="text-sm font-semibold text-neutral-700 dark:text-neutral-200">
-              {translateDynamic('feed.prefilledImages')}
-            </Text>
-            <Button
-              variant="link"
-              size="sm"
-              onPress={onRemovePhoto}
-              testID="remove-photo-button"
-              accessibilityLabel={translateDynamic('feed.addPost.removePhoto')}
-              accessibilityHint={translateDynamic(
-                'feed.addPost.removePhotoHint'
-              )}
-              textClassName="text-danger-600"
-              className="my-0 px-0"
-            >
-              <Text className="text-sm text-danger-600">
-                {translateDynamic('feed.addPost.removePhoto')}
-              </Text>
-            </Button>
-          </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {attachments.map((image, index) => (
-              <Image
-                key={image.filename}
-                accessibilityIgnoresInvertColors
-                accessibilityLabel={
-                  image.filename ||
-                  translateDynamic('feed.attachmentImageFallback')
-                }
-                accessibilityHint={translateDynamic('feed.attachmentImageHint')}
-                accessibilityRole="image"
-                testID={`attachment-image-${image.filename || index}`}
-                className="mr-3 rounded-xl"
-                source={{ uri: image.uri }}
-                style={styles.attachmentImage}
-              />
-            ))}
-          </ScrollView>
-        </View>
-      )}
+    <View
+      className="z-0 bg-primary-900 px-6 pb-20 dark:bg-primary-800"
+      style={{ paddingTop: insets.top + HEADER_PADDING_TOP }}
+    >
+      <Text className="text-3xl font-bold tracking-tight text-white">
+        {t('feed.addPost.title')}
+      </Text>
     </View>
   );
 }
 
+// ---------------------------------------------------------------------------
+// PostHeroPhotoSection
+// ---------------------------------------------------------------------------
+type PostHeroPhotoSectionProps = {
+  imageUri?: string;
+  isProcessing: boolean;
+  onPress: () => void;
+};
+
+function PostHeroPhotoSection({
+  imageUri,
+  isProcessing,
+  onPress,
+}: PostHeroPhotoSectionProps): React.ReactElement {
+  const { t } = useTranslation();
+
+  const handlePress = React.useCallback(() => {
+    haptics.selection();
+    onPress();
+  }, [onPress]);
+
+  return (
+    <Animated.View
+      entering={FadeIn.duration(300).reduceMotion(ReduceMotion.System)}
+      className="mb-6"
+    >
+      <TouchableOpacity
+        onPress={handlePress}
+        disabled={isProcessing}
+        activeOpacity={0.8}
+        accessibilityRole="button"
+        accessibilityLabel={
+          imageUri ? t('plants.form.edit_photo') : t('plants.form.add_photo')
+        }
+        accessibilityHint={t('harvest.photo.choose_source')}
+      >
+        <View className="relative">
+          <View
+            className={`aspect-video w-full items-center justify-center overflow-hidden rounded-2xl ${
+              imageUri
+                ? 'border border-primary-300 bg-neutral-100 dark:border-primary-700 dark:bg-charcoal-800'
+                : 'border border-neutral-200 bg-neutral-100 dark:border-white/10 dark:bg-white/5'
+            }`}
+          >
+            {isProcessing ? (
+              <View className="items-center justify-center">
+                <ActivityIndicator size="large" />
+                <Text className="mt-2 text-sm text-neutral-500">
+                  {t('harvest.photo.processing_photo')}
+                </Text>
+              </View>
+            ) : imageUri ? (
+              <Image
+                source={{ uri: imageUri }}
+                className="size-full"
+                contentFit="cover"
+              />
+            ) : (
+              <View className="items-center justify-center">
+                <Camera
+                  size={32}
+                  className="text-primary-800 dark:text-primary-300"
+                />
+                <Text className="mt-3 font-medium text-primary-900/70 dark:text-primary-100/70">
+                  {translateDynamic('feed.addPost.addPhoto') ||
+                    'Foto hinzufügen'}
+                </Text>
+              </View>
+            )}
+          </View>
+
+          {/* Edit badge when image exists */}
+          {imageUri && !isProcessing && (
+            <View className="absolute -bottom-2 -right-2 size-10 items-center justify-center rounded-full border-2 border-white bg-primary-600 dark:border-charcoal-950">
+              <Camera size={18} className="text-white" />
+            </View>
+          )}
+        </View>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// MicroLabel
+// ---------------------------------------------------------------------------
+function MicroLabel({ children }: { children: string }): React.ReactElement {
+  return (
+    <Text className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-primary-900/60 dark:text-primary-100/60">
+      {children}
+    </Text>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// PostFormContent - Extracted to reduce main component line count
+// ---------------------------------------------------------------------------
+type PostFormContentProps = {
+  titleValue: string;
+  bodyValue: string;
+  setValue: (field: 'title' | 'body', value: string) => void;
+  selectedStrain: string | undefined;
+  setSelectedStrain: React.Dispatch<React.SetStateAction<string | undefined>>;
+  imageUri: string | undefined;
+  isProcessingPhoto: boolean;
+  onPhotoPress: () => void;
+  isPending: boolean;
+  onSubmit: () => void;
+  bottomInset: number;
+};
+
+function PostFormContent({
+  titleValue,
+  bodyValue,
+  setValue,
+  selectedStrain,
+  setSelectedStrain,
+  imageUri,
+  isProcessingPhoto,
+  onPhotoPress,
+  isPending,
+  onSubmit,
+  bottomInset,
+}: PostFormContentProps): React.ReactElement {
+  const { t } = useTranslation();
+
+  return (
+    <KeyboardAwareScrollView
+      contentContainerStyle={styles.contentContainer}
+      showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+    >
+      <PostHeroPhotoSection
+        imageUri={imageUri}
+        isProcessing={isProcessingPhoto}
+        onPress={onPhotoPress}
+      />
+
+      <View className="mb-4">
+        <MicroLabel>{t('feed.addPost.titleLabel')}</MicroLabel>
+        <Input
+          value={titleValue}
+          onChangeText={(text) => setValue('title', text)}
+          placeholder={t('feed.addPost.titlePlaceholder')}
+          testID="title"
+          className="rounded-xl border border-neutral-200 bg-white p-4 dark:border-white/10 dark:bg-charcoal-900"
+        />
+      </View>
+
+      <View className="mb-4">
+        <MicroLabel>{t('feed.addPost.contentLabel')}</MicroLabel>
+        <Input
+          value={bodyValue}
+          onChangeText={(text) => setValue('body', text)}
+          placeholder={t('feed.addPost.contentPlaceholder')}
+          multiline
+          textAlignVertical="top"
+          testID="body-input"
+          className="min-h-[120px] rounded-xl border border-neutral-200 bg-white p-4 dark:border-white/10 dark:bg-charcoal-900"
+        />
+      </View>
+
+      <View className="mb-4">
+        <MicroLabel>{t('feed.addPost.strainLabel')}</MicroLabel>
+        <StrainPicker
+          value={selectedStrain}
+          onSelect={setSelectedStrain}
+          testID="strain-picker"
+        />
+      </View>
+
+      <Button
+        className="mt-8 h-auto w-full rounded-2xl bg-terracotta-500 py-4 shadow-lg shadow-terracotta-500/40 active:bg-terracotta-600"
+        textClassName="text-white text-lg font-semibold"
+        label={t('feed.addPost.publishButton')}
+        loading={isPending}
+        onPress={() => {
+          haptics.medium();
+          onSubmit();
+        }}
+        testID="add-post-button"
+      />
+
+      <View style={{ height: bottomInset + 24 }} />
+    </KeyboardAwareScrollView>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Main Screen
+// ---------------------------------------------------------------------------
 export default function AddPost(): React.JSX.Element {
   const { t } = useTranslation();
   const router = useRouter();
   const params = useLocalSearchParams();
+  const insets = useSafeAreaInsets();
   const translatedHint = translateDynamic('assessment.community.ctaHint');
-  const { control, handleSubmit, setValue } = useForm<FormType>({
+  const { handleSubmit, setValue, watch } = useForm<FormType>({
     resolver: zodResolver(schema),
+    defaultValues: { title: '', body: '' },
   });
   const { mutate: addPost, isPending } = useAddPost();
 
   const [attachments, setAttachments] = React.useState<AttachmentInput[]>([]);
   const [sourceAssessmentId, setSourceAssessmentId] = React.useState<string>();
+  const [selectedStrain, setSelectedStrain] = React.useState<string>();
+  const [isProcessingPhoto, setIsProcessingPhoto] = React.useState(false);
+
+  const titleValue = watch('title');
+  const bodyValue = watch('body');
 
   useAssessmentPrefill({
     params,
@@ -288,140 +435,136 @@ export default function AddPost(): React.JSX.Element {
     translatedHint,
   });
 
-  const handleCapturePhoto = React.useCallback(async () => {
-    try {
-      const permission = await ImagePicker.requestCameraPermissionsAsync();
-      if (!permission.granted) {
-        showErrorMessage(t('harvest.photo.errors.camera_permission_denied'));
-        return;
+  const handlePhotoAction = React.useCallback(
+    async (source: 'camera' | 'library') => {
+      try {
+        setIsProcessingPhoto(true);
+        if (source === 'camera') {
+          const permission = await ImagePicker.requestCameraPermissionsAsync();
+          if (!permission.granted) {
+            showErrorMessage(
+              t('harvest.photo.errors.camera_permission_denied')
+            );
+            return;
+          }
+        }
+        const result =
+          source === 'camera'
+            ? await ImagePicker.launchCameraAsync({
+                mediaTypes: ['images'],
+                quality: 1,
+                allowsEditing: false,
+              })
+            : await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ['images'],
+                quality: 1,
+                allowsMultipleSelection: false,
+              });
+        if (!result.canceled && result.assets[0]) {
+          const photo = result.assets[0];
+          setAttachments([
+            {
+              uri: photo.uri,
+              filename: photo.fileName || `photo-${Date.now()}.jpg`,
+              mimeType: 'image/jpeg',
+            },
+          ]);
+        }
+      } catch (error) {
+        console.error('Failed to capture/select photo:', error);
+        showErrorMessage(t('harvest.photo.errors.capture_failed'));
+      } finally {
+        setIsProcessingPhoto(false);
       }
+    },
+    [t]
+  );
 
-      const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ['images'],
-        quality: 1,
-        allowsEditing: false,
-      });
+  const handlePhotoPress = React.useCallback(() => {
+    Alert.alert(
+      t('harvest.photo.alerts.photo_options_title'),
+      t('harvest.photo.choose_source'),
+      [
+        {
+          text: t('harvest.photo.actions.take_photo'),
+          onPress: () => handlePhotoAction('camera'),
+        },
+        {
+          text: t('harvest.photo.actions.choose_from_library'),
+          onPress: () => handlePhotoAction('library'),
+        },
+        { text: t('harvest.photo.cancel'), style: 'cancel' },
+      ]
+    );
+  }, [t, handlePhotoAction]);
 
-      if (!result.canceled && result.assets[0]) {
-        const photo = result.assets[0];
-        setAttachments([
-          {
-            uri: photo.uri,
-            filename: photo.fileName || `photo-${Date.now()}.jpg`,
-            mimeType: 'image/jpeg',
+  // Determine if we're in help mode from URL params
+  const isHelpMode = params.mode === 'help';
+
+  const onSubmit = React.useCallback(
+    (data: FormType) => {
+      addPost(
+        {
+          ...data,
+          attachments,
+          sourceAssessmentId,
+          strain: selectedStrain,
+          category: isHelpMode ? COMMUNITY_HELP_CATEGORY : undefined,
+        },
+        {
+          onSuccess: () => {
+            showMessage({
+              message: t('communityPost.postAdded'),
+              type: 'success',
+            });
+            router.back();
           },
-        ]);
-      }
-    } catch (error) {
-      console.error('Failed to capture photo:', error);
-      showErrorMessage(t('harvest.photo.errors.capture_failed'));
-    }
-  }, [t]);
-
-  const handleSelectPhoto = React.useCallback(async () => {
-    try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
-        quality: 1,
-        allowsMultipleSelection: false,
-      });
-
-      if (!result.canceled && result.assets[0]) {
-        const photo = result.assets[0];
-        setAttachments([
-          {
-            uri: photo.uri,
-            filename: photo.fileName || `photo-${Date.now()}.jpg`,
-            mimeType: 'image/jpeg',
+          onError: (error) => {
+            console.error('Failed to create post:', error);
+            showErrorMessage(error?.message || t('communityPost.postAddError'));
           },
-        ]);
-      }
-    } catch (error) {
-      console.error('Failed to select photo:', error);
-      showErrorMessage(t('harvest.photo.errors.selection_failed'));
-    }
-  }, [t]);
-
-  const handleRemovePhoto = React.useCallback(() => {
-    setAttachments([]);
-  }, []);
-
-  const onSubmit = (data: FormType) => {
-    const payload = {
-      ...data,
+        }
+      );
+    },
+    [
+      addPost,
       attachments,
+      isHelpMode,
+      router,
+      selectedStrain,
       sourceAssessmentId,
-    };
-    addPost(payload, {
-      onSuccess: () => {
-        showMessage({
-          message: t('communityPost.postAdded'),
-          type: 'success',
-        });
-        router.back();
-      },
-      onError: (error) => {
-        console.error('Failed to create post:', error);
-        showErrorMessage(error?.message || t('communityPost.postAddError'));
-      },
-    });
-  };
+      t,
+    ]
+  );
 
   return (
     <>
-      <Stack.Screen
-        options={{
-          title: translateDynamic('feed.addPost.title'),
-          headerBackTitle: translateDynamic('feed.title'),
-          headerStyle: { backgroundColor: 'transparent' },
-          headerTransparent: true,
-        }}
-      />
-      <ScrollView
-        className="flex-1 bg-neutral-50 dark:bg-charcoal-950"
-        contentInsetAdjustmentBehavior="automatic"
-        testID="add-post-scroll"
-      >
-        <View className="gap-4 p-5 pt-6">
-          <ControlledInput
-            name="title"
-            label={translateDynamic('feed.addPost.titleLabel')}
-            control={control}
-            testID="title"
-          />
-          <ControlledInput
-            name="body"
-            label={translateDynamic('feed.addPost.contentLabel')}
-            control={control}
-            multiline
-            testID="body-input"
-          />
-
-          <PhotoAttachmentSection
-            attachments={attachments}
-            onCapturePhoto={handleCapturePhoto}
-            onSelectPhoto={handleSelectPhoto}
-            onRemovePhoto={handleRemovePhoto}
-          />
-
-          <Button
-            className="mt-4 rounded-full bg-terracotta-500 py-4"
-            textClassName="font-bold text-white"
-            label={t('feed.addPost')}
-            loading={isPending}
-            onPress={handleSubmit(onSubmit)}
-            testID="add-post-button"
+      <Stack.Screen options={{ headerShown: false }} />
+      <View className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
+        <CreatePostHeader insets={insets} />
+        <View className="-mt-10 flex-1 rounded-t-[35px] bg-neutral-50 dark:bg-charcoal-950">
+          <PostFormContent
+            titleValue={titleValue}
+            bodyValue={bodyValue}
+            setValue={setValue}
+            selectedStrain={selectedStrain}
+            setSelectedStrain={setSelectedStrain}
+            imageUri={attachments[0]?.uri}
+            isProcessingPhoto={isProcessingPhoto}
+            onPhotoPress={handlePhotoPress}
+            isPending={isPending}
+            onSubmit={handleSubmit(onSubmit)}
+            bottomInset={insets.bottom}
           />
         </View>
-      </ScrollView>
+      </View>
     </>
   );
 }
 
 const styles = StyleSheet.create({
-  attachmentImage: {
-    width: 120,
-    height: 120,
-    borderRadius: 12,
+  contentContainer: {
+    paddingHorizontal: 24,
+    paddingTop: 32,
   },
 });

@@ -10,7 +10,7 @@ import Animated, {
 import { interpolate } from 'react-native-reanimated';
 
 import type { Plant } from '@/api';
-import { Image, Pressable, Text, View } from '@/components/ui';
+import { OptimizedImage, Pressable, Text, View } from '@/components/ui';
 import { ArrowRight } from '@/components/ui/icons/arrow-right';
 import colors from '@/components/ui/colors';
 import { useAnimatedScrollList } from '@/lib/animations/animated-scroll-list-provider';
@@ -149,10 +149,11 @@ function PlantCardImage({
       style={{ backgroundColor: colors.badgeBg }}
     >
       {resolvedLocalUri ? (
-        <Image
-          source={{ uri: resolvedLocalUri }}
+        <OptimizedImage
+          uri={resolvedLocalUri}
           className="size-full"
           contentFit="cover"
+          recyclingKey={plant.id}
           testID={`plant-card-${plant.id}-image`}
         />
       ) : (

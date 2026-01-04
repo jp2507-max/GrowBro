@@ -17,6 +17,7 @@ export type CommunityPostsDiscoverParams = {
   sort?: CommunityPostSort;
   photosOnly?: boolean;
   mineOnly?: boolean;
+  category?: string | null;
 };
 
 // Re-export for convenience

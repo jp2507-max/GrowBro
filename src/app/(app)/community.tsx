@@ -14,6 +14,7 @@ import type { FlashListProps, FlashListRef } from '@shopify/flash-list';
 import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import React, { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -29,6 +30,7 @@ import { CommunityErrorBoundary } from '@/components/community/community-error-b
 import { CommunityErrorCard } from '@/components/community/community-error-card';
 import { CommunityFab } from '@/components/community/community-fab';
 import { CommunityFooterLoader } from '@/components/community/community-footer-loader';
+import { CommunityHeader } from '@/components/community/community-header';
 import { CommunitySkeletonList } from '@/components/community/community-skeleton-list';
 import { OfflineIndicator } from '@/components/community/offline-indicator';
 import { OutboxBanner } from '@/components/community/outbox-banner';
@@ -37,17 +39,14 @@ import {
   FocusAwareStatusBar,
   Modal,
   type ModalRef,
-  Pressable,
-  Text,
   View,
 } from '@/components/ui';
-import colors from '@/components/ui/colors';
 import { ComplianceBanner } from '@/components/ui/compliance-banner';
-import { Search } from '@/components/ui/icons';
 import { translate, useAnalytics } from '@/lib';
 import { sanitizeCommunityErrorType } from '@/lib/analytics';
 import { useAnimatedScrollList } from '@/lib/animations/animated-scroll-list-provider';
 import { useBottomTabBarHeight } from '@/lib/animations/use-bottom-tab-bar-height';
+import { COMMUNITY_HELP_CATEGORY } from '@/lib/community/post-categories';
 import {
   createOutboxAdapter,
   useCommunityFeedRealtime,
@@ -68,6 +67,23 @@ type CommunityQueryParams = {
   photosOnly?: boolean;
   mineOnly?: boolean;
   limit?: number;
+  category?: string | null;
+};
+
+type CommunityMode = 'showcase' | 'help';
+
+type FilterBundle = {
+  searchText: string;
+  sort: CommunityPostSort;
+  photosOnly: boolean;
+  mineOnly: boolean;
+};
+
+const DEFAULT_FILTER_BUNDLE: FilterBundle = {
+  searchText: '',
+  sort: 'new',
+  photosOnly: false,
+  mineOnly: false,
 };
 
 function useCommunityData(params: CommunityQueryParams) {
@@ -88,6 +104,7 @@ function useCommunityData(params: CommunityQueryParams) {
       photosOnly: params.photosOnly,
       mineOnly: params.mineOnly,
       limit: params.limit,
+      category: params.category,
     },
   });
 
@@ -157,6 +174,7 @@ function useSkeletonVisibility(isLoading: boolean, postsLength: number) {
 
 // eslint-disable-next-line max-lines-per-function
 export default function CommunityScreen(): React.ReactElement {
+  const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const {
@@ -173,7 +191,7 @@ export default function CommunityScreen(): React.ReactElement {
       scrollToOffset: (params: { offset?: number; animated?: boolean }) => void;
     }>
   );
-  useBottomTabBarHeight();
+  const { grossHeight } = useBottomTabBarHeight();
 
   // Reset scroll state on blur so tab bar is visible when navigating away
   useFocusEffect(
@@ -189,14 +207,56 @@ export default function CommunityScreen(): React.ReactElement {
   const outboxAdapter = React.useMemo(() => createOutboxAdapter(database), []);
   useCommunityFeedRealtime({ outboxAdapter });
   const filterSheetRef = React.useRef<ModalRef>(null);
-  const [searchText, setSearchText] = React.useState('');
-  const debouncedSearchText = useDebouncedValue(searchText.trim(), 200);
-  const [sort, setSort] = React.useState<CommunityPostSort>('new');
-  const [photosOnly, setPhotosOnly] = React.useState(false);
-  const [mineOnly, setMineOnly] = React.useState(false);
 
-  const hasActiveFilters = sort !== 'new' || photosOnly || mineOnly;
-  const isDiscoveryActive = hasActiveFilters || searchText.trim().length > 0;
+  // Segment state: 0 = Showcase, 1 = Help Station
+  const [selectedIndex, setSelectedIndex] = React.useState(0);
+  const mode: CommunityMode = selectedIndex === 1 ? 'help' : 'showcase';
+
+  // Per-segment filter bundles
+  const [showcaseFilters, setShowcaseFilters] = React.useState<FilterBundle>(
+    DEFAULT_FILTER_BUNDLE
+  );
+  const [helpFilters, setHelpFilters] = React.useState<FilterBundle>(
+    DEFAULT_FILTER_BUNDLE
+  );
+
+  // Get active filter bundle based on mode
+  const activeFilters = mode === 'help' ? helpFilters : showcaseFilters;
+  const setActiveFilters =
+    mode === 'help' ? setHelpFilters : setShowcaseFilters;
+
+  const debouncedSearchText = useDebouncedValue(
+    activeFilters.searchText.trim(),
+    200
+  );
+
+  // Derive category from mode: Showcase = undefined (no filter), Help = help category
+  const category = mode === 'help' ? COMMUNITY_HELP_CATEGORY : undefined;
+
+  const hasActiveFilters =
+    activeFilters.sort !== 'new' ||
+    activeFilters.photosOnly ||
+    activeFilters.mineOnly;
+  const isDiscoveryActive =
+    hasActiveFilters || activeFilters.searchText.trim().length > 0;
+
+  // Segment labels for the header
+  const segmentLabels: [string, string] = React.useMemo(
+    () => [
+      t('community.segments.showcase'),
+      t('community.segments.help_station'),
+    ],
+    [t]
+  );
+
+  const handleSegmentChange = React.useCallback(
+    (index: number) => {
+      setSelectedIndex(index);
+      // Scroll to top when switching segments
+      listRef.current?.scrollToOffset({ offset: 0, animated: true });
+    },
+    [listRef]
+  );
 
   const [undoState, setUndoState] = React.useState<{
     postId: string | number;
@@ -218,10 +278,11 @@ export default function CommunityScreen(): React.ReactElement {
     handleRefresh,
   } = useCommunityData({
     query: debouncedSearchText.length > 0 ? debouncedSearchText : undefined,
-    sort,
-    photosOnly,
-    mineOnly,
+    sort: activeFilters.sort,
+    photosOnly: activeFilters.photosOnly,
+    mineOnly: activeFilters.mineOnly,
     limit: 20,
+    category,
   });
 
   const {
@@ -304,20 +365,22 @@ export default function CommunityScreen(): React.ReactElement {
   }, [refetch]);
 
   const onCreatePress = React.useCallback(() => {
-    router.push('/add-post');
-  }, [router]);
+    // Pass mode param for Help Station so AddPost can set category
+    if (mode === 'help') {
+      router.push('/add-post?mode=help');
+    } else {
+      router.push('/add-post');
+    }
+  }, [router, mode]);
 
   const handleFilterPress = React.useCallback(() => {
     filterSheetRef.current?.present();
   }, []);
 
   const handleClearFilters = React.useCallback(() => {
-    setSort('new');
-    setPhotosOnly(false);
-    setMineOnly(false);
-    setSearchText('');
+    setActiveFilters(DEFAULT_FILTER_BUNDLE);
     filterSheetRef.current?.dismiss();
-  }, []);
+  }, [setActiveFilters]);
 
   const handlePostDelete = React.useCallback(
     (postId: string | number, undoExpiresAt: string) => {
@@ -448,38 +511,20 @@ export default function CommunityScreen(): React.ReactElement {
         <View className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
           <FocusAwareStatusBar />
 
-          {/* Compact Header Background - Premium Navbar */}
-          <View className="absolute inset-x-0 top-0 z-0 h-[130px] bg-primary-900">
-            {/* Header Content with SafeAreaView */}
-            <View
-              className="flex-row items-center justify-between px-6 pb-3"
-              style={{ paddingTop: insets.top + 8 }}
-            >
-              <Text className="text-3xl font-bold text-neutral-50">
-                {translate('community.title')}
-              </Text>
-              <View className="relative">
-                <Pressable
-                  onPress={handleFilterPressWithHaptics}
-                  accessibilityRole="button"
-                  accessibilityLabel={translate('community.filters_label')}
-                  accessibilityHint={translate('community.filters_hint')}
-                  testID="community-filter-button"
-                  className="items-center justify-center rounded-full bg-white/10 p-2.5"
-                >
-                  <Search size={20} color={colors.white} />
-                </Pressable>
-                {hasActiveFilters && (
-                  <View className="absolute -right-0.5 -top-0.5 size-3 rounded-full border-2 border-primary-900 bg-terracotta-500" />
-                )}
-              </View>
-            </View>
-          </View>
+          {/* Shared Header Component */}
+          <CommunityHeader
+            insets={insets}
+            hasActiveFilters={hasActiveFilters}
+            onFilterPress={handleFilterPressWithHaptics}
+            selectedIndex={selectedIndex}
+            onSegmentChange={handleSegmentChange}
+            segmentLabels={segmentLabels}
+          />
 
-          {/* Content Sheet - Overlapping the header */}
-          <View className="z-10 mt-[115px] flex-1 overflow-hidden rounded-t-[35px] bg-neutral-50 dark:bg-stone-950">
+          {/* Content Sheet - Overlapping header with curved top */}
+          <View className="z-10 -mt-8 flex-1 overflow-hidden rounded-t-[35px] bg-neutral-50 dark:bg-stone-950">
             {/* Drag indicator pill */}
-            <View className="w-full items-center py-3">
+            <View className="w-full items-center pb-2 pt-4">
               <View className="h-1 w-10 rounded-full bg-neutral-300 dark:bg-charcoal-700" />
             </View>
 
@@ -500,14 +545,14 @@ export default function CommunityScreen(): React.ReactElement {
                 drawDistance={flashListConfig.drawDistance}
                 refreshing={isRefreshing}
                 onRefresh={handleRefresh}
-                contentContainerClassName="pb-[100px]"
+                contentContainerStyle={{ paddingBottom: grossHeight + 80 }}
                 ListHeaderComponent={listHeader}
                 ListEmptyComponent={listEmpty}
                 ListFooterComponent={listFooter}
               />
 
-              {/* Terracotta FAB for creating posts */}
-              <CommunityFab onPress={onCreatePress} />
+              {/* Terracotta FAB for creating posts - changes style for Help mode */}
+              <CommunityFab onPress={onCreatePress} mode={mode} />
             </View>
           </View>
         </View>
@@ -519,12 +564,18 @@ export default function CommunityScreen(): React.ReactElement {
         title={translate('community.filters_label')}
       >
         <CommunityDiscoveryFilters
-          sort={sort}
-          photosOnly={photosOnly}
-          mineOnly={mineOnly}
-          onSortChange={setSort}
-          onPhotosOnlyChange={setPhotosOnly}
-          onMineOnlyChange={setMineOnly}
+          sort={activeFilters.sort}
+          photosOnly={activeFilters.photosOnly}
+          mineOnly={activeFilters.mineOnly}
+          onSortChange={(sort) =>
+            setActiveFilters((prev) => ({ ...prev, sort }))
+          }
+          onPhotosOnlyChange={(photosOnly) =>
+            setActiveFilters((prev) => ({ ...prev, photosOnly }))
+          }
+          onMineOnlyChange={(mineOnly) =>
+            setActiveFilters((prev) => ({ ...prev, mineOnly }))
+          }
           onClearAll={handleClearFilters}
         />
       </Modal>

@@ -12,6 +12,7 @@ type Variables = {
   photosOnly?: boolean;
   mineOnly?: boolean;
   limit?: number;
+  category?: string | null;
 };
 
 type PostPage = PaginateQuery<Post>;
@@ -32,6 +33,7 @@ export const useCommunityPostsInfinite = createInfiniteQuery<
       sort: variables?.sort,
       photosOnly: variables?.photosOnly,
       mineOnly: variables?.mineOnly,
+      category: variables?.category,
     });
   },
   getNextPageParam: (lastPage): string | undefined =>

@@ -1,11 +1,12 @@
-import { MMKV } from 'react-native-mmkv';
+/**
+ * Search History Storage
+ *
+ * Uses the shared MMKV storage instance with namespaced keys
+ * to avoid storage fragmentation.
+ */
+import { storage, STORAGE_KEYS } from '../storage';
 
-const SEARCH_HISTORY_KEY = 'strains_search_history';
 const MAX_HISTORY_ITEMS = 10;
-
-const storage = new MMKV({
-  id: 'strains-search-storage',
-});
 
 export interface SearchHistoryItem {
   query: string;
@@ -17,7 +18,7 @@ export interface SearchHistoryItem {
  */
 export function getSearchHistory(): SearchHistoryItem[] {
   try {
-    const json = storage.getString(SEARCH_HISTORY_KEY);
+    const json = storage.getString(STORAGE_KEYS.STRAINS_SEARCH_HISTORY);
     if (!json) return [];
     return JSON.parse(json) as SearchHistoryItem[];
   } catch (error) {
@@ -47,7 +48,7 @@ export function addToSearchHistory(query: string): void {
       ...filtered,
     ].slice(0, MAX_HISTORY_ITEMS);
 
-    storage.set(SEARCH_HISTORY_KEY, JSON.stringify(updated));
+    storage.set(STORAGE_KEYS.STRAINS_SEARCH_HISTORY, JSON.stringify(updated));
   } catch (error) {
     console.error('[SearchHistory] Failed to save history:', error);
   }
@@ -60,7 +61,7 @@ export function removeFromSearchHistory(query: string): void {
   try {
     const history = getSearchHistory();
     const filtered = history.filter((item) => item.query !== query);
-    storage.set(SEARCH_HISTORY_KEY, JSON.stringify(filtered));
+    storage.set(STORAGE_KEYS.STRAINS_SEARCH_HISTORY, JSON.stringify(filtered));
   } catch (error) {
     console.error('[SearchHistory] Failed to remove item:', error);
   }
@@ -71,7 +72,7 @@ export function removeFromSearchHistory(query: string): void {
  */
 export function clearSearchHistory(): void {
   try {
-    storage.delete(SEARCH_HISTORY_KEY);
+    storage.delete(STORAGE_KEYS.STRAINS_SEARCH_HISTORY);
   } catch (error) {
     console.error('[SearchHistory] Failed to clear history:', error);
   }

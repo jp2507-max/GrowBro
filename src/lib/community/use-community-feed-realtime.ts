@@ -218,10 +218,15 @@ function createPaginatedQueryCacheAdapter<T>(
         },
         (old) => {
           if (!old) return old;
+          const originalLength = old.results.length;
+          const filteredResults = old.results.filter(
+            (item) => keySelector(item) !== key
+          );
+          const actualRemoved = originalLength - filteredResults.length;
           return {
             ...old,
-            results: old.results.filter((item) => keySelector(item) !== key),
-            count: Math.max((old.count || 0) - 1, 0),
+            results: filteredResults,
+            count: Math.max((old.count || 0) - actualRemoved, 0),
           };
         }
       );
@@ -279,13 +284,17 @@ function createInfiniteQueryCacheAdapter<T>(
             const exists = page.results.some(
               (item) => keySelector(item) === rowKey
             );
-            if (!exists) return page;
-            return {
-              ...page,
-              results: page.results.map((item) =>
-                keySelector(item) === rowKey ? row : item
-              ),
-            };
+            if (exists) {
+              return {
+                ...page,
+                results: page.results.map((item) =>
+                  keySelector(item) === rowKey ? row : item
+                ),
+              };
+            }
+            // Note: Inserts are not handled here to maintain consistency.
+            // New items should be added via invalidateQueries/refetch.
+            return page;
           });
         }
       );
@@ -407,6 +416,13 @@ function invalidatePostsQueries(
   queryClient.invalidateQueries({ queryKey: ['community-post'] });
 }
 
+function invalidateCommunityFeedQueries(
+  queryClient: ReturnType<typeof useQueryClient>
+): void {
+  invalidatePostsQueries(queryClient);
+  queryClient.invalidateQueries({ queryKey: ['community-comments'] });
+}
+
 /**
  * Create event handlers for real-time subscriptions
  */
@@ -506,14 +522,7 @@ function useReconciliationTimer(
 
   const reconcile = React.useCallback(() => {
     console.log('Reconciling counters with server...');
-    queryClient.invalidateQueries({
-      predicate: (query) => isCommunityPostsInfiniteKey(query.queryKey),
-    });
-    queryClient.invalidateQueries({
-      predicate: (query) => isCommunityUserPostsKey(query.queryKey),
-    });
-    queryClient.invalidateQueries({ queryKey: ['community-post'] });
-    queryClient.invalidateQueries({ queryKey: ['community-comments'] });
+    invalidateCommunityFeedQueries(queryClient);
   }, [queryClient]);
 
   const startReconciliation = React.useCallback(() => {
@@ -556,14 +565,7 @@ function usePollingEffect(
       // Start new 30s polling interval
       pollingIntervalRef.current = setInterval(() => {
         console.log('Polling: Invalidating queries...');
-        queryClient.invalidateQueries({
-          predicate: (query) => isCommunityPostsInfiniteKey(query.queryKey),
-        });
-        queryClient.invalidateQueries({
-          predicate: (query) => isCommunityUserPostsKey(query.queryKey),
-        });
-        queryClient.invalidateQueries({ queryKey: ['community-post'] });
-        queryClient.invalidateQueries({ queryKey: ['community-comments'] });
+        invalidateCommunityFeedQueries(queryClient);
       }, 30000);
     } else {
       // Clear polling interval when not polling

@@ -1,10 +1,10 @@
 -- Support top-post sorting on visible posts
-create index if not exists idx_posts_visible_like_count_created_at
+create index concurrently if not exists idx_posts_visible_like_count_created_at
   on public.posts (like_count desc, created_at desc)
   where deleted_at is null and hidden_at is null;
 
 -- Speed up photos-only filter with recency ordering
-create index if not exists idx_posts_visible_media_created_at
+create index concurrently if not exists idx_posts_visible_media_created_at
   on public.posts (created_at desc)
   where deleted_at is null
     and hidden_at is null

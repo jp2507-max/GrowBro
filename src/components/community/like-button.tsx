@@ -241,7 +241,8 @@ export const LikeButton = React.memo(
       prevProps.likeCount === nextProps.likeCount &&
       prevProps.userHasLiked === nextProps.userHasLiked &&
       prevProps.testID === nextProps.testID &&
-      prevProps.variant === nextProps.variant
+      prevProps.variant === nextProps.variant &&
+      prevProps.compact === nextProps.compact
     );
   }
 );
