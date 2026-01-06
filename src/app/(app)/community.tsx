@@ -230,8 +230,8 @@ export default function CommunityScreen(): React.ReactElement {
     200
   );
 
-  // Derive category from mode: Showcase = undefined (no filter), Help = help category
-  const category = mode === 'help' ? COMMUNITY_HELP_CATEGORY : undefined;
+  // Derive category from mode: Showcase = null (posts with no category), Help = help category
+  const category = mode === 'help' ? COMMUNITY_HELP_CATEGORY : null;
 
   const hasActiveFilters =
     activeFilters.sort !== 'new' ||
@@ -587,6 +587,7 @@ export default function CommunityScreen(): React.ReactElement {
         onUndo={handleUndo}
         onDismiss={handleDismissUndo}
         disabled={undoMutation.isPending}
+        bottomOffset={grossHeight + 16}
       />
     </>
   );

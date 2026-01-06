@@ -16,6 +16,7 @@ import { ActivityIndicator } from 'react-native';
 
 import { Pressable, Text, View } from '@/components/ui';
 import { translate } from '@/lib/i18n';
+import { cn } from '@/lib/utils';
 import type { PostComment } from '@/types/community';
 
 interface CommentItemProps {
@@ -89,7 +90,22 @@ type CommentAvatarProps = {
   onPress: () => void;
 };
 
+function getAvatarInitial(displayName: string): string {
+  // Guard against null/undefined and trim whitespace
+  const trimmed = displayName?.trim() || '';
+
+  // Return fallback character if empty after trimming
+  if (!trimmed) {
+    return '?';
+  }
+
+  // Return first character in uppercase
+  return trimmed.charAt(0).toUpperCase();
+}
+
 function CommentAvatar({ displayName, onPress }: CommentAvatarProps) {
+  const avatarInitial = getAvatarInitial(displayName);
+
   return (
     <Pressable
       onPress={onPress}
@@ -106,7 +122,7 @@ function CommentAvatar({ displayName, onPress }: CommentAvatarProps) {
     >
       <View className="size-9 items-center justify-center rounded-full bg-primary-100 dark:bg-primary-900/50">
         <Text className="text-sm font-bold text-primary-700 dark:text-primary-300">
-          {displayName.charAt(0).toUpperCase()}
+          {avatarInitial}
         </Text>
       </View>
     </Pressable>
@@ -126,17 +142,20 @@ function CommentItemComponent({
   const isPending = status === 'pending';
   const isFailed = status === 'failed';
   const shouldHighlight = isHighlighted && status === 'processed';
-  const displayName = comment.user_id.slice(0, 8);
+  const displayName = React.useMemo(
+    () => comment.user_id?.slice(0, 8) || 'Unknown',
+    [comment.user_id]
+  );
 
-  const containerClasses = `mb-4 flex-row items-start ${
-    isFailed
-      ? 'opacity-80'
-      : isPending
-        ? 'opacity-60'
-        : shouldHighlight
-          ? 'bg-primary-50/50 dark:bg-primary-950/20 -mx-2 px-2 py-1 rounded-lg'
-          : ''
-  }`;
+  const containerClasses = cn(
+    'mb-4 flex-row items-start',
+    isFailed && 'opacity-80',
+    isPending && !isFailed && 'opacity-60',
+    shouldHighlight &&
+      !isFailed &&
+      !isPending &&
+      'bg-primary-50/50 dark:bg-primary-950/20 -mx-2 px-2 py-1 rounded-lg'
+  );
 
   const handleAuthorPress = React.useCallback(() => {
     router.push(`/community/${comment.user_id}`);
@@ -175,7 +194,7 @@ function CommentItemComponent({
           </Text>
           {formattedDate && (
             <Text
-              className="ml-2 text-xs text-neutral-400"
+              className="ml-2 text-xs text-neutral-600 dark:text-neutral-400"
               testID={`${testID}-date`}
             >
               {formattedDate}
@@ -184,7 +203,7 @@ function CommentItemComponent({
           {isPending && (
             <View className="ml-2 flex-row items-center gap-1">
               <ActivityIndicator size="small" testID={`${testID}-loading`} />
-              <Text className="text-xs text-neutral-400">
+              <Text className="text-xs text-neutral-600 dark:text-neutral-400">
                 {translate('community.posting')}
               </Text>
             </View>

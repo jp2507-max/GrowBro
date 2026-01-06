@@ -79,7 +79,6 @@ export function CommunityFab({
       stiffness: 400,
       reduceMotion: ReduceMotion.System,
     });
-    haptics.selection();
   }, [scale]);
 
   const handlePressOut = React.useCallback(() => {

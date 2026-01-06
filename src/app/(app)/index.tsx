@@ -119,8 +119,8 @@ export default function Feed() {
       />
 
       {/* Content Sheet - Overlapping header like Community */}
-      <View className="z-10 -mt-4 flex-1 overflow-hidden rounded-t-[28px] bg-neutral-50 dark:bg-stone-950">
-        {/* Drag indicator pill */}
+      <View className="z-10 -mt-4 flex-1 overflow-hidden rounded-t-[28px] bg-neutral-50 dark:bg-charcoal-950">
+        {/* Decorative drag indicator pill - visual design consistency only, no gesture interaction */}
         <View className="w-full items-center py-3">
           <View className="h-1 w-10 rounded-full bg-neutral-300 dark:bg-charcoal-700" />
         </View>

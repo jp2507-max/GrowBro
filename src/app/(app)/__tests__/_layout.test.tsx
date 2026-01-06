@@ -73,7 +73,7 @@ describe('TabLayout', () => {
       'index',
       'calendar',
       'community',
-      'plants',
+      'inventory',
       'strains',
     ]);
 

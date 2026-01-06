@@ -20,20 +20,18 @@ import colors from '@/components/ui/colors';
 import { CaretDown, Leaf, Search } from '@/components/ui/icons';
 import { Modal, useModal } from '@/components/ui/modal';
 import { haptics } from '@/lib/haptics';
+import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 import { translate } from '@/lib/i18n';
 
-const listContentStyle = { gap: 8, paddingBottom: 20 };
-
-function useDebouncedValue<T>(value: T, delayMs: number): T {
-  const [debounced, setDebounced] = React.useState(value);
-
-  React.useEffect(() => {
-    const handle = setTimeout(() => setDebounced(value), delayMs);
-    return () => clearTimeout(handle);
-  }, [value, delayMs]);
-
-  return debounced;
+// Helper to convert hex to rgba
+function hexToRgba(hex: string, alpha: number): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
+
+const listContentStyle = { gap: 8, paddingBottom: 20 };
 
 type StrainPickerProps = {
   value?: string;
@@ -87,7 +85,7 @@ function StrainOption({
   }));
 
   const animatedBgStyle = useAnimatedStyle(() => ({
-    backgroundColor: `rgba(34, 197, 94, ${bgOpacity.value})`, // primary-500 with opacity
+    backgroundColor: hexToRgba(colors.primary[500], bgOpacity.value),
   }));
 
   const handlePressIn = React.useCallback(() => {

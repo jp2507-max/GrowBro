@@ -106,6 +106,7 @@
       "offline_title": "Offline Mode",
       "open_post_hint": "Opens the post details screen.",
       "outbox_retry_hint": "Retries sending queued actions.",
+      "post_comment_hint": "Submits your comment on this post.",
       "post_deleted": "Post deleted",
       "post_image": "Image from @{{author}}",
       "post_image_hint": "Part of the post content.",
@@ -114,12 +115,14 @@
       "retry_comment_hint": "Retries posting this comment.",
       "retry_sync": "Retry sync",
       "share": "Share this post",
+      "share_hint": "Opens system share sheet for this post.",
       "undo_dismiss_hint": "Dismiss the undo snackbar and cancel the action",
       "undo_expires": "Undo expires in {{seconds}}s",
       "view_author_profile": "View profile of @{{author}}",
       "view_author_profile_hint": "Double-tap to open this user's profile.",
       "view_comments": "{{count}} comments",
-      "view_comments_hint": "Double-tap to view comments for this post."
+      "view_comments_hint": "Double-tap to view comments for this post.",
+      "view_strain_hint": "Opens details for this strain."
     },
     "home": {
       "activation_action_hint": "Double-tap to {{action}}",
@@ -200,6 +203,7 @@
       "calendar_hint": "Double-tap to open the Calendar tab.",
       "community_hint": "Double-tap to view the Community feed.",
       "home_hint": "Double-tap to view the Home overview.",
+      "inventory_hint": "Double-tap to open the Inventory tab.",
       "plants_hint": "Double-tap to open the Plants inventory.",
       "strains_hint": "Double-tap to browse strains."
     }

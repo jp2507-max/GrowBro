@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Pressable } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -7,8 +7,19 @@ import Animated, {
 } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
 
+import { GlassSurface } from '@/components/shared/glass-surface';
 import colors from '@/components/ui/colors';
 import { translate } from '@/lib';
+
+const favoriteStyles = StyleSheet.create({
+  overlayContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+});
 
 type Props = {
   isFavorite: boolean;
@@ -48,13 +59,13 @@ const HeartIconWithOutline = ({ filled }: { filled: boolean }) => (
   </Svg>
 );
 
-/** Heart icon for overlay variant (solid background) */
+/** Heart icon for overlay variant (glass background, white stroke for visibility) */
 const HeartIconSimple = ({ filled }: { filled: boolean }) => (
   <Svg width={ICON_SIZE} height={ICON_SIZE} viewBox="0 0 24 24" fill="none">
     <Path
       d={HEART_PATH}
       fill={filled ? colors.danger[500] : 'none'}
-      stroke={filled ? colors.danger[500] : colors.neutral[900]}
+      stroke={filled ? colors.danger[500] : colors.white}
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -99,6 +110,33 @@ export const FavoriteButton = React.memo<Props>(
 
     const isOverlay = variant === 'overlay';
 
+    if (isOverlay) {
+      return (
+        <Pressable
+          onPress={handlePress}
+          testID={testID ?? 'favorite-button'}
+          accessibilityRole="switch"
+          accessibilityState={{ checked: isFavorite }}
+          accessibilityLabel={label}
+          accessibilityHint={
+            accessibilityHint ??
+            translate('accessibility.strains.favorite_hint')
+          }
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <GlassSurface
+            glassEffectStyle="clear"
+            style={favoriteStyles.overlayContainer}
+            fallbackClassName="bg-black/30"
+          >
+            <Animated.View style={animatedStyle}>
+              <HeartIconSimple filled={isFavorite} />
+            </Animated.View>
+          </GlassSurface>
+        </Pressable>
+      );
+    }
+
     return (
       <Pressable
         onPress={handlePress}
@@ -110,18 +148,9 @@ export const FavoriteButton = React.memo<Props>(
           accessibilityHint ?? translate('accessibility.strains.favorite_hint')
         }
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        className={
-          isOverlay
-            ? 'size-10 items-center justify-center rounded-full bg-neutral-100 active:bg-neutral-200'
-            : undefined
-        }
       >
         <Animated.View style={animatedStyle}>
-          {isOverlay ? (
-            <HeartIconSimple filled={isFavorite} />
-          ) : (
-            <HeartIconWithOutline filled={isFavorite} />
-          )}
+          <HeartIconWithOutline filled={isFavorite} />
         </Animated.View>
       </Pressable>
     );

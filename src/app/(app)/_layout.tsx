@@ -1,18 +1,16 @@
-import { Redirect, SplashScreen, Tabs } from 'expo-router';
+import { Redirect, SplashScreen } from 'expo-router';
+import {
+  Badge,
+  Icon,
+  Label,
+  NativeTabs,
+} from 'expo-router/unstable-native-tabs';
 import React from 'react';
+import { Platform } from 'react-native';
 
-import { CustomTabBar } from '@/components/navigation/custom-tab-bar';
-import { SharedHeader } from '@/components/navigation/shared-header';
 import { LegalUpdateBanner } from '@/components/settings/legal-update-banner';
 import { RestoreAccountBanner } from '@/components/settings/restore-account-banner';
 import { View } from '@/components/ui';
-import {
-  Calendar as CalendarIcon,
-  Feed as FeedIcon,
-  Home as HomeIcon,
-  Inventory as InventoryIcon,
-  Style as StyleIcon,
-} from '@/components/ui/icons';
 import { useAgeGate, useAuth, useIsFirstTime } from '@/lib';
 import { AnimatedScrollListProvider } from '@/lib/animations/animated-scroll-list-provider';
 import { useCommunitySync } from '@/lib/community/use-community-sync';
@@ -20,62 +18,6 @@ import { checkLegalVersionBumps } from '@/lib/compliance/legal-acceptances';
 import { usePendingDeletion } from '@/lib/hooks/use-pending-deletion';
 import { translate } from '@/lib/i18n';
 import { useInventoryLowStockCount } from '@/lib/inventory/use-inventory-low-stock-count';
-import { useThemeConfig } from '@/lib/use-theme-config';
-
-type HeaderOptions = {
-  route: { name: string };
-  options: Record<string, unknown>;
-};
-
-function resolveBooleanOption(
-  options: Record<string, unknown>,
-  key: 'showConnectivity' | 'showSync'
-): boolean {
-  if (Object.prototype.hasOwnProperty.call(options, key)) {
-    return Boolean(options[key]);
-  }
-  return true;
-}
-
-function renderSharedHeader({
-  route,
-  options,
-}: HeaderOptions): React.ReactElement {
-  const rightComponent =
-    typeof options.headerRight === 'function'
-      ? (options.headerRight as () => React.ReactNode)()
-      : undefined;
-  const title =
-    (options.headerTitle as string) ?? (options.title as string) ?? route.name;
-
-  return (
-    <SharedHeader
-      rightComponent={rightComponent}
-      showConnectivity={resolveBooleanOption(options, 'showConnectivity')}
-      showSync={resolveBooleanOption(options, 'showSync')}
-      title={title}
-      routeName={route.name}
-    />
-  );
-}
-
-function useTabScreenOptions(theme: ReturnType<typeof useThemeConfig>) {
-  return React.useMemo(
-    () => ({
-      tabBarHideOnKeyboard: true,
-      freezeOnBlur: true,
-      detachInactiveScreens: true,
-      headerStyle: {
-        height: 148,
-        backgroundColor: theme.colors.card,
-      },
-      sceneStyle: {
-        backgroundColor: theme.colors.background,
-      },
-    }),
-    [theme.colors.background, theme.colors.card]
-  );
-}
 
 function useTabLayoutRedirects() {
   const status = useAuth.use.status();
@@ -109,9 +51,19 @@ function useSplashScreenHide() {
   }, [hideSplash, status]);
 }
 
+/**
+ * SF Symbol names for each tab (iOS only).
+ * Android will use drawable resources defined in the native project.
+ */
+const SF_SYMBOLS = {
+  home: 'house.fill',
+  calendar: 'calendar',
+  community: 'bubble.left.and.bubble.right.fill',
+  inventory: 'shippingbox.fill',
+  strains: 'leaf.fill',
+} as const;
+
 export default function TabLayout() {
-  const theme = useThemeConfig();
-  const tabScreenOptions = useTabScreenOptions(theme);
   const redirectTo = useTabLayoutRedirects();
   const { count: lowStockCount } = useInventoryLowStockCount();
   const { pendingDeletion, hasPendingDeletion } = usePendingDeletion();
@@ -161,58 +113,35 @@ export default function TabLayout() {
             onDismiss={() => setShowLegalBanner(false)}
           />
         )}
-        <Tabs
-          initialRouteName="index"
-          screenOptions={tabScreenOptions}
-          tabBar={(p) => <CustomTabBar {...p} />}
+        <NativeTabs
+          minimizeBehavior={Platform.OS === 'ios' ? 'onScrollDown' : undefined}
         >
-          <Tabs.Screen
-            name="index"
-            options={{
-              title: translate('tabs.home'),
-              tabBarIcon: ({ color }) => <HomeIcon color={color} />,
-              tabBarButtonTestID: 'home-tab',
-              headerShown: false,
-            }}
-          />
-          <Tabs.Screen
-            name="calendar"
-            options={{
-              title: translate('tabs.calendar'),
-              tabBarIcon: ({ color }) => <CalendarIcon color={color} />,
-              tabBarButtonTestID: 'calendar-tab',
-              headerShown: false,
-            }}
-          />
-          <Tabs.Screen
-            name="community"
-            options={{
-              title: translate('tabs.community'),
-              tabBarIcon: ({ color }) => <FeedIcon color={color} />,
-              tabBarButtonTestID: 'community-tab',
-              headerShown: false,
-            }}
-          />
-          <Tabs.Screen
-            name="inventory"
-            options={{
-              title: translate('tabs.inventory'),
-              tabBarIcon: ({ color }) => <InventoryIcon color={color} />,
-              tabBarBadge: lowStockCount > 0 ? lowStockCount : undefined,
-              tabBarButtonTestID: 'inventory-tab',
-              header: renderSharedHeader,
-            }}
-          />
-          <Tabs.Screen
-            name="strains"
-            options={{
-              title: translate('tabs.strains'),
-              tabBarIcon: ({ color }) => <StyleIcon color={color} />,
-              tabBarButtonTestID: 'strains-tab',
-              headerShown: false,
-            }}
-          />
-        </Tabs>
+          <NativeTabs.Trigger name="index">
+            <Icon sf={SF_SYMBOLS.home} />
+            <Label>{translate('tabs.home')}</Label>
+          </NativeTabs.Trigger>
+
+          <NativeTabs.Trigger name="calendar">
+            <Icon sf={SF_SYMBOLS.calendar} />
+            <Label>{translate('tabs.calendar')}</Label>
+          </NativeTabs.Trigger>
+
+          <NativeTabs.Trigger name="community">
+            <Icon sf={SF_SYMBOLS.community} />
+            <Label>{translate('tabs.community')}</Label>
+          </NativeTabs.Trigger>
+
+          <NativeTabs.Trigger name="inventory">
+            <Icon sf={SF_SYMBOLS.inventory} />
+            <Label>{translate('tabs.inventory')}</Label>
+            {lowStockCount > 0 && <Badge>{String(lowStockCount)}</Badge>}
+          </NativeTabs.Trigger>
+
+          <NativeTabs.Trigger name="strains">
+            <Icon sf={SF_SYMBOLS.strains} />
+            <Label>{translate('tabs.strains')}</Label>
+          </NativeTabs.Trigger>
+        </NativeTabs>
       </View>
     </AnimatedScrollListProvider>
   );

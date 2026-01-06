@@ -13,6 +13,7 @@ import React from 'react';
 import { ActivityIndicator } from 'react-native';
 
 import { useLikePost, useUnlikePost } from '@/api/community';
+import { GlassSurface } from '@/components/shared/glass-surface';
 import { Pressable, Text, View } from '@/components/ui';
 import colors from '@/components/ui/colors';
 
@@ -187,7 +188,7 @@ function LikeButtonComponent({
     );
   }
 
-  // Overlay mode: Kitchen Stories style - white pill with heart + count
+  // Overlay mode: Kitchen Stories style - glass pill with heart + count
   if (variant === 'overlay') {
     return (
       <Pressable
@@ -197,16 +198,22 @@ function LikeButtonComponent({
         accessibilityLabel={accessibilityLabel}
         accessibilityHint="Double-tap to toggle like status for this post."
         testID={testID}
-        className={`flex-row items-center gap-1 rounded-full bg-white px-2 py-1 shadow-sm dark:bg-charcoal-800 ${
-          isPending ? 'opacity-60' : 'opacity-100'
-        }`}
+        className={isPending ? 'opacity-60' : 'opacity-100'}
       >
-        <OverlayContent
-          isPending={isPending}
-          userHasLiked={userHasLiked}
-          likeCount={likeCount}
-          testID={testID}
-        />
+        <GlassSurface
+          glassEffectStyle="clear"
+          style={{ borderRadius: 999 }}
+          fallbackClassName="bg-white dark:bg-charcoal-800"
+        >
+          <View className="flex-row items-center gap-1 px-2 py-1">
+            <OverlayContent
+              isPending={isPending}
+              userHasLiked={userHasLiked}
+              likeCount={likeCount}
+              testID={testID}
+            />
+          </View>
+        </GlassSurface>
       </Pressable>
     );
   }

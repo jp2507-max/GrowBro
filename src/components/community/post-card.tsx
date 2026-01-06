@@ -11,7 +11,6 @@
  */
 
 import { Link, useRouter } from 'expo-router';
-import { DateTime } from 'luxon';
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import Animated, {
@@ -28,6 +27,7 @@ import colors from '@/components/ui/colors';
 import { MessageCircle, MoreHorizontal } from '@/components/ui/icons';
 import { getOptionalAuthenticatedUserId } from '@/lib/auth/user-utils';
 import { normalizePostUserId } from '@/lib/community/post-utils';
+import { formatRelativeTimeTranslated } from '@/lib/datetime/format-relative-time';
 import { haptics } from '@/lib/haptics';
 import { translate } from '@/lib/i18n';
 
@@ -57,26 +57,6 @@ type PostCardProps = {
   onDelete?: (postId: number | string, undoExpiresAt: string) => void;
   testID?: string;
 };
-
-/**
- * Format timestamp to relative time (e.g., "2h", "3d", "1w")
- */
-function formatRelativeTime(timestamp: string | null | undefined): string {
-  if (!timestamp) return '';
-  try {
-    const dt = DateTime.fromISO(timestamp);
-    const now = DateTime.now();
-    const diff = now.diff(dt, ['weeks', 'days', 'hours', 'minutes']);
-
-    if (diff.weeks >= 1) return `${Math.floor(diff.weeks)}w`;
-    if (diff.days >= 1) return `${Math.floor(diff.days)}d`;
-    if (diff.hours >= 1) return `${Math.floor(diff.hours)}h`;
-    if (diff.minutes >= 1) return `${Math.floor(diff.minutes)}m`;
-    return 'now';
-  } catch {
-    return '';
-  }
-}
 
 function PostCardComponent({
   post,
@@ -198,7 +178,7 @@ function PostCardView({
   }, [scale]);
 
   const hasImage = Boolean(post.media_uri);
-  const relativeTime = formatRelativeTime(post.created_at);
+  const relativeTime = formatRelativeTimeTranslated(post.created_at);
 
   const handleOptionsPress = React.useCallback(
     (e: { stopPropagation: () => void; preventDefault: () => void }) => {

@@ -141,7 +141,7 @@ function PlantCardImage({
   colors: StageColors;
 }): React.ReactElement {
   // Auto-sync plant photo from remote if missing locally
-  const { resolvedLocalUri } = usePlantPhotoSync(plant);
+  const { resolvedLocalUri, thumbnailUri } = usePlantPhotoSync(plant);
 
   return (
     <View
@@ -151,6 +151,7 @@ function PlantCardImage({
       {resolvedLocalUri ? (
         <OptimizedImage
           uri={resolvedLocalUri}
+          thumbnailUri={thumbnailUri}
           className="size-full"
           contentFit="cover"
           recyclingKey={plant.id}

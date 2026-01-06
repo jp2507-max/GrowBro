@@ -1,7 +1,12 @@
 import { BlurView } from 'expo-blur';
 import { Link } from 'expo-router';
 import * as React from 'react';
-import { Platform, StyleSheet, useColorScheme } from 'react-native';
+import {
+  Platform,
+  StyleSheet,
+  useColorScheme,
+  type ViewStyle,
+} from 'react-native';
 import Animated, {
   ReduceMotion,
   useAnimatedStyle,
@@ -21,6 +26,17 @@ import { formatStrainCardLabel } from '@/lib/strains/accessibility';
 import { getListImageProps } from '@/lib/strains/image-optimization';
 import { useDynamicType } from '@/lib/strains/use-dynamic-type';
 import type { Strain } from '@/types/strains';
+
+const glassStyles = StyleSheet.create({
+  favoriteButton: {
+    borderRadius: 999,
+    overflow: 'hidden',
+  } as ViewStyle,
+  overlayBadges: {
+    borderRadius: 12,
+    overflow: 'hidden',
+  } as ViewStyle,
+});
 
 type Props = {
   strain: Strain;
@@ -74,7 +90,7 @@ const AnimatedImage = Animated.createAnimatedComponent(Image);
 export const StrainCard = React.memo<Props>(({ strain, testID }) => {
   const { scaledSizes, isLargeTextMode } = useDynamicType();
   const colorScheme = useColorScheme();
-  const blurTint = colorScheme === 'dark' ? 'dark' : 'light';
+  const isDark = colorScheme === 'dark';
 
   const scale = useSharedValue(1);
 
@@ -140,20 +156,32 @@ export const StrainCard = React.memo<Props>(({ strain, testID }) => {
             />
 
             {/* Favorite Button */}
-            <View className="absolute right-3 top-3 overflow-hidden rounded-full">
-              <BlurView intensity={30} tint={blurTint} className="p-1.5">
-                <FavoriteButtonConnected
-                  strainId={strain.id}
-                  strain={strain}
-                  testID={`favorite-btn-${strain.id}`}
-                />
+            <View className="absolute right-3 top-3">
+              <BlurView
+                intensity={60}
+                tint={isDark ? 'dark' : 'light'}
+                style={glassStyles.favoriteButton}
+              >
+                <View className="p-1.5">
+                  <FavoriteButtonConnected
+                    strainId={strain.id}
+                    strain={strain}
+                    testID={`favorite-btn-${strain.id}`}
+                  />
+                </View>
               </BlurView>
             </View>
 
             {/* Overlay Badges */}
-            <View className="absolute bottom-3 left-3 overflow-hidden rounded-xl">
-              <BlurView intensity={30} tint={blurTint} className="px-2 py-1.5">
-                <StrainBadges strain={strain} />
+            <View className="absolute bottom-3 left-3">
+              <BlurView
+                intensity={60}
+                tint={isDark ? 'dark' : 'light'}
+                style={glassStyles.overlayBadges}
+              >
+                <View className="px-2 py-1.5">
+                  <StrainBadges strain={strain} />
+                </View>
               </BlurView>
             </View>
           </View>

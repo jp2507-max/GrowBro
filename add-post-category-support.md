@@ -8,7 +8,7 @@ The hardcoded "Sativa" badge in post cards has been removed and replaced with co
 
 - ✅ Post type now includes optional `strain?: string` and `category?: string` fields
 - ✅ Post card conditionally renders badge only when these fields exist
-- ❌ Database schema doesn't include these fields yet
+- ✅ Database schema includes `strain` and `category` fields
 - ❌ Backend API doesn't handle these fields yet
 
 ## Required Changes
@@ -52,7 +52,7 @@ The `strain_cache` table already exists with strain information including:
 
 ## Acceptance Criteria
 
-- [ ] Database schema updated with strain/category columns
+- [x] Database schema updated with strain/category columns
 - [ ] API endpoints support strain/category fields
 - [ ] Post creation UI includes strain selection
 - [ ] Badge displays correct strain/category information

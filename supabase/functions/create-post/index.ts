@@ -1,5 +1,6 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 
+// @ts-ignore - Edge Function npm import
 import {
   ImageMagick,
   initializeImageMagick,
@@ -7,8 +8,11 @@ import {
   MagickGeometry,
   type MagickImage,
 } from 'npm:@imagemagick/magick-wasm@0.0.30';
+// @ts-ignore - Edge Function npm import
 import { createClient, SupabaseClient } from 'npm:@supabase/supabase-js@2';
+// @ts-ignore - Edge Function npm import
 import { encode as encodeBlurhash } from 'npm:blurhash@2.0.5';
+// @ts-ignore - Edge Function npm import
 import { rgbaToThumbHash } from 'npm:thumbhash@0.1.1';
 
 const corsHeaders = {
@@ -154,6 +158,60 @@ Deno.serve(async (req: Request) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         }
       );
+    }
+
+    // Validate strain if provided
+    if (requestBody.strain && requestBody.strain.length > 100) {
+      return new Response(
+        JSON.stringify({ error: 'Strain name cannot exceed 100 characters' }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    // Validate category if provided
+    if (requestBody.category && requestBody.category.length > 50) {
+      return new Response(
+        JSON.stringify({ error: 'Category cannot exceed 50 characters' }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    // Validate strain exists in strain_cache if provided
+    if (requestBody.strain) {
+      const { data: strainExists } = await supabaseClient
+        .from('strain_cache')
+        .select('id')
+        .eq('name', requestBody.strain)
+        .single();
+
+      if (!strainExists) {
+        return new Response(JSON.stringify({ error: 'Invalid strain name' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
+    // Validate category against allowed values if provided
+    if (requestBody.category) {
+      const allowedCategories = ['Indica', 'Sativa', 'Hybrid'];
+      if (!allowedCategories.includes(requestBody.category)) {
+        return new Response(
+          JSON.stringify({
+            error: 'Invalid category. Must be one of: Indica, Sativa, Hybrid',
+          }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
     }
 
     let mediaProcessingResult = null;

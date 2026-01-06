@@ -11,11 +11,16 @@
  */
 
 import { useQueryClient } from '@tanstack/react-query';
+import * as Linking from 'expo-linking';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { DateTime } from 'luxon';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
-import { Platform, StyleSheet, type TextInput } from 'react-native';
+import {
+  Platform,
+  Share as NativeShare,
+  StyleSheet,
+  type TextInput,
+} from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -26,6 +31,7 @@ import { LikeButton } from '@/components/community/like-button';
 import {
   ActivityIndicator,
   FocusAwareStatusBar,
+  GlassButton,
   Input,
   OptimizedImage,
   Pressable,
@@ -34,6 +40,7 @@ import {
 } from '@/components/ui';
 import colors from '@/components/ui/colors';
 import {
+  ArrowLeft,
   ChevronRight,
   Leaf,
   MessageCircle,
@@ -47,8 +54,10 @@ import {
   createOutboxAdapter,
   useCommunityFeedRealtime,
 } from '@/lib/community/use-community-feed-realtime';
+import { formatRelativeTimeTranslated } from '@/lib/datetime/format-relative-time';
 import { haptics } from '@/lib/haptics';
 import { translate, type TxKeyPath } from '@/lib/i18n';
+import { showErrorToast } from '@/lib/settings/toast-utils';
 import { getHeaderColors } from '@/lib/theme-utils';
 import { database } from '@/lib/watermelon';
 
@@ -96,26 +105,6 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
 });
-
-/**
- * Format timestamp to relative time (e.g., "2h", "3d", "1w")
- */
-function formatRelativeTime(timestamp: string | null | undefined): string {
-  if (!timestamp) return '';
-  try {
-    const dt = DateTime.fromISO(timestamp);
-    const now = DateTime.now();
-    const diff = now.diff(dt, ['weeks', 'days', 'hours', 'minutes']);
-
-    if (diff.weeks >= 1) return `${Math.floor(diff.weeks)}w`;
-    if (diff.days >= 1) return `${Math.floor(diff.days)}d`;
-    if (diff.hours >= 1) return `${Math.floor(diff.hours)}h`;
-    if (diff.minutes >= 1) return `${Math.floor(diff.minutes)}m`;
-    return 'now';
-  } catch {
-    return '';
-  }
-}
 
 // eslint-disable-next-line max-lines-per-function
 export default function PostDetailScreen(): React.ReactElement {
@@ -176,6 +165,20 @@ export default function PostDetailScreen(): React.ReactElement {
       });
     } catch (error) {
       console.error('Create comment failed:', error);
+
+      // Show user-friendly error toast
+      const errorMessage = translate('community.comment_offline_failed');
+      const errorDescription = translate(
+        'community.comment_offline_failed_description'
+      );
+
+      // Include brief error detail if available
+      const detail = error instanceof Error ? error.message : undefined;
+      const fullDescription = detail
+        ? `${errorDescription} (${detail})`
+        : errorDescription;
+
+      showErrorToast(errorMessage, fullDescription);
     }
   }, [
     isCommentSubmitDisabled,
@@ -186,10 +189,43 @@ export default function PostDetailScreen(): React.ReactElement {
     queryClient,
   ]);
 
-  const handleSharePress = React.useCallback(() => {
+  const handleSharePress = React.useCallback(async () => {
     haptics.selection();
-    // TODO: Implement share functionality
-  }, []);
+    try {
+      // Create a deep link to the post.
+      // Note: We use the standardized schema uri provided by expo-linking
+      const url = Linking.createURL(`/feed/${local.id}`);
+      const message = `Check out this post on GrowBro: ${url}`;
+
+      const result = await NativeShare.share(
+        {
+          message,
+          url, // iOS: url parameter
+          title: 'Share Post', // Android: dialog title
+        },
+        {
+          // Android: show choose dialog
+          dialogTitle: 'Share Post',
+        }
+      );
+
+      if (result.action === NativeShare.sharedAction) {
+        if (result.activityType) {
+          // shared with activity type of result.activityType
+          console.debug('Shared via', result.activityType);
+        } else {
+          // shared
+        }
+      } else if (result.action === NativeShare.dismissedAction) {
+        // dismissed
+      }
+    } catch (error) {
+      showErrorToast(
+        translate('common.error' as TxKeyPath),
+        error instanceof Error ? error.message : undefined
+      );
+    }
+  }, [local.id]);
 
   const handleAuthorPress = React.useCallback(() => {
     if (!post) return;
@@ -203,8 +239,20 @@ export default function PostDetailScreen(): React.ReactElement {
 
   const handleStrainPress = React.useCallback(() => {
     haptics.selection();
-    // TODO: Navigate to strain detail
-  }, []);
+    if (!post?.strain) return;
+
+    // Convert strain name to URL-safe slug (e.g., "A.M.S." -> "a-m-s")
+    // The strain lookup API expects slugs, not raw names
+    const slug = post.strain
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, '-') // spaces → dashes
+      .replace(/[^\w-]+/g, '') // remove non-word chars except dashes
+      .replace(/--+/g, '-') // collapse multiple dashes
+      .replace(/^-+|-+$/g, ''); // trim leading/trailing dashes
+
+    router.push(`/strains/${slug}`);
+  }, [post?.strain, router]);
 
   React.useEffect(() => {
     if (!local.commentId || isLoadingComments) return;
@@ -257,7 +305,7 @@ export default function PostDetailScreen(): React.ReactElement {
       ? `unknown-user-${normalizedPost.id}`
       : String(normalizedPost.userId);
   const displayUsername = postUserId.slice(0, 8);
-  const relativeTime = formatRelativeTime(post.created_at);
+  const relativeTime = formatRelativeTimeTranslated(post.created_at);
   const comments = commentsData?.results ?? [];
   const hasImage = Boolean(post.media_uri);
 
@@ -285,17 +333,16 @@ export default function PostDetailScreen(): React.ReactElement {
         >
           {/* Single row: Back button + Title */}
           <View className="flex-row items-center gap-4">
-            <Pressable
+            <GlassButton
               onPress={() => router.back()}
-              accessibilityRole="button"
               accessibilityLabel={translate('nav.back' as TxKeyPath)}
               accessibilityHint={translate(
                 'accessibility.back_hint' as TxKeyPath
               )}
-              className="size-10 items-center justify-center rounded-full bg-white/15 active:bg-white/25"
+              fallbackClassName="bg-white/15"
             >
-              <Text className="text-lg text-white">←</Text>
-            </Pressable>
+              <ArrowLeft color={colors.white} width={20} height={20} />
+            </GlassButton>
             <Text
               className="text-2xl font-bold tracking-tight"
               style={{ color: headerColors.text }}

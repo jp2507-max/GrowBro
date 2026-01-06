@@ -1,14 +1,23 @@
 import { router } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import React from 'react';
+import { StyleSheet } from 'react-native';
 import type { EdgeInsets } from 'react-native-safe-area-context';
 import { twMerge } from 'tailwind-merge';
 
-import { Pressable, Text, View } from '@/components/ui';
+import { GlassSurface } from '@/components/shared/glass-surface';
+import { GlassButton, Text, View } from '@/components/ui';
 import { Settings as SettingsIcon } from '@/components/ui/icons';
 import { translate } from '@/lib/i18n';
 import type { TxKeyPath } from '@/lib/i18n/utils';
 import { getHeaderColors } from '@/lib/theme-utils';
+
+const styles = StyleSheet.create({
+  statsPill: {
+    borderRadius: 999,
+    overflow: 'hidden',
+  },
+});
 
 const HEADER_PADDING_TOP = 12;
 const HEADER_PADDING_TOP_COMPACT = 8;
@@ -134,16 +143,15 @@ export function HeaderSettingsButton(): React.ReactElement {
   );
 
   return (
-    <Pressable
+    <GlassButton
       onPress={() => router.push('/settings')}
-      className="size-10 items-center justify-center rounded-full bg-white/20 active:bg-white/30 dark:bg-black/20 dark:active:bg-black/30"
-      accessibilityRole="button"
       accessibilityLabel={settingsLabel}
       accessibilityHint={settingsHint}
+      fallbackClassName="bg-white/20 dark:bg-black/20"
       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
     >
       <SettingsIcon className="text-white" />
-    </Pressable>
+    </GlassButton>
   );
 }
 
@@ -166,19 +174,31 @@ export function HeaderStatsPill({
 
   return (
     <View className="flex-row items-center gap-3">
-      {/* Plant count - semi-transparent white pill */}
-      <View className="flex-row items-center gap-1.5 rounded-full bg-white/20 px-3 py-1.5 dark:bg-white/10">
-        <Text className="text-base">🌱</Text>
-        <Text className="text-sm font-semibold text-white">{plantLabel}</Text>
-      </View>
+      {/* Plant count - glass pill */}
+      <GlassSurface
+        glassEffectStyle="clear"
+        style={styles.statsPill}
+        fallbackClassName="bg-white/20 dark:bg-white/10"
+      >
+        <View className="flex-row items-center gap-1.5 px-3 py-1.5">
+          <Text className="text-base">🌱</Text>
+          <Text className="text-sm font-semibold text-white">{plantLabel}</Text>
+        </View>
+      </GlassSurface>
       {/* Task count - terracotta accent for CTA emphasis */}
       {taskCount > 0 && (
-        <View className="flex-row items-center gap-1.5 rounded-full bg-terracotta-500/30 px-3 py-1.5 dark:bg-terracotta-500/20">
-          <Text className="text-base">📋</Text>
-          <Text className="text-sm font-semibold text-terracotta-100">
-            {taskLabel}
-          </Text>
-        </View>
+        <GlassSurface
+          glassEffectStyle="clear"
+          style={styles.statsPill}
+          fallbackClassName="bg-terracotta-500/30 dark:bg-terracotta-500/20"
+        >
+          <View className="flex-row items-center gap-1.5 px-3 py-1.5">
+            <Text className="text-base">📋</Text>
+            <Text className="text-sm font-semibold text-terracotta-100">
+              {taskLabel}
+            </Text>
+          </View>
+        </GlassSurface>
       )}
     </View>
   );
@@ -203,20 +223,18 @@ export function HeaderIconButton({
   isActive?: boolean;
 }): React.ReactElement {
   return (
-    <Pressable
+    <GlassButton
       onPress={onPress}
-      className={twMerge(
-        'size-10 items-center justify-center rounded-full shadow-sm active:bg-neutral-100 dark:active:bg-neutral-800',
-        isActive
-          ? 'bg-primary-100 dark:bg-primary-900'
-          : 'bg-white dark:bg-charcoal-900'
-      )}
-      accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       accessibilityHint={accessibilityHint}
       testID={testID}
+      fallbackClassName={
+        isActive
+          ? 'bg-primary-100 dark:bg-primary-900'
+          : 'bg-white/80 dark:bg-black/30'
+      }
     >
       {icon}
-    </Pressable>
+    </GlassButton>
   );
 }

@@ -176,7 +176,7 @@ const MeasurementDisplay = memo(function MeasurementDisplay({
             {t('nutrient.ec_at_temp', { temp: item.tempC.toFixed(1) })}
           </Text>
           <Text className="text-lg font-semibold text-neutral-900">
-            {item.ec25c.toFixed(2)} {t('units.ms_per_cm')}
+            {`${item.ec25c.toFixed(2)} ${t('units.ms_per_cm')}`}
           </Text>
         </View>
 
@@ -214,8 +214,7 @@ const QualityIndicator = memo(function QualityIndicator({
   return (
     <>
       <Text className="text-xs text-neutral-500">
-        {item.tempC.toFixed(1)}
-        {t('units.celsius')}
+        {`${item.tempC.toFixed(1)}${t('units.celsius')}`}
       </Text>
 
       {hasQualityFlags && (

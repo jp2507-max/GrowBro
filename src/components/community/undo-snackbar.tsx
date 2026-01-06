@@ -25,6 +25,8 @@ interface UndoSnackbarProps {
   onUndo: () => void;
   onDismiss: () => void;
   disabled?: boolean;
+  /** Bottom offset in pixels to position above tab bar */
+  bottomOffset?: number;
   testID?: string;
 }
 
@@ -35,6 +37,7 @@ export function UndoSnackbar({
   onUndo,
   onDismiss,
   disabled = false,
+  bottomOffset = 88,
   testID = 'undo-snackbar',
 }: UndoSnackbarProps): React.ReactElement | null {
   const [remainingSeconds, setRemainingSeconds] = React.useState(0);
@@ -88,7 +91,8 @@ export function UndoSnackbar({
         .stiffness(180)
         .reduceMotion(ReduceMotion.System)}
       exiting={FadeOut.duration(250)}
-      className="absolute inset-x-4 bottom-20 z-[1000]"
+      className="absolute inset-x-4 z-[1000]"
+      style={{ bottom: bottomOffset }}
       testID={testID}
     >
       <View className="flex-row items-center justify-between rounded-lg bg-neutral-900 p-4 shadow-lg dark:bg-neutral-800">

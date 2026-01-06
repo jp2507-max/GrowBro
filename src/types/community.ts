@@ -40,7 +40,7 @@ export interface Post {
   hidden_at?: string;
   moderation_reason?: string;
   undo_expires_at?: string;
-  // Optional category/strain fields for future implementation
+  /** Optional category and strain fields — supported by backend, frontend, and DB schema */
   strain?: string;
   category?: string;
   // Derived UI-only fields (not persisted)

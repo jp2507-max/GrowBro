@@ -106,6 +106,7 @@
       "offline_title": "Offline-Modus",
       "open_post_hint": "Öffnet die Beitragsdetails.",
       "outbox_retry_hint": "Versucht, ausstehende Aktionen erneut zu senden.",
+      "post_comment_hint": "Sendet deinen Kommentar für diesen Beitrag.",
       "post_deleted": "Beitrag gelöscht",
       "post_image": "Bild von @{{author}}",
       "post_image_hint": "Teil des Beitragsinhalts.",
@@ -114,12 +115,14 @@
       "retry_comment_hint": "Versucht erneut, diesen Kommentar zu posten.",
       "retry_sync": "Synchronisation wiederholen",
       "share": "Diesen Beitrag teilen",
+      "share_hint": "Öffnet die System-Teilen-Option für diesen Beitrag.",
       "undo_dismiss_hint": "Die Rückgängig-Snackbar schließen und die Aktion abbrechen",
       "undo_expires": "Rückgängigmachen läuft in {{seconds}}s ab",
       "view_author_profile": "Profil von @{{author}} anzeigen",
       "view_author_profile_hint": "Doppeltippen, um das Profil dieses Benutzers zu öffnen.",
       "view_comments": "{{count}} Kommentare",
-      "view_comments_hint": "Doppeltippen, um Kommentare zu diesem Beitrag anzuzeigen."
+      "view_comments_hint": "Doppeltippen, um Kommentare zu diesem Beitrag anzuzeigen.",
+      "view_strain_hint": "Öffnet Details für diese Sorte."
     },
     "home": {
       "activation_action_hint": "Doppeltippen, um {{action}}",
@@ -200,6 +203,7 @@
       "calendar_hint": "Doppeltippen, um den Kalender zu öffnen.",
       "community_hint": "Doppeltippen, um den Community-Feed zu öffnen.",
       "home_hint": "Doppeltippen, um die Startseite zu öffnen.",
+      "inventory_hint": "Doppeltippen, um das Inventar zu öffnen.",
       "plants_hint": "Doppeltippen, um das Pflanzeninventar zu öffnen.",
       "strains_hint": "Doppeltippen, um Sorten zu durchsuchen."
     }
@@ -852,7 +856,7 @@
     "comment_offline_failed": "Kommentar konnte offline nicht gespeichert werden",
     "comment_offline_failed_description": "Bitte erneut versuchen.",
     "comment_placeholder": "Teile deine Gedanken...",
-    "comment_queued": "Kommentar zur Wiederholung eingereiht",
+    "comment_queued": "Kommentar wird später gesendet",
     "comment_queued_description": "Wird automatisch erneut gesendet, sobald die Verbindung wiederhergestellt ist",
     "comment_too_long": "Kommentar überschreitet die maximale Länge von 500 Zeichen",
     "comments": "Kommentare",

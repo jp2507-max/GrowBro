@@ -17,12 +17,12 @@ import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
 
+import ModalKeyboardAwareScrollView from '@/components/ui/modal-keyboard-aware-scroll-view';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 
 import { Button, ControlledInput, Text, View } from '../ui';
 import { Modal, useModal } from '../ui/modal';
-import ModalKeyboardAwareScrollView from '../ui/modal-keyboard-aware-scroll-view';
 
 const schema = z.object({
   password: z.string().min(1, 'auth.validation_password_required'),
@@ -96,7 +96,8 @@ export const ReAuthModal = React.forwardRef<BottomSheetModal, ReAuthModalProps>(
         title={title || t('auth.re_auth_title')}
         enableDismissOnClose
       >
-        <ModalKeyboardAwareScrollView contentContainerClassName="flex-1 px-4 pb-4">
+        <ModalKeyboardAwareScrollView contentContainerClassName="flex-1 px-4">
+          {/* Note: No pb-4 needed for 50% snap point - content fits comfortably */}
           <Text className="mb-4 text-neutral-600 dark:text-neutral-400">
             {description || t('auth.re_auth_description')}
           </Text>

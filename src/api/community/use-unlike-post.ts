@@ -132,14 +132,14 @@ function invalidateUnlikeQueries(
   queryClient: ReturnType<typeof useQueryClient>,
   postId: string | undefined
 ): void {
-  queryClient.invalidateQueries({
+  void queryClient.invalidateQueries({
     predicate: (query) => isCommunityPostsInfiniteKey(query.queryKey),
   });
-  queryClient.invalidateQueries({
+  void queryClient.invalidateQueries({
     predicate: (query) => isCommunityUserPostsKey(query.queryKey),
   });
   if (postId) {
-    queryClient.invalidateQueries({
+    void queryClient.invalidateQueries({
       queryKey: communityPostKey(postId),
     });
   }

@@ -201,7 +201,27 @@ const client = z.object({
 
   GOOGLE_WEB_CLIENT_ID: z.string().min(1),
 
-  GOOGLE_IOS_CLIENT_ID: z.string().optional(),
+  // iOS client ID from Google Cloud Console
+  // Expected format: "<numeric-id>-<hash>.apps.googleusercontent.com"
+  // Also accepts just the prefix "<numeric-id>-<hash>" for backward compatibility
+  GOOGLE_IOS_CLIENT_ID: z
+    .string()
+    .refine(
+      (val) => {
+        if (!val) return true; // Allow empty/undefined
+        // Full format: ends with .apps.googleusercontent.com
+        if (val.endsWith('.apps.googleusercontent.com')) return true;
+        // Prefix-only format: <numeric-id>-<alphanumeric-hash>
+        if (/^\d+-[\w]+$/.test(val)) return true;
+        return false;
+      },
+      {
+        message:
+          'GOOGLE_IOS_CLIENT_ID must be in format "<numeric-id>-<hash>.apps.googleusercontent.com" ' +
+          'or just the prefix "<numeric-id>-<hash>"',
+      }
+    )
+    .optional(),
 
   // Account deletion portal
 

@@ -40,10 +40,21 @@ export const Card = ({
     []
   );
 
-  const imageUri = React.useMemo(
-    () => images[Math.floor(Math.random() * images.length)],
-    []
-  );
+  const imageUri = React.useMemo(() => {
+    // Simple hash function to create deterministic index from id
+    const hashCode = (str: string) => {
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = (hash << 5) - hash + char;
+        hash = hash & hash; // Convert to 32-bit integer
+      }
+      return Math.abs(hash);
+    };
+
+    const index = hashCode(String(id)) % images.length;
+    return images[index];
+  }, [id]);
 
   return (
     <Link href={`/feed/${id}`} asChild>

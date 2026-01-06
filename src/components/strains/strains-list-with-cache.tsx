@@ -11,10 +11,9 @@ import React, { useMemo } from 'react';
 import Animated, {
   runOnJS,
   useAnimatedScrollHandler,
+  // @ts-expect-error - useComposedEventHandler exists in Reanimated 4.x but bundler moduleResolution fails to resolve it
+  useComposedEventHandler,
 } from 'react-native-reanimated';
-// @ts-expect-error - useComposedEventHandler is available in Reanimated 4 but types might be outdated
-// eslint-disable-next-line import/no-duplicates
-import { useComposedEventHandler } from 'react-native-reanimated';
 import type { ReanimatedScrollEvent } from 'react-native-reanimated/lib/typescript/hook/commonTypes';
 
 import type { Strain } from '@/api';
@@ -44,7 +43,9 @@ type AnimatedFlashListProps = Omit<FlashListProps<Strain>, 'onScroll'> & {
 
 const AnimatedFlashList = Animated.createAnimatedComponent(
   FlashList
-) as React.ComponentClass<AnimatedFlashListProps>;
+) as unknown as React.ForwardRefExoticComponent<
+  AnimatedFlashListProps & React.RefAttributes<FlashListRef<Strain>>
+>;
 
 export type StrainsListWithCacheProps = {
   searchQuery?: string;
@@ -53,7 +54,7 @@ export type StrainsListWithCacheProps = {
   sortDirection?: 'asc' | 'desc';
   /** Animated scroll handler from useAnimatedScrollHandler - passed directly to AnimatedFlashList */
   onScroll?: AnimatedScrollHandler;
-  listRef?: React.Ref<FlashListRef<Strain> | FlashListRef<unknown> | null>;
+  listRef?: React.RefObject<FlashListRef<unknown> | null>;
   contentContainerStyle?: FlashListProps<Strain>['contentContainerStyle'];
   testID?: string;
   onStateChange?: (state: {
@@ -126,21 +127,23 @@ export function StrainsListWithCache({
 
   const flashListConfig = useMemo(() => getOptimizedFlashListConfig(), []);
 
-  const { handleScroll: handlePerfScroll, onBlankArea } =
-    useStrainListPerformance({
-      listSize: strains.length,
-    });
+  // Note: onBlankArea is deprecated in FlashList v2, so we only use handleScroll
+  const { handleScroll: handlePerfScroll } = useStrainListPerformance({
+    listSize: strains.length,
+  });
 
   const perfScrollHandler = useAnimatedScrollHandler({
-    onScroll: () => {
+    onEnd: () => {
       runOnJS(handlePerfScroll)();
     },
   });
 
-  const composedScrollHandler = useComposedEventHandler([
-    onScroll,
-    perfScrollHandler,
-  ]);
+  // Filter out undefined handlers for TypeScript-safe composition
+  const scrollHandlers = [onScroll, perfScrollHandler].filter(
+    (handler): handler is AnimatedScrollHandler => handler !== undefined
+  );
+
+  const composedScrollHandler = useComposedEventHandler(scrollHandlers);
 
   const { listEmpty, listHeader, listFooter } = useListComponents({
     isLoading,
@@ -155,8 +158,7 @@ export function StrainsListWithCache({
 
   return (
     <AnimatedFlashList
-      // @ts-expect-error - AnimatedFlashList ref type mismatch with FlashListRef
-      ref={listRef}
+      ref={listRef as React.Ref<FlashListRef<Strain>>}
       testID={testID}
       data={strains}
       renderItem={renderStrainItem}
@@ -166,7 +168,6 @@ export function StrainsListWithCache({
       onEndReached={onEndReached}
       onEndReachedThreshold={0.7}
       onScroll={composedScrollHandler}
-      onBlankArea={onBlankArea}
       contentContainerStyle={contentContainerStyle}
       ListHeaderComponent={listHeader}
       ListEmptyComponent={listEmpty}

@@ -68,13 +68,12 @@ export default function InventoryScreen(): React.ReactElement {
             {t('inventory.title')}
           </Text>
           <Button
+            label={t('inventory.add_item')}
             onPress={handleAddItem}
             variant="default"
             size="sm"
             testID="add-item-button"
-          >
-            {t('inventory.add_item')}
-          </Button>
+          />
         </View>
 
         {/* CSV Import/Export */}

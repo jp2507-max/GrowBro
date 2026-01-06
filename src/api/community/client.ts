@@ -134,9 +134,35 @@ function parseTopSortCursor(
 
 /**
  * Generate a composite cursor for top_7d sort from a post's like_count and created_at.
+ * Normalizes the timestamp to ensure it passes parseTopSortCursor validation.
  */
 function generateTopSortCursor(likeCount: number, createdAt: string): string {
-  return `${likeCount}:${createdAt}`;
+  try {
+    // Parse the createdAt timestamp and normalize to ISO 8601 with millisecond precision
+    const parsedDate = new Date(createdAt);
+
+    // Guard against invalid dates
+    if (isNaN(parsedDate.getTime())) {
+      console.warn(
+        `Invalid date for cursor generation: ${createdAt}, using fallback`
+      );
+      // Use epoch start as fallback for invalid dates
+      return `${likeCount}:1970-01-01T00:00:00.000Z`;
+    }
+
+    // Convert to canonical ISO 8601 format (UTC, millisecond precision)
+    const normalizedTimestamp = parsedDate.toISOString();
+
+    return `${likeCount}:${normalizedTimestamp}`;
+  } catch (error) {
+    console.error(
+      `Failed to generate cursor from createdAt: ${createdAt}, using fallback. Error: ${
+        error instanceof Error ? error.message : 'Unknown error'
+      }`
+    );
+    // Use epoch start as fallback for any parsing errors
+    return `${likeCount}:1970-01-01T00:00:00.000Z`;
+  }
 }
 
 /** Context for applying discover filters */

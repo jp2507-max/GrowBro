@@ -4,10 +4,14 @@ import Svg, { Path } from 'react-native-svg';
 
 import colors from '../colors';
 
+type ChevronRightProps = SvgProps & {
+  color?: string;
+};
+
 export function ChevronRight({
   color = colors.neutral[500],
   ...props
-}: SvgProps) {
+}: ChevronRightProps): React.ReactElement {
   return (
     <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" {...props}>
       <Path

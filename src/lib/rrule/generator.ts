@@ -85,6 +85,16 @@ export class RRULEGenerator {
     SU: RRule.SU,
   };
 
+  private static readonly WEEKDAY_CODES: WeekdayStr[] = [
+    'MO',
+    'TU',
+    'WE',
+    'TH',
+    'FR',
+    'SA',
+    'SU',
+  ];
+
   /**
    * Generate a daily RRULE string
    */
@@ -292,26 +302,17 @@ export class RRULEGenerator {
         const weekdays = Array.isArray(opts.byweekday)
           ? opts.byweekday
           : [opts.byweekday];
-        const weekdayCodes: WeekdayStr[] = [
-          'MO',
-          'TU',
-          'WE',
-          'TH',
-          'FR',
-          'SA',
-          'SU',
-        ];
         function toWeekday(value: ByWeekday): WeekDay | null {
           if (typeof value === 'string') {
             const upper = value.toUpperCase();
-            if (weekdayCodes.includes(upper as WeekdayStr)) {
+            if (RRULEGenerator.WEEKDAY_CODES.includes(upper as WeekdayStr)) {
               return upper as WeekDay;
             }
             return null;
           }
           const index = typeof value === 'number' ? value : value.weekday;
           const normalized = ((index % 7) + 7) % 7;
-          return weekdayCodes[normalized] ?? null;
+          return RRULEGenerator.WEEKDAY_CODES[normalized] ?? null;
         }
         const validWeekdays: WeekDay[] = [];
         const invalidValues: unknown[] = [];

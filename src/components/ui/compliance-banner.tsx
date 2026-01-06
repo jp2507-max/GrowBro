@@ -9,7 +9,11 @@
 
 import { useColorScheme } from 'nativewind';
 import React from 'react';
-import Animated, { FadeOut, ReduceMotion } from 'react-native-reanimated';
+import Animated, {
+  FadeOut,
+  ReduceMotion,
+  runOnJS,
+} from 'react-native-reanimated';
 
 import { Pressable, Text, View } from '@/components/ui';
 import colors from '@/components/ui/colors';
@@ -32,19 +36,27 @@ export function ComplianceBanner({
       storage.getBoolean(STORAGE_KEYS.COMMUNITY_COMPLIANCE_DISMISSED) ?? false
     );
   });
+  const [isAnimatingOut, setIsAnimatingOut] = React.useState(false);
 
   const handleDismiss = React.useCallback(() => {
     storage.set(STORAGE_KEYS.COMMUNITY_COMPLIANCE_DISMISSED, true);
-    setIsDismissed(true);
+    setIsAnimatingOut(true);
   }, []);
 
-  if (isDismissed) {
+  if (isDismissed && !isAnimatingOut) {
     return null;
   }
 
   return (
     <Animated.View
-      exiting={FadeOut.duration(200).reduceMotion(ReduceMotion.System)}
+      exiting={FadeOut.duration(200)
+        .reduceMotion(ReduceMotion.System)
+        .withCallback((finished: boolean) => {
+          'worklet';
+          if (finished) {
+            runOnJS(setIsDismissed)(true);
+          }
+        })}
       testID={testID}
     >
       <View className="mb-4 flex-row items-center justify-between rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-800/50 dark:bg-amber-900/20">

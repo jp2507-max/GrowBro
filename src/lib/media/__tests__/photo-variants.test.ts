@@ -23,6 +23,7 @@ describe('photo-variants', () => {
       isDirectory: false,
       size: 1234,
       uri: 'file:///test.jpg',
+      modificationTime: Date.now(),
     });
   });
 

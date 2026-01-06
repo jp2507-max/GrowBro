@@ -14,7 +14,8 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { EdgeInsets } from 'react-native-safe-area-context';
 
-import { Pressable, Text, View } from '@/components/ui';
+import { GlassSurface } from '@/components/shared/glass-surface';
+import { GlassButton, Pressable, Text, View } from '@/components/ui';
 import colors from '@/components/ui/colors';
 import { Search } from '@/components/ui/icons';
 import { haptics } from '@/lib/haptics';
@@ -30,7 +31,41 @@ const styles = StyleSheet.create({
   segmentedControl: {
     height: 36,
   },
+  searchPill: {
+    borderRadius: 16,
+  },
 });
+
+type SearchBarPlaceholderProps = {
+  onPress: () => void;
+};
+
+const SearchBarPlaceholder = React.memo<SearchBarPlaceholderProps>(
+  ({ onPress }) => (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={translate('community.filters_label')}
+      accessibilityHint={translate('community.filters_hint')}
+      testID="community-search-bar"
+      className="active:opacity-80"
+    >
+      <GlassSurface
+        glassEffectStyle="clear"
+        style={styles.searchPill}
+        fallbackClassName="bg-white/15"
+      >
+        <View className="flex-row items-center gap-3 px-4 py-3">
+          <Search size={18} color={colors.white} />
+          <Text className="flex-1 text-base text-white/70">
+            {translate('community.search_placeholder')}
+          </Text>
+        </View>
+      </GlassSurface>
+    </Pressable>
+  )
+);
+SearchBarPlaceholder.displayName = 'SearchBarPlaceholder';
 
 type CommunityHeaderProps = {
   insets: EdgeInsets;
@@ -89,16 +124,15 @@ export function CommunityHeader({
 
         {/* Filter/Search Button */}
         <View className="relative">
-          <Pressable
+          <GlassButton
             onPress={handleFilterPress}
-            accessibilityRole="button"
             accessibilityLabel={translate('community.filters_label')}
             accessibilityHint={translate('community.filters_hint')}
             testID="community-filter-button"
-            className="size-10 items-center justify-center rounded-full bg-white/15 active:bg-white/25"
+            fallbackClassName="bg-white/15"
           >
             <Search size={20} color={colors.white} />
-          </Pressable>
+          </GlassButton>
           {/* Active indicator dot */}
           {hasActiveFilters && (
             <View className="absolute -right-0.5 -top-0.5 size-3 rounded-full border-2 border-primary-800 bg-terracotta-500" />
@@ -108,19 +142,7 @@ export function CommunityHeader({
 
       {/* Subtitle / Glass Search Bar Placeholder */}
       <View className="mt-4">
-        <Pressable
-          onPress={handleFilterPress}
-          accessibilityRole="button"
-          accessibilityLabel={translate('community.filters_label')}
-          accessibilityHint={translate('community.filters_hint')}
-          testID="community-search-bar"
-          className="flex-row items-center gap-3 rounded-2xl bg-white/15 px-4 py-3 active:bg-white/25"
-        >
-          <Search size={18} color={colors.white} />
-          <Text className="flex-1 text-base text-white/70">
-            {translate('community.search_placeholder')}
-          </Text>
-        </Pressable>
+        <SearchBarPlaceholder onPress={handleFilterPress} />
       </View>
 
       {/* Segmented Control for Showcase / Help Station */}
@@ -138,7 +160,7 @@ export function CommunityHeader({
           }}
           // eslint-disable-next-line react-native/no-inline-styles
           activeFontStyle={{
-            color: colors.white,
+            color: colors.primary[800],
             fontWeight: '600',
           }}
           testID="community-segment-control"

@@ -19,6 +19,7 @@ import { KeyboardProvider } from 'react-native-keyboard-controller';
 
 import { APIProvider } from '@/api';
 import { ConsentModal } from '@/components/consent-modal';
+import { GlassFlashMessage } from '@/components/ui/glass-flash-message';
 import {
   ConsentService,
   hydrateAgeGate,
@@ -350,12 +351,17 @@ function usePhotoJanitorSetup(isI18nReady: boolean): void {
 function RootLayout(): React.ReactElement {
   const [isFirstTime] = useIsFirstTime();
 
-  /* eslint-disable react-compiler/react-compiler -- Zustand createSelectors pattern creates hook accessors */
+  // Zustand createSelectors pattern: .status() calls ARE hooks, but react-compiler
+  // misinterprets `useX.propertySelector` as referencing hooks as values.
+  // eslint-disable-next-line react-compiler/react-compiler
   const ageGateStatus = useAgeGate.status();
+  // eslint-disable-next-line react-compiler/react-compiler
   const sessionId = useAgeGate.sessionId();
+  // eslint-disable-next-line react-compiler/react-compiler
   const onboardingStatus = useOnboardingState.status();
+  // eslint-disable-next-line react-compiler/react-compiler
   const currentOnboardingStep = useOnboardingState.currentStep();
-  /* eslint-enable react-compiler/react-compiler */
+
   const [isI18nReady, setIsI18nReady] = React.useState(false);
   const [isAuthReady, setIsAuthReady] = React.useState(false);
   const [showConsent, setShowConsent] = React.useState(false);
@@ -582,7 +588,10 @@ function Providers({ children }: ProvidersProps): React.ReactElement {
             <DatabaseProvider database={database}>
               <BottomSheetModalProvider>
                 {children}
-                <FlashMessage position="top" />
+                <FlashMessage
+                  position="top"
+                  MessageComponent={GlassFlashMessage}
+                />
               </BottomSheetModalProvider>
             </DatabaseProvider>
           </APIProvider>

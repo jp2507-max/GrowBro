@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { ActivityIndicator, Pressable, TextInput } from 'react-native';
 
+import { GlassSurface } from '@/components/shared/glass-surface';
 import { Text, View } from '@/components/ui';
 import colors from '@/components/ui/colors';
 import { translate } from '@/lib/i18n';
@@ -33,23 +34,29 @@ export function CommunitySearchBar({
     <View className="px-4 pb-2 pt-4" testID={testID}>
       <View className="flex-row items-center gap-2">
         <View className="relative flex-1">
-          <TextInput
-            ref={inputRef}
-            value={value}
-            onChangeText={onChangeText}
-            placeholder={translate('community.search_placeholder')}
-            placeholderTextColor={colors.neutral[400]}
-            accessibilityLabel={translate('community.search_label')}
-            accessibilityHint={translate('community.search_hint')}
-            testID={`${testID}-input`}
-            className="h-12 rounded-2xl border-0 bg-white/90 px-4 pr-10 text-base font-medium text-charcoal-900 shadow-sm dark:bg-neutral-900/90 dark:text-neutral-100"
-            returnKeyType="search"
-            clearButtonMode="never"
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
+          <GlassSurface
+            glassEffectStyle="clear"
+            style={{ borderRadius: 16, overflow: 'hidden' }}
+            fallbackClassName="bg-white/90 dark:bg-neutral-900/90"
+          >
+            <TextInput
+              ref={inputRef}
+              value={value}
+              onChangeText={onChangeText}
+              placeholder={translate('community.search_placeholder')}
+              placeholderTextColor={colors.neutral[400]}
+              accessibilityLabel={translate('community.search_label')}
+              accessibilityHint={translate('community.search_hint')}
+              testID={`${testID}-input`}
+              className="h-12 rounded-2xl border-0 bg-transparent px-4 pr-10 text-base font-medium text-charcoal-900 dark:text-neutral-100"
+              returnKeyType="search"
+              clearButtonMode="never"
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+          </GlassSurface>
 
-          <View className="absolute right-2 top-0 h-12 items-center justify-center">
+          <View className="absolute right-4 top-0 h-12 items-center justify-center">
             {isSearching ? (
               <ActivityIndicator
                 size="small"

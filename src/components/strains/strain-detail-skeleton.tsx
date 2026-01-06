@@ -1,8 +1,8 @@
-import { BlurView } from 'expo-blur';
 import * as React from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Pressable, View } from '@/components/ui';
+import { GlassSurface } from '@/components/shared/glass-surface';
+import { GlassButton, View } from '@/components/ui';
 import { ArrowLeft } from '@/components/ui/icons';
 import { haptics } from '@/lib/haptics';
 import { translate } from '@/lib/i18n';
@@ -37,19 +37,18 @@ export function StrainDetailSkeleton({ onBack }: Props): React.ReactElement {
           className="absolute inset-x-0 top-0 z-10 flex-row items-center justify-between px-4"
           style={{ paddingTop: insets.top + 8 }}
         >
-          <Pressable
+          <GlassButton
             onPress={() => {
               haptics.selection();
               onBack();
             }}
-            className="size-10 items-center justify-center rounded-full bg-black/20 backdrop-blur-md active:bg-black/30"
-            accessibilityRole="button"
             accessibilityLabel={translate('accessibility.common.go_back')}
             accessibilityHint={translate('strains.detail.back_hint')}
             testID="back-button"
+            fallbackClassName="bg-black/20"
           >
             <ArrowLeft color="white" width={24} height={24} />
-          </Pressable>
+          </GlassButton>
 
           {/* Placeholder for action buttons */}
           <View className="flex-row gap-2">
@@ -58,19 +57,24 @@ export function StrainDetailSkeleton({ onBack }: Props): React.ReactElement {
           </View>
         </View>
 
-        {/* Title Overlay with BlurView */}
+        {/* Title Overlay with GlassSurface */}
         <View className="absolute inset-x-0 bottom-0">
-          <BlurView intensity={40} tint="dark" className="px-5 pb-9 pt-16">
-            {/* Title skeleton */}
-            <View className="mb-3 h-10 w-3/4 rounded-lg bg-white/20" />
+          <GlassSurface
+            glassEffectStyle="regular"
+            fallbackClassName="bg-black/60"
+          >
+            <View className="px-5 pb-9 pt-16">
+              {/* Title skeleton */}
+              <View className="mb-3 h-10 w-3/4 rounded-lg bg-white/20" />
 
-            {/* Badge skeletons */}
-            <View className="flex-row flex-wrap gap-2">
-              <View className="h-6 w-20 rounded-full bg-white/20" />
-              <View className="h-6 w-16 rounded-full bg-white/20" />
-              <View className="h-6 w-24 rounded-full bg-white/20" />
+              {/* Badge skeletons */}
+              <View className="flex-row flex-wrap gap-2">
+                <View className="h-6 w-20 rounded-full bg-white/20" />
+                <View className="h-6 w-16 rounded-full bg-white/20" />
+                <View className="h-6 w-24 rounded-full bg-white/20" />
+              </View>
             </View>
-          </BlurView>
+          </GlassSurface>
         </View>
       </View>
 
