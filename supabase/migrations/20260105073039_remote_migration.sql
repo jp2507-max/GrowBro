@@ -1,0 +1,2 @@
+-- Remote migration already applied
+-- This file is a placeholder for tracking purposes

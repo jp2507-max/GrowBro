@@ -1,5 +1,5 @@
+import { useColorScheme } from 'nativewind';
 import React from 'react';
-import { useColorScheme } from 'react-native';
 import type { SvgProps } from 'react-native-svg';
 import Svg, { Path } from 'react-native-svg';
 
@@ -10,7 +10,7 @@ interface SendProps extends SvgProps {
 }
 
 export const Send = ({ color, accessibilityLabel, ...props }: SendProps) => {
-  const colorScheme = useColorScheme();
+  const { colorScheme } = useColorScheme();
   const defaultColor =
     colorScheme === 'dark' ? colors.neutral[400] : colors.neutral[600];
 

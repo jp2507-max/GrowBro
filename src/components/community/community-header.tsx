@@ -135,7 +135,7 @@ export function CommunityHeader({
           </GlassButton>
           {/* Active indicator dot */}
           {hasActiveFilters && (
-            <View className="absolute -right-0.5 -top-0.5 size-3 rounded-full border-2 border-primary-800 bg-terracotta-500" />
+            <View className="absolute -right-0.5 -top-0.5 size-3 rounded-full border-2 border-primary-800 bg-terracotta-500 dark:border-primary-400" />
           )}
         </View>
       </View>
@@ -155,12 +155,12 @@ export function CommunityHeader({
           backgroundColor="rgba(255, 255, 255, 0.1)"
           // eslint-disable-next-line react-native/no-inline-styles
           fontStyle={{
-            color: 'rgba(255, 255, 255, 0.8)',
+            color: isDark ? 'rgba(255, 255, 255, 0.8)' : colors.neutral[700],
             fontWeight: '500',
           }}
           // eslint-disable-next-line react-native/no-inline-styles
           activeFontStyle={{
-            color: colors.primary[800],
+            color: isDark ? colors.primary[200] : colors.primary[800],
             fontWeight: '600',
           }}
           testID="community-segment-control"

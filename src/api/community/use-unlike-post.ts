@@ -225,7 +225,8 @@ export function useUnlikePost(): UseMutationResult<
       await apiClient.unlikePost(postId, idempotencyKey, clientTxId);
     },
 
-    onMutate: ({ postId }) => prepareOptimisticUnlike(queryClient, postId),
+    onMutate: async ({ postId }) =>
+      prepareOptimisticUnlike(queryClient, postId),
 
     onError: (error, _variables, context): void => {
       handleUnlikeError(error, context, queryClient);

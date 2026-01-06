@@ -26,7 +26,7 @@ export const Image = ({
   placeholder = 'L6PZfSi_.AyE_3t7t7R**0o#DgR4',
   testID,
   ...props
-}: ImgProps) => {
+}: ImgProps): React.JSX.Element => {
   return (
     <NImage
       className={className}

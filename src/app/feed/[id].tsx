@@ -26,28 +26,20 @@ import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useComments, useCreateComment, usePost } from '@/api/community';
+import { CommentInputFooter } from '@/components/community/comment-input-footer';
 import { CommentList } from '@/components/community/comment-list';
-import { LikeButton } from '@/components/community/like-button';
+import { PostActionBar } from '@/components/community/post-action-bar';
+import { PostHeader } from '@/components/community/post-header';
 import {
   ActivityIndicator,
   FocusAwareStatusBar,
   GlassButton,
-  Input,
   OptimizedImage,
-  Pressable,
   Text,
   View,
 } from '@/components/ui';
 import colors from '@/components/ui/colors';
-import {
-  ArrowLeft,
-  ChevronRight,
-  Leaf,
-  MessageCircle,
-  MoreHorizontal,
-  Send,
-  Share,
-} from '@/components/ui/icons';
+import { ArrowLeft } from '@/components/ui/icons';
 import { normalizePostUserId } from '@/lib/community/post-utils';
 import { isCommunityCommentsKey } from '@/lib/community/query-keys';
 import {
@@ -60,8 +52,6 @@ import { translate, type TxKeyPath } from '@/lib/i18n';
 import { showErrorToast } from '@/lib/settings/toast-utils';
 import { getHeaderColors } from '@/lib/theme-utils';
 import { database } from '@/lib/watermelon';
-
-const MAX_COMMENT_LENGTH = 500;
 
 const styles = StyleSheet.create({
   flex1: {
@@ -81,32 +71,9 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 8,
   },
-  borderlessInput: {
-    borderWidth: 0,
-  },
-  sendButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  sendButtonActive: {
-    backgroundColor: '#C75B4A',
-    opacity: 1,
-  },
-  sendButtonInactive: {
-    backgroundColor: '#C75B4A',
-    opacity: 0.5,
-  },
 });
 
-// eslint-disable-next-line max-lines-per-function
+// eslint-disable-next-line max-lines-per-function -- screen component with complex layout
 export default function PostDetailScreen(): React.ReactElement {
   const local = useLocalSearchParams<{ id: string; commentId?: string }>();
   const router = useRouter();
@@ -129,11 +96,6 @@ export default function PostDetailScreen(): React.ReactElement {
   const commentInputRef = React.useRef<TextInput>(null);
   const createCommentMutation = useCreateComment();
 
-  const isCommentOverLimit = commentBody.length > MAX_COMMENT_LENGTH;
-  const isCommentEmpty = commentBody.trim().length === 0;
-  const isCommentSubmitDisabled =
-    isCommentEmpty || isCommentOverLimit || createCommentMutation.isPending;
-
   const {
     data: post,
     isPending,
@@ -149,7 +111,7 @@ export default function PostDetailScreen(): React.ReactElement {
   });
 
   const handleCommentSubmit = React.useCallback(async () => {
-    if (isCommentSubmitDisabled) return;
+    if (!commentBody.trim() || createCommentMutation.isPending) return;
     try {
       await createCommentMutation.mutateAsync({
         postId: local.id,
@@ -180,14 +142,7 @@ export default function PostDetailScreen(): React.ReactElement {
 
       showErrorToast(errorMessage, fullDescription);
     }
-  }, [
-    isCommentSubmitDisabled,
-    createCommentMutation,
-    local.id,
-    commentBody,
-    refetch,
-    queryClient,
-  ]);
+  }, [createCommentMutation, local.id, commentBody, refetch, queryClient]);
 
   const handleSharePress = React.useCallback(async () => {
     haptics.selection();
@@ -305,7 +260,10 @@ export default function PostDetailScreen(): React.ReactElement {
       ? `unknown-user-${normalizedPost.id}`
       : String(normalizedPost.userId);
   const displayUsername = postUserId.slice(0, 8);
-  const relativeTime = formatRelativeTimeTranslated(post.created_at);
+  const relativeTime = formatRelativeTimeTranslated(
+    post.created_at,
+    'common.timeAgo'
+  );
   const comments = commentsData?.results ?? [];
   const hasImage = Boolean(post.media_uri);
 
@@ -365,84 +323,17 @@ export default function PostDetailScreen(): React.ReactElement {
           >
             {/* Main Content - Direct in sheet, NO card wrapper */}
             <View className="px-5 pt-6">
-              {/* 1. Author Row */}
-              <View className="mb-4 flex-row items-center justify-between">
-                <Pressable
-                  onPress={handleAuthorPress}
-                  accessibilityRole="button"
-                  accessibilityLabel={translate(
-                    'accessibility.community.view_author_profile' as TxKeyPath,
-                    { author: displayUsername }
-                  )}
-                  accessibilityHint={translate(
-                    'accessibility.community.view_author_profile_hint' as TxKeyPath
-                  )}
-                  className="flex-row items-center gap-3"
-                >
-                  {/* Avatar */}
-                  <View className="size-12 items-center justify-center rounded-full bg-primary-100 dark:bg-primary-900">
-                    <Text className="text-lg font-bold text-primary-600 dark:text-primary-300">
-                      {displayUsername.charAt(0).toUpperCase()}
-                    </Text>
-                  </View>
-                  {/* Name + Time */}
-                  <View>
-                    <Text className="text-lg font-bold text-neutral-900 dark:text-neutral-50">
-                      {displayUsername}
-                    </Text>
-                    {relativeTime && (
-                      <Text className="text-sm text-neutral-400">
-                        {relativeTime}
-                      </Text>
-                    )}
-                  </View>
-                </Pressable>
+              {/* 1. Author Row + Strain Pill */}
+              <PostHeader
+                displayUsername={displayUsername}
+                relativeTime={relativeTime}
+                strain={post.strain}
+                isDark={isDark}
+                onAuthorPress={handleAuthorPress}
+                onStrainPress={handleStrainPress}
+              />
 
-                {/* More Options */}
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={translate(
-                    'accessibility.community.post_options' as TxKeyPath
-                  )}
-                  accessibilityHint={translate(
-                    'accessibility.community.post_options_hint' as TxKeyPath
-                  )}
-                  className="p-2"
-                >
-                  <MoreHorizontal
-                    width={20}
-                    height={20}
-                    color={colors.neutral[400]}
-                  />
-                </Pressable>
-              </View>
-
-              {/* 2. Strain Link Pill (if strain exists) */}
-              {post.strain && (
-                <Pressable
-                  onPress={handleStrainPress}
-                  className="mb-4 flex-row items-center self-start rounded-full bg-primary-50 px-3 py-2 dark:bg-primary-900/20"
-                  accessibilityRole="button"
-                  accessibilityLabel={`Strain: ${post.strain}`}
-                  accessibilityHint={translate(
-                    'accessibility.community.view_strain_hint' as TxKeyPath
-                  )}
-                >
-                  <View className="size-6 items-center justify-center rounded-full bg-primary-100 dark:bg-primary-800">
-                    <Leaf width={14} height={14} color={colors.primary[600]} />
-                  </View>
-                  <Text className="ml-2 text-sm font-bold text-primary-700 dark:text-primary-300">
-                    {post.strain}
-                  </Text>
-                  <ChevronRight
-                    width={16}
-                    height={16}
-                    color={isDark ? colors.primary[400] : colors.primary[600]}
-                  />
-                </Pressable>
-              )}
-
-              {/* 3. Hero Image */}
+              {/* 2. Hero Image */}
               {hasImage && (
                 <View className="mb-4 overflow-hidden rounded-2xl shadow-sm">
                   <OptimizedImage
@@ -466,48 +357,15 @@ export default function PostDetailScreen(): React.ReactElement {
                 </View>
               )}
 
-              {/* 4. Action Bar */}
-              <View className="mb-4 flex-row items-center gap-6">
-                {/* Like Button */}
-                <LikeButton
-                  postId={String(post.id)}
-                  likeCount={post.like_count ?? 0}
-                  userHasLiked={post.user_has_liked ?? false}
-                />
-
-                {/* Comment Count */}
-                <View className="flex-row items-center gap-1.5">
-                  <MessageCircle
-                    width={26}
-                    height={26}
-                    color={isDark ? colors.neutral[400] : colors.neutral[600]}
-                  />
-                  {(post.comment_count ?? 0) > 0 && (
-                    <Text className="text-base font-semibold text-neutral-600 dark:text-neutral-400">
-                      {post.comment_count}
-                    </Text>
-                  )}
-                </View>
-
-                {/* Share */}
-                <Pressable
-                  onPress={handleSharePress}
-                  accessibilityRole="button"
-                  accessibilityLabel={translate(
-                    'accessibility.community.share' as TxKeyPath
-                  )}
-                  accessibilityHint={translate(
-                    'accessibility.community.share_hint' as TxKeyPath
-                  )}
-                  className="flex-row items-center gap-1.5"
-                >
-                  <Share
-                    width={26}
-                    height={26}
-                    color={isDark ? colors.neutral[400] : colors.neutral[600]}
-                  />
-                </Pressable>
-              </View>
+              {/* 3. Action Bar */}
+              <PostActionBar
+                postId={String(post.id)}
+                likeCount={post.like_count ?? 0}
+                commentCount={post.comment_count ?? 0}
+                userHasLiked={post.user_has_liked ?? false}
+                isDark={isDark}
+                onSharePress={handleSharePress}
+              />
 
               {/* 5. Caption - Full text (unlike feed's 3-line limit) */}
               {post.body && (
@@ -535,55 +393,14 @@ export default function PostDetailScreen(): React.ReactElement {
           </ScrollView>
 
           {/* Sticky Footer - Messenger Style Comment Input */}
-          <View
-            className="border-t border-neutral-100 bg-white px-4 py-3 dark:border-white/5 dark:bg-charcoal-950"
-            style={{ paddingBottom: Math.max(insets.bottom, 32) }}
-          >
-            <View className="flex-row items-center">
-              {/* Messenger-style rounded input */}
-              <View className="mr-3 min-h-[44px] flex-1 flex-row items-center rounded-full bg-neutral-100 px-5 py-3 dark:bg-white/5">
-                <Input
-                  ref={commentInputRef}
-                  placeholder={translate(
-                    'community.comment_placeholder' as TxKeyPath
-                  )}
-                  placeholderTextColor={colors.neutral[400]}
-                  value={commentBody}
-                  onChangeText={setCommentBody}
-                  multiline
-                  numberOfLines={1}
-                  maxLength={MAX_COMMENT_LENGTH + 50}
-                  className="min-h-[24px] flex-1 border-0 bg-transparent text-base text-neutral-900 dark:text-neutral-100"
-                  style={styles.borderlessInput}
-                />
-              </View>
-              {/* Circular Send Button - terracotta with opacity state */}
-              <Pressable
-                onPress={handleCommentSubmit}
-                disabled={isCommentSubmitDisabled}
-                accessibilityRole="button"
-                accessibilityLabel={translate(
-                  'community.post_comment' as TxKeyPath
-                )}
-                accessibilityHint={translate(
-                  'accessibility.community.post_comment_hint' as TxKeyPath
-                )}
-                accessibilityState={{ disabled: isCommentSubmitDisabled }}
-                style={[
-                  styles.sendButton,
-                  isCommentSubmitDisabled
-                    ? styles.sendButtonInactive
-                    : styles.sendButtonActive,
-                ]}
-              >
-                {createCommentMutation.isPending ? (
-                  <ActivityIndicator size="small" color="white" />
-                ) : (
-                  <Send width={20} height={20} color="white" />
-                )}
-              </Pressable>
-            </View>
-          </View>
+          <CommentInputFooter
+            value={commentBody}
+            onChangeText={setCommentBody}
+            onSubmit={handleCommentSubmit}
+            isPending={createCommentMutation.isPending}
+            bottomInset={insets.bottom}
+            inputRef={commentInputRef}
+          />
         </View>
       </KeyboardAvoidingView>
     </View>

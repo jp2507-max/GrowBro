@@ -153,14 +153,33 @@ function useKeyRotationSetup(): void {
   }, []);
 }
 
+/**
+ * Normalize iOS client ID to full format.
+ * env.js accepts prefix-only format (e.g., "123456-abc123") for backward
+ * compatibility, but GoogleSignin.configure() requires the full format
+ * ("123456-abc123.apps.googleusercontent.com").
+ */
+function normalizeIosClientId(
+  clientId: string | undefined
+): string | undefined {
+  if (!clientId) return undefined;
+  const suffix = '.apps.googleusercontent.com';
+  if (clientId.endsWith(suffix)) return clientId;
+  // Prefix-only format - append suffix
+  if (/^\d+-[\w]+$/.test(clientId)) {
+    return `${clientId}${suffix}`;
+  }
+  // Return as-is; invalid formats will fail at Google SDK level
+  return clientId;
+}
+
 function useGoogleSignInSetup(): void {
   React.useEffect(() => {
     if (!Env.GOOGLE_WEB_CLIENT_ID) return;
+    const iosClientId = normalizeIosClientId(Env.GOOGLE_IOS_CLIENT_ID);
     GoogleSignin.configure({
       webClientId: Env.GOOGLE_WEB_CLIENT_ID,
-      ...(Env.GOOGLE_IOS_CLIENT_ID
-        ? { iosClientId: Env.GOOGLE_IOS_CLIENT_ID }
-        : {}),
+      ...(iosClientId ? { iosClientId } : {}),
     });
   }, []);
 }
@@ -467,7 +486,7 @@ function persistConsents(
 }
 
 // Timeout for auth hydration - 5s is generous for token check + signIn
-const HYDRATE_AUTH_TIMEOUT_MS = 5000;
+const HYDRATE_AUTH_TIMEOUT_MS = 12000;
 
 // Helper to initialize auth storage and hydrate states
 async function initializeAuthAndStates(): Promise<void> {

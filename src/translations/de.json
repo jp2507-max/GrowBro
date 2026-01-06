@@ -815,6 +815,13 @@
     "saving": "Speichert...",
     "select_date": "Datum wählen",
     "selected": "ausgewählt",
+    "timeAgo": {
+      "days": "vor {{count}} Tagen",
+      "hours": "vor {{count}} Stunden",
+      "minutes": "vor {{count}} Minuten",
+      "now": "Gerade eben",
+      "weeks": "vor {{count}} Wochen"
+    },
     "undo": "Rückgängig",
     "yes": "Ja"
   },

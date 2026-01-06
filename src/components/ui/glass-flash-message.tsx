@@ -43,10 +43,10 @@ const TYPE_ICONS: Record<FlashMessageType, string> = {
 const TYPE_FALLBACK_CLASSES: Record<FlashMessageType, string> = {
   none: 'bg-charcoal-900/90 dark:bg-charcoal-800/95',
   default: 'bg-charcoal-900/90 dark:bg-charcoal-800/95',
-  info: 'bg-blue-900/90 dark:bg-blue-800/95',
-  success: 'bg-emerald-900/90 dark:bg-emerald-800/95',
-  danger: 'bg-red-900/90 dark:bg-red-800/95',
-  warning: 'bg-amber-900/90 dark:bg-amber-800/95',
+  info: 'bg-indigo-900/90 dark:bg-indigo-800/95',
+  success: 'bg-success-900/90 dark:bg-success-800/95',
+  danger: 'bg-danger-900/90 dark:bg-danger-800/95',
+  warning: 'bg-warning-900/90 dark:bg-warning-800/95',
 };
 
 export function GlassFlashMessage({

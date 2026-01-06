@@ -34,6 +34,23 @@ type GlassSurfaceProps = {
   testID?: string;
   /** Pointer events behavior. */
   pointerEvents?: 'auto' | 'none' | 'box-none' | 'box-only';
+  /** Accessibility label for screen readers. */
+  accessibilityLabel?: string;
+  /** Accessibility role for screen readers. */
+  accessibilityRole?:
+    | 'none'
+    | 'button'
+    | 'link'
+    | 'header'
+    | 'search'
+    | 'image'
+    | 'text'
+    | 'adjustable'
+    | 'imagebutton'
+    | 'summary'
+    | 'alert';
+  /** Accessibility hint for screen readers. */
+  accessibilityHint?: string;
 };
 
 const glassAvailable = isLiquidGlassAvailable();
@@ -47,6 +64,9 @@ export function GlassSurface({
   children,
   testID,
   pointerEvents,
+  accessibilityLabel,
+  accessibilityRole,
+  accessibilityHint,
 }: GlassSurfaceProps): React.ReactElement {
   if (glassAvailable) {
     return (
@@ -56,6 +76,9 @@ export function GlassSurface({
         style={style}
         testID={testID}
         pointerEvents={pointerEvents}
+        accessibilityLabel={accessibilityLabel}
+        accessibilityRole={accessibilityRole}
+        accessibilityHint={accessibilityHint}
       >
         {children}
       </GlassView>
@@ -69,6 +92,9 @@ export function GlassSurface({
       className={fallbackClassName}
       testID={testID}
       pointerEvents={pointerEvents}
+      accessibilityLabel={accessibilityLabel}
+      accessibilityRole={accessibilityRole}
+      accessibilityHint={accessibilityHint}
     >
       {children}
     </View>

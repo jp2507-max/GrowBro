@@ -11,7 +11,6 @@ import React, { useMemo } from 'react';
 import Animated, {
   runOnJS,
   useAnimatedScrollHandler,
-  // @ts-expect-error - useComposedEventHandler exists in Reanimated 4.x but bundler moduleResolution fails to resolve it
   useComposedEventHandler,
 } from 'react-native-reanimated';
 import type { ReanimatedScrollEvent } from 'react-native-reanimated/lib/typescript/hook/commonTypes';

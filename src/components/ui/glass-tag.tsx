@@ -24,28 +24,30 @@ type GlassTagProps = {
   style?: StyleProp<ViewStyle>;
   /** Test ID for testing. */
   testID?: string;
+  /** Accessibility label for screen readers. Defaults to label. */
+  accessibilityLabel?: string;
 };
 
 const TONE_CLASSES: Record<GlassTagTone, { fallback: string; text: string }> = {
   neutral: {
     fallback: 'bg-black/40',
-    text: 'text-white',
+    text: 'text-white dark:text-neutral-50',
   },
   primary: {
     fallback: 'bg-primary-600/60',
-    text: 'text-white',
+    text: 'text-white dark:text-primary-100',
   },
   success: {
     fallback: 'bg-emerald-600/60',
-    text: 'text-white',
+    text: 'text-white dark:text-emerald-100',
   },
   warning: {
     fallback: 'bg-amber-500/60',
-    text: 'text-white',
+    text: 'text-white dark:text-amber-100',
   },
   danger: {
     fallback: 'bg-red-600/60',
-    text: 'text-white',
+    text: 'text-white dark:text-red-100',
   },
 };
 
@@ -55,6 +57,7 @@ export function GlassTag({
   leftIcon,
   style,
   testID,
+  accessibilityLabel,
 }: GlassTagProps): React.ReactElement {
   const toneConfig = TONE_CLASSES[tone];
 
@@ -64,6 +67,8 @@ export function GlassTag({
       style={[styles.tag, style]}
       fallbackClassName={toneConfig.fallback}
       testID={testID}
+      accessibilityLabel={accessibilityLabel || label}
+      accessibilityRole="text"
     >
       <View className="flex-row items-center gap-1 px-2.5 py-1">
         {leftIcon}

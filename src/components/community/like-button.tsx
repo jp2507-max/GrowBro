@@ -50,7 +50,9 @@ function CompactContent({
     );
   }
   return (
-    <Text className="text-xl text-white">{userHasLiked ? '♥' : '♡'}</Text>
+    <Text className="text-xl text-black dark:text-white">
+      {userHasLiked ? '♥' : '♡'}
+    </Text>
   );
 }
 

@@ -1,5 +1,6 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 
+// @ts-ignore - Edge Function npm import
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const corsHeaders = {
@@ -19,13 +20,22 @@ Deno.serve(async (req: Request) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
+  // Check for Authorization header
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader) {
+    return new Response(JSON.stringify({ error: 'Authorization required' }), {
+      status: 401,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
   // Create Supabase client
   const supabaseClient = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
     Deno.env.get('SUPABASE_ANON_KEY') ?? '',
     {
       global: {
-        headers: { Authorization: req.headers.get('Authorization')! },
+        headers: { Authorization: authHeader },
       },
     }
   );
@@ -40,7 +50,16 @@ Deno.serve(async (req: Request) => {
     // Proxy to create-post function
     // We can use the internal function URL if we are in local dev,
     // or just invoke it via the client
-    const body = await req.json();
+    let body;
+    try {
+      body = await req.json();
+    } catch {
+      console.error('[posts-shim] Invalid JSON body in request');
+      return new Response(JSON.stringify({ error: 'Invalid JSON body' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     const { data, error } = await supabaseClient.functions.invoke(
       'create-post',

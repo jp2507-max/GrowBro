@@ -1,4 +1,4 @@
-import { type Race } from '../strains';
+import { type Race } from '../strains/types';
 
 export type { Race } from '../strains/types';
 

@@ -47,7 +47,10 @@ export function AssessmentHistoryCard({
     : null;
 
   const relativeTime = React.useMemo(() => {
-    return formatRelativeTimeTranslated(assessment.createdAt.toISOString());
+    return formatRelativeTimeTranslated(
+      assessment.createdAt.toISOString(),
+      'common.timeAgo'
+    );
   }, [assessment.createdAt]);
 
   const statusColor = React.useMemo(() => {

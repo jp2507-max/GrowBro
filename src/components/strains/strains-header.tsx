@@ -124,7 +124,7 @@ export function StrainsHeader({
           accessibilityLabel={translate('strains.search_placeholder')}
           accessibilityHint={translate('accessibility.strains.search_hint')}
           testID="strains-search-input"
-          className="h-12 rounded-2xl border-0 bg-transparent px-4 font-medium text-neutral-900 dark:text-white"
+          className="h-12 border-0 bg-transparent font-medium"
           placeholderTextColor={colors.neutral[400]}
         />
       </GlassSurface>

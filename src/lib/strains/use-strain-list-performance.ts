@@ -3,7 +3,7 @@
  * Tracks scroll performance, blank areas, and provides monitoring lifecycle
  */
 
-import { useCallback, useEffect } from 'react';
+import { useEffect } from 'react';
 
 import { useFlashListPerformance } from './use-flashlist-performance';
 
@@ -42,11 +42,7 @@ export function useStrainListPerformance({
     };
   }, [listSize, startTracking, stopTracking]);
 
-  const handleScroll = useCallback(() => {
-    onPerfScroll();
-  }, [onPerfScroll]);
-
   return {
-    handleScroll,
+    handleScroll: onPerfScroll,
   };
 }

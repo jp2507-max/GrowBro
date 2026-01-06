@@ -815,6 +815,13 @@
     "saving": "Saving...",
     "select_date": "Select date",
     "selected": "selected",
+    "timeAgo": {
+      "days": "{{count}} days ago",
+      "hours": "{{count}} hours ago",
+      "minutes": "{{count}} minutes ago",
+      "now": "Just now",
+      "weeks": "{{count}} weeks ago"
+    },
     "undo": "Undo",
     "yes": "Yes"
   },

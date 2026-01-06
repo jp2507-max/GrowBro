@@ -1,9 +1,15 @@
 import * as React from 'react';
-import { ActivityIndicator, Pressable, TextInput } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  TextInput,
+  useColorScheme,
+} from 'react-native';
 
 import { GlassSurface } from '@/components/shared/glass-surface';
-import { Text, View } from '@/components/ui';
+import { View } from '@/components/ui';
 import colors from '@/components/ui/colors';
+import { Settings, X } from '@/components/ui/icons';
 import { translate } from '@/lib/i18n';
 
 type CommunitySearchBarProps = {
@@ -24,6 +30,7 @@ export function CommunitySearchBar({
   testID = 'community-search-bar',
 }: CommunitySearchBarProps): React.ReactElement {
   const inputRef = React.useRef<TextInput>(null);
+  const colorScheme = useColorScheme();
 
   const handleClear = React.useCallback((): void => {
     onChangeText('');
@@ -70,11 +77,17 @@ export function CommunitySearchBar({
                 accessibilityHint={translate('community.search_clear_hint')}
                 accessibilityRole="button"
                 testID={`${testID}-clear`}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 className="size-8 items-center justify-center rounded-full bg-neutral-200 dark:bg-neutral-700"
               >
-                <Text className="text-base text-neutral-600 dark:text-neutral-400">
-                  ✕
-                </Text>
+                <X
+                  size={16}
+                  color={
+                    colorScheme === 'dark'
+                      ? colors.neutral[400]
+                      : colors.neutral[600]
+                  }
+                />
               </Pressable>
             ) : null}
           </View>
@@ -88,21 +101,26 @@ export function CommunitySearchBar({
             accessibilityRole="button"
             accessibilityState={{ selected: hasActiveFilters }}
             testID={`${testID}-filter-button`}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             className={`size-12 items-center justify-center rounded-lg border ${
               hasActiveFilters
                 ? 'border-primary-600 bg-primary-50 dark:bg-primary-950'
                 : 'border-neutral-200 bg-white dark:border-white/10 dark:bg-charcoal-900'
             }`}
           >
-            <Text
-              className={`text-lg ${
+            <Settings
+              width={20}
+              height={20}
+              color={
                 hasActiveFilters
-                  ? 'text-primary-600 dark:text-primary-400'
-                  : 'text-neutral-600 dark:text-neutral-400'
-              }`}
-            >
-              ⚙
-            </Text>
+                  ? colorScheme === 'dark'
+                    ? colors.primary[400]
+                    : colors.primary[600]
+                  : colorScheme === 'dark'
+                    ? colors.neutral[400]
+                    : colors.neutral[600]
+              }
+            />
             {hasActiveFilters && (
               <View className="absolute -right-1 -top-1 size-3 rounded-full border border-white bg-primary-600 dark:border-charcoal-950" />
             )}

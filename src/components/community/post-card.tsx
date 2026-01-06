@@ -178,7 +178,10 @@ function PostCardView({
   }, [scale]);
 
   const hasImage = Boolean(post.media_uri);
-  const relativeTime = formatRelativeTimeTranslated(post.created_at);
+  const relativeTime = formatRelativeTimeTranslated(
+    post.created_at,
+    'common.timeAgo'
+  );
 
   const handleOptionsPress = React.useCallback(
     (e: { stopPropagation: () => void; preventDefault: () => void }) => {

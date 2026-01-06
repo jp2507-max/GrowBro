@@ -233,6 +233,7 @@ export function HeaderIconButton({
           ? 'bg-primary-100 dark:bg-primary-900'
           : 'bg-white/80 dark:bg-black/30'
       }
+      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
     >
       {icon}
     </GlassButton>

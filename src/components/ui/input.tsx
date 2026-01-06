@@ -16,6 +16,8 @@ import {
 } from 'react-native';
 import { tv } from 'tailwind-variants';
 
+import { cn } from '@/lib/utils';
+
 import colors from './colors';
 import { Text } from './text';
 
@@ -90,6 +92,7 @@ export const Input = React.forwardRef<NTextInput, NInputProps>((props, ref) => {
   const {
     accessibilityLabel: inputAccessibilityLabel,
     accessibilityHint: inputAccessibilityHint,
+    className,
     ...restInputProps
   } = inputProps;
   const [isFocussed, setIsFocussed] = React.useState(false);
@@ -122,7 +125,7 @@ export const Input = React.forwardRef<NTextInput, NInputProps>((props, ref) => {
         testID={testID}
         ref={ref}
         placeholderTextColor={colors.neutral[400]}
-        className={styles.input()}
+        className={cn(styles.input(), className)}
         onBlur={onBlur}
         onFocus={onFocus}
         accessibilityLabel={inputAccessibilityLabel ?? label ?? undefined}

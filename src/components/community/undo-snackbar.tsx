@@ -90,7 +90,7 @@ export function UndoSnackbar({
         .damping(22)
         .stiffness(180)
         .reduceMotion(ReduceMotion.System)}
-      exiting={FadeOut.duration(250)}
+      exiting={FadeOut.duration(250).reduceMotion(ReduceMotion.System)}
       className="absolute inset-x-4 z-[1000]"
       style={{ bottom: bottomOffset }}
       testID={testID}

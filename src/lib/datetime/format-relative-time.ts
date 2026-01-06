@@ -25,6 +25,7 @@ export interface RelativeTimeResult {
  *
  * @param timestamp - ISO timestamp string
  * @returns RelativeTimeResult with token and optional count
+ * @note Future timestamps return { token: 'now' }
  */
 export function formatRelativeTime(
   timestamp: string | null | undefined
@@ -54,12 +55,12 @@ export function formatRelativeTime(
  * Convenience function that returns the translated string directly
  *
  * @param timestamp - ISO timestamp string
- * @param translationKeyPath - Base translation key path (e.g., 'common.timeAgo')
+ * @param translationKeyPath - Base translation key path. Must have keys: .now, .minutes, .hours, .days, .weeks
  * @returns Translated relative time string
  */
 export function formatRelativeTimeTranslated(
   timestamp: string | null | undefined,
-  translationKeyPath: TxKeyPath = 'harvest.history.relative'
+  translationKeyPath: TxKeyPath
 ): string {
   const result = formatRelativeTime(timestamp);
 

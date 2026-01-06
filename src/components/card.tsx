@@ -25,6 +25,8 @@ export const Card = ({
   like_count = 0,
   comment_count = 0,
   user_has_liked = false,
+  media_uri,
+  media_resized_uri,
 }: Props) => {
   const compositeLabel = React.useMemo(() => {
     const badgeText = translate('cannabis.educational_badge');
@@ -41,6 +43,11 @@ export const Card = ({
   );
 
   const imageUri = React.useMemo(() => {
+    // Use actual post media, fallback to placeholder if unavailable
+    if (media_resized_uri || media_uri) {
+      return media_resized_uri || media_uri;
+    }
+
     // Simple hash function to create deterministic index from id
     const hashCode = (str: string) => {
       let hash = 0;
@@ -54,7 +61,7 @@ export const Card = ({
 
     const index = hashCode(String(id)) % images.length;
     return images[index];
-  }, [id]);
+  }, [id, media_resized_uri, media_uri]);
 
   return (
     <Link href={`/feed/${id}`} asChild>

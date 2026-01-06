@@ -202,7 +202,11 @@ const HarvestHistoryRow = memo<RowProps>(function HarvestHistoryRow({
   }, [item.source, onPress]);
 
   const relativeTime = useMemo(
-    () => formatRelativeTimeTranslated(item.updatedAt.toISOString()),
+    () =>
+      formatRelativeTimeTranslated(
+        item.updatedAt.toISOString(),
+        'harvest.history.relative'
+      ),
     [item.updatedAt]
   );
 
