@@ -4,11 +4,72 @@ import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, ScrollView } from 'react-native';
 import { showMessage } from 'react-native-flash-message';
 
-import { useFetchReading, useUpdateReading } from '@/api/ph-ec-readings';
+import {
+  AccessDeniedError,
+  useFetchReading,
+  useUpdateReading,
+} from '@/api/ph-ec-readings';
 import { useFetchReservoirs } from '@/api/reservoirs';
 import { PhEcReadingForm } from '@/components/nutrient/ph-ec-reading-form';
 import { Text, View } from '@/components/ui';
 import type { PpmScale } from '@/lib/nutrient-engine/types';
+
+// Error handling component for reading detail screen
+function ReadingDetailError({ error }: { error: AccessDeniedError | Error }) {
+  const { t } = useTranslation();
+
+  if (error instanceof AccessDeniedError) {
+    return (
+      <View
+        testID="reading-detail-access-denied"
+        className="flex-1 items-center justify-center bg-white p-4 dark:bg-charcoal-950"
+      >
+        <Text className="text-center text-neutral-600">
+          {t('nutrient.accessDenied')}
+        </Text>
+      </View>
+    );
+  }
+
+  return (
+    <View
+      testID="reading-detail-error"
+      className="flex-1 items-center justify-center bg-white p-4 dark:bg-charcoal-950"
+    >
+      <Text className="text-center text-neutral-600">
+        {t('nutrient.errorLoadingReading')}
+      </Text>
+    </View>
+  );
+}
+
+// Loading component
+function ReadingDetailLoading() {
+  return (
+    <View
+      testID="reading-detail-loading"
+      className="flex-1 items-center justify-center bg-white dark:bg-charcoal-950"
+    >
+      <ActivityIndicator size="large" />
+    </View>
+  );
+}
+
+// Not found component
+function ReadingDetailNotFound() {
+  const { t } = useTranslation();
+
+  return (
+    <View
+      testID="reading-detail-not-found"
+      className="flex-1 items-center justify-center bg-white p-4 dark:bg-charcoal-950"
+    >
+      <Text className="text-center text-neutral-600">
+        {t('nutrient.readingNotFound')}
+      </Text>
+    </View>
+  );
+}
 
 export default function ReadingDetailScreen(): React.ReactElement {
   const { t } = useTranslation();
@@ -17,7 +78,7 @@ export default function ReadingDetailScreen(): React.ReactElement {
   const updateReading = useUpdateReading();
 
   // Fetch existing reading
-  const { data: reading, isLoading } = useFetchReading(id!);
+  const { data: reading, isLoading, error: _error } = useFetchReading(id!);
   const { data: reservoirsData } = useFetchReservoirs();
 
   const handleSubmit = useCallback(
@@ -87,27 +148,15 @@ export default function ReadingDetailScreen(): React.ReactElement {
   }, [reading]);
 
   if (isLoading) {
-    return (
-      <View
-        testID="reading-detail-loading"
-        className="flex-1 items-center justify-center bg-white dark:bg-charcoal-950"
-      >
-        <ActivityIndicator size="large" />
-      </View>
-    );
+    return <ReadingDetailLoading />;
+  }
+
+  if (_error) {
+    return <ReadingDetailError error={_error} />;
   }
 
   if (!reading) {
-    return (
-      <View
-        testID="reading-detail-not-found"
-        className="flex-1 items-center justify-center bg-white p-4 dark:bg-charcoal-950"
-      >
-        <Text className="text-center text-neutral-600">
-          {t('nutrient.readingNotFound')}
-        </Text>
-      </View>
-    );
+    return <ReadingDetailNotFound />;
   }
 
   return (

@@ -17,6 +17,20 @@ import { type PhEcReadingModel } from '@/lib/watermelon-models/ph-ec-reading';
 import { client } from '../common';
 
 // ============================================================================
+// Error Types
+// ============================================================================
+
+export class AccessDeniedError extends Error {
+  code: 'ACCESS_DENIED';
+
+  constructor(message: string = 'User does not own this reading') {
+    super(message);
+    this.name = 'AccessDeniedError';
+    this.code = 'ACCESS_DENIED';
+  }
+}
+
+// ============================================================================
 // Types
 // ============================================================================
 
@@ -59,6 +73,37 @@ type FetchReadingsResponse = {
 // The mutation itself only performs the database operation.
 
 // ============================================================================
+// Helper Functions
+// ============================================================================
+
+/**
+ * Compute EC@25°C based on raw reading and temperature compensation settings
+ * @internal
+ */
+function computeEC25(params: {
+  ecRaw: number;
+  tempC: number;
+  atcOn: boolean;
+  tempCompensationBeta: number;
+}): number {
+  const { ecRaw, tempC, atcOn, tempCompensationBeta } = params;
+
+  if (atcOn) {
+    // If meter has ATC active, the raw reading is already compensated
+    return ecRaw;
+  }
+
+  // Otherwise apply compensation using user preference
+  try {
+    return toEC25(ecRaw, tempC, tempCompensationBeta);
+  } catch (error) {
+    throw new Error(
+      `Failed to compute EC@25°C: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
+  }
+}
+
+// ============================================================================
 // Local Database Operations
 // ============================================================================
 
@@ -74,28 +119,23 @@ export async function createReadingLocal(
   const readingsCollection =
     database.get<PhEcReadingModel>('ph_ec_readings_v2');
 
+  // Capture external state before entering the transaction
+  const preferences = useNutrientEngineStore.getState().preferences;
+  const atcOn = variables.atcOn ?? false;
+  const tempC = variables.tempC ?? 25;
+
+  // Compute EC@25°C if not provided, outside the transaction
+  const ec25c =
+    variables.ec25c ??
+    computeEC25({
+      ecRaw: variables.ecRaw,
+      tempC: tempC,
+      atcOn: atcOn,
+      tempCompensationBeta: preferences.tempCompensationBeta,
+    });
+
   const reading = await database.write(async () => {
     return await readingsCollection.create((record) => {
-      const preferences = useNutrientEngineStore.getState().preferences;
-      const atcOn = variables.atcOn ?? false;
-      const tempC = variables.tempC ?? 25;
-
-      // Compute EC@25°C if not provided
-      let ec25c = variables.ec25c;
-      if (ec25c === undefined) {
-        if (atcOn) {
-          // If meter has ATC active, the raw reading is already compensated
-          ec25c = variables.ecRaw;
-        } else {
-          // Otherwise apply compensation using user preference
-          ec25c = toEC25(
-            variables.ecRaw,
-            tempC,
-            preferences.tempCompensationBeta
-          );
-        }
-      }
-
       record.ph = variables.ph;
       record.ecRaw = variables.ecRaw;
       record.ec25c = ec25c;
@@ -221,6 +261,14 @@ export async function fetchReadingsLocal(
   return { data, total };
 }
 
+/**
+ * Fetch a single pH/EC reading by ID from local database
+ * @param id - The reading ID
+ * @param userId - Optional user ID for ownership validation
+ * @returns The reading data or null if not found
+ * @throws {AccessDeniedError} When user doesn't own the reading
+ * @throws {Error} For unexpected database errors
+ */
 export async function fetchReadingLocal(
   id: string,
   userId?: string
@@ -233,7 +281,7 @@ export async function fetchReadingLocal(
 
     // Validate ownership if userId is provided
     if (userId && record.userId && record.userId !== userId) {
-      return null;
+      throw new AccessDeniedError('User does not own this reading');
     }
 
     return {
@@ -254,6 +302,11 @@ export async function fetchReadingLocal(
       updatedAt: record.updatedAt.getTime(),
     };
   } catch (error) {
+    // Handle our custom AccessDeniedError
+    if (error instanceof AccessDeniedError) {
+      throw error;
+    }
+
     // WatermelonDB throws RecordNotFoundError when record doesn't exist
     // Alternatively, check for the specific error name or code
     if (
@@ -270,13 +323,20 @@ export async function fetchReadingLocal(
 
 export async function updateReadingLocal(
   id: string,
-  variables: Partial<CreateReadingVariables>
+  variables: Partial<CreateReadingVariables>,
+  userId?: string
 ): Promise<PhEcReading> {
   const readingsCollection =
     database.get<PhEcReadingModel>('ph_ec_readings_v2');
 
   const reading = await database.write(async () => {
     const record = await readingsCollection.find(id);
+
+    // Validate ownership if userId is provided
+    if (userId && record.userId && record.userId !== userId) {
+      throw new AccessDeniedError('User does not own this reading');
+    }
+
     await record.update((r) => {
       if (variables.ph !== undefined) r.ph = variables.ph;
       if (variables.ecRaw !== undefined) r.ecRaw = variables.ecRaw;
@@ -405,7 +465,7 @@ export const useFetchReading = (id: string) => {
   const { session } = useAuth();
   const userId = session?.user.id;
 
-  return useQuery<PhEcReading | null, AxiosError>({
+  return useQuery<PhEcReading | null, AccessDeniedError | AxiosError>({
     queryKey: ['ph-ec-reading', id, userId],
     queryFn: () => fetchReadingLocal(id, userId),
     enabled: !!id && !!userId,
@@ -421,7 +481,9 @@ export const useUpdateReading = createMutation<
   AxiosError
 >({
   mutationFn: async ({ id, ...variables }) => {
-    return await updateReadingLocal(id, variables);
+    const { session } = useAuth.getState();
+    const userId = session?.user.id;
+    return await updateReadingLocal(id, variables, userId);
   },
 });
 

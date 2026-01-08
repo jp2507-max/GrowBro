@@ -1,6 +1,12 @@
 import { Q } from '@nozbe/watermelondb';
 import { DateTime } from 'luxon';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CalendarHeader } from '@/components/calendar/calendar-header';
@@ -46,10 +52,6 @@ function parseEphemeralTaskInfo(
   return { seriesId: parts[1], localDate: parts[2] };
 }
 
-/**
- * Hook to manage calendar data for a range of weeks and the selected day.
- * Fetches tasks for a 5-week range (indicator visibility) and plant info for the selected day.
- */
 async function fetchTasksForRange(start: Date, end: Date) {
   const [pending, completed] = await Promise.all([
     getTasksByDateRange(start, end),
@@ -104,6 +106,12 @@ function buildTaskCounts(tasks: Task[]): Map<string, number> {
   return counts;
 }
 
+/**
+ * Hook to manage calendar data for a range of weeks and the selected day.
+ * Fetches tasks for a 5-week range (indicator visibility) and plant info for the selected day.
+ * @param selectedDate - The currently selected date
+ * @returns Object containing pending/completed tasks, task counts, plant map, loading state, and refetch function
+ */
 function useCalendarData(selectedDate: DateTime): {
   dayPendingTasks: Task[];
   dayCompletedTasks: Task[];
@@ -120,7 +128,7 @@ function useCalendarData(selectedDate: DateTime): {
   const [isLoading, setIsLoading] = useState(true);
 
   // Track the latest request ID to prevent race conditions
-  const requestIdRef = React.useRef(0);
+  const requestIdRef = useRef(0);
 
   // Derive primitive values for stable dependencies
   const selectedWeekMillis = selectedDate.startOf('week').toMillis();
@@ -216,7 +224,7 @@ function useCalendarData(selectedDate: DateTime): {
 export default function CalendarScreen(): React.ReactElement {
   const insets = useSafeAreaInsets();
   const { grossHeight } = useBottomTabBarHeight();
-  const [selectedDate, setSelectedDate] = React.useState<DateTime>(
+  const [selectedDate, setSelectedDate] = useState<DateTime>(
     DateTime.now().startOf('day')
   );
 

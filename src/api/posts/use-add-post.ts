@@ -33,6 +33,11 @@ export const attachmentInputSchema = z
 // Derive TypeScript type from schema for single source of truth
 export type AttachmentInput = z.infer<typeof attachmentInputSchema>;
 
+export const categorySchema = z
+  .enum(['grow_tips', 'harvest', 'equipment', 'general'])
+  .optional();
+export const strainSchema = z.string().min(1).max(100).optional();
+
 // Type for remote attachment metadata
 interface RemoteAttachmentMetadata {
   width?: number;
@@ -339,6 +344,17 @@ export const useAddPost = createMutation<Response, Variables, AxiosError>({
           `Invalid attachments: ${validationResult.error.message}`
         );
       }
+    }
+
+    // Validate strain and category
+    const strainValidation = strainSchema.safeParse(variables.strain);
+    if (!strainValidation.success) {
+      throw new Error(`Invalid strain: ${strainValidation.error.message}`);
+    }
+
+    const categoryValidation = categorySchema.safeParse(variables.category);
+    if (!categoryValidation.success) {
+      throw new Error(`Invalid category: ${categoryValidation.error.message}`);
     }
 
     // Process first photo attachment if present (backend only supports single media)

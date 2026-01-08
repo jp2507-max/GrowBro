@@ -166,7 +166,8 @@ function normalizeIosClientId(
   const suffix = '.apps.googleusercontent.com';
   if (clientId.endsWith(suffix)) return clientId;
   // Prefix-only format - append suffix
-  if (/^\d+-[\w]+$/.test(clientId)) {
+  // Google uses lowercase alphanumeric only in hash portion (no internal hyphens)
+  if (/^\d+-[a-z0-9]+$/.test(clientId)) {
     return `${clientId}${suffix}`;
   }
   // Return as-is; invalid formats will fail at Google SDK level

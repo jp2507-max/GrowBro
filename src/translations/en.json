@@ -147,10 +147,12 @@
       "input_label": "{{label}} input"
     },
     "nutrient": {
+      "accessDenied": "Access denied",
       "add_reading": "Add Reading",
       "add_reading_description": "Manually log pH and EC values",
       "atc_label": "ATC",
       "edit_reading": "Edit Reading",
+      "errorLoadingReading": "Error loading reading",
       "load_error": "Failed to load readings",
       "readingNotFound": "Reading not found",
       "reading_error": "Failed to save reading",

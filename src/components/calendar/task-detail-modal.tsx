@@ -23,7 +23,7 @@ type TaskDetailModalProps = {
 };
 
 function formatTime(dueAtLocal: string, timezone?: string): string {
-  const zone = timezone ?? DateTime.local().zoneName ?? 'UTC';
+  const zone = timezone || DateTime.local().zoneName || 'UTC';
   const dt = DateTime.fromISO(dueAtLocal, { zone });
 
   if (!dt.isValid) {
@@ -204,6 +204,8 @@ export function TaskDetailModal({
   const time = formatTime(task.dueAtLocal, task.timezone);
   const noDescription = translate('calendar.task_detail.no_description');
 
+  const category = (task.metadata as { category?: string })?.category;
+
   return (
     <Modal
       ref={modalRef}
@@ -220,16 +222,11 @@ export function TaskDetailModal({
         </Text>
 
         {/* Category Badge */}
-        {(() => {
-          const category = (task.metadata as { category?: string })?.category;
-          return (
-            category && (
-              <View className="mt-2">
-                <CategoryBadge category={category} />
-              </View>
-            )
-          );
-        })()}
+        {category && (
+          <View className="mt-2">
+            <CategoryBadge category={category} />
+          </View>
+        )}
 
         {/* Time */}
         <View className="mt-4 flex-row items-center gap-2">

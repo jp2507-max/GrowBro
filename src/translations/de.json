@@ -147,10 +147,12 @@
       "input_label": "{{label}}-Eingabe"
     },
     "nutrient": {
+      "accessDenied": "Zugriff verweigert",
       "add_reading": "Messung hinzufügen",
       "add_reading_description": "pH- und EC-Werte manuell protokollieren",
       "atc_label": "ATC",
       "edit_reading": "Messung bearbeiten",
+      "errorLoadingReading": "Fehler beim Laden der Messung",
       "load_error": "Messungen konnten nicht geladen werden",
       "readingNotFound": "Messung nicht gefunden",
       "reading_error": "Messung konnte nicht gespeichert werden",
