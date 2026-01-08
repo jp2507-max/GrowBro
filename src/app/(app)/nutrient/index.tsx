@@ -30,10 +30,12 @@ export default function NutrientReadingsScreen(): React.ReactElement {
     router.push(`/nutrient/add-reading${params}`);
   }, [router, plantId]);
 
-  const handleSelectReading = useCallback((reading: PhEcReading) => {
-    // TODO: Navigate to reading detail screen
-    console.log('Selected reading:', reading.id);
-  }, []);
+  const handleSelectReading = useCallback(
+    (reading: PhEcReading) => {
+      router.push(`/nutrient/${reading.id}`);
+    },
+    [router]
+  );
 
   return (
     <View className="flex-1 bg-white dark:bg-charcoal-950">

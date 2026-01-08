@@ -73,6 +73,9 @@
       }
     },
     "calendar": {
+      "day_counter_hint": "Shows the current day progress within the month.",
+      "jump_to_today_hint": "Jumps to today's date.",
+      "month_picker_hint": "Opens month picker.",
       "needs_review_hint": "Marks this task as needing review due to a conflict.",
       "out_of_range_hint": "Indicates the latest reading is outside the target range.",
       "targets_hint": "Shows the pH and EC targets for this task."
@@ -99,6 +102,7 @@
       "compose_hint": "Opens the Create Post screen.",
       "create_post_hint": "Opens the Create Post screen.",
       "delete_post": "Delete post",
+      "delete_post_failed": "Failed to delete post",
       "delete_post_hint": "Double-tap to delete this post. You will have 15 seconds to undo.",
       "error_card_hint": "Informs that the community feed failed to load.",
       "like_button_hint": "Double-tap to toggle like status for this post.",
@@ -108,6 +112,7 @@
       "outbox_retry_hint": "Retries sending queued actions.",
       "post_comment_hint": "Submits your comment on this post.",
       "post_deleted": "Post deleted",
+      "post_fallback": "Community post",
       "post_image": "Image from @{{author}}",
       "post_image_hint": "Part of the post content.",
       "post_options": "Post options",
@@ -116,6 +121,7 @@
       "retry_sync": "Retry sync",
       "share": "Share this post",
       "share_hint": "Opens system share sheet for this post.",
+      "strain_label": "Strain: {{strain}}",
       "undo_dismiss_hint": "Dismiss the undo snackbar and cancel the action",
       "undo_expires": "Undo expires in {{seconds}}s",
       "view_author_profile": "View profile of @{{author}}",
@@ -137,6 +143,20 @@
       "close_hint": "Double-tap to close the modal and return to the previous screen",
       "close_label": "Close modal",
       "input_label": "{{label}} input"
+    },
+    "nutrient": {
+      "add_reading": "Add Reading",
+      "add_reading_description": "Manually log pH and EC values",
+      "atc_label": "ATC",
+      "edit_reading": "Edit Reading",
+      "load_error": "Failed to load readings",
+      "reading_error": "Failed to save reading",
+      "reading_history": "Reading History",
+      "reading_saved": "Reading saved successfully",
+      "reading_update_error": "Failed to update reading",
+      "reading_updated": "Reading updated successfully",
+      "readings_count": "{{count}} readings",
+      "save_reading": "Save Reading"
     },
     "plant_hero_image": "Plant hero image",
     "plants": {
@@ -694,12 +714,18 @@
     },
     "log_ph_ec": "Log pH/EC",
     "month_picker": {
+      "next_year": "Next year",
+      "next_year_hint": "Goes to the next year.",
+      "previous_year": "Previous year",
+      "previous_year_hint": "Goes to the previous year.",
       "select_month": "Select month",
+      "select_month_hint": "Selects this month.",
       "title": "Select Month"
     },
     "move": "Move",
     "move_to_date": "Move to date",
     "needs_review_label": "Needs review due to conflict",
+    "noTaskSelected": "No task selected",
     "noTasksForDay": "No tasks for this day",
     "out_of_range": "out of range",
     "out_of_range_label": "Latest pH/EC out of target range",
@@ -834,11 +860,23 @@
     "select_date": "Select date",
     "selected": "selected",
     "timeAgo": {
-      "days": "{{count}} days ago",
-      "hours": "{{count}} hours ago",
-      "minutes": "{{count}} minutes ago",
+      "days": {
+        "one": "{{count}} day ago",
+        "other": "{{count}} days ago"
+      },
+      "hours": {
+        "one": "{{count}} hour ago",
+        "other": "{{count}} hours ago"
+      },
+      "minutes": {
+        "one": "{{count}} minute ago",
+        "other": "{{count}} minutes ago"
+      },
       "now": "Just now",
-      "weeks": "{{count}} weeks ago"
+      "weeks": {
+        "one": "{{count}} week ago",
+        "other": "{{count}} weeks ago"
+      }
     },
     "undo": "Undo",
     "yes": "Yes"
@@ -926,6 +964,11 @@
     "interactions": "Community interactions",
     "invalid_comment": "Invalid comment",
     "like": "Like",
+    "like_button_like": "Like",
+    "like_button_unlike": "Unlike",
+    "like_count": "{{count}} likes",
+    "like_count_one": "{{count}} like",
+    "like_count_other": "{{count}} likes",
     "like_failed": "Failed to like post",
     "likes": "Likes",
     "likesDescription": "Get notified when someone likes your posts (max 1 per post per 5 min)",
@@ -1396,7 +1439,8 @@
         "days": "{{count}} days ago",
         "hours": "{{count}} hours ago",
         "minutes": "{{count}} minutes ago",
-        "now": "Just now"
+        "now": "Just now",
+        "weeks": "{{count}} weeks ago"
       },
       "title": "Harvest history"
     },
@@ -2305,7 +2349,7 @@
     "guidance": {
       "body": "Whether you're a beginner or expert, we've got you covered with step-by-step guides and helpful resources.",
       "feature_playbooks_body": "Complete cultivation guides tailored to your setup and strain",
-      "feature_playbooks_title": "Guided Grow Playbooks",
+      "feature_playbooks_title": "Guided Grow Growbooks",
       "feature_tasks_body": "Automated schedules that keep your grow on track",
       "feature_tasks_title": "Smart Task Management",
       "feature_tips_body": "Contextual advice and educational content when you need it",
@@ -2529,10 +2573,10 @@
   "playbooks": {
     "accessibility": {
       "adoptTemplate": "Adopt community template",
-      "applyPlaybook": "Apply {{name}} playbook to plant",
+      "applyPlaybook": "Apply {{name}} growbook to plant",
       "logTrichomeCheck": "Log trichome check",
       "phaseProgress": "{{phase}} phase, {{status}}, {{completed}} of {{{total}}} tasks completed",
-      "playbookCard": "{{name}} playbook, {{setup}} setup, {{weeks}} weeks, {{tasks}} tasks",
+      "playbookCard": "{{name}} growbook, {{setup}} setup, {{weeks}} weeks, {{tasks}} tasks",
       "selectPlantHint": "Double tap to select this plant",
       "shareTemplate": "Share template with community",
       "shiftSchedule": "Shift schedule",
@@ -2552,18 +2596,18 @@
       "viewDetails": "View Details"
     },
     "apply": {
-      "alreadyApplied": "This playbook is already applied to this plant",
-      "applying": "Applying playbook...",
+      "alreadyApplied": "This growbook is already applied to this plant",
+      "applying": "Applying growbook...",
       "createPlant": "Create New Plant",
-      "error": "Failed to apply playbook",
-      "selectPlant": "Select a plant to apply this playbook",
+      "error": "Failed to apply growbook",
+      "selectPlant": "Select a plant to apply this growbook",
       "success_one": "Successfully created {{count}} task",
       "success_other": "Successfully created {{count}} tasks"
     },
     "applyError": "Failed to Apply",
     "applyErrorDescription": "Something went wrong. Please try again.",
-    "applyPlaybook": "Apply Playbook",
-    "applySuccess": "Playbook Applied",
+    "applyPlaybook": "Apply Growbook",
+    "applySuccess": "Growbook Applied",
     "applySuccessDescription": "Successfully created {{count}} tasks for your plant",
     "applyToPlant": "Apply to Plant",
     "applying": "Applying...",
@@ -2609,20 +2653,20 @@
           "handleRequired": "Author handle is required"
         },
         "license": "License",
-        "licenseDescription": "Others can use and modify your playbook with attribution",
+        "licenseDescription": "Others can use and modify your growbook with attribution",
         "licenseText": "{{license}} - Creative Commons Attribution-ShareAlike",
-        "placeholderDescription": "Describe your playbook...",
+        "placeholderDescription": "Describe your growbook...",
         "placeholderHandle": "your_handle",
         "privacyNotice": "ℹ️ All personal information, plant names, and custom notes will be automatically removed before sharing.",
         "share": "Share",
         "sharing": "Sharing...",
-        "subtitle": "Share your customized playbook with the community. All personal information will be automatically removed.",
-        "title": "Share Playbook"
+        "subtitle": "Share your customized growbook with the community. All personal information will be automatically removed.",
+        "title": "Share Growbook"
       },
       "subtitle": "Discover and share successful grow schedules",
       "title": "Community Templates"
     },
-    "communityDescription": "Browse and adopt playbooks shared by other growers",
+    "communityDescription": "Browse and adopt growbooks shared by other growers",
     "communityTemplates": "Community Templates",
     "createPlant": "Create Plant",
     "customNotes": "Custom Notes",
@@ -2630,23 +2674,23 @@
     "customNotesPlaceholder": "Add your own notes...",
     "customizationLevel": "Customization Level",
     "customizedTasks": "Customized Tasks",
-    "detailDescription": "This playbook will generate a complete schedule of tasks tailored to your plant's growth stages, with automatic reminders and progress tracking.",
+    "detailDescription": "This growbook will generate a complete schedule of tasks tailored to your plant's growth stages, with automatic reminders and progress tracking.",
     "durationDays_one": "{{count}} day",
     "durationDays_other": "{{count}} days",
     "editTask": "Edit Task",
     "edited": "Edited",
     "empty": {
       "subtitle": "Check back later for cultivation guides",
-      "title": "No Playbooks Available"
+      "title": "No Growbooks Available"
     },
     "excludedFromBulkOperations": "Excluded from bulk schedule shifts",
     "excludedFromBulkShift": "This task has been customized and will be excluded from bulk schedule shifts",
     "loadError": "Failed to load playbooks. Please try again.",
     "manuallyEdited": "Manually Edited",
-    "noPlants": "You don't have any plants yet. Create one to apply this playbook.",
-    "noTasks": "No tasks in this playbook",
+    "noPlants": "You don't have any plants yet. Create one to apply this growbook.",
+    "noTasks": "No tasks in this growbook",
     "noTemplates": "No community templates available yet",
-    "notFound": "Playbook not found",
+    "notFound": "Growbook not found",
     "onboarding": {
       "getStarted": "Get Started",
       "next": "Next",
@@ -2676,7 +2720,7 @@
       "seedling": "Seedling",
       "veg": "Vegetative"
     },
-    "preview": "Playbook Preview",
+    "preview": "Growbook Preview",
     "progress": {
       "careChanges": "Care requirements will change",
       "completedTasks_one": "{{count}} of {{{total}}} task completed",
@@ -2731,12 +2775,12 @@
         "phases": "Phases",
         "taskCount_one": "{{count}} task",
         "taskCount_other": "{{count}} tasks",
-        "title": "Playbook Preview",
+        "title": "Growbook Preview",
         "totalWeeks_one": "{{count}} week total",
         "totalWeeks_other": "{{count}} weeks total"
       },
       "subtitle": "Select a cultivation schedule that matches your setup",
-      "title": "Choose Your Playbook"
+      "title": "Choose Your Growbook"
     },
     "shareWithCommunity": "Share with Community",
     "shareWithCommunityHint": "Make this template available to other growers",
@@ -2786,17 +2830,17 @@
       "water": "Water"
     },
     "templateName": "Template Name",
-    "templateNamePlaceholder": "My Custom Playbook",
+    "templateNamePlaceholder": "My Custom Growbook",
     "templates": {
       "detail": {
-        "adoptButton": "Adopt This Playbook",
-        "adoptDescription": "You can customize the playbook after adopting it",
+        "adoptButton": "Adopt This Growbook",
+        "adoptDescription": "You can customize the growbook after adopting it",
         "adopted": "Adopted",
         "authorPrefix": "by",
         "communityRating": "Community Rating",
         "duration": "Duration",
         "growthPhases": "Growth Phases",
-        "licenseDescription": "You can use and modify this playbook with attribution to the author",
+        "licenseDescription": "You can use and modify this growbook with attribution to the author",
         "licensePrefix": "License:",
         "moreTasks": "+ {{count}} more tasks",
         "rateButton": "Rate",
@@ -2805,7 +2849,7 @@
         "tasksPreview": "Tasks Preview ({{total}} total)"
       }
     },
-    "title": "Playbooks",
+    "title": "Growbooks",
     "totalWeeks": "{{count}} weeks",
     "trichome": {
       "assessment": {
@@ -3482,7 +3526,7 @@
       "no_description": "No description available",
       "not_reported": "Not reported",
       "outdoor": "Outdoor",
-      "playbook_cta_hint": "Create a grow playbook with this strain",
+      "playbook_cta_hint": "Create a grow growbook with this strain",
       "playbook_description": "Create a personalized growing schedule",
       "quick_facts": "Quick Facts",
       "retry": "Retry",
@@ -3495,7 +3539,7 @@
       "terpenes_title": "Terpene Profile",
       "title": "Strain Details",
       "up_to": "up to",
-      "use_in_playbook": "Use This Strain in a Playbook",
+      "use_in_playbook": "Use This Strain in a Growbook",
       "weeks": "weeks",
       "yield": "Yield"
     },
@@ -3874,7 +3918,7 @@
     "community": "Community",
     "home": "Home",
     "plants": "Plants",
-    "playbooks": "Playbooks",
+    "playbooks": "Growbooks",
     "strains": "Strains"
   },
   "tasks": {

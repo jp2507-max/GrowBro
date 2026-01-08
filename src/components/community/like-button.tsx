@@ -10,7 +10,8 @@
  */
 
 import React from 'react';
-import { ActivityIndicator } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { ActivityIndicator, StyleSheet } from 'react-native';
 
 import { useLikePost, useUnlikePost } from '@/api/community';
 import { GlassSurface } from '@/components/shared/glass-surface';
@@ -146,6 +147,7 @@ function LikeButtonComponent({
   compact = false,
   variant = 'default',
 }: LikeButtonProps): React.ReactElement {
+  const { t } = useTranslation();
   const likeMutation = useLikePost();
   const unlikeMutation = useUnlikePost();
 
@@ -162,13 +164,15 @@ function LikeButtonComponent({
   }, [postId, userHasLiked, isPending, likeMutation, unlikeMutation]);
 
   const buttonLabel = React.useMemo(() => {
-    return userHasLiked ? 'Unlike' : 'Like';
-  }, [userHasLiked]);
+    return userHasLiked
+      ? t('community.like_button_unlike')
+      : t('community.like_button_like');
+  }, [userHasLiked, t]);
 
   const accessibilityLabel = React.useMemo(() => {
-    const countLabel = likeCount === 1 ? 'like' : 'likes';
-    return `${buttonLabel}, ${likeCount} ${countLabel}`;
-  }, [buttonLabel, likeCount]);
+    const countLabel = t('community.like_count', { count: likeCount });
+    return `${buttonLabel}, ${countLabel}`;
+  }, [buttonLabel, likeCount, t]);
 
   // Compact mode: just heart icon for BlurView overlays
   if (compact) {
@@ -178,7 +182,7 @@ function LikeButtonComponent({
         disabled={isPending}
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel}
-        accessibilityHint="Double-tap to toggle like status for this post."
+        accessibilityHint={t('accessibility.community.like_button_hint')}
         testID={testID}
       >
         <CompactContent
@@ -198,13 +202,13 @@ function LikeButtonComponent({
         disabled={isPending}
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel}
-        accessibilityHint="Double-tap to toggle like status for this post."
+        accessibilityHint={t('accessibility.community.like_button_hint')}
         testID={testID}
         className={isPending ? 'opacity-60' : 'opacity-100'}
       >
         <GlassSurface
           glassEffectStyle="clear"
-          style={{ borderRadius: 999 }}
+          style={styles.roundedPill}
           fallbackClassName="bg-white dark:bg-charcoal-800"
         >
           <View className="flex-row items-center gap-1 px-2 py-1">
@@ -226,7 +230,7 @@ function LikeButtonComponent({
       disabled={isPending}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
-      accessibilityHint="Double-tap to toggle like status for this post."
+      accessibilityHint={t('accessibility.community.like_button_hint')}
       testID={testID}
       className="flex-row items-center gap-2"
     >
@@ -241,7 +245,7 @@ function LikeButtonComponent({
 }
 
 // Memoize LikeButton to prevent re-renders when parent updates
-// Only re-render if postId, likeCount, userHasLiked, or testID changes
+// Only re-render if props affect the visual state (postId, counts, status, variant, compact)
 export const LikeButton = React.memo(
   LikeButtonComponent,
   (prevProps, nextProps) => {
@@ -255,3 +259,9 @@ export const LikeButton = React.memo(
     );
   }
 );
+
+const styles = StyleSheet.create({
+  roundedPill: {
+    borderRadius: 999,
+  },
+});

@@ -17,6 +17,19 @@ const images = [
   'https://images.unsplash.com/photo-1587974928442-77dc3e0dba72?auto=format&fit=crop&w=800&q=80',
 ];
 
+// Simple hash function to create deterministic index from id
+const getPlaceholderImage = (id: number | string) => {
+  const str = String(id);
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  const index = Math.abs(hash) % images.length;
+  return images[index];
+};
+
 export const Card = ({
   title,
   body,
@@ -27,6 +40,8 @@ export const Card = ({
   user_has_liked = false,
   media_uri,
   media_resized_uri,
+  media_blurhash,
+  media_thumbhash,
 }: Props) => {
   const compositeLabel = React.useMemo(() => {
     const badgeText = translate('cannabis.educational_badge');
@@ -47,20 +62,7 @@ export const Card = ({
     if (media_resized_uri || media_uri) {
       return media_resized_uri || media_uri;
     }
-
-    // Simple hash function to create deterministic index from id
-    const hashCode = (str: string) => {
-      let hash = 0;
-      for (let i = 0; i < str.length; i++) {
-        const char = str.charCodeAt(i);
-        hash = (hash << 5) - hash + char;
-        hash = hash & hash; // Convert to 32-bit integer
-      }
-      return Math.abs(hash);
-    };
-
-    const index = hashCode(String(id)) % images.length;
-    return images[index];
+    return getPlaceholderImage(id);
   }, [id, media_resized_uri, media_uri]);
 
   return (
@@ -76,6 +78,8 @@ export const Card = ({
             contentFit="cover"
             uri={imageUri}
             recyclingKey={String(id)}
+            blurhash={media_blurhash}
+            thumbhash={media_thumbhash}
           />
 
           <View className="p-2">

@@ -178,6 +178,102 @@ export async function fetchReadingsLocal(
   return { data, total };
 }
 
+export async function fetchReadingLocal(
+  id: string
+): Promise<PhEcReading | null> {
+  const readingsCollection =
+    database.get<PhEcReadingModel>('ph_ec_readings_v2');
+
+  try {
+    const record = await readingsCollection.find(id);
+    return {
+      id: record.id,
+      ph: record.ph,
+      ecRaw: record.ecRaw,
+      ec25c: record.ec25c,
+      tempC: record.tempC,
+      atcOn: record.atcOn,
+      ppmScale: record.ppmScale as PpmScale,
+      reservoirId: record.reservoirId,
+      plantId: record.plantId,
+      meterId: record.meterId,
+      note: record.note,
+      qualityFlags: record.qualityFlags,
+      measuredAt: record.measuredAt || record.createdAt.getTime(),
+      createdAt: record.createdAt.getTime(),
+      updatedAt: record.updatedAt.getTime(),
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function updateReadingLocal(
+  id: string,
+  variables: Partial<CreateReadingVariables>
+): Promise<PhEcReading> {
+  const readingsCollection =
+    database.get<PhEcReadingModel>('ph_ec_readings_v2');
+
+  const reading = await database.write(async () => {
+    const record = await readingsCollection.find(id);
+    await record.update((r) => {
+      if (variables.ph !== undefined) r.ph = variables.ph;
+      if (variables.ecRaw !== undefined) r.ecRaw = variables.ecRaw;
+      if (variables.ec25c !== undefined) r.ec25c = variables.ec25c;
+      if (variables.tempC !== undefined) r.tempC = variables.tempC;
+      if (variables.atcOn !== undefined) r.atcOn = variables.atcOn;
+      if (variables.ppmScale !== undefined) r.ppmScale = variables.ppmScale;
+      if (variables.reservoirId !== undefined)
+        r.reservoirId = variables.reservoirId;
+      if (variables.plantId !== undefined) r.plantId = variables.plantId;
+      if (variables.meterId !== undefined) r.meterId = variables.meterId;
+      if (variables.note !== undefined) r.note = variables.note;
+
+      // Re-compute quality flags on update
+      if (
+        variables.ph !== undefined ||
+        variables.ecRaw !== undefined ||
+        variables.tempC !== undefined ||
+        variables.atcOn !== undefined
+      ) {
+        const qualityFlags = computeQualityFlags({
+          id: record.id,
+          ph: variables.ph ?? record.ph,
+          ecRaw: variables.ecRaw ?? record.ecRaw,
+          ec25c: variables.ec25c ?? record.ec25c,
+          tempC: variables.tempC ?? record.tempC,
+          atcOn: variables.atcOn ?? record.atcOn,
+          ppmScale: variables.ppmScale ?? (record.ppmScale as PpmScale),
+          measuredAt: record.measuredAt,
+          createdAt: record.createdAt.getTime(),
+          updatedAt: Date.now(),
+        });
+        r.qualityFlags = qualityFlags;
+      }
+    });
+    return record;
+  });
+
+  return {
+    id: reading.id,
+    ph: reading.ph,
+    ecRaw: reading.ecRaw,
+    ec25c: reading.ec25c,
+    tempC: reading.tempC,
+    atcOn: reading.atcOn,
+    ppmScale: reading.ppmScale as PpmScale,
+    reservoirId: reading.reservoirId,
+    plantId: reading.plantId,
+    meterId: reading.meterId,
+    note: reading.note,
+    qualityFlags: reading.qualityFlags,
+    measuredAt: reading.measuredAt,
+    createdAt: reading.createdAt.getTime(),
+    updatedAt: reading.updatedAt.getTime(),
+  };
+}
+
 // ============================================================================
 // API Hooks
 // ============================================================================
@@ -235,6 +331,30 @@ export const useReservoirReadings = (reservoirId: string) => {
 export const usePlantReadings = (plantId: string) => {
   return useFetchReadings({ plantId });
 };
+
+/**
+ * Hook to fetch a single pH/EC reading by ID
+ */
+export const useFetchReading = (id: string) => {
+  return useQuery<PhEcReading | null, AxiosError>({
+    queryKey: ['ph-ec-reading', id],
+    queryFn: () => fetchReadingLocal(id),
+    enabled: !!id,
+  });
+};
+
+/**
+ * Hook to update a pH/EC reading
+ */
+export const useUpdateReading = createMutation<
+  PhEcReading,
+  { id: string } & Partial<CreateReadingVariables>,
+  AxiosError
+>({
+  mutationFn: async ({ id, ...variables }) => {
+    return await updateReadingLocal(id, variables);
+  },
+});
 
 // ============================================================================
 // Server Sync Operations (Called by sync worker)

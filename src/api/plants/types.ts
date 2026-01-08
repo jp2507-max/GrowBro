@@ -1,6 +1,6 @@
-import { type Race } from '../strains/types';
+import { type Race } from '@/api/strains/types';
 
-export type { Race } from '../strains/types';
+export type { Race } from '@/api/strains/types';
 
 export type PlantStage =
   | 'seedling'
@@ -55,7 +55,7 @@ export type Plant = {
   health?: PlantHealth;
   notes?: string;
   imageUrl?: string;
-  thumbnailUri?: string;
+  thumbnailUrl?: string;
   metadata?: PlantMetadata;
   environment?: PlantEnvironment;
   photoperiodType?: PhotoperiodType;

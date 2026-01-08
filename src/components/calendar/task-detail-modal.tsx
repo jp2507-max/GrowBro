@@ -19,6 +19,7 @@ type TaskDetailModalProps = {
   onComplete?: (task: Task) => void;
   onEdit?: (task: Task) => void;
   onDelete?: (task: Task) => void;
+  onDismiss?: () => void;
 };
 
 function formatTime(dueAtLocal: string, timezone?: string): string {
@@ -133,11 +134,13 @@ export function TaskDetailModal({
   onComplete,
   onEdit,
   onDelete,
+  onDismiss,
 }: TaskDetailModalProps): React.ReactElement {
   const { backgroundStyle, handleStyle } = useModalDarkModeStyles();
   const dismiss = React.useCallback(() => {
     modalRef.current?.dismiss();
-  }, [modalRef]);
+    onDismiss?.();
+  }, [modalRef, onDismiss]);
 
   const handleComplete = React.useCallback(() => {
     if (task && onComplete) {
@@ -174,7 +177,9 @@ export function TaskDetailModal({
         handleIndicatorStyle={handleStyle}
       >
         <BottomSheetView style={styles.content}>
-          <Text className="text-center text-neutral-500">No task selected</Text>
+          <Text className="text-center text-neutral-500">
+            {translate('calendar.noTaskSelected')}
+          </Text>
         </BottomSheetView>
       </Modal>
     );
@@ -199,13 +204,16 @@ export function TaskDetailModal({
         </Text>
 
         {/* Category Badge */}
-        {(task.metadata as { category?: string })?.category && (
-          <View className="mt-2">
-            <CategoryBadge
-              category={(task.metadata as { category?: string }).category}
-            />
-          </View>
-        )}
+        {(() => {
+          const category = (task.metadata as { category?: string })?.category;
+          return (
+            category && (
+              <View className="mt-2">
+                <CategoryBadge category={category} />
+              </View>
+            )
+          );
+        })()}
 
         {/* Time */}
         <View className="mt-4 flex-row items-center gap-2">

@@ -200,11 +200,11 @@ Deno.serve(async (req: Request) => {
 
     // Validate category against allowed values if provided
     if (requestBody.category) {
-      const allowedCategories = ['Indica', 'Sativa', 'Hybrid'];
+      const allowedCategories = ['problem_deficiency'];
       if (!allowedCategories.includes(requestBody.category)) {
         return new Response(
           JSON.stringify({
-            error: 'Invalid category. Must be one of: Indica, Sativa, Hybrid',
+            error: 'Invalid category. Must be one of: problem_deficiency',
           }),
           {
             status: 400,

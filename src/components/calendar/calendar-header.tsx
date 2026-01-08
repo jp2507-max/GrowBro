@@ -49,7 +49,7 @@ function MonthDropdown({
       className="flex-row items-center gap-1"
       accessibilityRole="button"
       accessibilityLabel={translate('calendar.month_picker.select_month')}
-      accessibilityHint="Opens month picker"
+      accessibilityHint={translate('accessibility.calendar.month_picker_hint')}
       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       testID="calendar-month-dropdown"
     >
@@ -76,7 +76,7 @@ function TodayButton({ onPress }: { onPress: () => void }): React.ReactElement {
       variant="pill"
       size={32}
       accessibilityLabel={translate('calendar.header.jump_to_today')}
-      accessibilityHint="Jumps to today's date"
+      accessibilityHint={translate('accessibility.calendar.jump_to_today_hint')}
       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       testID="calendar-today-button"
       fallbackClassName="border border-white/30 bg-white/95 dark:bg-charcoal-800/90"
@@ -100,7 +100,14 @@ function DayCounter({
   const daysInMonth = selectedDate.daysInMonth ?? 31;
 
   return (
-    <View className="flex-row items-baseline gap-px">
+    <View
+      className="flex-row items-baseline gap-px"
+      accessibilityLabel={translate('calendar.day_counter', {
+        day: dayOfMonth,
+        total: daysInMonth,
+      })}
+      accessibilityHint={translate('accessibility.calendar.day_counter_hint')}
+    >
       <Text className="text-4xl font-black tracking-tight text-neutral-900 dark:text-white">
         DAY {dayOfMonth}
       </Text>

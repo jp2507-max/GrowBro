@@ -82,7 +82,10 @@ export function PostHeader({
           onPress={onStrainPress}
           className="mb-4 flex-row items-center self-start rounded-full bg-primary-50 px-3 py-2 dark:bg-primary-900/20"
           accessibilityRole="button"
-          accessibilityLabel={`Strain: ${strain}`}
+          accessibilityLabel={translate(
+            'accessibility.community.strain_label' as TxKeyPath,
+            { strain }
+          )}
           accessibilityHint={translate(
             'accessibility.community.view_strain_hint' as TxKeyPath
           )}

@@ -216,14 +216,7 @@ const HarvestHistoryRow = memo<RowProps>(function HarvestHistoryRow({
         stage: t(`harvest.stages.${item.stage}`),
         time: relativeTime,
       })}${item.dryWeight != null ? t('harvest.history.list.rowLabelWeight', { weight: item.dryWeight }) : ''}${item.conflictSeen ? t('harvest.history.list.rowLabelConflict') : ''}`,
-    [
-      t,
-      item.stage,
-      item.updatedAt,
-      item.dryWeight,
-      item.conflictSeen,
-      relativeTime,
-    ]
+    [t, item.stage, item.dryWeight, item.conflictSeen, relativeTime]
   );
 
   return (

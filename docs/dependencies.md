@@ -8,7 +8,7 @@ Referenced in `package.json` at line 95.
 
 ### Rationale
 
-This pre-release version of `@expo/ui` is required to support **NativeTabs** (currenty via `expo-router/unstable-native-tabs`). It provides:
+This pre-release version of `@expo/ui` is required to support **NativeTabs** (currently via `expo-router/unstable-native-tabs`). It provides:
 
 - **Native-driven Tab Bar**: Highly performant native tab implementations for iOS and Android.
 - **Liquid Glass Effect**: Supports the premium iOS aesthetic requirements of the project.

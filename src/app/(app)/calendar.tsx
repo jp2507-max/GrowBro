@@ -160,7 +160,7 @@ export default function CalendarScreen(): React.ReactElement {
     const dateKey = selectedDate.toFormat('yyyy-MM-dd');
     counts.set(dateKey, pendingTasks.length + completedTasks.length);
     return counts;
-  }, [selectedDate, pendingTasks.length, completedTasks.length]);
+  }, [selectedDate, pendingTasks, completedTasks]);
 
   const onDateSelect = useCallback((date: DateTime) => {
     setSelectedDate(date.startOf('day'));
@@ -197,6 +197,10 @@ export default function CalendarScreen(): React.ReactElement {
     },
     [taskDetailModal]
   );
+
+  const handleModalDismiss = useCallback(() => {
+    setSelectedTask(null);
+  }, []);
 
   const listData = useMemo(
     () =>
@@ -251,6 +255,7 @@ export default function CalendarScreen(): React.ReactElement {
         modalRef={taskDetailModal.ref}
         task={selectedTask}
         onComplete={handleCompleteTask}
+        onDismiss={handleModalDismiss}
       />
     </View>
   );

@@ -28,8 +28,9 @@ import { MessageCircle, MoreHorizontal } from '@/components/ui/icons';
 import { getOptionalAuthenticatedUserId } from '@/lib/auth/user-utils';
 import { normalizePostUserId } from '@/lib/community/post-utils';
 import { formatRelativeTimeTranslated } from '@/lib/datetime/format-relative-time';
+import { showErrorMessage } from '@/lib/flash-message';
 import { haptics } from '@/lib/haptics';
-import { translate } from '@/lib/i18n';
+import { translate, type TxKeyPath } from '@/lib/i18n';
 
 import { LikeButton } from './like-button';
 import {
@@ -86,7 +87,7 @@ function PostCardComponent({
       ? `unknown-user-${normalizedPost.id}`
       : String(normalizedPost.userId);
   const postId = normalizedPost.id;
-  const displayUsername = postUserId.slice(0, 8);
+  const displayUsername = postUserId.slice(0, 8) || 'Unknown';
 
   const isOwnPost =
     currentUserId !== undefined &&
@@ -203,6 +204,8 @@ function PostCardView({
       onDelete?.(postId, result.undo_expires_at);
     } catch (error) {
       console.error('Delete post failed:', error);
+      showErrorMessage(translate('community.delete_post_failed' as TxKeyPath));
+      haptics.error();
     }
   }, [deleteMutation, postId, onDelete]);
 
@@ -214,7 +217,10 @@ function PostCardView({
             accessibilityHint={translate(
               'accessibility.community.open_post_hint'
             )}
-            accessibilityLabel={post.body?.slice(0, 100) || 'Community post'}
+            accessibilityLabel={
+              post.body?.slice(0, 100) ||
+              translate('accessibility.community.post_fallback' as TxKeyPath)
+            }
             accessibilityRole="link"
             testID={testID}
             onPressIn={onPressIn}
@@ -325,7 +331,7 @@ function PostCardView({
                   onPress={handleCommentPress}
                   className="flex-row items-center gap-1.5"
                 >
-                  <MessageCircle size={22} color={colors.neutral[600]} />
+                  <MessageCircle size={26} color={colors.neutral[600]} />
                   {(post.comment_count ?? 0) > 0 && (
                     <Text
                       className="text-sm text-neutral-600 dark:text-neutral-400"
@@ -383,6 +389,7 @@ export const PostCard = React.memo(
       prevProps.post.comment_count === nextProps.post.comment_count &&
       prevProps.post.user_has_liked === nextProps.post.user_has_liked &&
       prevProps.post.created_at === nextProps.post.created_at &&
+      prevProps.post.userId === nextProps.post.userId &&
       prevProps.onDelete === nextProps.onDelete &&
       prevProps.testID === nextProps.testID
     );

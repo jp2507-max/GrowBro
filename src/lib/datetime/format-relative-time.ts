@@ -32,22 +32,18 @@ export function formatRelativeTime(
 ): RelativeTimeResult {
   if (!timestamp) return { token: 'now' };
 
-  try {
-    const dt = DateTime.fromISO(timestamp);
-    const now = DateTime.now();
-    const diff = now.diff(dt, ['weeks', 'days', 'hours', 'minutes']);
+  const dt = DateTime.fromISO(timestamp);
+  if (!dt.isValid) return { token: 'now' };
 
-    if (diff.weeks >= 1)
-      return { token: 'weeks', count: Math.floor(diff.weeks) };
-    if (diff.days >= 1) return { token: 'days', count: Math.floor(diff.days) };
-    if (diff.hours >= 1)
-      return { token: 'hours', count: Math.floor(diff.hours) };
-    if (diff.minutes >= 1)
-      return { token: 'minutes', count: Math.floor(diff.minutes) };
-    return { token: 'now' };
-  } catch {
-    return { token: 'now' };
-  }
+  const now = DateTime.now();
+  const diff = now.diff(dt, ['weeks', 'days', 'hours', 'minutes']);
+
+  if (diff.weeks >= 1) return { token: 'weeks', count: Math.floor(diff.weeks) };
+  if (diff.days >= 1) return { token: 'days', count: Math.floor(diff.days) };
+  if (diff.hours >= 1) return { token: 'hours', count: Math.floor(diff.hours) };
+  if (diff.minutes >= 1)
+    return { token: 'minutes', count: Math.floor(diff.minutes) };
+  return { token: 'now' };
 }
 
 /**

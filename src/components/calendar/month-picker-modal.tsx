@@ -49,7 +49,7 @@ function MonthButton({
       )}
       accessibilityRole="button"
       accessibilityLabel={monthName}
-      accessibilityHint="Selects this month"
+      accessibilityHint={translate('calendar.month_picker.select_month_hint')}
       accessibilityState={{ selected: isSelected }}
     >
       <Text
@@ -91,8 +91,10 @@ function YearSelector({
         onPress={handlePrevious}
         className="size-10 items-center justify-center rounded-full bg-neutral-100 dark:bg-charcoal-800"
         accessibilityRole="button"
-        accessibilityLabel="Previous year"
-        accessibilityHint="Goes to the previous year"
+        accessibilityLabel={translate('calendar.month_picker.previous_year')}
+        accessibilityHint={translate(
+          'calendar.month_picker.previous_year_hint'
+        )}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       >
         <ArrowLeft color={colors.neutral[600]} />
@@ -106,8 +108,8 @@ function YearSelector({
         onPress={handleNext}
         className="size-10 items-center justify-center rounded-full bg-neutral-100 dark:bg-charcoal-800"
         accessibilityRole="button"
-        accessibilityLabel="Next year"
-        accessibilityHint="Goes to the next year"
+        accessibilityLabel={translate('calendar.month_picker.next_year')}
+        accessibilityHint={translate('calendar.month_picker.next_year_hint')}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       >
         <ArrowRight color={colors.neutral[600]} />
@@ -134,7 +136,11 @@ export function MonthPickerModal({
 
   const handleMonthSelect = React.useCallback(
     (month: number) => {
-      const newDate = selectedDate.set({ year: displayYear, month: month + 1 });
+      const newDate = selectedDate.set({
+        year: displayYear,
+        month: month + 1,
+        day: 1,
+      });
       onMonthSelect(newDate);
       modalRef.current?.dismiss();
     },

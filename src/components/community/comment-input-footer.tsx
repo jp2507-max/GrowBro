@@ -76,7 +76,7 @@ export function CommentInputFooter({
             onChangeText={onChangeText}
             multiline
             numberOfLines={1}
-            maxLength={MAX_COMMENT_LENGTH + 50}
+            maxLength={MAX_COMMENT_LENGTH}
             className="min-h-[24px] flex-1 border-0 bg-transparent text-base text-neutral-900 dark:text-neutral-100"
             style={styles.borderlessInput}
           />

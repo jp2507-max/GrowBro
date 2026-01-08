@@ -73,6 +73,9 @@
       }
     },
     "calendar": {
+      "day_counter_hint": "Zeigt den aktuellen Tagesfortschritt im Monat an.",
+      "jump_to_today_hint": "Springt zum heutigen Datum.",
+      "month_picker_hint": "Öffnet die Monatsauswahl.",
       "needs_review_hint": "Kennzeichnet diese Aufgabe als konfliktbehaftet und prüfungsbedürftig.",
       "out_of_range_hint": "Zeigt an, dass der letzte Messwert außerhalb des Zielbereichs liegt.",
       "targets_hint": "Zeigt die pH- und EC-Zielwerte dieser Aufgabe."
@@ -99,6 +102,7 @@
       "compose_hint": "Öffnet den Bildschirm zum Erstellen eines Beitrags.",
       "create_post_hint": "Öffnet den Bildschirm zum Erstellen eines Beitrags.",
       "delete_post": "Beitrag löschen",
+      "delete_post_failed": "Beitrag konnte nicht gelöscht werden",
       "delete_post_hint": "Doppeltippen, um diesen Beitrag zu löschen. Du hast 15 Sekunden Zeit zum Rückgängig machen.",
       "error_card_hint": "Informiert, dass der Community-Feed nicht geladen werden konnte.",
       "like_button_hint": "Doppeltippen, um den Gefällt-mir-Status für diesen Beitrag umzuschalten.",
@@ -108,6 +112,7 @@
       "outbox_retry_hint": "Versucht, ausstehende Aktionen erneut zu senden.",
       "post_comment_hint": "Sendet deinen Kommentar für diesen Beitrag.",
       "post_deleted": "Beitrag gelöscht",
+      "post_fallback": "Community-Beitrag",
       "post_image": "Bild von @{{author}}",
       "post_image_hint": "Teil des Beitragsinhalts.",
       "post_options": "Beitragsoptionen",
@@ -116,6 +121,7 @@
       "retry_sync": "Synchronisation wiederholen",
       "share": "Diesen Beitrag teilen",
       "share_hint": "Öffnet die System-Teilen-Option für diesen Beitrag.",
+      "strain_label": "Sorte: {{strain}}",
       "undo_dismiss_hint": "Die Rückgängig-Snackbar schließen und die Aktion abbrechen",
       "undo_expires": "Rückgängigmachen läuft in {{seconds}}s ab",
       "view_author_profile": "Profil von @{{author}} anzeigen",
@@ -137,6 +143,20 @@
       "close_hint": "Doppeltippen, um das Modal zu schließen und zum vorherigen Bildschirm zurückzukehren",
       "close_label": "Modal schließen",
       "input_label": "{{label}}-Eingabe"
+    },
+    "nutrient": {
+      "add_reading": "Messung hinzufügen",
+      "add_reading_description": "pH- und EC-Werte manuell protokollieren",
+      "atc_label": "ATC",
+      "edit_reading": "Messung bearbeiten",
+      "load_error": "Messungen konnten nicht geladen werden",
+      "reading_error": "Messung konnte nicht gespeichert werden",
+      "reading_history": "Messverlauf",
+      "reading_saved": "Messung erfolgreich gespeichert",
+      "reading_update_error": "Messung konnte nicht aktualisiert werden",
+      "reading_updated": "Messung erfolgreich aktualisiert",
+      "readings_count": "{{count}} Messungen",
+      "save_reading": "Messung speichern"
     },
     "plant_hero_image": "Pflanzenbild",
     "plants": {
@@ -396,7 +416,7 @@
       "suggestedTimingAdjustment_plural": "Vorgeschlagene Zeitplananpassung: {{sign}}{{count}} Tage",
       "suggestionCount": "{{count}} Vorschlag basierend auf Bewertung",
       "suggestionCount_plural": "{{count}} Vorschläge basierend auf Bewertung",
-      "title": "Playbook-Anpassungen vorgeschlagen"
+      "title": "Anleitungs-Anpassungen vorgeschlagen"
     },
     "queue": {
       "retryError": "Fehler beim erneuten Versuch fehlgeschlagener Bewertungen. Bitte versuchen Sie es erneut.",
@@ -694,12 +714,18 @@
     },
     "log_ph_ec": "pH/EC protokollieren",
     "month_picker": {
+      "next_year": "Nächstes Jahr",
+      "next_year_hint": "Geht zum nächsten Jahr.",
+      "previous_year": "Vorheriges Jahr",
+      "previous_year_hint": "Geht zum vorherigen Jahr.",
       "select_month": "Monat auswählen",
+      "select_month_hint": "Wählt diesen Monat aus.",
       "title": "Monat auswählen"
     },
     "move": "Verschieben",
     "move_to_date": "Auf Datum verschieben",
     "needs_review_label": "Überprüfung erforderlich wegen Konflikt",
+    "noTaskSelected": "Keine Aufgabe ausgewählt",
     "noTasksForDay": "Keine Aufgaben für diesen Tag",
     "out_of_range": "außerhalb des Bereichs",
     "out_of_range_label": "Letzter pH/EC außerhalb des Zielbereichs",
@@ -834,11 +860,23 @@
     "select_date": "Datum wählen",
     "selected": "ausgewählt",
     "timeAgo": {
-      "days": "vor {{count}} Tagen",
-      "hours": "vor {{count}} Stunden",
-      "minutes": "vor {{count}} Minuten",
+      "days": {
+        "one": "vor {{count}} Tag",
+        "other": "vor {{count}} Tagen"
+      },
+      "hours": {
+        "one": "vor {{count}} Stunde",
+        "other": "vor {{count}} Stunden"
+      },
+      "minutes": {
+        "one": "vor {{count}} Minute",
+        "other": "vor {{count}} Minuten"
+      },
       "now": "Gerade eben",
-      "weeks": "vor {{count}} Wochen"
+      "weeks": {
+        "one": "vor {{count}} Woche",
+        "other": "vor {{count}} Wochen"
+      }
     },
     "undo": "Rückgängig",
     "yes": "Ja"
@@ -926,6 +964,11 @@
     "interactions": "Community-Interaktionen",
     "invalid_comment": "Ungültiger Kommentar",
     "like": "Gefällt mir",
+    "like_button_like": "Gefällt mir",
+    "like_button_unlike": "Gefällt mir entfernen",
+    "like_count": "{{count}} Gefällt mir",
+    "like_count_one": "{{count}} Gefällt mir",
+    "like_count_other": "{{count}} Gefällt mir",
     "like_failed": "Beitrag konnte nicht geliked werden",
     "likes": "Gefällt mir-Angaben",
     "likesDescription": "Benachrichtigt dich, wenn jemand deine Beiträge liked (max. 1 pro Beitrag alle 5 Min).",
@@ -945,7 +988,7 @@
     "outbox_sending": "Wird gesendet...",
     "phases": "Phasen",
     "playbooks": {
-      "accessibility": "Öffnet die Community-Playbook-Vorlagen.",
+      "accessibility": "Öffnet die Community-Anleitungs-Vorlagen.",
       "community": "Community-Vorlagen",
       "schedule": {
         "shift": "Zeitplan anpassen"
@@ -1012,11 +1055,11 @@
       "title": "KI-Trainingsbilder"
     },
     "analytics": {
-      "impact": "Aus: Playbook-Verbesserungsanalytik deaktiviert. Rechtsgrundlage: Einwilligung; Aufbewahrung: 180T aggregiert",
-      "infoBody": "Anonyme Nutzung der Playbooks hilft uns Zeitpläne und KI-Empfehlungen zu verfeinern.",
-      "infoTitle": "Playbook-Analytik",
-      "subtitle": "Hilf Playbooks & KI-Vorschläge zu verbessern",
-      "title": "Playbook-Analytik"
+      "impact": "Aus: Anleitungs-Verbesserungsanalytik deaktiviert. Rechtsgrundlage: Einwilligung; Aufbewahrung: 180T aggregiert",
+      "infoBody": "Anonyme Nutzung der Anleitungen hilft uns Zeitpläne und KI-Empfehlungen zu verfeinern.",
+      "infoTitle": "Anleitungs-Analytik",
+      "subtitle": "Hilf Anleitungen & KI-Vorschläge zu verbessern",
+      "title": "Anleitungs-Analytik"
     },
     "crashDiagnostics": {
       "impact": "Aus: keine Absturzberichte werden gesendet. Rechtsgrundlage: Einwilligung; Aufbewahrung: 180T",
@@ -1111,17 +1154,17 @@
       "title": "Erinnerungsfehler"
     },
     "playbook": {
-      "already_applied": "Dieses Playbook ist bereits auf diese Pflanze angewendet",
-      "generation_failed": "Aufgaben konnten nicht aus Playbook generiert werden",
-      "invalid_schema": "Ungültiges Playbook-Format",
+      "already_applied": "Diese Anleitung ist bereits auf diese Pflanze angewendet",
+      "generation_failed": "Aufgaben konnten nicht aus Anleitung generiert werden",
+      "invalid_schema": "Ungültiges Anleitungs-Format",
       "noTasks": "Keine Aufgaben gefunden",
-      "not_found": "Playbook nicht gefunden",
+      "not_found": "Anleitung nicht gefunden",
       "status": {
         "completed": "✓ Abgeschlossen",
         "current": "Aktuell",
         "upcoming": "Bevorstehend"
       },
-      "title": "Playbook-Fehler"
+      "title": "Anleitungs-Fehler"
     },
     "postLoad": "Fehler beim Laden des Beitrags",
     "recovery": {
@@ -1396,7 +1439,8 @@
         "days": "vor {{count}} Tagen",
         "hours": "vor {{count}} Stunden",
         "minutes": "vor {{count}} Minuten",
-        "now": "Gerade eben"
+        "now": "Gerade eben",
+        "weeks": "vor {{count}} Wochen"
       },
       "title": "Ernteverlauf"
     },
@@ -1685,7 +1729,7 @@
       "action_create_task_desc": "Bleib organisiert mit Aufgabenerinnerungen",
       "action_explore_strains": "Sorten erkunden",
       "action_explore_strains_desc": "Finde die perfekte Sorte für dein Setup",
-      "action_open_playbook": "Öffne ein Playbook",
+      "action_open_playbook": "Öffne eine Anleitung",
       "action_open_playbook_desc": "Erhalte Schritt-für-Schritt-Anleitung",
       "action_try_ai_diagnosis": "KI-Diagnose testen",
       "action_try_ai_diagnosis_desc": "Erkenne Pflanzengesundheitsprobleme",
@@ -1725,7 +1769,7 @@
     "quick_actions": {
       "add_task": "Aufgabe erstellen",
       "explore_strains": "Sorten erkunden",
-      "open_playbook": "Playbook öffnen",
+      "open_playbook": "Anleitung öffnen",
       "share_update": "Update teilen",
       "try_ai": "KI-Diagnose starten"
     },
@@ -2142,7 +2186,7 @@
         "diluteReservoir": "Verdünne das Reservoir mit ausgewogenem Wasser, um EC zu senken.",
         "increaseMonitoring": "Überwache pH/EC engmaschiger, bis sich die Werte stabilisieren.",
         "monitor48h": "Prüfe nach 48 Stunden erneut, um die Entwicklung zu bewerten.",
-        "nitrogenFeed": "Erhöhe die Stickstoffzufuhr gemäß dem Defizit-Playbook.",
+        "nitrogenFeed": "Erhöhe die Stickstoffzufuhr gemäß dem Defizit-Anleitung.",
         "retest12h": "Prüfe nach 12 Stunden erneut, um die Korrektur zu bestätigen.",
         "title": "Empfehlungen"
       },
@@ -2305,7 +2349,7 @@
     "guidance": {
       "body": "Egal ob Anfänger oder Experte, wir haben für dich Schritt-für-Schritt-Anleitungen und hilfreiche Ressourcen.",
       "feature_playbooks_body": "Vollständige Anbauanleitungen, angepasst an dein Setup und deine Sorte",
-      "feature_playbooks_title": "Geführte Anbau-Playbooks",
+      "feature_playbooks_title": "Geführte Anbau-Anleitungen",
       "feature_tasks_body": "Automatisierte Zeitpläne, die deinen Anbau auf Kurs halten",
       "feature_tasks_title": "Intelligentes Aufgabenmanagement",
       "feature_tips_body": "Kontextbezogene Ratschläge und Bildungsinhalte, wenn du sie brauchst",
@@ -2529,10 +2573,10 @@
   "playbooks": {
     "accessibility": {
       "adoptTemplate": "Community-Vorlage übernehmen",
-      "applyPlaybook": "{{name}} Playbook auf Pflanze anwenden",
+      "applyPlaybook": "{{name}} Anleitung auf Pflanze anwenden",
       "logTrichomeCheck": "Trichom-Check protokollieren",
       "phaseProgress": "{{phase}}-Phase, {{status}}, {{completed}} von {{{total}}} Aufgaben abgeschlossen",
-      "playbookCard": "{{name}} Playbook, {{setup}} Setup, {{weeks}} Wochen, {{tasks}} Aufgaben",
+      "playbookCard": "{{name}} Anleitung, {{setup}} Setup, {{weeks}} Wochen, {{tasks}} Aufgaben",
       "selectPlantHint": "Doppelt tippen, um diese Pflanze auszuwählen",
       "shareTemplate": "Vorlage mit Community teilen",
       "shiftSchedule": "Zeitplan verschieben",
@@ -2552,18 +2596,18 @@
       "viewDetails": "Details anzeigen"
     },
     "apply": {
-      "alreadyApplied": "Dieser Playbook ist bereits auf diese Pflanze angewendet",
-      "applying": "Playbook wird angewendet...",
+      "alreadyApplied": "Diese Anleitung ist bereits auf diese Pflanze angewendet",
+      "applying": "Anleitung wird angewendet...",
       "createPlant": "Neue Pflanze erstellen",
-      "error": "Playbook konnte nicht angewendet werden",
-      "selectPlant": "Wähle eine Pflanze für diesen Playbook",
+      "error": "Anleitung konnte nicht angewendet werden",
+      "selectPlant": "Wähle eine Pflanze für diese Anleitung",
       "success_one": "{{count}} Aufgabe erfolgreich erstellt",
       "success_other": "{{count}} Aufgaben erfolgreich erstellt"
     },
     "applyError": "Anwendung fehlgeschlagen",
     "applyErrorDescription": "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
-    "applyPlaybook": "Playbook anwenden",
-    "applySuccess": "Playbook angewendet",
+    "applyPlaybook": "Anleitung anwenden",
+    "applySuccess": "Anleitung angewendet",
     "applySuccessDescription": "{{count}} Aufgaben für deine Pflanze erfolgreich erstellt",
     "applyToPlant": "Auf Pflanze anwenden",
     "applying": "Wird angewendet...",
@@ -2609,20 +2653,20 @@
           "handleRequired": "Autoren-Handle ist erforderlich"
         },
         "license": "Lizenz",
-        "licenseDescription": "Andere können dein Playbook verwenden und modifizieren mit Namensnennung",
+        "licenseDescription": "Andere können deine Anleitung verwenden und modifizieren mit Namensnennung",
         "licenseText": "{{license}} - Creative Commons Attribution-ShareAlike",
-        "placeholderDescription": "Beschreibe dein Playbook...",
+        "placeholderDescription": "Beschreibe deine Anleitung...",
         "placeholderHandle": "dein_handle",
         "privacyNotice": "ℹ️ Alle persönlichen Informationen, Pflanzennamen und benutzerdefinierten Notizen werden automatisch vor dem Teilen entfernt.",
         "share": "Teilen",
         "sharing": "Wird geteilt...",
-        "subtitle": "Teile dein angepasstes Playbook mit der Community. Alle persönlichen Informationen werden automatisch entfernt.",
-        "title": "Playbook teilen"
+        "subtitle": "Teile deine angepasste Anleitung mit der Community. Alle persönlichen Informationen werden automatisch entfernt.",
+        "title": "Anleitung teilen"
       },
       "subtitle": "Erfolgreiche Anbaupläne entdecken und teilen",
       "title": "Community-Vorlagen"
     },
-    "communityDescription": "Durchsuche und übernehme Playbooks, die von anderen Growern geteilt wurden",
+    "communityDescription": "Durchsuche und übernimm Anleitungen, die von anderen Growern geteilt wurden",
     "communityTemplates": "Community-Vorlagen",
     "createPlant": "Pflanze erstellen",
     "customNotes": "Eigene Notizen",
@@ -2630,23 +2674,23 @@
     "customNotesPlaceholder": "Füge deine eigenen Notizen hinzu...",
     "customizationLevel": "Anpassungsgrad",
     "customizedTasks": "Angepasste Aufgaben",
-    "detailDescription": "Dieses Playbook erstellt einen vollständigen Aufgabenplan, der auf die Wachstumsphasen deiner Pflanze zugeschnitten ist, mit automatischen Erinnerungen und Fortschrittsverfolgung.",
+    "detailDescription": "Diese Anleitung erstellt einen vollständigen Aufgabenplan, der auf die Wachstumsphasen deiner Pflanze zugeschnitten ist, mit automatischen Erinnerungen und Fortschrittsverfolgung.",
     "durationDays_one": "{{count}} Tag",
     "durationDays_other": "{{count}} Tage",
     "editTask": "Aufgabe bearbeiten",
     "edited": "Bearbeitet",
     "empty": {
       "subtitle": "Schau später für Anbau-Anleitungen vorbei",
-      "title": "Keine Playbooks verfügbar"
+      "title": "Keine Anleitungen verfügbar"
     },
     "excludedFromBulkOperations": "Von Massenverschiebungen ausgeschlossen",
     "excludedFromBulkShift": "Diese Aufgabe wurde angepasst und wird von Massenverschiebungen ausgeschlossen",
-    "loadError": "Playbooks konnten nicht geladen werden. Bitte versuche es erneut.",
+    "loadError": "Anleitungen konnten nicht geladen werden. Bitte versuche es erneut.",
     "manuallyEdited": "Manuell bearbeitet",
-    "noPlants": "Du hast noch keine Pflanzen. Erstelle eine, um dieses Playbook anzuwenden.",
-    "noTasks": "Keine Aufgaben in diesem Playbook",
+    "noPlants": "Du hast noch keine Pflanzen. Erstelle eine, um diese Anleitung anzuwenden.",
+    "noTasks": "Keine Aufgaben in dieser Anleitung",
     "noTemplates": "Noch keine Community-Vorlagen verfügbar",
-    "notFound": "Playbook nicht gefunden",
+    "notFound": "Anleitung nicht gefunden",
     "onboarding": {
       "getStarted": "Los geht's",
       "next": "Weiter",
@@ -2731,12 +2775,12 @@
         "phases": "Phasen",
         "taskCount_one": "{{count}} Aufgabe",
         "taskCount_other": "{{count}} Aufgaben",
-        "title": "Playbook-Vorschau",
+        "title": "Growbook-Vorschau",
         "totalWeeks_one": "{{count}} Woche insgesamt",
         "totalWeeks_other": "{{count}} Wochen insgesamt"
       },
       "subtitle": "Wähle einen Anbauplan, der zu deinem Setup passt",
-      "title": "Wähle deinen Playbook"
+      "title": "Wähle dein Growbook"
     },
     "shareWithCommunity": "Mit Community teilen",
     "shareWithCommunityHint": "Diese Vorlage anderen Growern zur Verfügung stellen",
@@ -2786,17 +2830,17 @@
       "water": "Bewässerung"
     },
     "templateName": "Vorlagenname",
-    "templateNamePlaceholder": "Mein eigener Playbook",
+    "templateNamePlaceholder": "Mein eigenes Growbook",
     "templates": {
       "detail": {
-        "adoptButton": "Dieses Playbook übernehmen",
-        "adoptDescription": "Du kannst das Playbook nach der Übernahme anpassen",
+        "adoptButton": "Dieses Growbook übernehmen",
+        "adoptDescription": "Du kannst das Growbook nach der Übernahme anpassen",
         "adopted": "Übernommen",
         "authorPrefix": "von",
         "communityRating": "Community-Bewertung",
         "duration": "Dauer",
         "growthPhases": "Wachstumsphasen",
-        "licenseDescription": "Du kannst dieses Playbook mit Namensnennung des Autors verwenden und modifizieren",
+        "licenseDescription": "Du kannst dieses Growbook mit Namensnennung des Autors verwenden und modifizieren",
         "licensePrefix": "Lizenz:",
         "moreTasks": "+ {{count}} weitere Aufgaben",
         "rateButton": "Bewerten",
@@ -2805,7 +2849,7 @@
         "tasksPreview": "Aufgabenvorschau ({{total}} insgesamt)"
       }
     },
-    "title": "Playbooks",
+    "title": "Anleitungen",
     "totalWeeks": "{{count}} Wochen",
     "trichome": {
       "assessment": {
@@ -3495,7 +3539,7 @@
       "terpenes_title": "Terpenprofil",
       "title": "Sortendetails",
       "up_to": "bis zu",
-      "use_in_playbook": "Diese Sorte in einem Playbook verwenden",
+      "use_in_playbook": "Diese Sorte in einem Growbook verwenden",
       "weeks": "Wochen",
       "yield": "Ertrag"
     },
@@ -3874,7 +3918,7 @@
     "community": "Community",
     "home": "Startseite",
     "plants": "Pflanzen",
-    "playbooks": "Playbooks",
+    "playbooks": "Growbooks",
     "strains": "Sorten"
   },
   "tasks": {

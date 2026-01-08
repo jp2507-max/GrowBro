@@ -39,7 +39,7 @@ export function PostActionBar({
 
       {/* Comment Count */}
       <View className="flex-row items-center gap-1.5">
-        <MessageCircle width={26} height={26} color={iconColor} />
+        <MessageCircle size={26} color={iconColor} />
         {commentCount > 0 && (
           <Text className="text-base font-semibold text-neutral-600 dark:text-neutral-400">
             {commentCount}
@@ -59,7 +59,7 @@ export function PostActionBar({
         )}
         className="flex-row items-center gap-1.5"
       >
-        <Share width={26} height={26} color={iconColor} />
+        <Share size={26} color={iconColor} />
       </Pressable>
     </View>
   );
