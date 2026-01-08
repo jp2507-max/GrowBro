@@ -33,6 +33,7 @@ export function PostHeader({
       <View className="mb-4 flex-row items-center justify-between">
         <Pressable
           onPress={onAuthorPress}
+          testID="post-header-author-pressable"
           accessibilityRole="button"
           accessibilityLabel={translate(
             'accessibility.community.view_author_profile' as TxKeyPath,
@@ -63,6 +64,7 @@ export function PostHeader({
         {/* More Options */}
         <Pressable
           onPress={onOptionsPress}
+          testID="post-header-options-pressable"
           accessibilityRole="button"
           accessibilityLabel={translate(
             'accessibility.community.post_options' as TxKeyPath
@@ -72,7 +74,11 @@ export function PostHeader({
           )}
           className="p-2"
         >
-          <MoreHorizontal width={20} height={20} color={colors.neutral[400]} />
+          <MoreHorizontal
+            width={20}
+            height={20}
+            color={isDark ? colors.neutral[400] : colors.neutral[600]}
+          />
         </Pressable>
       </View>
 
@@ -80,6 +86,7 @@ export function PostHeader({
       {strain && (
         <Pressable
           onPress={onStrainPress}
+          testID="post-header-strain-pressable"
           className="mb-4 flex-row items-center self-start rounded-full bg-primary-50 px-3 py-2 dark:bg-primary-900/20"
           accessibilityRole="button"
           accessibilityLabel={translate(

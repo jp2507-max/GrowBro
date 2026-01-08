@@ -1,5 +1,6 @@
+import { Q } from '@nozbe/watermelondb';
 import { DateTime } from 'luxon';
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CalendarHeader } from '@/components/calendar/calendar-header';
@@ -45,92 +46,133 @@ function parseEphemeralTaskInfo(
   return { seriesId: parts[1], localDate: parts[2] };
 }
 
-// -----------------------------------------------------------------------------
-// Hook: useDayTasks
-// -----------------------------------------------------------------------------
-
-function useDayTasks(selectedDate: DateTime): {
-  pendingTasks: Task[];
-  completedTasks: Task[];
+/**
+ * Hook to manage calendar data for a range of weeks and the selected day.
+ * Fetches tasks for a 5-week range (indicator visibility) and plant info for the selected day.
+ */
+function useCalendarData(selectedDate: DateTime): {
+  dayPendingTasks: Task[];
+  dayCompletedTasks: Task[];
+  taskCounts: Map<string, number>;
   plantMap: Map<string, PlantInfo>;
   isLoading: boolean;
   refetch: () => Promise<void>;
 } {
-  const [pendingTasks, setPendingTasks] = React.useState<Task[]>([]);
-  const [completedTasks, setCompletedTasks] = React.useState<Task[]>([]);
-  const [plantMap, setPlantMap] = React.useState<Map<string, PlantInfo>>(
-    new Map()
-  );
-  const [isLoading, setIsLoading] = React.useState(true);
+  const [tasks, setTasks] = useState<{ pending: Task[]; completed: Task[] }>({
+    pending: [],
+    completed: [],
+  });
+  const [plantMap, setPlantMap] = useState<Map<string, PlantInfo>>(new Map());
+  const [isLoading, setIsLoading] = useState(true);
 
-  const loadTasks = React.useCallback(async () => {
+  // Derive primitive values for stable dependencies
+  const selectedWeekMillis = selectedDate.startOf('week').toMillis();
+  const selectedDayMillis = selectedDate.startOf('day').toMillis();
+
+  // Range for indicators: 5 weeks (centered on selectedDate's week)
+  const range = useMemo(() => {
+    const weekStart = DateTime.fromMillis(selectedWeekMillis);
+    return {
+      start: weekStart.minus({ weeks: 2 }).startOf('day'),
+      end: weekStart.plus({ weeks: 2 }).endOf('week').endOf('day'),
+    };
+  }, [selectedWeekMillis]);
+
+  const rangeStartMillis = range.start.toMillis();
+  const rangeEndMillis = range.end.toMillis();
+
+  const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const startOfDay = selectedDate.startOf('day').toJSDate();
-      const endOfDay = selectedDate.endOf('day').toJSDate();
+      const rStart = DateTime.fromMillis(rangeStartMillis);
+      const rEnd = DateTime.fromMillis(rangeEndMillis);
 
+      // 1. Fetch all tasks in the 5-week range for indicators
       const [pending, completed] = await Promise.all([
-        getTasksByDateRange(startOfDay, endOfDay),
-        getCompletedTasksByDateRange(startOfDay, endOfDay),
+        getTasksByDateRange(rStart.toJSDate(), rEnd.toJSDate()),
+        getCompletedTasksByDateRange(rStart.toJSDate(), rEnd.toJSDate()),
       ]);
 
-      // Collect unique plant IDs from all tasks
-      const plantIds = new Set<string>();
-      for (const task of [...pending, ...completed]) {
-        if (task.plantId) {
-          plantIds.add(task.plantId);
-        }
-      }
+      setTasks({ pending, completed });
 
-      // Fetch plant info for all relevant plant IDs
+      // 2. Identify tasks for the SELECTED day to fetch plant info
+      const dayStart = DateTime.fromMillis(selectedDayMillis);
+      const dayEnd = dayStart.endOf('day');
+
+      const isForSelectedDay = (task: Task) => {
+        const due = DateTime.fromISO(task.dueAtLocal);
+        return due >= dayStart && due <= dayEnd;
+      };
+
+      const dayPending = pending.filter(isForSelectedDay);
+      const dayCompleted = completed.filter(isForSelectedDay);
+
+      // Collect unique plant IDs for the selected day
+      const plantIds = new Set<string>();
+      [...dayPending, ...dayCompleted].forEach((t) => {
+        if (t.plantId) plantIds.add(t.plantId);
+      });
+
+      // 3. Fetch plant info efficiently
       const newPlantMap = new Map<string, PlantInfo>();
       if (plantIds.size > 0) {
         const plantsCollection = database.get<PlantModel>('plants');
         const plantIdsArray = Array.from(plantIds);
 
-        // Fetch plants in parallel batches
-        const plantPromises = plantIdsArray.map(async (id) => {
-          try {
-            const plant = await plantsCollection.find(id);
-            return {
-              id: plant.id,
-              name: plant.name,
-              imageUrl: plant.imageUrl,
-            };
-          } catch {
-            // Plant not found, skip
-            return null;
-          }
+        const plants = await plantsCollection
+          .query(Q.where('id', Q.oneOf(plantIdsArray)))
+          .fetch();
+
+        plants.forEach((plant) => {
+          newPlantMap.set(plant.id, {
+            id: plant.id,
+            name: plant.name,
+            imageUrl: plant.imageUrl,
+          });
         });
-
-        const plants = await Promise.all(plantPromises);
-        for (const plant of plants) {
-          if (plant) {
-            newPlantMap.set(plant.id, plant);
-          }
-        }
       }
-
-      setPendingTasks(pending);
-      setCompletedTasks(completed);
       setPlantMap(newPlantMap);
     } catch (error) {
-      console.warn('[CalendarScreen] Failed to load tasks:', error);
+      console.warn('[CalendarScreen] Failed to load calendar data:', error);
     } finally {
       setIsLoading(false);
     }
-  }, [selectedDate]);
+  }, [rangeStartMillis, rangeEndMillis, selectedDayMillis]);
 
-  React.useEffect(() => {
-    loadTasks();
-  }, [loadTasks]);
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // Derive day-specific tasks and overall counts
+  const { dayPendingTasks, dayCompletedTasks, taskCounts } = useMemo(() => {
+    const dayStart = DateTime.fromMillis(selectedDayMillis);
+    const dayEnd = dayStart.endOf('day');
+
+    const isForSelectedDay = (task: Task) => {
+      const due = DateTime.fromISO(task.dueAtLocal);
+      return due >= dayStart && due <= dayEnd;
+    };
+
+    const counts = new Map<string, number>();
+    [...tasks.pending, ...tasks.completed].forEach((task) => {
+      const dateKey = DateTime.fromISO(task.dueAtLocal).toFormat('yyyy-MM-dd');
+      counts.set(dateKey, (counts.get(dateKey) ?? 0) + 1);
+    });
+
+    return {
+      dayPendingTasks: tasks.pending.filter(isForSelectedDay),
+      dayCompletedTasks: tasks.completed.filter(isForSelectedDay),
+      taskCounts: counts,
+    };
+  }, [tasks, selectedDayMillis]);
 
   return {
-    pendingTasks,
-    completedTasks,
+    dayPendingTasks,
+    dayCompletedTasks,
+    taskCounts,
     plantMap,
     isLoading,
-    refetch: loadTasks,
+    refetch: loadData,
   };
 }
 
@@ -145,22 +187,18 @@ export default function CalendarScreen(): React.ReactElement {
     DateTime.now().startOf('day')
   );
 
-  const { pendingTasks, completedTasks, plantMap, isLoading, refetch } =
-    useDayTasks(selectedDate);
+  const {
+    dayPendingTasks,
+    dayCompletedTasks,
+    taskCounts,
+    plantMap,
+    isLoading,
+    refetch,
+  } = useCalendarData(selectedDate);
 
   // Task detail modal state
   const taskDetailModal = useTaskDetailModal();
-  const [selectedTask, setSelectedTask] = React.useState<Task | null>(null);
-
-  // Build task counts map for the current week (for indicators)
-  const taskCounts = useMemo(() => {
-    const counts = new Map<string, number>();
-    // For now, just count tasks for the selected date
-    // In production, you'd fetch counts for the entire week
-    const dateKey = selectedDate.toFormat('yyyy-MM-dd');
-    counts.set(dateKey, pendingTasks.length + completedTasks.length);
-    return counts;
-  }, [selectedDate, pendingTasks, completedTasks]);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
   const onDateSelect = useCallback((date: DateTime) => {
     setSelectedDate(date.startOf('day'));
@@ -205,12 +243,12 @@ export default function CalendarScreen(): React.ReactElement {
   const listData = useMemo(
     () =>
       buildCalendarListData({
-        pendingTasks,
-        completedTasks,
+        pendingTasks: dayPendingTasks,
+        completedTasks: dayCompletedTasks,
         isLoading,
         plantMap,
       }),
-    [pendingTasks, completedTasks, isLoading, plantMap]
+    [dayPendingTasks, dayCompletedTasks, isLoading, plantMap]
   );
 
   const renderItem = useMemo(

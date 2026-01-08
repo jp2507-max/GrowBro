@@ -211,9 +211,10 @@ const client = z.object({
         if (!val) return true; // Allow empty/undefined
         // Full format: <numeric-id>-<hash>.apps.googleusercontent.com
         // Validates the ENTIRE format, not just suffix
-        if (/^\d+-[\w]+\.apps\.googleusercontent\.com$/.test(val)) return true;
+        if (/^\d+-[a-zA-Z0-9-]+\.apps\.googleusercontent\.com$/.test(val))
+          return true;
         // Prefix-only format: <numeric-id>-<alphanumeric-hash>
-        if (/^\d+-[\w]+$/.test(val)) return true;
+        if (/^\d+-[a-zA-Z0-9-]+$/.test(val)) return true;
         return false;
       },
       {

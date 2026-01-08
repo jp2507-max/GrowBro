@@ -45,7 +45,7 @@ const cardStyles = StyleSheet.create({
     width: '100%' as const,
   },
   shadow: {
-    shadowColor: '#000',
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
@@ -87,7 +87,8 @@ function PostCardComponent({
       ? `unknown-user-${normalizedPost.id}`
       : String(normalizedPost.userId);
   const postId = normalizedPost.id;
-  const displayUsername = postUserId.slice(0, 8) || 'Unknown';
+  const displayUsername =
+    postUserId.slice(0, 8) || translate('community.unknown_user');
 
   const isOwnPost =
     currentUserId !== undefined &&

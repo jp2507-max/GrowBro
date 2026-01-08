@@ -88,7 +88,9 @@ function ActionButton({
       )}
       accessibilityRole="button"
       accessibilityLabel={label}
-      accessibilityHint={`Performs ${label} action`}
+      accessibilityHint={translate('accessibility.common.action_button_hint', {
+        label,
+      })}
       testID={testID}
     >
       {icon}

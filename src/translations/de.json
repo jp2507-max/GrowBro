@@ -81,6 +81,7 @@
       "targets_hint": "Zeigt die pH- und EC-Zielwerte dieser Aufgabe."
     },
     "common": {
+      "action_button_hint": "Führt {{label}} Aktion aus",
       "back_hint": "Navigiert zurück zum vorherigen Bildschirm",
       "confirm_date_hint": "Bestätigt das ausgewählte Datum.",
       "go_back": "Zurück",
@@ -124,6 +125,7 @@
       "strain_label": "Sorte: {{strain}}",
       "undo_dismiss_hint": "Die Rückgängig-Snackbar schließen und die Aktion abbrechen",
       "undo_expires": "Rückgängigmachen läuft in {{seconds}}s ab",
+      "unknown_user": "Unbekannt",
       "view_author_profile": "Profil von @{{author}} anzeigen",
       "view_author_profile_hint": "Doppeltippen, um das Profil dieses Benutzers zu öffnen.",
       "view_comments": "{{count}} Kommentare",
@@ -150,6 +152,7 @@
       "atc_label": "ATC",
       "edit_reading": "Messung bearbeiten",
       "load_error": "Messungen konnten nicht geladen werden",
+      "readingNotFound": "Messung nicht gefunden",
       "reading_error": "Messung konnte nicht gespeichert werden",
       "reading_history": "Messverlauf",
       "reading_saved": "Messung erfolgreich gespeichert",
@@ -685,6 +688,8 @@
   },
   "calendar": {
     "day_counter": "TAG {{day}} / {{total}}",
+    "day_counter_label": "TAG",
+    "day_counter_separator": "/",
     "drag_handle_hint": "Lange drücken und ziehen, um Aufgaben innerhalb dieses Tages neu anzuordnen.",
     "drag_handle_label": "Ziehgriff zum Neuanordnen",
     "drag_item_hint": "Lange drücken und ziehen, um neu zu planen. Doppeltippen für Menü.",
@@ -2186,7 +2191,7 @@
         "diluteReservoir": "Verdünne das Reservoir mit ausgewogenem Wasser, um EC zu senken.",
         "increaseMonitoring": "Überwache pH/EC engmaschiger, bis sich die Werte stabilisieren.",
         "monitor48h": "Prüfe nach 48 Stunden erneut, um die Entwicklung zu bewerten.",
-        "nitrogenFeed": "Erhöhe die Stickstoffzufuhr gemäß dem Defizit-Anleitung.",
+        "nitrogenFeed": "Erhöhe die Stickstoffzufuhr gemäß der Defizit-Anleitung.",
         "retest12h": "Prüfe nach 12 Stunden erneut, um die Korrektur zu bestätigen.",
         "title": "Empfehlungen"
       },

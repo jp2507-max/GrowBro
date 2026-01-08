@@ -24,7 +24,6 @@ const getPlaceholderImage = (id: number | string) => {
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i);
     hash = (hash << 5) - hash + char;
-    hash = hash & hash; // Convert to 32-bit integer
   }
   const index = Math.abs(hash) % images.length;
   return images[index];
@@ -57,14 +56,6 @@ export const Card = ({
     []
   );
 
-  const imageUri = React.useMemo(() => {
-    // Use actual post media, fallback to placeholder if unavailable
-    if (media_resized_uri || media_uri) {
-      return media_resized_uri || media_uri;
-    }
-    return getPlaceholderImage(id);
-  }, [id, media_resized_uri, media_uri]);
-
   return (
     <Link href={`/feed/${id}`} asChild>
       <Pressable
@@ -72,14 +63,17 @@ export const Card = ({
         accessibilityLabel={compositeLabel}
         accessibilityRole="link"
       >
-        <View className="m-2 overflow-hidden rounded-xl  border border-neutral-300 bg-white  dark:bg-neutral-900">
+        <View className="m-2 overflow-hidden rounded-xl  border border-neutral-300 bg-white  dark:bg-charcoal-900">
           <OptimizedImage
             className="h-56 w-full overflow-hidden rounded-t-xl"
             contentFit="cover"
-            uri={imageUri}
+            uri={media_uri || getPlaceholderImage(id)}
+            resizedUri={media_resized_uri}
             recyclingKey={String(id)}
-            blurhash={media_blurhash}
-            thumbhash={media_thumbhash}
+            {...((media_uri || media_resized_uri) && {
+              blurhash: media_blurhash,
+              thumbhash: media_thumbhash,
+            })}
           />
 
           <View className="p-2">

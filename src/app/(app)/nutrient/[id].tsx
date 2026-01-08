@@ -1,10 +1,11 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, ScrollView } from 'react-native';
 import { showMessage } from 'react-native-flash-message';
 
 import { useFetchReading, useUpdateReading } from '@/api/ph-ec-readings';
+import { useFetchReservoirs } from '@/api/reservoirs';
 import { PhEcReadingForm } from '@/components/nutrient/ph-ec-reading-form';
 import { Text, View } from '@/components/ui';
 import type { PpmScale } from '@/lib/nutrient-engine/types';
@@ -14,10 +15,10 @@ export default function ReadingDetailScreen(): React.ReactElement {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const updateReading = useUpdateReading();
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Fetch existing reading
   const { data: reading, isLoading } = useFetchReading(id!);
+  const { data: reservoirsData } = useFetchReservoirs();
 
   const handleSubmit = useCallback(
     async (data: {
@@ -33,7 +34,6 @@ export default function ReadingDetailScreen(): React.ReactElement {
       note?: string;
     }) => {
       if (!id) return;
-      setIsSubmitting(true);
 
       try {
         await updateReading.mutateAsync({
@@ -65,8 +65,6 @@ export default function ReadingDetailScreen(): React.ReactElement {
           type: 'danger',
           duration: 4000,
         });
-      } finally {
-        setIsSubmitting(false);
       }
     },
     [updateReading, router, t, id]
@@ -77,6 +75,7 @@ export default function ReadingDetailScreen(): React.ReactElement {
     return {
       ph: reading.ph,
       ecRaw: reading.ecRaw,
+      ec25c: reading.ec25c,
       tempC: reading.tempC,
       atcOn: reading.atcOn,
       ppmScale: reading.ppmScale,
@@ -89,7 +88,10 @@ export default function ReadingDetailScreen(): React.ReactElement {
 
   if (isLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-white dark:bg-charcoal-950">
+      <View
+        testID="reading-detail-loading"
+        className="flex-1 items-center justify-center bg-white dark:bg-charcoal-950"
+      >
         <ActivityIndicator size="large" />
       </View>
     );
@@ -97,15 +99,24 @@ export default function ReadingDetailScreen(): React.ReactElement {
 
   if (!reading) {
     return (
-      <View className="flex-1 items-center justify-center bg-white p-4 dark:bg-charcoal-950">
-        <Text className="text-center text-neutral-600">Reading not found</Text>
+      <View
+        testID="reading-detail-not-found"
+        className="flex-1 items-center justify-center bg-white p-4 dark:bg-charcoal-950"
+      >
+        <Text className="text-center text-neutral-600">
+          {t('nutrient.readingNotFound')}
+        </Text>
       </View>
     );
   }
 
   return (
-    <View className="flex-1 bg-white dark:bg-charcoal-950">
+    <View
+      testID="reading-detail-screen"
+      className="flex-1 bg-white dark:bg-charcoal-950"
+    >
       <ScrollView
+        testID="reading-detail-scroll"
         className="flex-1"
         contentContainerClassName="p-4"
         contentInsetAdjustmentBehavior="automatic"
@@ -119,9 +130,9 @@ export default function ReadingDetailScreen(): React.ReactElement {
 
         <PhEcReadingForm
           onSubmit={handleSubmit}
-          isSubmitting={isSubmitting}
+          isSubmitting={updateReading.isPending}
           defaultValues={defaultValues}
-          reservoirs={[]} // TODO: Fetch reservoirs
+          reservoirs={reservoirsData?.data || []}
         />
       </ScrollView>
     </View>

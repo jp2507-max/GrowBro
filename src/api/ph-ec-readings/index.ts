@@ -18,10 +18,10 @@ import { client } from '../common';
 type CreateReadingVariables = {
   ph: number;
   ecRaw: number;
-  ec25c: number;
-  tempC: number;
-  atcOn: boolean;
-  ppmScale: PpmScale;
+  ec25c?: number;
+  tempC?: number;
+  atcOn?: boolean;
+  ppmScale?: PpmScale;
   reservoirId?: string;
   plantId?: string;
   meterId?: string;
@@ -34,6 +34,7 @@ type CreateReadingResponse = PhEcReading;
 type FetchReadingsVariables = {
   reservoirId?: string;
   plantId?: string;
+  meterId?: string;
   limit?: number;
   offset?: number;
 };
@@ -42,6 +43,14 @@ type FetchReadingsResponse = {
   data: PhEcReading[];
   total: number;
 };
+
+// ============================================================================
+// Middleware for cache invalidation
+// ============================================================================
+
+// Note: Due to react-query-kit limitations with queryClient access in onSuccess,
+// we'll handle cache invalidation at the hook usage level in components.
+// The mutation itself only performs the database operation.
 
 // ============================================================================
 // Local Database Operations
@@ -63,10 +72,10 @@ export async function createReadingLocal(
     return await readingsCollection.create((record) => {
       record.ph = variables.ph;
       record.ecRaw = variables.ecRaw;
-      record.ec25c = variables.ec25c;
-      record.tempC = variables.tempC;
-      record.atcOn = variables.atcOn;
-      record.ppmScale = variables.ppmScale;
+      record.ec25c = variables.ec25c ?? 0;
+      record.tempC = variables.tempC ?? 25;
+      record.atcOn = variables.atcOn ?? false;
+      record.ppmScale = variables.ppmScale ?? '500';
       record.measuredAt = variables.measuredAt ?? Date.now();
 
       if (variables.reservoirId) {
@@ -90,10 +99,10 @@ export async function createReadingLocal(
         id: '', // Not yet assigned
         ph: variables.ph,
         ecRaw: variables.ecRaw,
-        ec25c: variables.ec25c,
-        tempC: variables.tempC,
-        atcOn: variables.atcOn,
-        ppmScale: variables.ppmScale,
+        ec25c: variables.ec25c ?? 0,
+        tempC: variables.tempC ?? 25,
+        atcOn: variables.atcOn ?? false,
+        ppmScale: variables.ppmScale ?? '500',
         measuredAt: variables.measuredAt ?? Date.now(),
         createdAt: Date.now(),
         updatedAt: Date.now(),
@@ -203,8 +212,13 @@ export async function fetchReadingLocal(
       createdAt: record.createdAt.getTime(),
       updatedAt: record.updatedAt.getTime(),
     };
-  } catch {
-    return null;
+  } catch (error) {
+    // WatermelonDB throws if record not found
+    if (error instanceof Error && error.message.includes('not found')) {
+      return null;
+    }
+    // Re-throw unexpected errors for proper error handling
+    throw error;
   }
 }
 
@@ -234,6 +248,7 @@ export async function updateReadingLocal(
       if (
         variables.ph !== undefined ||
         variables.ecRaw !== undefined ||
+        variables.ec25c !== undefined ||
         variables.tempC !== undefined ||
         variables.atcOn !== undefined
       ) {
@@ -345,6 +360,17 @@ export const useFetchReading = (id: string) => {
 
 /**
  * Hook to update a pH/EC reading
+ *
+ * Note: Cache invalidation should be handled at the component level using:
+ * ```tsx
+ * const queryClient = useQueryClient();
+ * const mutation = useUpdateReading({
+ *   onSuccess: () => {
+ *     queryClient.invalidateQueries({ queryKey: ['ph-ec-reading', id] });
+ *     queryClient.invalidateQueries({ queryKey: ['ph-ec-readings'] });
+ *   }
+ * });
+ * ```
  */
 export const useUpdateReading = createMutation<
   PhEcReading,

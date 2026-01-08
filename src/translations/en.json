@@ -81,6 +81,7 @@
       "targets_hint": "Shows the pH and EC targets for this task."
     },
     "common": {
+      "action_button_hint": "Performs {{label}} action",
       "back_hint": "Navigates back to the previous screen",
       "confirm_date_hint": "Confirms the selected date.",
       "go_back": "Go back",
@@ -124,6 +125,7 @@
       "strain_label": "Strain: {{strain}}",
       "undo_dismiss_hint": "Dismiss the undo snackbar and cancel the action",
       "undo_expires": "Undo expires in {{seconds}}s",
+      "unknown_user": "Unknown",
       "view_author_profile": "View profile of @{{author}}",
       "view_author_profile_hint": "Double-tap to open this user's profile.",
       "view_comments": "{{count}} comments",
@@ -150,6 +152,7 @@
       "atc_label": "ATC",
       "edit_reading": "Edit Reading",
       "load_error": "Failed to load readings",
+      "readingNotFound": "Reading not found",
       "reading_error": "Failed to save reading",
       "reading_history": "Reading History",
       "reading_saved": "Reading saved successfully",
@@ -685,6 +688,8 @@
   },
   "calendar": {
     "day_counter": "DAY {{day}} / {{total}}",
+    "day_counter_label": "DAY",
+    "day_counter_separator": "/",
     "drag_handle_hint": "Long-press and drag to reorder tasks within this day.",
     "drag_handle_label": "Drag handle for reordering",
     "drag_item_hint": "Long-press then drag to reschedule. Double-tap to open move menu.",
@@ -2349,7 +2354,7 @@
     "guidance": {
       "body": "Whether you're a beginner or expert, we've got you covered with step-by-step guides and helpful resources.",
       "feature_playbooks_body": "Complete cultivation guides tailored to your setup and strain",
-      "feature_playbooks_title": "Guided Grow Growbooks",
+      "feature_playbooks_title": "Guided Growbooks",
       "feature_tasks_body": "Automated schedules that keep your grow on track",
       "feature_tasks_title": "Smart Task Management",
       "feature_tips_body": "Contextual advice and educational content when you need it",
@@ -3526,7 +3531,7 @@
       "no_description": "No description available",
       "not_reported": "Not reported",
       "outdoor": "Outdoor",
-      "playbook_cta_hint": "Create a grow growbook with this strain",
+      "playbook_cta_hint": "Create a growbook with this strain",
       "playbook_description": "Create a personalized growing schedule",
       "quick_facts": "Quick Facts",
       "retry": "Retry",

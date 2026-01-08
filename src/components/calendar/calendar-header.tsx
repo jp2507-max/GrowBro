@@ -109,10 +109,10 @@ function DayCounter({
       accessibilityHint={translate('accessibility.calendar.day_counter_hint')}
     >
       <Text className="text-4xl font-black tracking-tight text-neutral-900 dark:text-white">
-        DAY {dayOfMonth}
+        {translate('calendar.day_counter_label')} {dayOfMonth}
       </Text>
       <Text className="text-xl font-medium text-neutral-400 dark:text-neutral-500">
-        / {daysInMonth}
+        {translate('calendar.day_counter_separator')} {daysInMonth}
       </Text>
     </View>
   );

@@ -23,6 +23,7 @@ const corsHeaders = {
 };
 
 const COMMUNITY_MEDIA_BUCKET = 'community-posts';
+const ALLOWED_POST_CATEGORIES = ['problem_deficiency'] as const;
 
 // Fetch configuration constants
 const MAX_BYTES = 50 * 1024 * 1024; // 50MB limit
@@ -184,12 +185,25 @@ Deno.serve(async (req: Request) => {
 
     // Validate strain exists in strain_cache if provided
     if (requestBody.strain) {
-      const { data: strainExists } = await supabaseClient
+      const { data: strainExists, error: strainError } = await supabaseClient
         .from('strain_cache')
         .select('id')
         .eq('name', requestBody.strain)
         .single();
 
+      // Handle unexpected database errors separately
+      if (strainError && strainError.code !== 'PGRST116') {
+        console.error('[create-post] Strain lookup error:', strainError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to validate strain' }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+
+      // PGRST116 means no rows found, which is the expected validation case
       if (!strainExists) {
         return new Response(JSON.stringify({ error: 'Invalid strain name' }), {
           status: 400,
@@ -200,8 +214,11 @@ Deno.serve(async (req: Request) => {
 
     // Validate category against allowed values if provided
     if (requestBody.category) {
-      const allowedCategories = ['problem_deficiency'];
-      if (!allowedCategories.includes(requestBody.category)) {
+      if (
+        !(ALLOWED_POST_CATEGORIES as readonly string[]).includes(
+          requestBody.category
+        )
+      ) {
         return new Response(
           JSON.stringify({
             error: 'Invalid category. Must be one of: problem_deficiency',
