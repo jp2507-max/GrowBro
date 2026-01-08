@@ -23,7 +23,11 @@ import { client } from '../common';
 export class AccessDeniedError extends Error {
   code: 'ACCESS_DENIED';
 
-  constructor(message: string = 'User does not own this reading') {
+  /**
+   * Error thrown when user doesn't have permission to access a reading
+   * @internal - Message is internal-only, always translated at UI boundary
+   */
+  constructor(message: string = 'Access denied') {
     super(message);
     this.name = 'AccessDeniedError';
     this.code = 'ACCESS_DENIED';
@@ -94,12 +98,95 @@ function computeEC25(params: {
   }
 
   // Otherwise apply compensation using user preference
-  try {
-    return toEC25(ecRaw, tempC, tempCompensationBeta);
-  } catch (error) {
-    throw new Error(
-      `Failed to compute EC@25°C: ${error instanceof Error ? error.message : 'Unknown error'}`
-    );
+  return toEC25(ecRaw, tempC, tempCompensationBeta);
+}
+
+/**
+ * Map a WatermelonDB model to the PhEcReading type
+ * @internal
+ */
+function mapModelToReading(record: PhEcReadingModel): PhEcReading {
+  return {
+    id: record.id,
+    ph: record.ph,
+    ecRaw: record.ecRaw,
+    ec25c: record.ec25c,
+    tempC: record.tempC,
+    atcOn: record.atcOn,
+    ppmScale: record.ppmScale as PpmScale,
+    reservoirId: record.reservoirId,
+    plantId: record.plantId,
+    meterId: record.meterId,
+    note: record.note,
+    qualityFlags: record.qualityFlags,
+    measuredAt: record.measuredAt || record.createdAt.getTime(),
+    createdAt: record.createdAt.getTime(),
+    updatedAt: record.updatedAt.getTime(),
+  };
+}
+
+/**
+ * Apply partial field updates to a reading record
+ * Handles ec25c recomputation and quality flag updates
+ * @internal
+ */
+function applyReadingUpdates(options: {
+  r: PhEcReadingModel;
+  record: PhEcReadingModel;
+  variables: Partial<CreateReadingVariables>;
+  tempCompensationBeta: number;
+}): void {
+  const { r, record, variables, tempCompensationBeta } = options;
+
+  if (variables.ph !== undefined) r.ph = variables.ph;
+  if (variables.ecRaw !== undefined) r.ecRaw = variables.ecRaw;
+  if (variables.tempC !== undefined) r.tempC = variables.tempC;
+  if (variables.atcOn !== undefined) r.atcOn = variables.atcOn;
+  if (variables.ppmScale !== undefined) r.ppmScale = variables.ppmScale;
+  if (variables.reservoirId !== undefined)
+    r.reservoirId = variables.reservoirId;
+  if (variables.plantId !== undefined) r.plantId = variables.plantId;
+  if (variables.meterId !== undefined) r.meterId = variables.meterId;
+  if (variables.note !== undefined) r.note = variables.note;
+
+  // Recompute ec25c if dependent fields changed (unless explicitly provided)
+  const dependentFieldsChanged =
+    variables.ecRaw !== undefined ||
+    variables.tempC !== undefined ||
+    variables.atcOn !== undefined;
+
+  if (dependentFieldsChanged && variables.ec25c === undefined) {
+    r.ec25c = computeEC25({
+      ecRaw: variables.ecRaw ?? r.ecRaw,
+      tempC: variables.tempC ?? r.tempC,
+      atcOn: variables.atcOn ?? r.atcOn,
+      tempCompensationBeta,
+    });
+  } else if (variables.ec25c !== undefined) {
+    r.ec25c = variables.ec25c;
+  }
+
+  // Re-compute quality flags if relevant fields changed
+  const shouldRecomputeFlags =
+    variables.ph !== undefined ||
+    variables.ecRaw !== undefined ||
+    variables.ec25c !== undefined ||
+    variables.tempC !== undefined ||
+    variables.atcOn !== undefined;
+
+  if (shouldRecomputeFlags) {
+    r.qualityFlags = computeQualityFlags({
+      id: record.id,
+      ph: variables.ph ?? record.ph,
+      ecRaw: variables.ecRaw ?? r.ecRaw,
+      ec25c: r.ec25c,
+      tempC: variables.tempC ?? r.tempC,
+      atcOn: variables.atcOn ?? r.atcOn,
+      ppmScale: variables.ppmScale ?? (record.ppmScale as PpmScale),
+      measuredAt: record.measuredAt,
+      createdAt: record.createdAt.getTime(),
+      updatedAt: Date.now(),
+    });
   }
 }
 
@@ -114,7 +201,8 @@ function computeEC25(params: {
  * @internal
  */
 export async function createReadingLocal(
-  variables: CreateReadingVariables
+  variables: CreateReadingVariables,
+  userId: string
 ): Promise<PhEcReading> {
   const readingsCollection =
     database.get<PhEcReadingModel>('ph_ec_readings_v2');
@@ -136,6 +224,7 @@ export async function createReadingLocal(
 
   const reading = await database.write(async () => {
     return await readingsCollection.create((record) => {
+      record.userId = userId;
       record.ph = variables.ph;
       record.ecRaw = variables.ecRaw;
       record.ec25c = ec25c;
@@ -281,7 +370,7 @@ export async function fetchReadingLocal(
 
     // Validate ownership if userId is provided
     if (userId && record.userId && record.userId !== userId) {
-      throw new AccessDeniedError('User does not own this reading');
+      throw new AccessDeniedError();
     }
 
     return {
@@ -329,6 +418,10 @@ export async function updateReadingLocal(
   const readingsCollection =
     database.get<PhEcReadingModel>('ph_ec_readings_v2');
 
+  // Capture external state before entering the transaction
+  const { tempCompensationBeta } =
+    useNutrientEngineStore.getState().preferences;
+
   const reading = await database.write(async () => {
     const record = await readingsCollection.find(id);
 
@@ -338,61 +431,12 @@ export async function updateReadingLocal(
     }
 
     await record.update((r) => {
-      if (variables.ph !== undefined) r.ph = variables.ph;
-      if (variables.ecRaw !== undefined) r.ecRaw = variables.ecRaw;
-      if (variables.ec25c !== undefined) r.ec25c = variables.ec25c;
-      if (variables.tempC !== undefined) r.tempC = variables.tempC;
-      if (variables.atcOn !== undefined) r.atcOn = variables.atcOn;
-      if (variables.ppmScale !== undefined) r.ppmScale = variables.ppmScale;
-      if (variables.reservoirId !== undefined)
-        r.reservoirId = variables.reservoirId;
-      if (variables.plantId !== undefined) r.plantId = variables.plantId;
-      if (variables.meterId !== undefined) r.meterId = variables.meterId;
-      if (variables.note !== undefined) r.note = variables.note;
-
-      // Re-compute quality flags on update
-      if (
-        variables.ph !== undefined ||
-        variables.ecRaw !== undefined ||
-        variables.ec25c !== undefined ||
-        variables.tempC !== undefined ||
-        variables.atcOn !== undefined
-      ) {
-        const qualityFlags = computeQualityFlags({
-          id: record.id,
-          ph: variables.ph ?? record.ph,
-          ecRaw: variables.ecRaw ?? record.ecRaw,
-          ec25c: variables.ec25c ?? record.ec25c,
-          tempC: variables.tempC ?? record.tempC,
-          atcOn: variables.atcOn ?? record.atcOn,
-          ppmScale: variables.ppmScale ?? (record.ppmScale as PpmScale),
-          measuredAt: record.measuredAt,
-          createdAt: record.createdAt.getTime(),
-          updatedAt: Date.now(),
-        });
-        r.qualityFlags = qualityFlags;
-      }
+      applyReadingUpdates({ r, record, variables, tempCompensationBeta });
     });
     return record;
   });
 
-  return {
-    id: reading.id,
-    ph: reading.ph,
-    ecRaw: reading.ecRaw,
-    ec25c: reading.ec25c,
-    tempC: reading.tempC,
-    atcOn: reading.atcOn,
-    ppmScale: reading.ppmScale as PpmScale,
-    reservoirId: reading.reservoirId,
-    plantId: reading.plantId,
-    meterId: reading.meterId,
-    note: reading.note,
-    qualityFlags: reading.qualityFlags,
-    measuredAt: reading.measuredAt,
-    createdAt: reading.createdAt.getTime(),
-    updatedAt: reading.updatedAt.getTime(),
-  };
+  return mapModelToReading(reading);
 }
 
 // ============================================================================
@@ -415,8 +459,13 @@ export const useCreateReading = createMutation<
   AxiosError
 >({
   mutationFn: async (variables) => {
+    const { session } = useAuth.getState();
+    if (!session?.user.id) {
+      throw new Error('User must be authenticated to create readings');
+    }
+
     // Write to local database (offline-first)
-    const reading = await createReadingLocal(variables);
+    const reading = await createReadingLocal(variables, session.user.id);
 
     // Sync worker will handle push to server
     // No blocking on network call

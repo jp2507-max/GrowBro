@@ -54,7 +54,7 @@ describe('pH/EC Readings API', () => {
         ppmScale: PpmScale.PPM_500,
       };
 
-      const result = await createReadingLocal(variables);
+      const result = await createReadingLocal(variables, 'test-user-id');
 
       expect(result).toBeDefined();
       expect(result.ph).toBe(6.5);
@@ -95,7 +95,7 @@ describe('pH/EC Readings API', () => {
         ppmScale: PpmScale.PPM_500,
       };
 
-      const result = await createReadingLocal(variables);
+      const result = await createReadingLocal(variables, 'test-user-id');
 
       expect(result).toBeDefined();
       expect(result.qualityFlags).toContain(QualityFlag.TEMP_HIGH);
@@ -133,7 +133,7 @@ describe('pH/EC Readings API', () => {
         ppmScale: PpmScale.PPM_500,
       };
 
-      const result = await createReadingLocal(variables);
+      const result = await createReadingLocal(variables, 'test-user-id');
 
       expect(result).toBeDefined();
       expect(result.qualityFlags).toContain(QualityFlag.NO_ATC);
@@ -251,7 +251,7 @@ describe('pH/EC Readings API', () => {
       };
 
       // Should succeed even when offline
-      const result = await createReadingLocal(variables);
+      const result = await createReadingLocal(variables, 'test-user-id');
 
       expect(result).toBeDefined();
       expect(result.id).toBe('test-reading-offline');

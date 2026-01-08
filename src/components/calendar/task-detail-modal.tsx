@@ -204,7 +204,7 @@ export function TaskDetailModal({
   const time = formatTime(task.dueAtLocal, task.timezone);
   const noDescription = translate('calendar.task_detail.no_description');
 
-  const category = (task.metadata as { category?: string })?.category;
+  const category = task.metadata?.category as string | undefined;
 
   return (
     <Modal

@@ -166,8 +166,7 @@ function normalizeIosClientId(
   const suffix = '.apps.googleusercontent.com';
   if (clientId.endsWith(suffix)) return clientId;
   // Prefix-only format - append suffix
-  // Google uses lowercase alphanumeric only in hash portion (no internal hyphens)
-  if (/^\d+-[a-z0-9]+$/.test(clientId)) {
+  if (/^\d+-[A-Za-z0-9_-]+$/.test(clientId)) {
     return `${clientId}${suffix}`;
   }
   // Return as-is; invalid formats will fail at Google SDK level
@@ -486,7 +485,9 @@ function persistConsents(
   });
 }
 
-// Timeout for auth hydration - 5s is generous for token check + signIn
+// Timeout for auth hydration - 12s accommodates slow networks, offline rehydration, and token refresh delays
+// Token refresh operations have a 2s performance threshold, but hydration may need multiple retries
+// and handle poor network conditions, especially when returning from background or cold starts
 const HYDRATE_AUTH_TIMEOUT_MS = 12000;
 
 // Helper to initialize auth storage and hydrate states

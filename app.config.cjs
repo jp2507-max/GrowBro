@@ -274,8 +274,7 @@ function createExpoConfig(config) {
           // Correct format: extract the prefix
           clientIdPrefix = rawClientId.slice(0, -expectedSuffix.length);
           // Validate extracted prefix matches expected pattern: <numeric-id>-<hash>
-          // Google uses lowercase alphanumeric only (no internal hyphens in hash)
-          if (!/^\d+-[a-z0-9]+$/.test(clientIdPrefix)) {
+          if (!/^\d+-[A-Za-z0-9_-]+$/.test(clientIdPrefix)) {
             throw new Error(
               `GOOGLE_IOS_CLIENT_ID has invalid prefix: "${clientIdPrefix}". ` +
                 `Expected format: "<numeric-id>-<hash>.apps.googleusercontent.com" ` +
@@ -288,7 +287,7 @@ function createExpoConfig(config) {
             `GOOGLE_IOS_CLIENT_ID is malformed: "${rawClientId}". ` +
               `Expected format: "<client-id>.apps.googleusercontent.com"`
           );
-        } else if (/^\d+-[a-z0-9]+$/.test(rawClientId)) {
+        } else if (/^\d+-[A-Za-z0-9_-]+$/.test(rawClientId)) {
           // Looks like just the prefix (e.g., "123456789012-abc123")
           // Accept it but warn in dev
           clientIdPrefix = rawClientId;

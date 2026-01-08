@@ -209,13 +209,12 @@ const client = z.object({
     .refine(
       (val) => {
         if (!val) return true; // Allow empty/undefined
-        // Full format: <numeric-id>-<lowercase-alphanumeric>.apps.googleusercontent.com
-        // Google uses lowercase alphanumeric only in the hash portion
-        if (/^\d+-[a-z0-9]+\.apps\.googleusercontent\.com$/.test(val))
+        // Full format: <numeric-id>-<alphanumeric-with-underscores-and-hyphens>.apps.googleusercontent.com
+        if (/^\d+-[A-Za-z0-9_-]+\.apps\.googleusercontent\.com$/.test(val))
           return true;
-        // Prefix-only format: <numeric-id>-<lowercase-alphanumeric>
-        // Note: Runtime normalization in _layout.tsx expects this format (no internal hyphens)
-        if (/^\d+-[a-z0-9]+$/.test(val)) return true;
+        // Prefix-only format: <numeric-id>-<alphanumeric-with-underscores-and-hyphens>
+        // Note: Runtime normalization in _layout.tsx expects this format
+        if (/^\d+-[A-Za-z0-9_-]+$/.test(val)) return true;
         return false;
       },
       {

@@ -110,22 +110,17 @@ function parseTopSortCursor(
     return null;
   }
 
-  // Validate createdAt is a proper ISO 8601 timestamp
-  // Use strict regex pattern for ISO 8601 format
-  const iso8601Regex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/;
+  // Validate createdAt is a proper ISO 8601 timestamp with microsecond precision
+  // Accept both millisecond and microsecond precision to preserve Postgres TIMESTAMPTZ precision
+  const iso8601Regex =
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?(?:Z|[+-]\d{2}:\d{2})$/;
   if (!iso8601Regex.test(createdAt)) {
     return null;
   }
 
-  // Additional validation: ensure the date can be parsed and round-trips correctly
+  // Additional validation: ensure the date can be parsed
   const parsedDate = Date.parse(createdAt);
   if (isNaN(parsedDate)) {
-    return null;
-  }
-
-  // Verify the date round-trips to the same ISO string
-  const roundTripDate = new Date(parsedDate).toISOString();
-  if (roundTripDate !== createdAt) {
     return null;
   }
 
@@ -150,8 +145,21 @@ function generateTopSortCursor(likeCount: number, createdAt: string): string {
       return `${likeCount}:1970-01-01T00:00:00.000Z`;
     }
 
-    // Convert to canonical ISO 8601 format (UTC, millisecond precision)
-    const normalizedTimestamp = parsedDate.toISOString();
+    // Preserve original timestamp precision to avoid pagination gaps
+    // Postgres TIMESTAMPTZ has microsecond precision, toISOString() truncates to milliseconds
+    // Use original timestamp if it's valid ISO format, otherwise normalize
+    let normalizedTimestamp: string;
+
+    // Check if createdAt is already in valid ISO 8601 format that Postgres returns
+    if (
+      createdAt.match(
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/
+      )
+    ) {
+      normalizedTimestamp = createdAt;
+    } else {
+      normalizedTimestamp = parsedDate.toISOString();
+    }
 
     return `${likeCount}:${normalizedTimestamp}`;
   } catch (error) {

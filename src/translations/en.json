@@ -147,14 +147,14 @@
       "input_label": "{{label}} input"
     },
     "nutrient": {
-      "accessDenied": "Access denied",
+      "accessDenied": "Access Denied",
       "add_reading": "Add Reading",
       "add_reading_description": "Manually log pH and EC values",
       "atc_label": "ATC",
       "edit_reading": "Edit Reading",
-      "errorLoadingReading": "Error loading reading",
+      "errorLoadingReading": "Error Loading Reading",
       "load_error": "Failed to load readings",
-      "readingNotFound": "Reading not found",
+      "readingNotFound": "Reading Not Found",
       "reading_error": "Failed to save reading",
       "reading_history": "Reading History",
       "reading_saved": "Reading saved successfully",
@@ -969,7 +969,7 @@
     "https": "https://growbro.app/feed",
     "interaction": "Community interaction",
     "interactions": "Community interactions",
-    "invalid_comment": "Invalid comment",
+    "invalid_comment": "Unable to post comment. Please check your input and try again.",
     "like": "Like",
     "like_button_like": "Like",
     "like_button_unlike": "Unlike",
@@ -1447,7 +1447,8 @@
         "hours": "{{count}} hours ago",
         "minutes": "{{count}} minutes ago",
         "now": "Just now",
-        "weeks": "{{count}} weeks ago"
+        "weeks": "{{count}} week ago",
+        "weeks_plural": "{{count}} weeks ago"
       },
       "title": "Harvest history"
     },

@@ -238,7 +238,8 @@ export default function CalendarScreen(): React.ReactElement {
   } = useCalendarData(selectedDate);
 
   // Task detail modal state
-  const taskDetailModal = useTaskDetailModal();
+  const { ref: taskDetailModalRef, present: presentTaskDetail } =
+    useTaskDetailModal();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
   const onDateSelect = useCallback((date: DateTime) => {
@@ -272,9 +273,9 @@ export default function CalendarScreen(): React.ReactElement {
   const handleTaskPress = useCallback(
     (task: Task) => {
       setSelectedTask(task);
-      taskDetailModal.present();
+      presentTaskDetail();
     },
-    [taskDetailModal]
+    [presentTaskDetail]
   );
 
   const handleModalDismiss = useCallback(() => {
@@ -331,7 +332,7 @@ export default function CalendarScreen(): React.ReactElement {
 
       {/* Task Detail Modal */}
       <TaskDetailModal
-        modalRef={taskDetailModal.ref}
+        modalRef={taskDetailModalRef}
         task={selectedTask}
         onComplete={handleCompleteTask}
         onDismiss={handleModalDismiss}

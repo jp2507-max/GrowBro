@@ -1447,7 +1447,8 @@
         "hours": "vor {{count}} Stunden",
         "minutes": "vor {{count}} Minuten",
         "now": "Gerade eben",
-        "weeks": "vor {{count}} Wochen"
+        "weeks": "vor {{count}} Woche",
+        "weeks_plural": "vor {{count}} Wochen"
       },
       "title": "Ernteverlauf"
     },

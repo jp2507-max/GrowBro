@@ -33,10 +33,11 @@ export const attachmentInputSchema = z
 // Derive TypeScript type from schema for single source of truth
 export type AttachmentInput = z.infer<typeof attachmentInputSchema>;
 
+// Note: 'problem_deficiency' must match COMMUNITY_HELP_CATEGORY from @/lib/community/post-categories
 export const categorySchema = z
-  .enum(['grow_tips', 'harvest', 'equipment', 'general'])
+  .enum(['grow_tips', 'harvest', 'equipment', 'general', 'problem_deficiency'])
   .optional();
-export const strainSchema = z.string().min(1).max(100).optional();
+export const strainSchema = z.string().trim().min(1).max(100).optional();
 
 // Type for remote attachment metadata
 interface RemoteAttachmentMetadata {
