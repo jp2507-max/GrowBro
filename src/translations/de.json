@@ -664,6 +664,7 @@
     "verifying_email": "E-Mail wird verifiziert..."
   },
   "calendar": {
+    "day_counter": "TAG {{day}} / {{total}}",
     "drag_handle_hint": "Lange drücken und ziehen, um Aufgaben innerhalb dieses Tages neu anzuordnen.",
     "drag_handle_label": "Ziehgriff zum Neuanordnen",
     "drag_item_hint": "Lange drücken und ziehen, um neu zu planen. Doppeltippen für Menü.",
@@ -686,10 +687,16 @@
       "selectWeeklyDay": "Bitte wähle mindestens einen Tag für die wöchentliche Wiederholung aus"
     },
     "header": {
+      "jump_to_today": "Zu heute springen",
+      "month_label": "{{month}} {{year}}",
       "subtitle": "Dein Zeitplan",
       "today": "Heute"
     },
     "log_ph_ec": "pH/EC protokollieren",
+    "month_picker": {
+      "select_month": "Monat auswählen",
+      "title": "Monat auswählen"
+    },
     "move": "Verschieben",
     "move_to_date": "Auf Datum verschieben",
     "needs_review_label": "Überprüfung erforderlich wegen Konflikt",
@@ -724,6 +731,17 @@
     "targets_title": "Zielbereiche",
     "taskCount": "{{count}} Aufgabe",
     "taskCount_plural": "{{count}} Aufgaben",
+    "task_detail": {
+      "category": "Kategorie",
+      "complete": "Erledigen",
+      "delete": "Löschen",
+      "delete_confirm": "Bist du sicher, dass du diese Aufgabe löschen möchtest?",
+      "description": "Beschreibung",
+      "edit": "Bearbeiten",
+      "no_description": "Keine Beschreibung",
+      "time": "Uhrzeit",
+      "title": "Aufgabendetails"
+    },
     "task_row": {
       "complete": "Als erledigt markieren",
       "complete_hint": "Doppeltippen, um diese Aufgabe als erledigt zu markieren",
@@ -2375,6 +2393,13 @@
       "action_hub_title": "Heutige Aufgaben",
       "all_good_message": "Alles im grünen Bereich – Keine Aufgaben heute.",
       "no_tasks": "Keine anstehenden Aufgaben",
+      "nutrient_section": {
+        "empty": "Noch keine pH/EC-Messungen",
+        "latest": "Letzte Messung",
+        "log_reading": "Messung erfassen",
+        "title": "pH/EC-Messungen",
+        "view_all": "Alle anzeigen"
+      },
       "start_harvest": "Ernte starten",
       "stats_day": "Tag",
       "stats_height": "Höhe",
@@ -3848,8 +3873,8 @@
     "calendar": "Kalender",
     "community": "Community",
     "home": "Startseite",
-    "inventory": "Inventar",
     "plants": "Pflanzen",
+    "playbooks": "Playbooks",
     "strains": "Sorten"
   },
   "tasks": {

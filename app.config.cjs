@@ -273,6 +273,14 @@ function createExpoConfig(config) {
         if (rawClientId.endsWith(expectedSuffix)) {
           // Correct format: extract the prefix
           clientIdPrefix = rawClientId.slice(0, -expectedSuffix.length);
+          // Validate extracted prefix matches expected pattern: <numeric-id>-<hash>
+          if (!/^\d+-[\w]+$/.test(clientIdPrefix)) {
+            throw new Error(
+              `GOOGLE_IOS_CLIENT_ID has invalid prefix: "${clientIdPrefix}". ` +
+                `Expected format: "<numeric-id>-<hash>.apps.googleusercontent.com" ` +
+                `(e.g., "123456789012-abc123def456.apps.googleusercontent.com")`
+            );
+          }
         } else if (rawClientId.includes('.apps.googleusercontent.com')) {
           // Suffix exists but not at end - malformed
           throw new Error(

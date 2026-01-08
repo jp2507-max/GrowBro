@@ -1,5 +1,5 @@
-import { useRouter } from 'expo-router';
-import React, { useCallback, useState } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView } from 'react-native';
 import { showMessage } from 'react-native-flash-message';
@@ -12,15 +12,23 @@ import type { PpmScale } from '@/lib/nutrient-engine/types';
 /**
  * Add Reading Screen
  *
- * Allows users to manually log pH/EC measurements
+ * Allows users to manually log pH/EC measurements.
+ * Accepts optional `plantId` query param to pre-populate the plant field.
+ *
  * Requirements: 2.1, 2.2, 2.7
  */
 
 export default function AddReadingScreen(): React.ReactElement {
   const { t } = useTranslation();
   const router = useRouter();
+  const { plantId } = useLocalSearchParams<{ plantId?: string }>();
   const createReading = useCreateReading();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const defaultValues = useMemo(() => {
+    if (!plantId) return undefined;
+    return { plantId };
+  }, [plantId]);
 
   const handleSubmit = useCallback(
     async (data: {
@@ -94,6 +102,7 @@ export default function AddReadingScreen(): React.ReactElement {
         <PhEcReadingForm
           onSubmit={handleSubmit}
           isSubmitting={isSubmitting}
+          defaultValues={defaultValues}
           // TODO: Pass reservoirs from query once reservoir management is implemented
           reservoirs={[]}
         />

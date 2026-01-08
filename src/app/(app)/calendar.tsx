@@ -10,6 +10,10 @@ import {
   getItemKey,
   getItemType,
 } from '@/components/calendar/calendar-list-items';
+import {
+  TaskDetailModal,
+  useTaskDetailModal,
+} from '@/components/calendar/task-detail-modal';
 import { FocusAwareStatusBar, List, View } from '@/components/ui';
 import { useBottomTabBarHeight } from '@/lib/animations/use-bottom-tab-bar-height';
 import {
@@ -144,6 +148,20 @@ export default function CalendarScreen(): React.ReactElement {
   const { pendingTasks, completedTasks, plantMap, isLoading, refetch } =
     useDayTasks(selectedDate);
 
+  // Task detail modal state
+  const taskDetailModal = useTaskDetailModal();
+  const [selectedTask, setSelectedTask] = React.useState<Task | null>(null);
+
+  // Build task counts map for the current week (for indicators)
+  const taskCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    // For now, just count tasks for the selected date
+    // In production, you'd fetch counts for the entire week
+    const dateKey = selectedDate.toFormat('yyyy-MM-dd');
+    counts.set(dateKey, pendingTasks.length + completedTasks.length);
+    return counts;
+  }, [selectedDate, pendingTasks.length, completedTasks.length]);
+
   const onDateSelect = useCallback((date: DateTime) => {
     setSelectedDate(date.startOf('day'));
   }, []);
@@ -172,6 +190,14 @@ export default function CalendarScreen(): React.ReactElement {
     [refetch]
   );
 
+  const handleTaskPress = useCallback(
+    (task: Task) => {
+      setSelectedTask(task);
+      taskDetailModal.present();
+    },
+    [taskDetailModal]
+  );
+
   const listData = useMemo(
     () =>
       buildCalendarListData({
@@ -184,8 +210,8 @@ export default function CalendarScreen(): React.ReactElement {
   );
 
   const renderItem = useMemo(
-    () => createRenderItem(handleCompleteTask),
-    [handleCompleteTask]
+    () => createRenderItem(handleCompleteTask, handleTaskPress),
+    [handleCompleteTask, handleTaskPress]
   );
 
   const contentContainerStyle = useMemo(
@@ -207,6 +233,7 @@ export default function CalendarScreen(): React.ReactElement {
         selectedDate={selectedDate}
         onDateSelect={onDateSelect}
         insets={insets}
+        taskCounts={taskCounts}
       />
 
       <List
@@ -217,6 +244,13 @@ export default function CalendarScreen(): React.ReactElement {
         contentContainerStyle={contentContainerStyle}
         contentInsetAdjustmentBehavior="automatic"
         showsVerticalScrollIndicator={false}
+      />
+
+      {/* Task Detail Modal */}
+      <TaskDetailModal
+        modalRef={taskDetailModal.ref}
+        task={selectedTask}
+        onComplete={handleCompleteTask}
       />
     </View>
   );

@@ -664,6 +664,7 @@
     "verifying_email": "Verifying email..."
   },
   "calendar": {
+    "day_counter": "DAY {{day}} / {{total}}",
     "drag_handle_hint": "Long-press and drag to reorder tasks within this day.",
     "drag_handle_label": "Drag handle for reordering",
     "drag_item_hint": "Long-press then drag to reschedule. Double-tap to open move menu.",
@@ -686,10 +687,16 @@
       "selectWeeklyDay": "Please select at least one day for weekly recurrence"
     },
     "header": {
+      "jump_to_today": "Jump to today",
+      "month_label": "{{month}} {{year}}",
       "subtitle": "Your schedule",
       "today": "Today"
     },
     "log_ph_ec": "Log pH/EC",
+    "month_picker": {
+      "select_month": "Select month",
+      "title": "Select Month"
+    },
     "move": "Move",
     "move_to_date": "Move to date",
     "needs_review_label": "Needs review due to conflict",
@@ -724,6 +731,17 @@
     "targets_title": "Targets",
     "taskCount": "{{count}} task",
     "taskCount_plural": "{{count}} tasks",
+    "task_detail": {
+      "category": "Category",
+      "complete": "Complete",
+      "delete": "Delete",
+      "delete_confirm": "Are you sure you want to delete this task?",
+      "description": "Description",
+      "edit": "Edit",
+      "no_description": "No description",
+      "time": "Time",
+      "title": "Task Details"
+    },
     "task_row": {
       "complete": "Mark as complete",
       "complete_hint": "Double-tap to mark this task as complete",
@@ -2375,6 +2393,13 @@
       "action_hub_title": "Today's Tasks",
       "all_good_message": "All good – No tasks today.",
       "no_tasks": "No pending tasks",
+      "nutrient_section": {
+        "empty": "No pH/EC readings yet",
+        "latest": "Latest reading",
+        "log_reading": "Log Reading",
+        "title": "pH/EC Readings",
+        "view_all": "View All"
+      },
       "start_harvest": "Start Harvest",
       "stats_day": "Day",
       "stats_height": "Height",
@@ -3848,8 +3873,8 @@
     "calendar": "Calendar",
     "community": "Community",
     "home": "Home",
-    "inventory": "Inventory",
     "plants": "Plants",
+    "playbooks": "Playbooks",
     "strains": "Strains"
   },
   "tasks": {

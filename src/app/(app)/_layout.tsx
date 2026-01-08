@@ -1,10 +1,5 @@
 import { Redirect, SplashScreen } from 'expo-router';
-import {
-  Badge,
-  Icon,
-  Label,
-  NativeTabs,
-} from 'expo-router/unstable-native-tabs';
+import { Icon, Label, NativeTabs } from 'expo-router/unstable-native-tabs';
 import React from 'react';
 import { Platform } from 'react-native';
 
@@ -17,7 +12,6 @@ import { useCommunitySync } from '@/lib/community/use-community-sync';
 import { checkLegalVersionBumps } from '@/lib/compliance/legal-acceptances';
 import { usePendingDeletion } from '@/lib/hooks/use-pending-deletion';
 import { translate } from '@/lib/i18n';
-import { useInventoryLowStockCount } from '@/lib/inventory/use-inventory-low-stock-count';
 
 function useTabLayoutRedirects() {
   const status = useAuth.use.status();
@@ -59,13 +53,13 @@ const SF_SYMBOLS = {
   home: 'house.fill',
   calendar: 'calendar',
   community: 'bubble.left.and.bubble.right.fill',
-  inventory: 'shippingbox.fill',
+  playbooks: 'book.fill',
   strains: 'leaf.fill',
 } as const;
 
 export default function TabLayout() {
   const redirectTo = useTabLayoutRedirects();
-  const { count: lowStockCount } = useInventoryLowStockCount();
+
   const { pendingDeletion, hasPendingDeletion } = usePendingDeletion();
   useSplashScreenHide();
   useCommunitySync();
@@ -131,10 +125,9 @@ export default function TabLayout() {
             <Label>{translate('tabs.community')}</Label>
           </NativeTabs.Trigger>
 
-          <NativeTabs.Trigger name="inventory">
-            <Icon sf={SF_SYMBOLS.inventory} />
-            <Label>{translate('tabs.inventory')}</Label>
-            {lowStockCount > 0 && <Badge>{String(lowStockCount)}</Badge>}
+          <NativeTabs.Trigger name="playbooks">
+            <Icon sf={SF_SYMBOLS.playbooks} />
+            <Label>{translate('tabs.playbooks')}</Label>
           </NativeTabs.Trigger>
 
           <NativeTabs.Trigger name="strains">

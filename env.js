@@ -209,8 +209,9 @@ const client = z.object({
     .refine(
       (val) => {
         if (!val) return true; // Allow empty/undefined
-        // Full format: ends with .apps.googleusercontent.com
-        if (val.endsWith('.apps.googleusercontent.com')) return true;
+        // Full format: <numeric-id>-<hash>.apps.googleusercontent.com
+        // Validates the ENTIRE format, not just suffix
+        if (/^\d+-[\w]+\.apps\.googleusercontent\.com$/.test(val)) return true;
         // Prefix-only format: <numeric-id>-<alphanumeric-hash>
         if (/^\d+-[\w]+$/.test(val)) return true;
         return false;
@@ -218,7 +219,7 @@ const client = z.object({
       {
         message:
           'GOOGLE_IOS_CLIENT_ID must be in format "<numeric-id>-<hash>.apps.googleusercontent.com" ' +
-          'or just the prefix "<numeric-id>-<hash>"',
+          'or just the prefix "<numeric-id>-<hash>" (e.g., "123456789012-abc123def456")',
       }
     )
     .optional(),
