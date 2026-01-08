@@ -259,12 +259,9 @@ export const processRemoteAttachment = async (
   const bytes = Number(metadata?.bytes ?? attachment.size ?? 0);
   const hasCompleteMetadata = width > 0 && height > 0 && bytes > 0;
 
-  // ISSUE: This logic is too strict for prefilled attachments from assessments.
-  // Some Supabase signed URLs come without metadata (width, height, bytes) but should
-  // still be processed by downloading and re-uploading to get proper metadata.
-  // Instead of throwing an error, we should fall back to the download-and-process path.
+  // If metadata is incomplete (missing width, height, or bytes), fall back to
+  // downloading and re-processing the attachment to extract necessary metadata.
   if (!hasCompleteMetadata) {
-    // FIXED: Fall back to downloading and processing Supabase URLs with missing metadata
     return processRemoteAttachmentWithoutMetadata(attachment, uploadedPaths);
   }
 

@@ -101,10 +101,24 @@ function ActionButton({
   );
 }
 
+type ModalStyles = {
+  backgroundStyle: {
+    backgroundColor: string;
+    borderTopLeftRadius: number;
+    borderTopRightRadius: number;
+  };
+  handleStyle: {
+    backgroundColor: string;
+    width: number;
+    height: number;
+    borderRadius: number;
+  };
+};
+
 /**
  * Hook for dark mode aware modal styling
  */
-function useModalDarkModeStyles() {
+function useModalDarkModeStyles(): ModalStyles {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
 

@@ -23,7 +23,13 @@ const corsHeaders = {
 };
 
 const COMMUNITY_MEDIA_BUCKET = 'community-posts';
+// Note: Keep in sync with COMMUNITY_HELP_CATEGORY in src/lib/community/post-categories.ts
 const ALLOWED_POST_CATEGORIES = ['problem_deficiency'] as const;
+type PostCategory = (typeof ALLOWED_POST_CATEGORIES)[number];
+
+function isValidCategory(value: string): value is PostCategory {
+  return (ALLOWED_POST_CATEGORIES as readonly string[]).includes(value);
+}
 
 // Fetch configuration constants
 const MAX_BYTES = 50 * 1024 * 1024; // 50MB limit
@@ -214,14 +220,10 @@ Deno.serve(async (req: Request) => {
 
     // Validate category against allowed values if provided
     if (requestBody.category) {
-      if (
-        !(ALLOWED_POST_CATEGORIES as readonly string[]).includes(
-          requestBody.category
-        )
-      ) {
+      if (!isValidCategory(requestBody.category)) {
         return new Response(
           JSON.stringify({
-            error: 'Invalid category. Must be one of: problem_deficiency',
+            error: `Invalid category. Must be one of: ${ALLOWED_POST_CATEGORIES.join(', ')}`,
           }),
           {
             status: 400,

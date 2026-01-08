@@ -214,7 +214,8 @@ const client = z.object({
         if (/^\d+-[a-zA-Z0-9-]+\.apps\.googleusercontent\.com$/.test(val))
           return true;
         // Prefix-only format: <numeric-id>-<alphanumeric-hash>
-        if (/^\d+-[a-zA-Z0-9-]+$/.test(val)) return true;
+        // Stricter: disallow trailing/consecutive hyphens
+        if (/^\d+-[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*$/.test(val)) return true;
         return false;
       },
       {

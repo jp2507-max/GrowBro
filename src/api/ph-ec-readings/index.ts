@@ -1,11 +1,16 @@
 import { Q } from '@nozbe/watermelondb';
 import type { Clause } from '@nozbe/watermelondb/QueryDescription';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 import { createMutation } from 'react-query-kit';
 
+import { useAuth } from '@/lib/auth';
+import { useNutrientEngineStore } from '@/lib/nutrient-engine/state/nutrient-engine-store';
 import type { PhEcReading, PpmScale } from '@/lib/nutrient-engine/types';
-import { computeQualityFlags } from '@/lib/nutrient-engine/utils/conversions';
+import {
+  computeQualityFlags,
+  toEC25,
+} from '@/lib/nutrient-engine/utils/conversions';
 import { database } from '@/lib/watermelon';
 import { type PhEcReadingModel } from '@/lib/watermelon-models/ph-ec-reading';
 
@@ -37,6 +42,7 @@ type FetchReadingsVariables = {
   meterId?: string;
   limit?: number;
   offset?: number;
+  userId?: string;
 };
 
 type FetchReadingsResponse = {
@@ -70,11 +76,31 @@ export async function createReadingLocal(
 
   const reading = await database.write(async () => {
     return await readingsCollection.create((record) => {
+      const preferences = useNutrientEngineStore.getState().preferences;
+      const atcOn = variables.atcOn ?? false;
+      const tempC = variables.tempC ?? 25;
+
+      // Compute EC@25°C if not provided
+      let ec25c = variables.ec25c;
+      if (ec25c === undefined) {
+        if (atcOn) {
+          // If meter has ATC active, the raw reading is already compensated
+          ec25c = variables.ecRaw;
+        } else {
+          // Otherwise apply compensation using user preference
+          ec25c = toEC25(
+            variables.ecRaw,
+            tempC,
+            preferences.tempCompensationBeta
+          );
+        }
+      }
+
       record.ph = variables.ph;
       record.ecRaw = variables.ecRaw;
-      record.ec25c = variables.ec25c ?? 0;
-      record.tempC = variables.tempC ?? 25;
-      record.atcOn = variables.atcOn ?? false;
+      record.ec25c = ec25c;
+      record.tempC = tempC;
+      record.atcOn = atcOn;
       record.ppmScale = variables.ppmScale ?? '500';
       record.measuredAt = variables.measuredAt ?? Date.now();
 
@@ -99,9 +125,9 @@ export async function createReadingLocal(
         id: '', // Not yet assigned
         ph: variables.ph,
         ecRaw: variables.ecRaw,
-        ec25c: variables.ec25c ?? 0,
-        tempC: variables.tempC ?? 25,
-        atcOn: variables.atcOn ?? false,
+        ec25c: ec25c,
+        tempC: tempC,
+        atcOn: atcOn,
         ppmScale: variables.ppmScale ?? '500',
         measuredAt: variables.measuredAt ?? Date.now(),
         createdAt: Date.now(),
@@ -148,6 +174,14 @@ export async function fetchReadingsLocal(
     whereFilters.push(Q.where('plant_id', variables.plantId));
   }
 
+  if (variables.meterId) {
+    whereFilters.push(Q.where('meter_id', variables.meterId));
+  }
+
+  if (variables.userId) {
+    whereFilters.push(Q.where('user_id', variables.userId));
+  }
+
   const query = readingsCollection.query(
     ...whereFilters,
     Q.sortBy('measured_at', Q.desc)
@@ -188,13 +222,20 @@ export async function fetchReadingsLocal(
 }
 
 export async function fetchReadingLocal(
-  id: string
+  id: string,
+  userId?: string
 ): Promise<PhEcReading | null> {
   const readingsCollection =
     database.get<PhEcReadingModel>('ph_ec_readings_v2');
 
   try {
     const record = await readingsCollection.find(id);
+
+    // Validate ownership if userId is provided
+    if (userId && record.userId && record.userId !== userId) {
+      return null;
+    }
+
     return {
       id: record.id,
       ph: record.ph,
@@ -213,8 +254,13 @@ export async function fetchReadingLocal(
       updatedAt: record.updatedAt.getTime(),
     };
   } catch (error) {
-    // WatermelonDB throws if record not found
-    if (error instanceof Error && error.message.includes('not found')) {
+    // WatermelonDB throws RecordNotFoundError when record doesn't exist
+    // Alternatively, check for the specific error name or code
+    if (
+      error instanceof Error &&
+      (error.name === 'RecordNotFoundError' ||
+        error.message.includes('not found'))
+    ) {
       return null;
     }
     // Re-throw unexpected errors for proper error handling
@@ -327,9 +373,14 @@ export const useCreateReading = createMutation<
  * Requirements: 2.1, 2.5, 6.2
  */
 export const useFetchReadings = (variables: FetchReadingsVariables) => {
+  const { session } = useAuth();
+  const userId = session?.user.id;
+  const scopedVariables = { ...variables, userId };
+
   return useQuery<FetchReadingsResponse, AxiosError>({
-    queryKey: ['ph-ec-readings', variables],
-    queryFn: () => fetchReadingsLocal(variables),
+    queryKey: ['ph-ec-readings', scopedVariables],
+    queryFn: () => fetchReadingsLocal(scopedVariables),
+    enabled: !!userId,
   });
 };
 
@@ -351,26 +402,18 @@ export const usePlantReadings = (plantId: string) => {
  * Hook to fetch a single pH/EC reading by ID
  */
 export const useFetchReading = (id: string) => {
+  const { session } = useAuth();
+  const userId = session?.user.id;
+
   return useQuery<PhEcReading | null, AxiosError>({
-    queryKey: ['ph-ec-reading', id],
-    queryFn: () => fetchReadingLocal(id),
-    enabled: !!id,
+    queryKey: ['ph-ec-reading', id, userId],
+    queryFn: () => fetchReadingLocal(id, userId),
+    enabled: !!id && !!userId,
   });
 };
 
 /**
  * Hook to update a pH/EC reading
- *
- * Note: Cache invalidation should be handled at the component level using:
- * ```tsx
- * const queryClient = useQueryClient();
- * const mutation = useUpdateReading({
- *   onSuccess: () => {
- *     queryClient.invalidateQueries({ queryKey: ['ph-ec-reading', id] });
- *     queryClient.invalidateQueries({ queryKey: ['ph-ec-readings'] });
- *   }
- * });
- * ```
  */
 export const useUpdateReading = createMutation<
   PhEcReading,
@@ -381,6 +424,21 @@ export const useUpdateReading = createMutation<
     return await updateReadingLocal(id, variables);
   },
 });
+
+/**
+ * Hook to update a pH/EC reading with automatic cache invalidation
+ */
+export function useUpdateReadingWithInvalidation() {
+  const queryClient = useQueryClient();
+  return useUpdateReading({
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ['ph-ec-reading', variables.id],
+      });
+      queryClient.invalidateQueries({ queryKey: ['ph-ec-readings'] });
+    },
+  });
+}
 
 // ============================================================================
 // Server Sync Operations (Called by sync worker)

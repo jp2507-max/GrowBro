@@ -18,7 +18,7 @@ const images = [
 ];
 
 // Simple hash function to create deterministic index from id
-const getPlaceholderImage = (id: number | string) => {
+const getPlaceholderImage = (id: number | string): string => {
   const str = String(id);
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
@@ -63,7 +63,7 @@ export const Card = ({
         accessibilityLabel={compositeLabel}
         accessibilityRole="link"
       >
-        <View className="m-2 overflow-hidden rounded-xl  border border-neutral-300 bg-white  dark:bg-charcoal-900">
+        <View className="m-2 overflow-hidden rounded-xl border border-neutral-200 bg-white dark:border-white/10 dark:bg-charcoal-900">
           <OptimizedImage
             className="h-56 w-full overflow-hidden rounded-t-xl"
             contentFit="cover"

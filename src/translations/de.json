@@ -81,7 +81,7 @@
       "targets_hint": "Zeigt die pH- und EC-Zielwerte dieser Aufgabe."
     },
     "common": {
-      "action_button_hint": "Führt {{label}} Aktion aus",
+      "action_button_hint": "Führt die Aktion {{label}} aus",
       "back_hint": "Navigiert zurück zum vorherigen Bildschirm",
       "confirm_date_hint": "Bestätigt das ausgewählte Datum.",
       "go_back": "Zurück",

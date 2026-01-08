@@ -11,6 +11,7 @@
  */
 
 import { Link, useRouter } from 'expo-router';
+import { useColorScheme } from 'nativewind';
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import Animated, {
@@ -88,7 +89,7 @@ function PostCardComponent({
       : String(normalizedPost.userId);
   const postId = normalizedPost.id;
   const displayUsername =
-    postUserId.slice(0, 8) || translate('community.unknown_user');
+    postUserId.slice(0, 8) || translate('accessibility.community.unknown_user');
 
   const isOwnPost =
     currentUserId !== undefined &&
@@ -154,9 +155,16 @@ function PostCardView({
     preventDefault: () => void;
   }) => void;
 }): React.ReactElement {
+  const { colorScheme } = useColorScheme();
   const scale = useSharedValue(1);
   const deleteMutation = useDeletePost();
   const optionsSheetRef = React.useRef<PostOptionsSheetRef>(null);
+
+  // Theme-aware icon colors
+  const iconColor =
+    colorScheme === 'dark' ? colors.neutral[400] : colors.neutral[600];
+  const moreIconColor =
+    colorScheme === 'dark' ? colors.neutral[500] : colors.neutral[400];
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -258,7 +266,7 @@ function PostCardView({
                       {displayUsername}
                     </Text>
                     {relativeTime && (
-                      <Text className="text-xs text-neutral-400">
+                      <Text className="text-xs text-neutral-400 dark:text-neutral-500">
                         {relativeTime}
                       </Text>
                     )}
@@ -281,7 +289,7 @@ function PostCardView({
                     className="p-2"
                     testID={`${testID}-more-button`}
                   >
-                    <MoreHorizontal size={20} color={colors.neutral[400]} />
+                    <MoreHorizontal size={20} color={moreIconColor} />
                   </Pressable>
                 )}
               </View>
@@ -332,7 +340,7 @@ function PostCardView({
                   onPress={handleCommentPress}
                   className="flex-row items-center gap-1.5"
                 >
-                  <MessageCircle size={26} color={colors.neutral[600]} />
+                  <MessageCircle size={26} color={iconColor} />
                   {(post.comment_count ?? 0) > 0 && (
                     <Text
                       className="text-sm text-neutral-600 dark:text-neutral-400"

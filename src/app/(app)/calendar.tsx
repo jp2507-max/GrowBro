@@ -50,6 +50,60 @@ function parseEphemeralTaskInfo(
  * Hook to manage calendar data for a range of weeks and the selected day.
  * Fetches tasks for a 5-week range (indicator visibility) and plant info for the selected day.
  */
+async function fetchTasksForRange(start: Date, end: Date) {
+  const [pending, completed] = await Promise.all([
+    getTasksByDateRange(start, end),
+    getCompletedTasksByDateRange(start, end),
+  ]);
+  return { pending, completed };
+}
+
+function filterTasksForDay(tasks: Task[], dayStart: DateTime): Task[] {
+  const dayEnd = dayStart.endOf('day');
+  return tasks.filter((task) => {
+    const due = DateTime.fromISO(task.dueAtLocal);
+    return due >= dayStart && due <= dayEnd;
+  });
+}
+
+function getPlantIdsFromTasks(tasks: Task[]): string[] {
+  const plantIds = new Set<string>();
+  tasks.forEach((t) => {
+    if (t.plantId) plantIds.add(t.plantId);
+  });
+  return Array.from(plantIds);
+}
+
+async function loadPlantMap(
+  plantIds: string[]
+): Promise<Map<string, PlantInfo>> {
+  const newPlantMap = new Map<string, PlantInfo>();
+  if (plantIds.length > 0) {
+    const plantsCollection = database.get<PlantModel>('plants');
+    const plants = await plantsCollection
+      .query(Q.where('id', Q.oneOf(plantIds)))
+      .fetch();
+
+    plants.forEach((plant) => {
+      newPlantMap.set(plant.id, {
+        id: plant.id,
+        name: plant.name,
+        imageUrl: plant.imageUrl,
+      });
+    });
+  }
+  return newPlantMap;
+}
+
+function buildTaskCounts(tasks: Task[]): Map<string, number> {
+  const counts = new Map<string, number>();
+  tasks.forEach((task) => {
+    const dateKey = DateTime.fromISO(task.dueAtLocal).toFormat('yyyy-MM-dd');
+    counts.set(dateKey, (counts.get(dateKey) ?? 0) + 1);
+  });
+  return counts;
+}
+
 function useCalendarData(selectedDate: DateTime): {
   dayPendingTasks: Task[];
   dayCompletedTasks: Task[];
@@ -64,6 +118,9 @@ function useCalendarData(selectedDate: DateTime): {
   });
   const [plantMap, setPlantMap] = useState<Map<string, PlantInfo>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
+
+  // Track the latest request ID to prevent race conditions
+  const requestIdRef = React.useRef(0);
 
   // Derive primitive values for stable dependencies
   const selectedWeekMillis = selectedDate.startOf('week').toMillis();
@@ -82,60 +139,48 @@ function useCalendarData(selectedDate: DateTime): {
   const rangeEndMillis = range.end.toMillis();
 
   const loadData = useCallback(async () => {
+    // Increment request ID for this new call
+    const currentRequestId = ++requestIdRef.current;
     setIsLoading(true);
+
     try {
       const rStart = DateTime.fromMillis(rangeStartMillis);
       const rEnd = DateTime.fromMillis(rangeEndMillis);
 
-      // 1. Fetch all tasks in the 5-week range for indicators
-      const [pending, completed] = await Promise.all([
-        getTasksByDateRange(rStart.toJSDate(), rEnd.toJSDate()),
-        getCompletedTasksByDateRange(rStart.toJSDate(), rEnd.toJSDate()),
-      ]);
+      // 1. Fetch all tasks in the 5-week range
+      const { pending, completed } = await fetchTasksForRange(
+        rStart.toJSDate(),
+        rEnd.toJSDate()
+      );
+
+      // If a newer request has started, ignore this result
+      if (currentRequestId !== requestIdRef.current) return;
 
       setTasks({ pending, completed });
 
       // 2. Identify tasks for the SELECTED day to fetch plant info
       const dayStart = DateTime.fromMillis(selectedDayMillis);
-      const dayEnd = dayStart.endOf('day');
-
-      const isForSelectedDay = (task: Task) => {
-        const due = DateTime.fromISO(task.dueAtLocal);
-        return due >= dayStart && due <= dayEnd;
-      };
-
-      const dayPending = pending.filter(isForSelectedDay);
-      const dayCompleted = completed.filter(isForSelectedDay);
-
-      // Collect unique plant IDs for the selected day
-      const plantIds = new Set<string>();
-      [...dayPending, ...dayCompleted].forEach((t) => {
-        if (t.plantId) plantIds.add(t.plantId);
-      });
+      const dayTasks = [
+        ...filterTasksForDay(pending, dayStart),
+        ...filterTasksForDay(completed, dayStart),
+      ];
 
       // 3. Fetch plant info efficiently
-      const newPlantMap = new Map<string, PlantInfo>();
-      if (plantIds.size > 0) {
-        const plantsCollection = database.get<PlantModel>('plants');
-        const plantIdsArray = Array.from(plantIds);
+      const plantIds = getPlantIdsFromTasks(dayTasks);
+      const newPlantMap = await loadPlantMap(plantIds);
 
-        const plants = await plantsCollection
-          .query(Q.where('id', Q.oneOf(plantIdsArray)))
-          .fetch();
+      // Check again before setting secondary state
+      if (currentRequestId !== requestIdRef.current) return;
 
-        plants.forEach((plant) => {
-          newPlantMap.set(plant.id, {
-            id: plant.id,
-            name: plant.name,
-            imageUrl: plant.imageUrl,
-          });
-        });
-      }
       setPlantMap(newPlantMap);
     } catch (error) {
-      console.warn('[CalendarScreen] Failed to load calendar data:', error);
+      if (currentRequestId === requestIdRef.current) {
+        console.warn('[CalendarScreen] Failed to load calendar data:', error);
+      }
     } finally {
-      setIsLoading(false);
+      if (currentRequestId === requestIdRef.current) {
+        setIsLoading(false);
+      }
     }
   }, [rangeStartMillis, rangeEndMillis, selectedDayMillis]);
 
@@ -146,23 +191,11 @@ function useCalendarData(selectedDate: DateTime): {
   // Derive day-specific tasks and overall counts
   const { dayPendingTasks, dayCompletedTasks, taskCounts } = useMemo(() => {
     const dayStart = DateTime.fromMillis(selectedDayMillis);
-    const dayEnd = dayStart.endOf('day');
-
-    const isForSelectedDay = (task: Task) => {
-      const due = DateTime.fromISO(task.dueAtLocal);
-      return due >= dayStart && due <= dayEnd;
-    };
-
-    const counts = new Map<string, number>();
-    [...tasks.pending, ...tasks.completed].forEach((task) => {
-      const dateKey = DateTime.fromISO(task.dueAtLocal).toFormat('yyyy-MM-dd');
-      counts.set(dateKey, (counts.get(dateKey) ?? 0) + 1);
-    });
 
     return {
-      dayPendingTasks: tasks.pending.filter(isForSelectedDay),
-      dayCompletedTasks: tasks.completed.filter(isForSelectedDay),
-      taskCounts: counts,
+      dayPendingTasks: filterTasksForDay(tasks.pending, dayStart),
+      dayCompletedTasks: filterTasksForDay(tasks.completed, dayStart),
+      taskCounts: buildTaskCounts([...tasks.pending, ...tasks.completed]),
     };
   }, [tasks, selectedDayMillis]);
 
