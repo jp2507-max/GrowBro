@@ -257,8 +257,20 @@ export const ensureRemoteAttachmentMetadata = async (
   const metadata = attachment.metadata as RemoteAttachmentMetadata | undefined;
   const uri = attachment.uri!;
 
+  // SECURITY: Only allow Supabase storage URIs
   if (!isSupabaseStorageUri(uri)) {
-    return processRemoteAttachmentWithoutMetadata(attachment, uploadedPaths);
+    throw new Error(
+      'Only Supabase storage URIs are allowed for remote attachments'
+    );
+  }
+
+  // SECURITY: Validate path before processing
+  const originalPath = extractSupabaseStoragePath(uri);
+  if (
+    originalPath &&
+    (originalPath.includes('..') || originalPath.includes('%2e%2e'))
+  ) {
+    throw new Error('Path traversal detected in storage path');
   }
 
   const width = Number(metadata?.width ?? metadata?.dimensions?.width ?? 0);
@@ -269,13 +281,19 @@ export const ensureRemoteAttachmentMetadata = async (
   const aspectRatio = metadata?.aspectRatio ?? width / height;
 
   // Extract and validate storage paths
-  const originalPath = extractSupabaseStoragePath(uri);
   const resizedPath = metadata?.resizedPath
     ? extractSupabaseStoragePath(metadata.resizedPath)
     : null;
   const thumbnailPath = metadata?.thumbnailPath
     ? extractSupabaseStoragePath(metadata.thumbnailPath)
     : null;
+
+  // SECURITY: Validate all paths for traversal attempts
+  [resizedPath, thumbnailPath].forEach((path) => {
+    if (path && (path.includes('..') || path.includes('%2e%2e'))) {
+      throw new Error('Path traversal detected in storage path');
+    }
+  });
 
   // Validate that we have proper, distinct paths for all variants
   const hasValidPaths =

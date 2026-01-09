@@ -119,12 +119,18 @@ export class RealtimeConnectionManager {
 
     this.isSubscribing = true;
     try {
-      // If already connected or connecting, perform clean re-subscribe
+      // If already connected or connecting, clean up channel without resetting isActive
+      // to avoid race condition in handleSubscriptionStatus
       if (
         this.connectionState === 'connected' ||
         this.connectionState === 'connecting'
       ) {
-        this.unsubscribe();
+        this.cleanup();
+        this.stopPolling();
+        if (this.reconnectTimer) {
+          clearTimeout(this.reconnectTimer);
+          this.reconnectTimer = null;
+        }
       }
 
       this.callbacks = callbacks;
@@ -357,12 +363,14 @@ export class RealtimeConnectionManager {
   private async pollUpdates(): Promise<void> {
     console.log('Polling for updates...');
     if (!this.callbacks.onPollRefresh) {
-      console.warn(
-        '[Realtime] Polling active but onPollRefresh callback not implemented. ' +
-          'UI data will not update. Implement onPollRefresh to refetch React Query data.'
+      console.error(
+        '[Realtime] CRITICAL: Polling active but onPollRefresh not implemented. ' +
+          'Data will NOT update. This is a bug in consumer implementation. Stopping polling.'
       );
+      this.stopPolling();
+      return;
     }
-    this.callbacks.onPollRefresh?.();
+    this.callbacks.onPollRefresh();
   }
 
   /**

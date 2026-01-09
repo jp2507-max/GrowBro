@@ -100,8 +100,8 @@ describe('RealtimeConnectionManager', () => {
       expect(mockCallbacks.onPollRefresh).toHaveBeenCalled();
     });
 
-    it('should warn when onPollRefresh is not implemented', async () => {
-      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+    it('should stop polling when onPollRefresh is not implemented', async () => {
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
       const callbacksWithoutRefresh = {
         onPostChange: jest.fn(),
         onCommentChange: jest.fn(),
@@ -117,14 +117,14 @@ describe('RealtimeConnectionManager', () => {
         subscribe: jest.fn((callback) => {
           setTimeout(() => {
             callback('CHANNEL_ERROR');
-            // After max retries, should start polling and trigger warning
+            // After max retries, should start polling and trigger error
             setTimeout(() => {
-              if (manager.isPollingActive()) {
-                expect(consoleSpy).toHaveBeenCalledWith(
-                  '[Realtime] Polling active but onPollRefresh callback not implemented. ' +
-                    'UI data will not update. Implement onPollRefresh to refetch React Query data.'
-                );
-              }
+              expect(consoleErrorSpy).toHaveBeenCalledWith(
+                '[Realtime] CRITICAL: Polling active but onPollRefresh not implemented. ' +
+                  'Data will NOT update. This is a bug in consumer implementation. Stopping polling.'
+              );
+              // Polling should be stopped
+              expect(manager.isPollingActive()).toBe(false);
             }, 100);
           }, 10);
           return { unsubscribe: jest.fn() };
@@ -134,10 +134,10 @@ describe('RealtimeConnectionManager', () => {
 
       manager.subscribe(callbacksWithoutRefresh);
 
-      // Wait for polling to start and warning to be logged
+      // Wait for polling to start and error to be logged
       await new Promise((resolve) => setTimeout(resolve, 200));
 
-      consoleSpy.mockRestore();
+      consoleErrorSpy.mockRestore();
     });
 
     it('should track polling state', async () => {

@@ -235,28 +235,51 @@ function invalidateCommentRelatedQueries(
   });
 }
 
-// Factory to create mutation options - extracted to reduce hook body size
-function createMutationOptions(queryClient: ReturnType<typeof useQueryClient>) {
-  return {
-    mutationFn: async ({
-      postId,
-      body,
-      idempotencyKey,
-      clientTxId,
-    }: CreateCommentVariables) => {
-      validateCommentBody(body);
+async function performCreateCommentMutation({
+  postId,
+  body,
+  idempotencyKey,
+  clientTxId,
+}: CreateCommentVariables) {
+  validateCommentBody(body);
+
+  try {
+    return await apiClient.createComment(
+      { postId, body },
+      idempotencyKey!,
+      clientTxId!
+    );
+  } catch (error) {
+    if (error instanceof ValidationError) {
+      throw error;
+    }
+
+    try {
       await queueCommentInOutbox({
         postId,
         body,
         clientTxId: clientTxId!,
         idempotencyKey: idempotencyKey!,
       });
-      return apiClient.createComment(
-        { postId, body },
-        idempotencyKey!,
-        clientTxId!
-      );
-    },
+      // Rethrow original error to trigger onError -> handleNetworkError (show queued toast)
+      throw error;
+    } catch (queueError) {
+      // If queueing also fails, throw specific error
+      if (queueError === error) throw error;
+
+      const err = new Error(
+        'Failed to queue comment in outbox'
+      ) as ErrorWithCode;
+      err.code = OUTBOX_QUEUE_FAILED;
+      throw err;
+    }
+  }
+}
+
+// Factory to create mutation options - extracted to reduce hook body size
+function createMutationOptions(queryClient: ReturnType<typeof useQueryClient>) {
+  return {
+    mutationFn: performCreateCommentMutation,
     onMutate: async ({
       postId,
       body,

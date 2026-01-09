@@ -312,6 +312,29 @@ const OAUTH_CODE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 const exchangedCodes = new Set<string>();
 
 /**
+ * Track timeouts for exchanged codes to prevent memory leaks
+ */
+const exchangedCodeTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
+
+/**
+ * Track an exchanged code with proper timeout cleanup
+ */
+function trackExchangedCode(code: string): void {
+  const existing = exchangedCodeTimeouts.get(code);
+  if (existing) {
+    clearTimeout(existing);
+  }
+
+  const timeout = setTimeout(() => {
+    exchangedCodes.delete(code);
+    exchangedCodeTimeouts.delete(code);
+  }, OAUTH_CODE_TTL_MS);
+
+  exchangedCodes.add(code);
+  exchangedCodeTimeouts.set(code, timeout);
+}
+
+/**
  * Show retry message and retry OAuth callback after delay
  * Checks for existing session first in case code was already exchanged
  */
@@ -460,9 +483,7 @@ export async function handleOAuthCallback(
     }
 
     // Mark code as successfully exchanged
-    exchangedCodes.add(code);
-    // Cleanup code after TTL to prevent memory buildup
-    setTimeout(() => exchangedCodes.delete(code), OAUTH_CODE_TTL_MS);
+    trackExchangedCode(code);
 
     // Success - navigate to app
     showMessage({

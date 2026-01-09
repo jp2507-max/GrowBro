@@ -121,12 +121,14 @@ function parseTopSortCursor(
     return null;
   }
 
-  const createdAt = remainder.match(
+  const timestampMatch = remainder.match(
     /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})/
-  )?.[0];
-  const id = remainder.includes(':')
-    ? remainder.split(':').slice(1).join(':')
-    : undefined;
+  );
+  const createdAt = timestampMatch?.[0];
+  const id =
+    createdAt && remainder.length > createdAt.length
+      ? remainder.substring(createdAt.length + 1) // +1 to skip the colon separator
+      : undefined;
 
   // Additional validation: ensure the date can be parsed
   if (!createdAt) {
