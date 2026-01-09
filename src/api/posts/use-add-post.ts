@@ -248,8 +248,9 @@ const processRemoteAttachmentWithoutMetadata = async (
   }
 };
 
-// Helper function to process remote attachments
-export const processRemoteAttachment = async (
+// Helper function to ensure remote attachments have complete metadata,
+// falling back to downloading and re-processing if needed.
+export const ensureRemoteAttachmentMetadata = async (
   attachment: AttachmentInput,
   uploadedPaths: string[] = []
 ): Promise<MediaPayload> => {
@@ -265,9 +266,15 @@ export const processRemoteAttachment = async (
   const bytes = Number(metadata?.bytes ?? attachment.size ?? 0);
   const hasCompleteMetadata = width > 0 && height > 0 && bytes > 0;
 
-  // If metadata is incomplete (missing width, height, or bytes), fall back to
-  // downloading and re-processing the attachment to extract necessary metadata.
+  // Supabase Storage URIs usually arrive with metadata from the query.
+  // If metadata is incomplete (missing width, height, or bytes), it indicates
+  // a legacy post or a client-side state issue where metadata wasn't passed.
+  // Validation requires this metadata, so we must fall back to an expensive download/re-process.
   if (!hasCompleteMetadata) {
+    console.warn(
+      '[ensureRemoteAttachmentMetadata] Incomplete metadata for remote attachment, triggering fallback download. usage_metric:processing_fallback',
+      { uri, metadata }
+    );
     return processRemoteAttachmentWithoutMetadata(attachment, uploadedPaths);
   }
 
@@ -319,8 +326,8 @@ const processAttachments = async (
         mediaPayloads.push(mediaPayload);
       } else {
         // Remote prefill attachment - may need downloading if no metadata
-        // Process through our attachment handler which will download if needed
-        const mediaPayload = await processRemoteAttachment(
+        // Ensure we have complete metadata, downloading and reprocessing if necessary
+        const mediaPayload = await ensureRemoteAttachmentMetadata(
           attachment,
           uploadedPaths
         );

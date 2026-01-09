@@ -204,6 +204,7 @@ const client = z.object({
   // iOS client ID from Google Cloud Console
   // Expected format: "<numeric-id>-<hash>.apps.googleusercontent.com"
   // Also accepts just the prefix "<numeric-id>-<hash>" for backward compatibility
+  // Note: Both env.js and app.config.cjs accept prefix-only format consistently
   GOOGLE_IOS_CLIENT_ID: z
     .string()
     .refine(

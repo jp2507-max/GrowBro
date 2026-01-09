@@ -304,6 +304,12 @@ const OAUTH_MAX_RETRIES = 2;
 const OAUTH_RETRY_DELAY_MS = 1500; // 1.5 seconds
 
 /**
+ * Track successfully exchanged codes to avoid false positives in retry logic
+ * Cleared on app restart
+ */
+const exchangedCodes = new Set<string>();
+
+/**
  * Show retry message and retry OAuth callback after delay
  * Checks for existing session first in case code was already exchanged
  */
@@ -315,17 +321,24 @@ async function retryOAuthWithDelay(
     `[OAuth] Transient network error detected, checking for existing session...`
   );
 
-  // Check if session was created despite the timeout
-  const sessionExists = await hasValidSession();
-  if (sessionExists) {
-    console.log(
-      '[OAuth] Session already exists - code was successfully exchanged despite timeout'
-    );
+  // Check if THIS code was already successfully exchanged
+  if (exchangedCodes.has(code)) {
+    console.log('[OAuth] This code was successfully exchanged despite timeout');
     showMessage({
       message: 'Sign In Successful',
       description: 'You have been signed in successfully.',
       type: 'success',
     });
+    router.replace('/(app)');
+    return;
+  }
+
+  // Session exists but not from this code - another OAuth flow succeeded
+  const sessionExists = await hasValidSession();
+  if (sessionExists) {
+    console.log(
+      '[OAuth] Different OAuth flow succeeded - abandoning this code exchange'
+    );
     router.replace('/(app)');
     return;
   }
@@ -443,6 +456,9 @@ export async function handleOAuthCallback(
       handleOAuthError(error, retryCount, 'exchange');
       return;
     }
+
+    // Mark code as successfully exchanged
+    exchangedCodes.add(code);
 
     // Success - navigate to app
     showMessage({

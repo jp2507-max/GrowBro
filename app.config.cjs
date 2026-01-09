@@ -307,7 +307,9 @@ function createExpoConfig(config) {
           );
         }
 
-        const iosUrlScheme = `com.googleusercontent.apps.${clientIdPrefix}`;
+        // Ensure safe scheme format by removing any invalid characters
+        const sanitizedPrefix = clientIdPrefix.replace(/[^a-zA-Z0-9_-]/g, '');
+        const iosUrlScheme = `com.googleusercontent.apps.${sanitizedPrefix}`;
 
         return [
           ['@react-native-google-signin/google-signin', { iosUrlScheme }],

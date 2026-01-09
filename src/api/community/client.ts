@@ -98,25 +98,31 @@ function sleep(ms: number): Promise<void> {
  */
 function parseTopSortCursor(
   cursor: string
-): { likeCount: number; createdAt: string } | null {
+): { likeCount: number; createdAt: string; id?: string } | null {
   const firstColonIndex = cursor.indexOf(':');
   if (firstColonIndex === -1) return null;
 
   const likeCountStr = cursor.substring(0, firstColonIndex);
-  const createdAt = cursor.substring(firstColonIndex + 1);
+  const remainder = cursor.substring(firstColonIndex + 1);
   const likeCount = parseInt(likeCountStr, 10);
 
-  if (isNaN(likeCount) || !createdAt) {
+  if (isNaN(likeCount) || !remainder) {
     return null;
   }
 
   // Validate createdAt is a proper ISO 8601 timestamp with microsecond precision
-  // Accept both millisecond and microsecond precision to preserve Postgres TIMESTAMPTZ precision
+  // Support optional ID suffix for tie-breaking: likeCount:createdAt:id
   const iso8601Regex =
-    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?(?:Z|[+-]\d{2}:\d{2})$/;
-  if (!iso8601Regex.test(createdAt)) {
+    /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?(?:Z|[+-]\d{2}:\d{2}))(?::(.+))?$/;
+
+  const match = remainder.match(iso8601Regex);
+
+  if (!match) {
     return null;
   }
+
+  const createdAt = match[1];
+  const id = match[2];
 
   // Additional validation: ensure the date can be parsed
   const parsedDate = Date.parse(createdAt);
@@ -124,14 +130,18 @@ function parseTopSortCursor(
     return null;
   }
 
-  return { likeCount, createdAt };
+  return { likeCount, createdAt, id };
 }
 
 /**
  * Generate a composite cursor for top_7d sort from a post's like_count and created_at.
  * Normalizes the timestamp to ensure it passes parseTopSortCursor validation.
  */
-function generateTopSortCursor(likeCount: number, createdAt: string): string {
+function generateTopSortCursor(
+  likeCount: number,
+  createdAt: string,
+  id?: string
+): string {
   try {
     // Parse the createdAt timestamp and normalize to ISO 8601 with millisecond precision
     const parsedDate = new Date(createdAt);
@@ -161,7 +171,8 @@ function generateTopSortCursor(likeCount: number, createdAt: string): string {
       normalizedTimestamp = parsedDate.toISOString();
     }
 
-    return `${likeCount}:${normalizedTimestamp}`;
+    const cursor = `${likeCount}:${normalizedTimestamp}`;
+    return id ? `${cursor}:${id}` : cursor;
   } catch (error) {
     console.error(
       `Failed to generate cursor from createdAt: ${createdAt}, using fallback. Error: ${
@@ -220,6 +231,66 @@ function applyDiscoverFilters<
     b = b.eq('category', ctx.category);
   }
   return b;
+}
+
+/**
+ * Apply sorting and cursor logic for discover query.
+ * Extracted to reduce getPostsDiscover method length.
+ */
+function applyDiscoverSort<
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  T extends PostgrestFilterBuilder<any, any, any, any[], any, any, any>,
+>(builder: T, sort: 'new' | 'top_7d', cursor?: string): T {
+  let b = builder;
+  if (sort === 'top_7d') {
+    b = b
+      .order('like_count', { ascending: false })
+      .order('created_at', { ascending: false });
+
+    // Apply composite cursor for top_7d sort
+    if (cursor) {
+      const parsed = parseTopSortCursor(cursor);
+      if (parsed) {
+        // Rows come after cursor if:
+        // 1. like_count < cursor
+        // 2. like_count == cursor AND created_at < cursor
+        // 3. like_count == cursor AND created_at == cursor AND id < cursor (tie-breaker)
+        let filter = `like_count.lt.${parsed.likeCount},and(like_count.eq.${parsed.likeCount},created_at.lt."${parsed.createdAt}")`;
+
+        if (parsed.id) {
+          filter += `,and(like_count.eq.${parsed.likeCount},created_at.eq."${parsed.createdAt}",id.lt."${parsed.id}")`;
+        }
+
+        b = b.or(filter);
+      }
+    }
+  } else {
+    b = b.order('created_at', { ascending: false });
+  }
+  return b;
+}
+
+/**
+ * Calculate the next cursor for pagination.
+ * Extracted to reduce getPostsDiscover method length.
+ */
+function calculateNextCursor(
+  posts: Post[],
+  limit: number,
+  sort: 'new' | 'top_7d'
+): string | null {
+  if (posts.length !== limit) {
+    return null;
+  }
+
+  const lastPost = posts[posts.length - 1];
+  return sort === 'top_7d'
+    ? generateTopSortCursor(
+        lastPost.like_count ?? 0,
+        lastPost.created_at,
+        lastPost.id
+      )
+    : lastPost.created_at;
 }
 
 /**
@@ -336,38 +407,14 @@ export class CommunityApiClient implements CommunityAPI {
       dataFilterCtx
     );
 
-    if (sort === 'top_7d') {
-      queryBuilder = queryBuilder
-        .order('like_count', { ascending: false })
-        .order('created_at', { ascending: false });
-
-      // Apply composite cursor for top_7d sort
-      if (cursor) {
-        const parsed = parseTopSortCursor(cursor);
-        if (parsed) {
-          // Rows come after cursor if: like_count < cursor OR (like_count == cursor AND created_at < cursor)
-          queryBuilder = queryBuilder.or(
-            `like_count.lt.${parsed.likeCount},and(like_count.eq.${parsed.likeCount},created_at.lt."${parsed.createdAt}")`
-          );
-        }
-      }
-    } else {
-      queryBuilder = queryBuilder.order('created_at', { ascending: false });
-    }
+    queryBuilder = applyDiscoverSort(queryBuilder, sort, cursor);
 
     queryBuilder = queryBuilder.limit(limit);
 
     const posts = await this.getPostsWithCounts(queryBuilder);
 
     // Generate next cursor based on sort type
-    let next: string | null = null;
-    if (posts.length === limit) {
-      const lastPost = posts[posts.length - 1];
-      next =
-        sort === 'top_7d'
-          ? generateTopSortCursor(lastPost.like_count ?? 0, lastPost.created_at)
-          : lastPost.created_at;
-    }
+    const next = calculateNextCursor(posts, limit, sort);
 
     return {
       results: posts,

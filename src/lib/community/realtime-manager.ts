@@ -25,6 +25,10 @@ type RealtimeCallbacks = {
   onCommentChange?: (event: RealtimeEvent<PostComment>) => void | Promise<void>;
   onLikeChange?: (event: RealtimeEvent<PostLike>) => void | Promise<void>;
   onConnectionStateChange?: (state: ConnectionState) => void;
+  /**
+   * Called every 30s when polling fallback is active (after max reconnect attempts).
+   * **Consumer must implement data refetching** (e.g., invalidate React Query).
+   */
   onPollRefresh?: () => void;
 };
 
@@ -49,6 +53,7 @@ export class RealtimeConnectionManager {
     typeof AppState.addEventListener
   > | null = null;
   private wasConnectedBeforeBackground = false;
+  private isSubscribing = false;
 
   // Exponential backoff: 1s, 2s, 4s, 8s, 16s, 32s (max)
   private getBackoffDelay(): number {
@@ -107,27 +112,37 @@ export class RealtimeConnectionManager {
    * @param postId Optional post ID to filter comments subscription
    */
   subscribe(callbacks: RealtimeCallbacks, postId?: string): void {
-    // If already connected or connecting, perform clean re-subscribe
-    if (
-      this.connectionState === 'connected' ||
-      this.connectionState === 'connecting'
-    ) {
-      this.unsubscribe();
+    if (this.isSubscribing) {
+      console.warn('Subscription already in progress');
+      return;
     }
 
-    this.callbacks = callbacks;
-    this.postIdFilter = postId;
-    this.isActive = true;
+    this.isSubscribing = true;
+    try {
+      // If already connected or connecting, perform clean re-subscribe
+      if (
+        this.connectionState === 'connected' ||
+        this.connectionState === 'connecting'
+      ) {
+        this.unsubscribe();
+      }
 
-    // Set up AppState listener for background/foreground handling
-    if (!this.appStateSubscription) {
-      this.appStateSubscription = AppState.addEventListener(
-        'change',
-        this.handleAppStateChange
-      );
+      this.callbacks = callbacks;
+      this.postIdFilter = postId;
+      this.isActive = true;
+
+      // Set up AppState listener for background/foreground handling
+      if (!this.appStateSubscription) {
+        this.appStateSubscription = AppState.addEventListener(
+          'change',
+          this.handleAppStateChange
+        );
+      }
+
+      this.connect();
+    } finally {
+      this.isSubscribing = false;
     }
-
-    this.connect();
   }
 
   /**
@@ -335,12 +350,12 @@ export class RealtimeConnectionManager {
   }
 
   /**
-   * Poll for updates when real-time is unavailable
-   * Notifies listeners to refetch data via dedicated polling callback
+   * Poll for updates when real-time is unavailable.
+   * Delegates to onPollRefresh callback - consumer must implement refetching.
+   * @see RealtimeCallbacks.onPollRefresh for implementation requirements
    */
   private async pollUpdates(): Promise<void> {
     console.log('Polling for updates...');
-    // Emit dedicated poll refresh event for components to handle
     this.callbacks.onPollRefresh?.();
   }
 
