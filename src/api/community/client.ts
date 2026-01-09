@@ -347,7 +347,7 @@ export class CommunityApiClient implements CommunityAPI {
         if (parsed) {
           // Rows come after cursor if: like_count < cursor OR (like_count == cursor AND created_at < cursor)
           queryBuilder = queryBuilder.or(
-            `like_count.lt.${parsed.likeCount},and(like_count.eq.${parsed.likeCount},created_at.lt.${parsed.createdAt})`
+            `like_count.lt.${parsed.likeCount},and(like_count.eq.${parsed.likeCount},created_at.lt."${parsed.createdAt}")`
           );
         }
       }

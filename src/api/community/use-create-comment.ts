@@ -245,18 +245,16 @@ function createMutationOptions(queryClient: ReturnType<typeof useQueryClient>) {
       clientTxId,
     }: CreateCommentVariables) => {
       validateCommentBody(body);
-      const finalIdempotencyKey = idempotencyKey || randomUUID();
-      const finalClientTxId = clientTxId || randomUUID();
       await queueCommentInOutbox({
         postId,
         body,
-        clientTxId: finalClientTxId,
-        idempotencyKey: finalIdempotencyKey,
+        clientTxId: clientTxId!,
+        idempotencyKey: idempotencyKey!,
       });
       return apiClient.createComment(
         { postId, body },
-        finalIdempotencyKey,
-        finalClientTxId
+        idempotencyKey!,
+        clientTxId!
       );
     },
     onMutate: async ({
@@ -265,8 +263,6 @@ function createMutationOptions(queryClient: ReturnType<typeof useQueryClient>) {
       idempotencyKey,
       clientTxId,
     }: CreateCommentVariables) => {
-      const finalIdempotencyKey = idempotencyKey || randomUUID();
-      const finalClientTxId = clientTxId || randomUUID();
       await queryClient.cancelQueries({
         predicate: (query) =>
           isCommunityCommentsKey(query.queryKey) &&
@@ -279,13 +275,13 @@ function createMutationOptions(queryClient: ReturnType<typeof useQueryClient>) {
           isCommunityCommentsKey(query.queryKey) &&
           query.queryKey[1] === postId,
       });
-      const tempComment = createTempComment(postId, body, finalClientTxId);
+      const tempComment = createTempComment(postId, body, clientTxId!);
       optimisticallyAddComment(queryClient, postId, tempComment);
       return {
         previousComments,
         tempComment,
-        idempotencyKey: finalIdempotencyKey,
-        clientTxId: finalClientTxId,
+        idempotencyKey: idempotencyKey!,
+        clientTxId: clientTxId!,
       };
     },
     onSuccess: (

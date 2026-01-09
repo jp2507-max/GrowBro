@@ -37,7 +37,6 @@ type RealtimeCallbacks = {
 export class RealtimeConnectionManager {
   private channel: RealtimeChannel | null = null;
   private connectionState: ConnectionState = 'disconnected';
-  private isConnecting = false;
   private callbacks: RealtimeCallbacks = {};
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 3;
@@ -108,12 +107,6 @@ export class RealtimeConnectionManager {
    * @param postId Optional post ID to filter comments subscription
    */
   subscribe(callbacks: RealtimeCallbacks, postId?: string): void {
-    // Guard against concurrent subscription attempts
-    if (this.isConnecting) {
-      console.warn('Subscription already in progress, ignoring duplicate call');
-      return;
-    }
-
     // If already connected or connecting, perform clean re-subscribe
     if (
       this.connectionState === 'connected' ||
@@ -213,13 +206,11 @@ export class RealtimeConnectionManager {
   ): void {
     if (!this.isActive) return;
     if (status === 'SUBSCRIBED') {
-      this.isConnecting = false;
       this.setConnectionState('connected');
       this.reconnectAttempts = 0;
       this.stopPolling();
       console.log('Connected to community feed realtime');
     } else if (status === 'CHANNEL_ERROR') {
-      this.isConnecting = false;
       this.setConnectionState('error');
       console.error('Realtime subscription error:', {
         status,
@@ -231,7 +222,6 @@ export class RealtimeConnectionManager {
       communityMetrics.recordReconnect();
       this.handleConnectionError();
     } else if (status === 'TIMED_OUT') {
-      this.isConnecting = false;
       this.setConnectionState('error');
       console.error('Realtime subscription timed out:', {
         status,
@@ -241,7 +231,6 @@ export class RealtimeConnectionManager {
       communityMetrics.recordReconnect();
       this.handleConnectionError();
     } else if (status === 'CLOSED') {
-      this.isConnecting = false;
       this.setConnectionState('disconnected');
       console.log('Realtime connection closed:', {
         status,
@@ -263,7 +252,6 @@ export class RealtimeConnectionManager {
       return;
     }
 
-    this.isConnecting = true;
     this.setConnectionState('connecting');
 
     // Create channel with unique name based on filter
@@ -462,7 +450,6 @@ export class RealtimeConnectionManager {
    */
   unsubscribe(): void {
     this.isActive = false;
-    this.isConnecting = false;
     // Clear timers
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
