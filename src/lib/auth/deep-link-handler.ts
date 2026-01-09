@@ -303,9 +303,11 @@ async function hasValidSession(): Promise<boolean> {
 const OAUTH_MAX_RETRIES = 2;
 const OAUTH_RETRY_DELAY_MS = 1500; // 1.5 seconds
 
+const OAUTH_CODE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+
 /**
  * Track successfully exchanged codes to avoid false positives in retry logic
- * Cleared on app restart
+ * Cleared on app restart or after TTL
  */
 const exchangedCodes = new Set<string>();
 
@@ -459,6 +461,8 @@ export async function handleOAuthCallback(
 
     // Mark code as successfully exchanged
     exchangedCodes.add(code);
+    // Cleanup code after TTL to prevent memory buildup
+    setTimeout(() => exchangedCodes.delete(code), OAUTH_CODE_TTL_MS);
 
     // Success - navigate to app
     showMessage({
