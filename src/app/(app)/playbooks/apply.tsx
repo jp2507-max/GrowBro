@@ -49,7 +49,7 @@ function PlantSelectionList({
           accessibilityLabel={
             plant.strain ? `${plant.name}, ${plant.strain}` : plant.name
           }
-          accessibilityHint={t('playbooks.accessibility.selectPlantHint')}
+          accessibilityHint={t('playbooks.accessibility.select_plant_hint')}
           testID={`plant-option-${plant.id}`}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
@@ -174,8 +174,8 @@ function useApplyHandlers({
       );
 
       showMessage({
-        message: t('playbooks.applySuccess'),
-        description: t('playbooks.applySuccessDescription', {
+        message: t('playbooks.apply_success'),
+        description: t('playbooks.apply_success_description', {
           count: result.appliedTaskCount,
         }),
         type: 'success',
@@ -186,8 +186,8 @@ function useApplyHandlers({
     } catch (error) {
       console.error('Failed to apply playbook:', error);
       showMessage({
-        message: t('playbooks.applyError'),
-        description: t('playbooks.applyErrorDescription'),
+        message: t('playbooks.apply_error'),
+        description: t('playbooks.apply_error_description'),
         type: 'danger',
         duration: 4000,
       });
@@ -212,9 +212,9 @@ function EmptyPlantState({ onCreatePlant }: { onCreatePlant: () => void }) {
   return (
     <View className="items-center py-12">
       <Text className="mb-4 text-center text-neutral-600 dark:text-neutral-400">
-        {t('playbooks.noPlants')}
+        {t('playbooks.no_plants')}
       </Text>
-      <Button label={t('playbooks.createPlant')} onPress={onCreatePlant} />
+      <Button label={t('playbooks.create_plant')} onPress={onCreatePlant} />
     </View>
   );
 }
@@ -242,10 +242,10 @@ function ApplyContent({
       <ScrollView className="flex-1" contentInsetAdjustmentBehavior="automatic">
         <View className="p-4">
           <Text className="mb-2 text-2xl font-bold text-neutral-900 dark:text-neutral-100">
-            {t('playbooks.selectPlant')}
+            {t('playbooks.select_plant')}
           </Text>
           <Text className="mb-6 text-base text-neutral-500 dark:text-neutral-400">
-            {t('playbooks.selectPlantDescription')}
+            {t('playbooks.select_plant_description')}
           </Text>
 
           {plants.length === 0 ? (
@@ -267,7 +267,7 @@ function ApplyContent({
         >
           <Button
             label={
-              applying ? t('playbooks.applying') : t('playbooks.applyPlaybook')
+              applying ? t('playbooks.applying') : t('playbooks.apply_playbook')
             }
             onPress={onApply}
             disabled={!selectedPlantId || applying}

@@ -34,13 +34,13 @@ export function UncertaintyResultCard({
 
   // Determine header message
   const headerKey = isOOD
-    ? 'assessment.uncertainty.unableToClassify'
-    : 'assessment.uncertainty.notConfident';
+    ? 'assessment.uncertainty.unable_to_classify'
+    : 'assessment.uncertainty.not_confident';
 
   // Determine explanation message
   const explanationKey = isOOD
-    ? 'assessment.uncertainty.oodExplanation'
-    : 'assessment.uncertainty.lowConfidenceExplanation';
+    ? 'assessment.uncertainty.ood_explanation'
+    : 'assessment.uncertainty.low_confidence_explanation';
 
   return (
     <View
@@ -61,11 +61,11 @@ export function UncertaintyResultCard({
       {isLowConfidence && !isOOD && (
         <View className="mb-3 rounded-lg bg-warning-100 p-3 dark:bg-warning-900">
           <Text className="text-sm text-warning-900 dark:text-warning-100">
-            {t('assessment.uncertainty.confidenceLabel')}:{' '}
+            {t('assessment.uncertainty.confidence_label')}:{' '}
             {Math.round(assessment.calibratedConfidence * 100)}%
           </Text>
           <Text className="mt-1 text-xs text-warning-700 dark:text-warning-300">
-            {t('assessment.uncertainty.confidenceThreshold')}
+            {t('assessment.uncertainty.confidence_threshold')}
           </Text>
         </View>
       )}
@@ -75,7 +75,7 @@ export function UncertaintyResultCard({
         {/* Retake button */}
         {onRetake && (
           <Button
-            label={t('assessment.uncertainty.retakePhoto')}
+            label={t('assessment.uncertainty.retake_photo')}
             onPress={onRetake}
             variant="default"
             testID={`${testID}-retake-button`}
@@ -93,8 +93,8 @@ export function UncertaintyResultCard({
         <Button
           label={
             showChecklist
-              ? t('assessment.uncertainty.hideChecklist')
-              : t('assessment.uncertainty.showChecklist')
+              ? t('assessment.uncertainty.hide_checklist')
+              : t('assessment.uncertainty.show_checklist')
           }
           onPress={() => setShowChecklist(!showChecklist)}
           variant="ghost"
@@ -115,7 +115,7 @@ export function UncertaintyResultCard({
       {/* Educational note */}
       <View className="mt-4 rounded-lg bg-warning-100 p-3 dark:bg-warning-900">
         <Text className="text-xs text-warning-800 dark:text-warning-200">
-          {t('assessment.uncertainty.educationalNote')}
+          {t('assessment.uncertainty.educational_note')}
         </Text>
       </View>
     </View>

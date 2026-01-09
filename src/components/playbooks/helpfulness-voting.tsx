@@ -35,7 +35,7 @@ export function HelpfulnessVoting({
         testID="voting-complete"
       >
         <Text className="text-center text-sm text-neutral-600 dark:text-neutral-400">
-          {translate('playbooks.votingThanks', {
+          {translate('playbooks.voting_thanks', {
             emoji: vote === 'helpful' ? '👍' : '👎',
           })}
         </Text>
@@ -66,7 +66,7 @@ export function HelpfulnessVoting({
           testID="vote-not-helpful"
         >
           <Text className="text-center text-danger-700 dark:text-danger-300">
-            {translate('playbooks.voteNotHelpful')}
+            {translate('playbooks.vote_not_helpful')}
           </Text>
         </Pressable>
       </View>

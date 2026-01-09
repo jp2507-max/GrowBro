@@ -20,7 +20,7 @@ export function TrichomeGuideContent({
       <View className="mb-4 rounded-lg border border-primary-200 bg-primary-50 p-4 dark:border-primary-800 dark:bg-primary-900/20">
         <Text
           className="mb-2 text-base font-semibold text-primary-800 dark:text-primary-200"
-          tx="trichome.photographyTips"
+          tx="trichome.photography_tips"
         />
         <View className="gap-2">
           {guide.photographyTips.map((tip, index) => (
@@ -40,7 +40,7 @@ export function TrichomeGuideContent({
       <View className="mb-4 rounded-lg border border-warning-200 bg-warning-50 p-4 dark:border-warning-800 dark:bg-warning-900/20">
         <Text
           className="mb-2 text-base font-semibold text-warning-800 dark:text-warning-200"
-          tx="trichome.lightingCautions"
+          tx="trichome.lighting_cautions"
         />
         <View className="gap-2">
           {guide.lightingCautions.map((caution, index) => (

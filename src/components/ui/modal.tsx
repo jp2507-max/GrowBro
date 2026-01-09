@@ -43,14 +43,11 @@ import {
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
-import Animated, {
-  FadeIn,
-  FadeOut,
-  ReduceMotion,
-} from 'react-native-reanimated';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { Path, Svg } from 'react-native-svg';
 
 import colors from '@/components/ui/colors';
+import { withRM } from '@/lib/animations/motion';
 
 import { Text } from './text';
 
@@ -145,8 +142,8 @@ const CustomBackdrop = ({ style }: BottomSheetBackdropProps) => {
   const { t } = useTranslation();
   return (
     <Animated.View
-      entering={FadeIn.duration(50).reduceMotion(ReduceMotion.System)}
-      exiting={FadeOut.duration(20).reduceMotion(ReduceMotion.System)}
+      entering={withRM(FadeIn.duration(50))}
+      exiting={withRM(FadeOut.duration(20))}
       style={[style, styles.backdrop]}
     >
       <Pressable

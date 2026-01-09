@@ -96,12 +96,13 @@ export function indexDrivenScale(params: IndexDrivenParams): number {
 export function crossfadeAroundIndex(params: CrossfadeParams): number {
   'worklet';
   const { activeIndex, centerIndex, window = 0.5, opts } = params;
-  const v = Reanimated.interpolate(
-    activeIndex.value,
-    [centerIndex - window, centerIndex, centerIndex + window],
-    [0, 1, 0],
-    Reanimated.Extrapolation.CLAMP
-  );
+  if (window <= 0) {
+    const isCentered = Math.abs(activeIndex.value - centerIndex) < 1e-3;
+    return applySpring(isCentered ? 1 : 0, opts);
+  }
+
+  const distance = Math.abs(activeIndex.value - centerIndex);
+  const v = distance >= window ? 0 : 1 - distance / window;
   return applySpring(v, opts);
 }
 

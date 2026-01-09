@@ -29,6 +29,7 @@ describe('RealtimeConnectionManager', () => {
       onCommentChange: jest.fn(),
       onLikeChange: jest.fn(),
       onConnectionStateChange: jest.fn(),
+      onPollRefresh: jest.fn(),
     };
   });
 
@@ -68,6 +69,75 @@ describe('RealtimeConnectionManager', () => {
   describe('Polling Fallback', () => {
     it('should not be polling initially', () => {
       expect(manager.isPollingActive()).toBe(false);
+    });
+
+    it('should call onPollRefresh during polling', async () => {
+      // Mock a failed connection that triggers polling
+      const mockSupabase = require('@/lib/supabase').supabase;
+      mockSupabase.channel.mockReturnValueOnce({
+        on: jest.fn().mockReturnThis(),
+        subscribe: jest.fn((callback) => {
+          // Simulate connection failure leading to polling
+          setTimeout(() => {
+            callback('CHANNEL_ERROR');
+            // After max retries, should start polling
+            setTimeout(() => {
+              if (manager.isPollingActive()) {
+                expect(mockCallbacks.onPollRefresh).toHaveBeenCalled();
+              }
+            }, 100);
+          }, 10);
+          return { unsubscribe: jest.fn() };
+        }),
+        removeChannel: jest.fn(),
+      });
+
+      manager.subscribe(mockCallbacks);
+
+      // Wait for polling to start
+      await new Promise((resolve) => setTimeout(resolve, 200));
+
+      expect(mockCallbacks.onPollRefresh).toHaveBeenCalled();
+    });
+
+    it('should stop polling when onPollRefresh is not implemented', async () => {
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+      const callbacksWithoutRefresh = {
+        onPostChange: jest.fn(),
+        onCommentChange: jest.fn(),
+        onLikeChange: jest.fn(),
+        onConnectionStateChange: jest.fn(),
+        // onPollRefresh intentionally omitted
+      };
+
+      // Mock a failed connection that triggers polling
+      const mockSupabase = require('@/lib/supabase').supabase;
+      mockSupabase.channel.mockReturnValueOnce({
+        on: jest.fn().mockReturnThis(),
+        subscribe: jest.fn((callback) => {
+          setTimeout(() => {
+            callback('CHANNEL_ERROR');
+            // After max retries, should start polling and trigger error
+            setTimeout(() => {
+              expect(consoleErrorSpy).toHaveBeenCalledWith(
+                '[Realtime] CRITICAL: Polling active but onPollRefresh not implemented. ' +
+                  'Data will NOT update. This is a bug in consumer implementation. Stopping polling.'
+              );
+              // Polling should be stopped
+              expect(manager.isPollingActive()).toBe(false);
+            }, 100);
+          }, 10);
+          return { unsubscribe: jest.fn() };
+        }),
+        removeChannel: jest.fn(),
+      });
+
+      manager.subscribe(callbacksWithoutRefresh);
+
+      // Wait for polling to start and error to be logged
+      await new Promise((resolve) => setTimeout(resolve, 200));
+
+      consoleErrorSpy.mockRestore();
     });
 
     it('should track polling state', async () => {

@@ -75,7 +75,7 @@ export function DiagnosticResultCard({
 
       {feedbackSubmitted && (
         <Text className="mt-3 text-center text-sm text-success-700 dark:text-success-400">
-          {translate('nutrient.diagnostics.feedbackThanks')}
+          {translate('nutrient.diagnostics.feedback_thanks')}
         </Text>
       )}
     </View>
@@ -91,7 +91,7 @@ function ClassificationHeader({
   confidencePercent: number;
   confidenceColor: string;
 }): React.ReactElement {
-  const issueTypeKey = `nutrient.diagnostics.issueTypes.${result.classification.type}`;
+  const issueTypeKey = `nutrient.diagnostics.issue_types.${result.classification.type}`;
   const severityKey = `nutrient.diagnostics.severity.${result.classification.severity}`;
 
   return (
@@ -143,17 +143,17 @@ function ConfidenceBreakdown({
   return (
     <View className="mb-3 rounded-lg bg-white p-3 dark:bg-charcoal-900">
       <Text className="mb-2 text-sm font-medium text-neutral-500 dark:text-neutral-400">
-        {translate('nutrient.diagnostics.confidenceBreakdown')}
+        {translate('nutrient.diagnostics.confidence_breakdown')}
       </Text>
       {rules !== undefined && (
         <Text className="text-xs text-neutral-500 dark:text-neutral-400">
-          {translate('nutrient.diagnostics.rulesConfidence')}:{' '}
+          {translate('nutrient.diagnostics.rules_confidence')}:{' '}
           {Math.round(rules * 100)}%
         </Text>
       )}
       {ai !== undefined && (
         <Text className="text-xs text-neutral-500 dark:text-neutral-400">
-          {translate('nutrient.diagnostics.aiConfidence')}:{' '}
+          {translate('nutrient.diagnostics.ai_confidence')}:{' '}
           {Math.round(ai * 100)}%
         </Text>
       )}
@@ -236,7 +236,7 @@ function RecommendationsSection({
           </View>
           {rec.priority === 1 && (
             <Text className="text-xs font-medium text-danger-600 dark:text-danger-400">
-              {translate('nutrient.diagnostics.priorityHigh')}
+              {translate('nutrient.diagnostics.priority_high')}
             </Text>
           )}
         </View>
@@ -276,7 +276,7 @@ function SecondOpinionCTA({
 }): React.ReactElement {
   return (
     <Button
-      label={translate('nutrient.diagnostics.getSecondOpinion')}
+      label={translate('nutrient.diagnostics.get_second_opinion')}
       onPress={onPress}
       variant="outline"
       className="mb-3"
@@ -295,7 +295,7 @@ function FeedbackButtons({
   return (
     <View className="mt-3">
       <Text className="mb-2 text-center text-sm text-neutral-500 dark:text-neutral-400">
-        {translate('nutrient.diagnostics.feedbackQuestion')}
+        {translate('nutrient.diagnostics.feedback_question')}
       </Text>
       <View className="flex-row justify-center gap-3">
         <Pressable
@@ -314,12 +314,12 @@ function FeedbackButtons({
           onPress={() => onFeedback(false)}
           className="rounded-lg bg-danger-100 px-4 py-2 dark:bg-danger-900"
           accessibilityRole="button"
-          accessibilityLabel={translate('nutrient.diagnostics.notHelpful')}
+          accessibilityLabel={translate('nutrient.diagnostics.not_helpful')}
           accessibilityHint="Mark this diagnostic result as not helpful"
           testID={`${testID}-not-helpful`}
         >
           <Text className="font-medium text-danger-800 dark:text-danger-200">
-            👎 {translate('nutrient.diagnostics.notHelpful')}
+            👎 {translate('nutrient.diagnostics.not_helpful')}
           </Text>
         </Pressable>
       </View>

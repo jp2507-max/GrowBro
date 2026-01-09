@@ -89,14 +89,14 @@ export function PhEcReadingList({
   }, []);
 
   const ItemSeparatorComponent = useCallback(
-    () => <View className="h-px bg-neutral-200" />,
+    () => <View className="h-px bg-neutral-200 dark:border-white/10" />,
     []
   );
 
   if (isLoading) {
     return (
       <View className="flex-1 items-center justify-center p-4">
-        <Text className="text-neutral-500">
+        <Text className="text-neutral-500 dark:text-neutral-400">
           {t('nutrient.loading_readings')}
         </Text>
       </View>
@@ -106,10 +106,10 @@ export function PhEcReadingList({
   if (items.length === 0) {
     return (
       <View className="flex-1 items-center justify-center p-4" testID={testID}>
-        <Text className="text-center text-lg text-neutral-700">
+        <Text className="text-center text-lg text-neutral-700 dark:text-neutral-300">
           {t('nutrient.no_readings')}
         </Text>
-        <Text className="mt-2 text-center text-sm text-neutral-500">
+        <Text className="mt-2 text-center text-sm text-neutral-500 dark:text-neutral-400">
           {t('nutrient.add_first_reading')}
         </Text>
       </View>
@@ -165,33 +165,42 @@ const MeasurementDisplay = memo(function MeasurementDisplay({
     <>
       <View className="flex-row items-baseline gap-3">
         <View>
-          <Text className="text-xs text-neutral-500">{t('nutrient.ph')}</Text>
-          <Text className="text-lg font-semibold text-neutral-900">
+          <Text className="text-xs text-neutral-500 dark:text-neutral-400">
+            {t('nutrient.ph')}
+          </Text>
+          <Text className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">
             {item.ph.toFixed(2)}
           </Text>
         </View>
 
         <View>
-          <Text className="text-xs text-neutral-500">
+          <Text className="text-xs text-neutral-500 dark:text-neutral-400">
             {t('nutrient.ec_at_temp', { temp: item.tempC.toFixed(1) })}
           </Text>
-          <Text className="text-lg font-semibold text-neutral-900">
-            {item.ec25c.toFixed(2)} {t('units.ms_per_cm')}
+          <Text className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">
+            {`${item.ec25c.toFixed(2)} ${t('units.ms_per_cm')}`}
           </Text>
         </View>
 
         <View>
-          <Text className="text-xs text-neutral-500">{t('nutrient.ppm')}</Text>
-          <Text className="text-sm font-medium text-neutral-700">
+          <Text className="text-xs text-neutral-500 dark:text-neutral-400">
+            {t('nutrient.ppm')}
+          </Text>
+          <Text className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
             {ppmDisplay}
           </Text>
         </View>
       </View>
 
-      <Text className="mt-2 text-xs text-neutral-500">{dateStr}</Text>
+      <Text className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
+        {dateStr}
+      </Text>
 
       {item.note && (
-        <Text className="mt-1 text-sm text-neutral-600" numberOfLines={2}>
+        <Text
+          className="mt-1 text-sm text-neutral-600 dark:text-neutral-400"
+          numberOfLines={2}
+        >
           {item.note}
         </Text>
       )}
@@ -213,14 +222,15 @@ const QualityIndicator = memo(function QualityIndicator({
 
   return (
     <>
-      <Text className="text-xs text-neutral-500">
-        {item.tempC.toFixed(1)}
-        {t('units.celsius')}
+      <Text className="text-xs text-neutral-500 dark:text-neutral-400">
+        {`${item.tempC.toFixed(1)} ${t('units.celsius')}`}
       </Text>
 
       {hasQualityFlags && (
-        <View className="mt-1 rounded bg-warning-100 px-2 py-1">
-          <Text className="text-xs text-warning-700">⚠️</Text>
+        <View className="mt-1 rounded bg-warning-100 px-2 py-1 dark:bg-warning-900/20">
+          <Text className="text-xs text-warning-700 dark:text-warning-300">
+            ⚠️
+          </Text>
         </View>
       )}
     </>
@@ -242,17 +252,17 @@ const QualityFlagDetails = memo(function QualityFlagDetails({
   return (
     <View className="mt-2 gap-1">
       {qualityFlags.includes(QualityFlagEnum.NO_ATC) && (
-        <Text className="text-xs text-warning-700">
+        <Text className="text-xs text-warning-700 dark:text-warning-300">
           • {t('nutrient.no_atc_warning')}
         </Text>
       )}
       {qualityFlags.includes(QualityFlagEnum.TEMP_HIGH) && (
-        <Text className="text-xs text-warning-700">
+        <Text className="text-xs text-warning-700 dark:text-warning-300">
           • {t('nutrient.temp_high_warning')}
         </Text>
       )}
       {qualityFlags.includes(QualityFlagEnum.CAL_STALE) && (
-        <Text className="text-xs text-warning-700">
+        <Text className="text-xs text-warning-700 dark:text-warning-300">
           • {t('nutrient.cal_stale_warning')}
         </Text>
       )}
@@ -275,7 +285,7 @@ const ReadingListItemComponent = memo(function ReadingListItemComponent({
     <Pressable
       accessibilityRole="button"
       onPress={handlePress}
-      className="bg-white p-4"
+      className="bg-white p-4 dark:bg-charcoal-900"
       testID={`reading-item-${item.id}`}
     >
       <View className="flex-row items-start justify-between">

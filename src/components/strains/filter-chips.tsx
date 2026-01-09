@@ -27,8 +27,8 @@ function FilterChip({
       className="flex-row items-center gap-1 rounded-full bg-primary-100 px-3 py-1 dark:bg-primary-900"
       testID={testID}
       accessibilityRole="button"
-      accessibilityLabel={translate('strains.filters.removeLabel', { label })}
-      accessibilityHint={translate('strains.filters.removeHint')}
+      accessibilityLabel={translate('strains.filters.remove_label', { label })}
+      accessibilityHint={translate('strains.filters.remove_hint')}
     >
       <Text className="text-sm text-primary-700 dark:text-primary-300">
         {label}
@@ -97,8 +97,8 @@ export function FilterChips({
         className="rounded-full border border-neutral-300 px-3 py-1 dark:border-neutral-700"
         testID={`${testID}-clear-all`}
         accessibilityRole="button"
-        accessibilityLabel={translate('strains.filters.clearAllLabel')}
-        accessibilityHint={translate('strains.filters.clearAllHint')}
+        accessibilityLabel={translate('strains.filters.clear_all_label')}
+        accessibilityHint={translate('strains.filters.clear_all_hint')}
       >
         <Text className="text-sm text-neutral-700 dark:text-neutral-300">
           {translate('strains.filters.clear_all')}

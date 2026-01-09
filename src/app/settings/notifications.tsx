@@ -32,19 +32,19 @@ function CategoryList() {
       <View className="rounded-lg bg-white p-3 dark:bg-charcoal-900">
         <Text
           className="mb-1 text-sm text-neutral-600 dark:text-neutral-400"
-          tx="settings.notifications.categories.communityInteractions"
+          tx="settings.notifications.categories.community_interactions"
         />
         <Text
           className="mb-1 text-sm text-neutral-600 dark:text-neutral-400"
-          tx="settings.notifications.categories.communityLikes"
+          tx="settings.notifications.categories.community_likes"
         />
         <Text
           className="mb-1 text-sm text-neutral-500 dark:text-neutral-400"
-          tx="settings.notifications.categories.cultivationReminders"
+          tx="settings.notifications.categories.cultivation_reminders"
         />
         <Text
           className="text-sm text-neutral-500 dark:text-neutral-400"
-          tx="settings.notifications.categories.systemUpdates"
+          tx="settings.notifications.categories.system_updates"
         />
       </View>
     </View>
@@ -57,7 +57,7 @@ function PlatformHelp() {
       <View className="mb-6">
         <Text
           className="text-xs text-neutral-500 dark:text-neutral-400"
-          tx="settings.notifications.platformHelp.android"
+          tx="settings.notifications.platform_help.android"
         />
       </View>
     );
@@ -67,7 +67,7 @@ function PlatformHelp() {
     <View className="mb-6">
       <Text
         className="text-xs text-neutral-500 dark:text-neutral-400"
-        tx="settings.notifications.platformHelp.ios"
+        tx="settings.notifications.platform_help.ios"
       />
     </View>
   );
@@ -107,7 +107,7 @@ function CategoryToggle({
           {isChannelDisabled && (
             <Text
               className="mt-1 text-xs text-warning-600 dark:text-warning-400"
-              tx="settings.notifications.channelDisabled"
+              tx="settings.notifications.channel_disabled"
             />
           )}
         </View>
@@ -128,7 +128,7 @@ function CategoryToggle({
         >
           <Text
             className="text-center text-xs font-medium text-warning-800 dark:text-warning-200"
-            tx="settings.notifications.manageInSettings"
+            tx="settings.notifications.manage_in_settings"
           />
         </Pressable>
       )}
@@ -241,11 +241,11 @@ export default function NotificationSettings() {
           <View className="mb-6 rounded-lg bg-white p-4 dark:bg-charcoal-900">
             <Text
               className="mb-2 text-base font-semibold text-charcoal-900 dark:text-neutral-100"
-              tx="settings.notifications.systemPermissions.title"
+              tx="settings.notifications.system_permissions.title"
             />
             <Text
               className="mb-4 text-sm text-neutral-500 dark:text-neutral-400"
-              tx="settings.notifications.systemPermissions.description"
+              tx="settings.notifications.system_permissions.description"
             />
 
             <Pressable
@@ -257,7 +257,7 @@ export default function NotificationSettings() {
             >
               <Text
                 className="text-center font-semibold text-white"
-                tx="settings.notifications.systemPermissions.openSettings"
+                tx="settings.notifications.system_permissions.open_settings"
               />
             </Pressable>
           </View>
@@ -267,12 +267,12 @@ export default function NotificationSettings() {
             <View className="mb-6 rounded-lg bg-white p-4 dark:bg-charcoal-900">
               <Text
                 className="mb-4 text-base font-semibold text-charcoal-900 dark:text-neutral-100"
-                tx="settings.notifications.categories.sectionTitle"
+                tx="settings.notifications.categories.section_title"
               />
 
               <CategoryToggle
-                txTitle="settings.notifications.categories.taskReminders"
-                txDescription="settings.notifications.categories.taskRemindersDescription"
+                txTitle="settings.notifications.categories.task_reminders"
+                txDescription="settings.notifications.categories.task_reminders_description"
                 value={preferences.taskReminders}
                 onValueChange={(value) =>
                   toggleCategory('taskReminders', value)
@@ -286,7 +286,7 @@ export default function NotificationSettings() {
                 <View className="mb-4 ml-4 rounded-lg bg-white p-3 dark:bg-charcoal-900">
                   <Text
                     className="mb-2 text-sm font-medium text-charcoal-900 dark:text-neutral-100"
-                    tx="settings.notifications.taskReminderTiming.title"
+                    tx="settings.notifications.task_reminder_timing.title"
                   />
                   <View className="space-y-2">
                     {(['hour_before', 'day_before', 'custom'] as const).map(
@@ -310,13 +310,13 @@ export default function NotificationSettings() {
                           </View>
                           <Text className="text-sm text-charcoal-900 dark:text-neutral-100">
                             {timing === 'hour_before' && (
-                              <Text tx="settings.notifications.taskReminderTiming.hourBefore" />
+                              <Text tx="settings.notifications.task_reminder_timing.hour_before" />
                             )}
                             {timing === 'day_before' && (
-                              <Text tx="settings.notifications.taskReminderTiming.dayBefore" />
+                              <Text tx="settings.notifications.task_reminder_timing.day_before" />
                             )}
                             {timing === 'custom' && (
-                              <Text tx="settings.notifications.taskReminderTiming.custom" />
+                              <Text tx="settings.notifications.task_reminder_timing.custom" />
                             )}
                           </Text>
                         </Pressable>
@@ -328,7 +328,7 @@ export default function NotificationSettings() {
                     <View className="mt-3">
                       <Text
                         className="mb-2 text-xs text-neutral-500 dark:text-neutral-400"
-                        tx="settings.notifications.taskReminderTiming.customMinutes"
+                        tx="settings.notifications.task_reminder_timing.custom_minutes"
                       />
                       <Input
                         testID="custom-minutes-input"
@@ -385,7 +385,7 @@ export default function NotificationSettings() {
                       />
                       <Text
                         className="mt-1 text-xs text-neutral-500 dark:text-neutral-400"
-                        tx="settings.notifications.taskReminderTiming.customMinutesHelp"
+                        tx="settings.notifications.task_reminder_timing.custom_minutes_help"
                       />
                     </View>
                   )}
@@ -393,8 +393,8 @@ export default function NotificationSettings() {
               )}
 
               <CategoryToggle
-                txTitle="settings.notifications.categories.harvestAlerts"
-                txDescription="settings.notifications.categories.harvestAlertsDescription"
+                txTitle="settings.notifications.categories.harvest_alerts"
+                txDescription="settings.notifications.categories.harvest_alerts_description"
                 value={preferences.harvestAlerts}
                 onValueChange={(value) =>
                   toggleCategory('harvestAlerts', value)
@@ -405,8 +405,8 @@ export default function NotificationSettings() {
               />
 
               <CategoryToggle
-                txTitle="settings.notifications.categories.communityActivity"
-                txDescription="settings.notifications.categories.communityActivityDescription"
+                txTitle="settings.notifications.categories.community_activity"
+                txDescription="settings.notifications.categories.community_activity_description"
                 value={preferences.communityActivity}
                 onValueChange={(value) =>
                   toggleCategory('communityActivity', value)
@@ -417,8 +417,8 @@ export default function NotificationSettings() {
               />
 
               <CategoryToggle
-                txTitle="settings.notifications.categories.systemUpdatesCategory"
-                txDescription="settings.notifications.categories.systemUpdatesDescription"
+                txTitle="settings.notifications.categories.system_updates_category"
+                txDescription="settings.notifications.categories.system_updates_description"
                 value={preferences.systemUpdates}
                 onValueChange={(value) =>
                   toggleCategory('systemUpdates', value)
@@ -430,7 +430,7 @@ export default function NotificationSettings() {
 
               <CategoryToggle
                 txTitle="settings.notifications.categories.marketing"
-                txDescription="settings.notifications.categories.marketingDescription"
+                txDescription="settings.notifications.categories.marketing_description"
                 value={preferences.marketing}
                 onValueChange={(value) => toggleCategory('marketing', value)}
                 disabled={isLoading}
@@ -503,11 +503,11 @@ export default function NotificationSettings() {
               <View className="flex-1 pr-4">
                 <Text
                   className="mb-1 text-sm font-medium text-charcoal-900 dark:text-neutral-100"
-                  tx="settings.notifications.community.repliesAndComments"
+                  tx="settings.notifications.community.replies_and_comments"
                 />
                 <Text
                   className="text-xs text-neutral-500 dark:text-neutral-400"
-                  tx="settings.notifications.community.repliesAndCommentsDescription"
+                  tx="settings.notifications.community.replies_and_comments_description"
                 />
               </View>
               <Switch
@@ -529,7 +529,7 @@ export default function NotificationSettings() {
                 />
                 <Text
                   className="text-xs text-neutral-500 dark:text-neutral-400"
-                  tx="settings.notifications.community.likesDescription"
+                  tx="settings.notifications.community.likes_description"
                 />
               </View>
               <Switch

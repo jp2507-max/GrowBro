@@ -63,7 +63,7 @@ export function QueueStatusSheet({
     } catch (error) {
       console.error('Failed to retry failed assessments:', error);
       showMessage({
-        message: translate('assessment.queue.retryError'),
+        message: translate('assessment.queue.retry_error'),
         type: 'danger',
         duration: 4000,
       });
@@ -80,7 +80,7 @@ export function QueueStatusSheet({
     } catch (error) {
       console.error('Failed to trigger sync:', error);
       showMessage({
-        message: translate('assessment.queue.syncError'),
+        message: translate('assessment.queue.sync_error'),
         type: 'danger',
         duration: 4000,
       });
@@ -124,7 +124,7 @@ export function QueueStatusSheet({
 
       {status.lastUpdated && (
         <Text
-          tx="assessment.lastUpdated"
+          tx="assessment.last_updated"
           txOptions={{
             time: new Date(status.lastUpdated).toLocaleTimeString(),
           }}
@@ -238,7 +238,7 @@ function ActionButtons({
     <View className="gap-2">
       {status.pending > 0 ? (
         <Button
-          tx="assessment.syncNow"
+          tx="assessment.sync_now"
           onPress={onSyncNow}
           disabled={isSyncing}
           variant="default"
@@ -248,7 +248,7 @@ function ActionButtons({
 
       {status.failed > 0 ? (
         <Button
-          tx="assessment.retryFailed"
+          tx="assessment.retry_failed"
           onPress={onRetryFailed}
           disabled={isRetrying}
           variant="secondary"

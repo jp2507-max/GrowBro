@@ -37,7 +37,7 @@ export function QueueFilters({
   return (
     <View className="mb-4" testID={testID}>
       <Text className="mb-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">
-        {t('moderation.filterPriority')}
+        {t('moderation.filter_priority')}
       </Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <View className="flex-row gap-2">

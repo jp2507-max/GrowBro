@@ -1,8 +1,13 @@
+import type { UseQueryResult } from '@tanstack/react-query';
 import { useQuery } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 import { createMutation, createQuery } from 'react-query-kit';
 
 import type { PaginateQuery } from '@/api/types';
+import {
+  communityCommentsKey,
+  communityPostsPageKey,
+} from '@/lib/community/query-keys';
 
 import { type ConflictError, getCommunityApiClient } from './client';
 import type {
@@ -18,6 +23,7 @@ export * from './types';
 export * from './use-create-comment';
 export * from './use-delete-comment';
 export * from './use-like-post';
+export * from './use-posts-infinite';
 export * from './use-unlike-post';
 export * from './use-user-posts';
 
@@ -26,16 +32,19 @@ export * from './use-user-posts';
 // ==================== Post Queries ====================
 
 export const usePost = createQuery<Post, { postId: string }, AxiosError>({
-  queryKey: ['post', 'postId'],
+  queryKey: ['community-post'],
   fetcher: ({ postId }) => getCommunityApiClient().getPost(postId),
 });
 
 export const usePosts = ({
   cursor,
   limit,
-}: { cursor?: string; limit?: number } = {}) => {
+}: { cursor?: string; limit?: number } = {}): UseQueryResult<
+  PaginateQuery<Post>,
+  AxiosError
+> => {
   return useQuery<PaginateQuery<Post>, AxiosError>({
-    queryKey: ['posts', cursor, limit],
+    queryKey: communityPostsPageKey({ cursor, limit }),
     queryFn: () => getCommunityApiClient().getPosts(cursor, limit),
   });
 };
@@ -45,8 +54,17 @@ export const useUserProfile = createQuery<
   { userId: string },
   AxiosError
 >({
-  queryKey: ['user-profile'],
+  queryKey: ['community-user-profile'],
   fetcher: ({ userId }) => getCommunityApiClient().getUserProfile(userId),
+});
+
+export const useUserProfiles = createQuery<
+  UserProfile[],
+  { userIds: string[] },
+  AxiosError
+>({
+  queryKey: ['community-user-profiles'],
+  fetcher: ({ userIds }) => getCommunityApiClient().getUserProfiles(userIds),
 });
 
 // ==================== Comment Queries ====================
@@ -59,9 +77,9 @@ export const useComments = ({
   postId: string;
   cursor?: string;
   limit?: number;
-}) => {
+}): UseQueryResult<PaginateQuery<PostComment>, AxiosError> => {
   return useQuery<PaginateQuery<PostComment>, AxiosError>({
-    queryKey: ['comments', postId, cursor, limit],
+    queryKey: communityCommentsKey({ postId, cursor, limit }),
     queryFn: () => getCommunityApiClient().getComments(postId, cursor, limit),
   });
 };

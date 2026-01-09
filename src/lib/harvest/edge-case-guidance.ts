@@ -31,21 +31,21 @@ export function getOverlappingHarvestsGuidance(
   _overlappingCount: number
 ): GuidanceMessage {
   return {
-    title: 'harvest.edgeCase.overlappingHarvests.title',
-    description: 'harvest.edgeCase.overlappingHarvests.description',
+    title: 'harvest.edge_case.overlapping_harvests.title',
+    description: 'harvest.edge_case.overlapping_harvests.description',
     severity: 'warning',
     actions: [
       {
-        label: 'harvest.edgeCase.overlappingHarvests.viewExisting',
+        label: 'harvest.edge_case.overlapping_harvests.view_existing',
         actionType: 'navigate',
         targetScreen: 'harvest/history',
       },
       {
-        label: 'harvest.edgeCase.overlappingHarvests.closeOther',
+        label: 'harvest.edge_case.overlapping_harvests.close_other',
         actionType: 'fix',
       },
       {
-        label: 'harvest.edgeCase.overlappingHarvests.override',
+        label: 'harvest.edge_case.overlapping_harvests.override',
         actionType: 'override',
       },
     ],
@@ -58,17 +58,17 @@ export function getOverlappingHarvestsGuidance(
  */
 export function getMissingDryWeightGuidance(): GuidanceMessage {
   return {
-    title: 'harvest.edgeCase.missingDryWeight.title',
-    description: 'harvest.edgeCase.missingDryWeight.description',
+    title: 'harvest.edge_case.missing_dry_weight.title',
+    description: 'harvest.edge_case.missing_dry_weight.description',
     severity: 'error',
     actions: [
       {
-        label: 'harvest.edgeCase.missingDryWeight.addWeight',
+        label: 'harvest.edge_case.missing_dry_weight.add_weight',
         actionType: 'fix',
         targetScreen: 'harvest/edit',
       },
       {
-        label: 'harvest.edgeCase.missingDryWeight.dismiss',
+        label: 'harvest.edge_case.missing_dry_weight.dismiss',
         actionType: 'dismiss',
       },
     ],
@@ -90,24 +90,24 @@ export function getUnusualDurationGuidance(params: {
 
   return {
     title: isTooShort
-      ? 'harvest.edgeCase.durationTooShort.title'
-      : 'harvest.edgeCase.durationTooLong.title',
+      ? 'harvest.edge_case.duration_too_short.title'
+      : 'harvest.edge_case.duration_too_long.title',
     description: isTooShort
-      ? 'harvest.edgeCase.durationTooShort.description'
-      : 'harvest.edgeCase.durationTooLong.description',
+      ? 'harvest.edge_case.duration_too_short.description'
+      : 'harvest.edge_case.duration_too_long.description',
     severity: isTooShort ? 'warning' : 'info',
     actions: [
       {
-        label: 'harvest.edgeCase.duration.continue',
+        label: 'harvest.edge_case.duration.continue',
         actionType: 'override',
       },
       {
-        label: 'harvest.edgeCase.duration.adjustDate',
+        label: 'harvest.edge_case.duration.adjust_date',
         actionType: 'fix',
         targetScreen: 'harvest/edit',
       },
       {
-        label: 'harvest.edgeCase.duration.dismiss',
+        label: 'harvest.edge_case.duration.dismiss',
         actionType: 'dismiss',
       },
     ],
@@ -121,16 +121,16 @@ export function getUnusualDurationGuidance(params: {
  */
 export function getClockSkewGuidance(_skewMinutes: number): GuidanceMessage {
   return {
-    title: 'harvest.edgeCase.clockSkew.title',
-    description: 'harvest.edgeCase.clockSkew.description',
+    title: 'harvest.edge_case.clock_skew.title',
+    description: 'harvest.edge_case.clock_skew.description',
     severity: 'warning',
     actions: [
       {
-        label: 'harvest.edgeCase.clockSkew.syncTime',
+        label: 'harvest.edge_case.clock_skew.sync_time',
         actionType: 'fix',
       },
       {
-        label: 'harvest.edgeCase.clockSkew.ignore',
+        label: 'harvest.edge_case.clock_skew.ignore',
         actionType: 'dismiss',
       },
     ],
@@ -143,17 +143,17 @@ export function getClockSkewGuidance(_skewMinutes: number): GuidanceMessage {
  */
 export function getInvalidTimestampOrderGuidance(): GuidanceMessage {
   return {
-    title: 'harvest.edgeCase.invalidTimestamps.title',
-    description: 'harvest.edgeCase.invalidTimestamps.description',
+    title: 'harvest.edge_case.invalid_timestamps.title',
+    description: 'harvest.edge_case.invalid_timestamps.description',
     severity: 'error',
     actions: [
       {
-        label: 'harvest.edgeCase.invalidTimestamps.fixDates',
+        label: 'harvest.edge_case.invalid_timestamps.fix_dates',
         actionType: 'fix',
         targetScreen: 'harvest/edit',
       },
       {
-        label: 'harvest.edgeCase.invalidTimestamps.dismiss',
+        label: 'harvest.edge_case.invalid_timestamps.dismiss',
         actionType: 'dismiss',
       },
     ],
@@ -166,17 +166,17 @@ export function getInvalidTimestampOrderGuidance(): GuidanceMessage {
  */
 export function getInvalidWeightRatioGuidance(): GuidanceMessage {
   return {
-    title: 'harvest.edgeCase.invalidWeightRatio.title',
-    description: 'harvest.edgeCase.invalidWeightRatio.description',
+    title: 'harvest.edge_case.invalid_weight_ratio.title',
+    description: 'harvest.edge_case.invalid_weight_ratio.description',
     severity: 'error',
     actions: [
       {
-        label: 'harvest.edgeCase.invalidWeightRatio.fixWeights',
+        label: 'harvest.edge_case.invalid_weight_ratio.fix_weights',
         actionType: 'fix',
         targetScreen: 'harvest/edit',
       },
       {
-        label: 'harvest.edgeCase.invalidWeightRatio.dismiss',
+        label: 'harvest.edge_case.invalid_weight_ratio.dismiss',
         actionType: 'dismiss',
       },
     ],
@@ -189,17 +189,17 @@ export function getInvalidWeightRatioGuidance(): GuidanceMessage {
  */
 export function getSyncConflictGuidance(): GuidanceMessage {
   return {
-    title: 'harvest.edgeCase.syncConflict.title',
-    description: 'harvest.edgeCase.syncConflict.description',
+    title: 'harvest.edge_case.sync_conflict.title',
+    description: 'harvest.edge_case.sync_conflict.description',
     severity: 'info',
     actions: [
       {
-        label: 'harvest.edgeCase.syncConflict.viewChanges',
+        label: 'harvest.edge_case.sync_conflict.view_changes',
         actionType: 'navigate',
         targetScreen: 'harvest/details',
       },
       {
-        label: 'harvest.edgeCase.syncConflict.dismiss',
+        label: 'harvest.edge_case.sync_conflict.dismiss',
         actionType: 'dismiss',
       },
     ],
@@ -215,21 +215,21 @@ export function getStorageFullGuidance(
   _totalMB: number
 ): GuidanceMessage {
   return {
-    title: 'harvest.edgeCase.storageFull.title',
-    description: 'harvest.edgeCase.storageFull.description',
+    title: 'harvest.edge_case.storage_full.title',
+    description: 'harvest.edge_case.storage_full.description',
     severity: 'warning',
     actions: [
       {
-        label: 'harvest.edgeCase.storageFull.freeSpace',
+        label: 'harvest.edge_case.storage_full.free_space',
         actionType: 'navigate',
         targetScreen: 'settings/storage',
       },
       {
-        label: 'harvest.edgeCase.storageFull.continueWithout',
+        label: 'harvest.edge_case.storage_full.continue_without',
         actionType: 'override',
       },
       {
-        label: 'harvest.edgeCase.storageFull.dismiss',
+        label: 'harvest.edge_case.storage_full.dismiss',
         actionType: 'dismiss',
       },
     ],

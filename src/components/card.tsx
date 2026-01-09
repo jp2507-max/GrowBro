@@ -4,7 +4,7 @@ import React from 'react';
 import type { Post } from '@/api';
 import { LikeButton } from '@/components/community/like-button';
 import { ModerationActions } from '@/components/moderation-actions';
-import { Image, Pressable, Text, View } from '@/components/ui';
+import { OptimizedImage, Pressable, Text, View } from '@/components/ui';
 import { translate } from '@/lib';
 
 type Props = Post;
@@ -17,6 +17,18 @@ const images = [
   'https://images.unsplash.com/photo-1587974928442-77dc3e0dba72?auto=format&fit=crop&w=800&q=80',
 ];
 
+// Simple hash function to create deterministic index from id
+const getPlaceholderImage = (id: number | string): string => {
+  const str = String(id);
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+  }
+  const index = Math.abs(hash) % images.length;
+  return images[index];
+};
+
 export const Card = ({
   title,
   body,
@@ -25,6 +37,10 @@ export const Card = ({
   like_count = 0,
   comment_count = 0,
   user_has_liked = false,
+  media_uri,
+  media_resized_uri,
+  media_blurhash,
+  media_thumbhash,
 }: Props) => {
   const compositeLabel = React.useMemo(() => {
     const badgeText = translate('cannabis.educational_badge');
@@ -47,13 +63,17 @@ export const Card = ({
         accessibilityLabel={compositeLabel}
         accessibilityRole="link"
       >
-        <View className="m-2 overflow-hidden rounded-xl  border border-neutral-300 bg-white  dark:bg-neutral-900">
-          <Image
+        <View className="m-2 overflow-hidden rounded-xl border border-neutral-200 bg-white dark:border-white/10 dark:bg-charcoal-900">
+          <OptimizedImage
             className="h-56 w-full overflow-hidden rounded-t-xl"
             contentFit="cover"
-            source={{
-              uri: images[Math.floor(Math.random() * images.length)],
-            }}
+            uri={media_uri || getPlaceholderImage(id)}
+            resizedUri={media_resized_uri}
+            recyclingKey={String(id)}
+            {...((media_uri || media_resized_uri) && {
+              blurhash: media_blurhash,
+              thumbhash: media_thumbhash,
+            })}
           />
 
           <View className="p-2">

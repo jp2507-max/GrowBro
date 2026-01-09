@@ -19,6 +19,7 @@ interface CommentListProps {
   comments: PostComment[];
   isLoading?: boolean;
   commentStatuses?: Record<string, 'pending' | 'failed' | 'processed'>;
+  highlightedCommentId?: string;
   onRetryComment?: (commentId: string) => void;
   onCancelComment?: (commentId: string) => void;
   testID?: string;
@@ -28,6 +29,7 @@ export function CommentList({
   comments,
   isLoading = false,
   commentStatuses = {},
+  highlightedCommentId,
   onRetryComment,
   onCancelComment,
   testID = 'comment-list',
@@ -38,7 +40,7 @@ export function CommentList({
         <ActivityIndicator />
         <Text
           className="mt-2 text-sm text-neutral-500 dark:text-neutral-400"
-          tx="community.commentList.loading"
+          tx="community.comment_list.loading"
         />
       </View>
     );
@@ -49,14 +51,14 @@ export function CommentList({
       <View className="items-center py-8" testID={`${testID}-empty`}>
         <Text
           className="text-sm text-neutral-500 dark:text-neutral-400"
-          tx="community.commentList.empty"
+          tx="community.comment_list.empty"
         />
       </View>
     );
   }
 
   return (
-    <View className="gap-2" testID={testID}>
+    <View testID={testID}>
       {comments.map((comment) => {
         // Determine status: use provided status map, fallback to temp- check, default to processed
         const status =
@@ -64,12 +66,14 @@ export function CommentList({
           (comment.id.startsWith('temp-') ? 'pending' : 'processed');
 
         const isFailed = status === 'failed';
+        const isHighlighted = comment.id === highlightedCommentId;
 
         return (
           <ModeratedCommentItem
             key={comment.id}
             comment={comment}
             status={status}
+            isHighlighted={isHighlighted}
             onRetry={
               isFailed && onRetryComment
                 ? () => onRetryComment(comment.id)

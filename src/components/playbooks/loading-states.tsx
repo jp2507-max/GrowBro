@@ -8,11 +8,12 @@ import React from 'react';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { View } from '@/components/ui';
+import { withRM } from '@/lib/animations/motion';
 
 export function PlaybookCardSkeleton() {
   return (
     <Animated.View
-      entering={FadeIn.duration(300)}
+      entering={withRM(FadeIn.duration(300))}
       className="mb-4 rounded-xl border border-neutral-200 bg-white p-4 dark:border-charcoal-800 dark:bg-charcoal-900"
     >
       {/* Header skeleton */}
@@ -41,7 +42,7 @@ export function PlaybookCardSkeleton() {
 export function TaskTimelineSkeleton() {
   return (
     <Animated.View
-      entering={FadeIn.duration(300)}
+      entering={withRM(FadeIn.duration(300))}
       className="mx-4 mb-2 flex-row items-center gap-3 rounded-lg border border-neutral-200 bg-white p-3 dark:border-neutral-800 dark:bg-neutral-900"
     >
       {/* Status indicator skeleton */}
@@ -61,7 +62,7 @@ export function TaskTimelineSkeleton() {
 
 export function ShiftPreviewSkeleton() {
   return (
-    <Animated.View entering={FadeIn.duration(300)} className="p-4">
+    <Animated.View entering={withRM(FadeIn.duration(300))} className="p-4">
       {/* Summary skeleton */}
       <View className="mb-4 rounded-lg border border-neutral-200 bg-white p-4 dark:border-charcoal-800 dark:bg-charcoal-900">
         <View className="mb-3 h-5 w-32 rounded-full bg-neutral-200 dark:bg-charcoal-700" />
@@ -81,7 +82,7 @@ export function ShiftPreviewSkeleton() {
 
 export function TrichomeGuideSkeleton() {
   return (
-    <Animated.View entering={FadeIn.duration(300)} className="p-4">
+    <Animated.View entering={withRM(FadeIn.duration(300))} className="p-4">
       {/* Title skeleton */}
       <View className="mb-4 h-6 w-48 rounded-full bg-neutral-200 dark:bg-charcoal-700" />
 

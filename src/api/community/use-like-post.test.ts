@@ -8,6 +8,7 @@
  * - Offline queue integration
  */
 
+import type { InfiniteData } from '@tanstack/react-query';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import type { ReactNode } from 'react';
@@ -42,7 +43,13 @@ jest.mock('./client', () => ({
   ConflictError: class ConflictError extends Error {
     constructor(
       message: string,
-      public readonly canonicalState: any
+      public readonly canonicalState: {
+        post_id?: string;
+        user_id?: string;
+        exists?: boolean;
+        updated_at?: string;
+        message?: string;
+      }
     ) {
       super(message);
       this.name = 'ConflictError';
@@ -106,7 +113,13 @@ describe('useLikePost', () => {
       );
 
     // Set initial data
-    queryClient.setQueryData(['posts'], mockPosts);
+    queryClient.setQueryData<InfiniteData<PaginateQuery<Post>>>(
+      ['community-posts', 'infinite'],
+      {
+        pages: [mockPosts],
+        pageParams: [undefined],
+      }
+    );
 
     // Mock API client
     mockLikePost.mockResolvedValue(undefined);
@@ -121,12 +134,13 @@ describe('useLikePost', () => {
     });
 
     // Check optimistic update
-    const updatedData = queryClient.getQueryData<PaginateQuery<Post>>([
-      'posts',
-    ]);
+    const updatedData = queryClient.getQueryData<
+      InfiniteData<PaginateQuery<Post>>
+    >(['community-posts', 'infinite']);
+    const firstPost = updatedData?.pages[0]?.results[0];
 
-    expect(updatedData?.results[0].like_count).toBe(6);
-    expect(updatedData?.results[0].user_has_liked).toBe(true);
+    expect(firstPost?.like_count).toBe(6);
+    expect(firstPost?.user_has_liked).toBe(true);
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
   });
@@ -143,12 +157,13 @@ describe('useLikePost', () => {
     await waitFor(() => expect(result.current.isError).toBe(true));
 
     // Check rollback
-    const rolledBackData = queryClient.getQueryData<PaginateQuery<Post>>([
-      'posts',
-    ]);
+    const rolledBackData = queryClient.getQueryData<
+      InfiniteData<PaginateQuery<Post>>
+    >(['community-posts', 'infinite']);
+    const firstPost = rolledBackData?.pages[0]?.results[0];
 
-    expect(rolledBackData?.results[0].like_count).toBe(5);
-    expect(rolledBackData?.results[0].user_has_liked).toBe(false);
+    expect(firstPost?.like_count).toBe(5);
+    expect(firstPost?.user_has_liked).toBe(false);
 
     // Check error message
     expect(flashMessage.showMessage).toHaveBeenCalledWith(
@@ -179,11 +194,12 @@ describe('useLikePost', () => {
     await waitFor(() => expect(result.current.isError).toBe(true));
 
     // Check reconciliation to server state
-    const reconciledData = queryClient.getQueryData<PaginateQuery<Post>>([
-      'posts',
-    ]);
+    const reconciledData = queryClient.getQueryData<
+      InfiniteData<PaginateQuery<Post>>
+    >(['community-posts', 'infinite']);
+    const firstPost = reconciledData?.pages[0]?.results[0];
 
-    expect(reconciledData?.results[0].user_has_liked).toBe(false);
+    expect(firstPost?.user_has_liked).toBe(false);
 
     // Check reconciliation message
     expect(flashMessage.showMessage).toHaveBeenCalledWith(
@@ -224,12 +240,14 @@ describe('useLikePost', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    const updatedData = queryClient.getQueryData<PaginateQuery<Post>>([
-      'posts',
-    ]);
+    const updatedData = queryClient.getQueryData<
+      InfiniteData<PaginateQuery<Post>>
+    >(['community-posts', 'infinite']);
+    const firstPost = updatedData?.pages[0]?.results[0];
+    const secondPost = updatedData?.pages[0]?.results[1];
 
-    expect(updatedData?.results[0].like_count).toBe(6);
-    expect(updatedData?.results[1].like_count).toBe(11);
+    expect(firstPost?.like_count).toBe(6);
+    expect(secondPost?.like_count).toBe(11);
   });
 });
 
@@ -273,7 +291,13 @@ describe('useUnlikePost', () => {
         children
       );
 
-    queryClient.setQueryData(['posts'], mockPosts);
+    queryClient.setQueryData<InfiniteData<PaginateQuery<Post>>>(
+      ['community-posts', 'infinite'],
+      {
+        pages: [mockPosts],
+        pageParams: [undefined],
+      }
+    );
 
     mockUnlikePost.mockResolvedValue(undefined);
   });
@@ -285,12 +309,13 @@ describe('useUnlikePost', () => {
       result.current.mutate({ postId: 'post-1' });
     });
 
-    const updatedData = queryClient.getQueryData<PaginateQuery<Post>>([
-      'posts',
-    ]);
+    const updatedData = queryClient.getQueryData<
+      InfiniteData<PaginateQuery<Post>>
+    >(['community-posts', 'infinite']);
+    const firstPost = updatedData?.pages[0]?.results[0];
 
-    expect(updatedData?.results[0].like_count).toBe(4);
-    expect(updatedData?.results[0].user_has_liked).toBe(false);
+    expect(firstPost?.like_count).toBe(4);
+    expect(firstPost?.user_has_liked).toBe(false);
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
   });
@@ -306,11 +331,12 @@ describe('useUnlikePost', () => {
 
     await waitFor(() => expect(result.current.isError).toBe(true));
 
-    const rolledBackData = queryClient.getQueryData<PaginateQuery<Post>>([
-      'posts',
-    ]);
+    const rolledBackData = queryClient.getQueryData<
+      InfiniteData<PaginateQuery<Post>>
+    >(['community-posts', 'infinite']);
+    const firstPost = rolledBackData?.pages[0]?.results[0];
 
-    expect(rolledBackData?.results[0].like_count).toBe(5);
-    expect(rolledBackData?.results[0].user_has_liked).toBe(true);
+    expect(firstPost?.like_count).toBe(5);
+    expect(firstPost?.user_has_liked).toBe(true);
   });
 });

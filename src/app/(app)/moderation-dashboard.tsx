@@ -45,7 +45,7 @@ export default function ModerationDashboard() {
 
       <View className="mt-4">
         <Button
-          label={translate('moderation.queue.processAll')}
+          label={translate('moderation.queue.process_all')}
           onPress={async () => {
             await moderationQueue.processAll();
             force();

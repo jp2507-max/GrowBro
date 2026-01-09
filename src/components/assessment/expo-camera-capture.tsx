@@ -1,10 +1,10 @@
 import { CameraView } from 'expo-camera';
+import { randomUUID } from 'expo-crypto';
 import * as FileSystem from 'expo-file-system';
 import type { JSX } from 'react';
 import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, StyleSheet } from 'react-native';
-import { v4 as uuidv4 } from 'uuid';
 
 import { Button, colors, View } from '@/components/ui';
 import { stripExifData } from '@/lib/assessment/image-processing';
@@ -67,7 +67,7 @@ export function ExpoCameraCapture({
         await qualityAssessmentEngine.assessPhoto(processed.uri);
 
       const capturedPhoto: CapturedPhoto = {
-        id: uuidv4(),
+        id: randomUUID(),
         uri: processed.uri,
         timestamp: Date.now(),
         qualityScore: qualityResult,
@@ -102,7 +102,7 @@ export function ExpoCameraCapture({
         <Button
           testID="capture-button"
           accessibilityLabel={t('assessment.camera.actions.capture')}
-          accessibilityHint={t('assessment.camera.actions.captureHint')}
+          accessibilityHint={t('assessment.camera.actions.capture_hint')}
           onPress={handleCapture}
           disabled={isCapturing}
           className="size-20 rounded-full bg-neutral-100"
@@ -112,7 +112,7 @@ export function ExpoCameraCapture({
               size="small"
               color={colors.charcoal[950]}
               accessibilityLabel={t('assessment.camera.status.capturing')}
-              accessibilityHint={t('assessment.camera.status.capturingHint')}
+              accessibilityHint={t('assessment.camera.status.capturing_hint')}
             />
           ) : (
             <View className="size-16 rounded-full border-4 border-charcoal-950 bg-neutral-100" />

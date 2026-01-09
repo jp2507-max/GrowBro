@@ -47,12 +47,12 @@ export function InheritanceBadge({
       <View className="flex-row items-center gap-2">
         <View className="size-2 rounded-full bg-primary-500" />
         <Text className="text-sm font-medium text-charcoal-900 dark:text-neutral-100">
-          {t('playbooks.manuallyEdited')}
+          {t('playbooks.manually_edited')}
         </Text>
       </View>
       {excludedFromBulkShift && (
         <Text className="ml-4 text-xs text-neutral-600 dark:text-neutral-400">
-          {t('playbooks.excludedFromBulkOperations')}
+          {t('playbooks.excluded_from_bulk_operations')}
         </Text>
       )}
     </View>

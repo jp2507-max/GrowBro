@@ -97,8 +97,10 @@ async function fetchAndCache(params: {
 // eslint-disable-next-line max-lines-per-function
 export function useStrainsInfiniteWithCache({
   variables,
+  enabled = true,
 }: {
   variables?: UseStrainsInfiniteWithCacheParams;
+  enabled?: boolean;
 } = {}) {
   return useInfiniteQuery({
     queryKey: [
@@ -109,6 +111,7 @@ export function useStrainsInfiniteWithCache({
       variables?.sortBy,
       variables?.sortDirection,
     ],
+    enabled,
     queryFn: async ({ pageParam = { index: 0 }, signal }) => {
       const client = getStrainsApiClient();
       const repo = getCacheRepository();
@@ -183,7 +186,7 @@ export function useStrainsInfiniteWithCache({
     gcTime: 10 * 60 * 1000, // ✅ Good: 10min garbage collection time
     retry: (failureCount, error: Error) => {
       if (error?.message?.includes('No network connection')) return false; // ✅ Good: No retry on network issues
-      return failureCount < 1; // ⚠️ Conservative: Only 1 retry, may be too aggressive
+      return failureCount < 2; // ✅ Allow 2 retries (3 total attempts) for transient errors
     },
   });
 }
@@ -235,10 +238,11 @@ export function useClearAllCache() {
 }
 
 export function useOfflineAwareStrains(
-  params: UseStrainsInfiniteWithCacheParams
+  params: UseStrainsInfiniteWithCacheParams,
+  enabled = true
 ) {
   const { isInternetReachable } = useNetworkStatus();
-  const query = useStrainsInfiniteWithCache({ variables: params });
+  const query = useStrainsInfiniteWithCache({ variables: params, enabled });
 
   const isOffline = !isInternetReachable;
   const isUsingCache = useMemo(() => {

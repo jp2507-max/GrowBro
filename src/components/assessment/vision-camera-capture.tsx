@@ -1,8 +1,8 @@
+import { randomUUID } from 'expo-crypto';
 import { type JSX, useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, StyleSheet } from 'react-native';
 import { Camera, useCameraDevice } from 'react-native-vision-camera';
-import { v4 as uuidv4 } from 'uuid';
 
 import { Button, Text, View } from '@/components/ui';
 import colors from '@/components/ui/colors';
@@ -60,7 +60,7 @@ export function VisionCameraCapture({
         await qualityAssessmentEngine.assessPhoto(processed.uri);
 
       const capturedPhoto: CapturedPhoto = {
-        id: uuidv4(),
+        id: randomUUID(),
         uri: processed.uri,
         timestamp: Date.now(),
         qualityScore: qualityResult,
@@ -81,7 +81,7 @@ export function VisionCameraCapture({
       <View className="flex-1 items-center justify-center bg-charcoal-950">
         <ActivityIndicator size="large" color={colors.white} />
         <Text className="mt-4 text-neutral-300">
-          {t('assessment.camera.errors.cameraFailed')}
+          {t('assessment.camera.errors.camera_failed')}
         </Text>
       </View>
     );
@@ -112,13 +112,13 @@ export function VisionCameraCapture({
           testID="capture-button"
           accessibilityRole="button"
           accessibilityLabel={t('assessment.camera.actions.capture')}
-          accessibilityHint={t('assessment.camera.actions.captureHint')}
+          accessibilityHint={t('assessment.camera.actions.capture_hint')}
         >
           {isCapturing ? (
             <View
               accessible={true}
               accessibilityLabel={t('assessment.camera.status.capturing')}
-              accessibilityHint={t('assessment.camera.status.capturingHint')}
+              accessibilityHint={t('assessment.camera.status.capturing_hint')}
               accessibilityRole="progressbar"
             >
               <ActivityIndicator size="small" color={colors.black} />

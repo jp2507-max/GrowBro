@@ -34,7 +34,7 @@ function buildDiagnosticSummaryForPost(result: DiagnosticResult): string {
 
   // Classification
   const issueType = translate(
-    `nutrient.diagnostics.issueTypes.${result.classification.type}`
+    `nutrient.diagnostics.issue_types.${result.classification.type}`
   );
   lines.push(
     `${translate('nutrient.diagnostics.community.classification')}: ${issueType}`

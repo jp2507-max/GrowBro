@@ -1,17 +1,26 @@
 import { useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import React from 'react';
+import { StyleSheet } from 'react-native';
 import type { EdgeInsets } from 'react-native-safe-area-context';
 
 import {
   HeaderIconButton,
   ScreenHeaderBase,
 } from '@/components/navigation/screen-header-base';
+import { GlassSurface } from '@/components/shared/glass-surface';
 import { Input, Text, View } from '@/components/ui';
 import colors from '@/components/ui/colors';
 import { Rate, Settings } from '@/components/ui/icons';
 import { haptics } from '@/lib/haptics';
 import { translate } from '@/lib/i18n';
+
+const styles = StyleSheet.create({
+  searchPill: {
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+});
 
 type StrainsHeaderProps = {
   insets: EdgeInsets;
@@ -68,7 +77,9 @@ export function StrainsHeader({
             }
             onPress={handleFavoritesPress}
             accessibilityLabel={translate('strains.favorites.title')}
-            accessibilityHint={translate('strains.favoritesAccessibilityHint')}
+            accessibilityHint={translate(
+              'strains.favorites_accessibility_hint'
+            )}
             testID="strains-favorites-button"
           />
           <HeaderIconButton
@@ -96,23 +107,29 @@ export function StrainsHeader({
       }
       testID="strains-header"
     >
-      {/* Search Row */}
-      <Input
-        value={searchValue}
-        onChangeText={onSearchChange}
-        placeholder={
-          strainCount > 0
-            ? translate('strains.search_placeholder_count', {
-                count: strainCount,
-              })
-            : translate('strains.search_placeholder')
-        }
-        accessibilityLabel={translate('strains.search_placeholder')}
-        accessibilityHint={translate('accessibility.strains.search_hint')}
-        testID="strains-search-input"
-        className="h-12 rounded-2xl border-0 bg-white/90 px-4 font-medium text-neutral-900 shadow-sm dark:bg-neutral-900/90 dark:text-white"
-        placeholderTextColor={colors.neutral[400]}
-      />
+      {/* Search Row - Glass Pill Container */}
+      <GlassSurface
+        glassEffectStyle="clear"
+        style={styles.searchPill}
+        fallbackClassName="bg-white/90 dark:bg-neutral-900/90"
+      >
+        <Input
+          value={searchValue}
+          onChangeText={onSearchChange}
+          placeholder={
+            strainCount > 0
+              ? translate('strains.search_placeholder_count', {
+                  count: strainCount,
+                })
+              : translate('strains.search_placeholder')
+          }
+          accessibilityLabel={translate('strains.search_placeholder')}
+          accessibilityHint={translate('accessibility.strains.search_hint')}
+          testID="strains-search-input"
+          className="h-12 border-0 bg-transparent font-medium"
+          placeholderTextColor={colors.neutral[400]}
+        />
+      </GlassSurface>
     </ScreenHeaderBase>
   );
 }

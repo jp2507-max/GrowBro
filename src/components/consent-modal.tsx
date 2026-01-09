@@ -60,7 +60,7 @@ function ToggleRow({
         testID={`${testID}-switch`}
         accessibilityLabel={title}
         accessibilityHint={translate(
-          'accessibility.common.toggleHint' as TxKeyPath
+          'accessibility.common.toggle_hint' as TxKeyPath
         )}
       />
     </View>
@@ -381,24 +381,24 @@ function ConsentSections(props: {
         {translate('consent.experiments.impact')}
       </Text>
       <ToggleRow
-        title={translate('consent.aiTraining.title')}
-        subtitle={translate('consent.aiTraining.subtitle')}
+        title={translate('consent.ai_training.title')}
+        subtitle={translate('consent.ai_training.subtitle')}
         checked={aiTraining}
         onChange={setAiTraining}
         testID="toggle-aiTraining"
       />
       <Text className="text-xs text-charcoal-600 dark:text-charcoal-400">
-        {translate('consent.aiTraining.impact')}
+        {translate('consent.ai_training.impact')}
       </Text>
       <ToggleRow
-        title={translate('consent.crashDiagnostics.title')}
-        subtitle={translate('consent.crashDiagnostics.subtitle')}
+        title={translate('consent.crash_diagnostics.title')}
+        subtitle={translate('consent.crash_diagnostics.subtitle')}
         checked={crashDiagnostics}
         onChange={setCrashDiagnostics}
         testID="toggle-crashDiagnostics"
       />
       <Text className="text-xs text-charcoal-600 dark:text-charcoal-400">
-        {translate('consent.crashDiagnostics.impact')}
+        {translate('consent.crash_diagnostics.impact')}
       </Text>
     </View>
   );

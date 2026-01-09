@@ -1,4 +1,5 @@
 import type { RealtimeChannel } from '@supabase/supabase-js';
+import { AppState, type AppStateStatus } from 'react-native';
 
 import { supabase } from '@/lib/supabase';
 import type {
@@ -24,6 +25,11 @@ type RealtimeCallbacks = {
   onCommentChange?: (event: RealtimeEvent<PostComment>) => void | Promise<void>;
   onLikeChange?: (event: RealtimeEvent<PostLike>) => void | Promise<void>;
   onConnectionStateChange?: (state: ConnectionState) => void;
+  /**
+   * Called every 30s when polling fallback is active (after max reconnect attempts).
+   * **Consumer must implement data refetching** (e.g., invalidate React Query).
+   */
+  onPollRefresh?: () => void;
 };
 
 /**
@@ -42,6 +48,12 @@ export class RealtimeConnectionManager {
   private pollingTimer: ReturnType<typeof setTimeout> | null = null;
   private isPolling = false;
   private postIdFilter?: string;
+  private isActive = false;
+  private appStateSubscription: ReturnType<
+    typeof AppState.addEventListener
+  > | null = null;
+  private wasConnectedBeforeBackground = false;
+  private isSubscribing = false;
 
   // Exponential backoff: 1s, 2s, 4s, 8s, 16s, 32s (max)
   private getBackoffDelay(): number {
@@ -53,6 +65,38 @@ export class RealtimeConnectionManager {
     );
     return delay;
   }
+
+  /**
+   * Handle app state changes - disconnect when backgrounded, reconnect when foregrounded
+   * This prevents stale connections and reduces battery drain on mobile
+   */
+  private handleAppStateChange = (nextAppState: AppStateStatus): void => {
+    if (!this.isActive) return;
+
+    if (nextAppState === 'active') {
+      // App came to foreground - reconnect if we were connected before
+      if (this.wasConnectedBeforeBackground) {
+        console.log('[Realtime] App foregrounded, reconnecting...');
+        this.reconnectAttempts = 0; // Reset attempts for fresh start
+        this.connect();
+      }
+    } else if (nextAppState === 'background' || nextAppState === 'inactive') {
+      // App going to background - disconnect to save resources
+      this.wasConnectedBeforeBackground =
+        this.connectionState === 'connected' ||
+        this.connectionState === 'connecting';
+      if (this.wasConnectedBeforeBackground) {
+        console.log('[Realtime] App backgrounded, disconnecting...');
+        this.cleanup();
+        this.stopPolling();
+        if (this.reconnectTimer) {
+          clearTimeout(this.reconnectTimer);
+          this.reconnectTimer = null;
+        }
+        this.setConnectionState('disconnected');
+      }
+    }
+  };
 
   /**
    * Update connection state and notify listeners
@@ -68,17 +112,43 @@ export class RealtimeConnectionManager {
    * @param postId Optional post ID to filter comments subscription
    */
   subscribe(callbacks: RealtimeCallbacks, postId?: string): void {
-    // If already connected or connecting, perform clean re-subscribe
-    if (
-      this.connectionState === 'connected' ||
-      this.connectionState === 'connecting'
-    ) {
-      this.unsubscribe();
+    if (this.isSubscribing) {
+      console.warn('Subscription already in progress');
+      return;
     }
 
-    this.callbacks = callbacks;
-    this.postIdFilter = postId;
-    this.connect();
+    this.isSubscribing = true;
+    try {
+      // If already connected or connecting, clean up channel without resetting isActive
+      // to avoid race condition in handleSubscriptionStatus
+      if (
+        this.connectionState === 'connected' ||
+        this.connectionState === 'connecting'
+      ) {
+        this.cleanup();
+        this.stopPolling();
+        if (this.reconnectTimer) {
+          clearTimeout(this.reconnectTimer);
+          this.reconnectTimer = null;
+        }
+      }
+
+      this.callbacks = callbacks;
+      this.postIdFilter = postId;
+      this.isActive = true;
+
+      // Set up AppState listener for background/foreground handling
+      if (!this.appStateSubscription) {
+        this.appStateSubscription = AppState.addEventListener(
+          'change',
+          this.handleAppStateChange
+        );
+      }
+
+      this.connect();
+    } finally {
+      this.isSubscribing = false;
+    }
   }
 
   /**
@@ -151,7 +221,11 @@ export class RealtimeConnectionManager {
   /**
    * Handle subscription status changes
    */
-  private handleSubscriptionStatus(status: string): void {
+  private handleSubscriptionStatus(
+    status: string,
+    error?: Error | { message?: string }
+  ): void {
+    if (!this.isActive) return;
     if (status === 'SUBSCRIBED') {
       this.setConnectionState('connected');
       this.reconnectAttempts = 0;
@@ -159,17 +233,31 @@ export class RealtimeConnectionManager {
       console.log('Connected to community feed realtime');
     } else if (status === 'CHANNEL_ERROR') {
       this.setConnectionState('error');
-      console.error('Realtime subscription error');
+      console.error('Realtime subscription error:', {
+        status,
+        errorMessage: error instanceof Error ? error.message : error?.message,
+        errorStack: error instanceof Error ? error.stack : undefined,
+        channelName: this.channel?.topic,
+        reconnectAttempts: this.reconnectAttempts,
+      });
       communityMetrics.recordReconnect();
       this.handleConnectionError();
     } else if (status === 'TIMED_OUT') {
       this.setConnectionState('error');
-      console.error('Realtime subscription timed out');
+      console.error('Realtime subscription timed out:', {
+        status,
+        channelName: this.channel?.topic,
+        reconnectAttempts: this.reconnectAttempts,
+      });
       communityMetrics.recordReconnect();
       this.handleConnectionError();
     } else if (status === 'CLOSED') {
       this.setConnectionState('disconnected');
-      console.log('Realtime connection closed');
+      console.log('Realtime connection closed:', {
+        status,
+        wasActive: this.isActive,
+        channelName: this.channel?.topic,
+      });
       communityMetrics.recordReconnect();
       this.handleConnectionError();
     }
@@ -179,6 +267,7 @@ export class RealtimeConnectionManager {
    * Establish WebSocket connection and set up subscriptions
    */
   private connect(): void {
+    if (!this.isActive) return;
     if (this.channel) {
       console.warn('Already connected or connecting to realtime');
       return;
@@ -196,9 +285,9 @@ export class RealtimeConnectionManager {
     // Set up all postgres_changes subscriptions
     this.setupSubscriptions();
 
-    // Subscribe with status callback
-    this.channel.subscribe((status) => {
-      this.handleSubscriptionStatus(status);
+    // Subscribe with status callback (includes error object when available)
+    this.channel.subscribe((status, error) => {
+      this.handleSubscriptionStatus(status, error);
     });
   }
 
@@ -206,6 +295,11 @@ export class RealtimeConnectionManager {
    * Handle connection errors with exponential backoff and fallback to polling
    */
   private handleConnectionError(): void {
+    if (!this.isActive) return;
+
+    // Prevent reconnects if a new subscription is starting (race condition fix)
+    if (this.isSubscribing) return;
+
     // Clear existing reconnect timer
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
@@ -266,14 +360,13 @@ export class RealtimeConnectionManager {
   }
 
   /**
-   * Poll for updates when real-time is unavailable
-   * This is a simplified implementation - actual polling should trigger
-   * refetch in React Query
+   * Poll for updates when real-time is unavailable.
+   * Delegates to onPollRefresh callback - consumer must implement refetching.
+   * @see RealtimeCallbacks.onPollRefresh for implementation requirements
    */
   private async pollUpdates(): Promise<void> {
-    // Notify listeners to trigger refetch
-    // In practice, this would trigger React Query refetch
     console.log('Polling for updates...');
+    this.callbacks.onPollRefresh?.();
   }
 
   /**
@@ -381,10 +474,17 @@ export class RealtimeConnectionManager {
    * Unsubscribe from all real-time updates and cleanup
    */
   unsubscribe(): void {
+    this.isActive = false;
     // Clear timers
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
       this.reconnectTimer = null;
+    }
+
+    // Remove AppState listener
+    if (this.appStateSubscription) {
+      this.appStateSubscription.remove();
+      this.appStateSubscription = null;
     }
 
     this.stopPolling();
@@ -392,6 +492,7 @@ export class RealtimeConnectionManager {
 
     this.setConnectionState('disconnected');
     this.reconnectAttempts = 0;
+    this.wasConnectedBeforeBackground = false;
     this.callbacks = {};
     this.postIdFilter = undefined;
     console.log('Unsubscribed from community feed realtime');

@@ -44,6 +44,17 @@ export function removeItem(key: string): void {
   storage.delete(key);
 }
 
+// Namespaced Storage Keys - use with shared `storage` instance
+export const STORAGE_KEYS = {
+  // Strains
+  STRAINS_SEARCH_HISTORY: 'strains.searchHistory',
+  STRAINS_FILTER_PRESETS: 'strains.filterPresets',
+
+  // Community
+  COMMUNITY_COMPLIANCE_DISMISSED: 'community.complianceBannerDismissed',
+  COMMUNITY_USERNAMES_CACHE: 'community.usernames.v1',
+} as const;
+
 // Support & Feedback MMKV Storage Keys
 export const SUPPORT_STORAGE_KEYS = {
   // Help Center

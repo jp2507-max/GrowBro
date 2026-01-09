@@ -122,7 +122,7 @@ export function TaskCreationModal({
         description:
           error instanceof Error
             ? error.message
-            : t('assessment.taskCreation.failed'),
+            : t('assessment.task_creation.failed'),
         type: 'danger',
         duration: 3000,
       });
@@ -153,18 +153,18 @@ export function TaskCreationModal({
         testID={testID}
       >
         <Text className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
-          {t('assessment.taskCreation.title')}
+          {t('assessment.task_creation.title')}
         </Text>
 
         <Text className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
           {taskCount === 0
-            ? t('assessment.taskCreation.noTasks')
-            : t('assessment.taskCreation.createTasks', { count: taskCount })}
+            ? t('assessment.task_creation.no_tasks')
+            : t('assessment.task_creation.createTasks', { count: taskCount })}
         </Text>
 
         {taskCount > 0 && (
           <TaskSummaryCard
-            title={t('assessment.taskCreation.tasksToCreate')}
+            title={t('assessment.task_creation.tasks_to_create')}
             tasks={taskLabels}
           />
         )}
@@ -176,8 +176,8 @@ export function TaskCreationModal({
           onConfirm={handleCreateTasks}
           testID={testID}
           cancelLabel={t('common.cancel')}
-          confirmLabel={t('assessment.taskCreation.createTasksButton')}
-          creatingLabel={t('assessment.taskCreation.creating')}
+          confirmLabel={t('assessment.task_creation.create_tasks_button')}
+          creatingLabel={t('assessment.task_creation.creating')}
         />
       </BottomSheetScrollView>
     </BottomSheetModal>

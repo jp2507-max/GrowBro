@@ -49,8 +49,8 @@ export function NotificationPermissionPrimer({
       if (result === 'denied' && Platform.OS === 'ios') {
         // On iOS, if denied, guide user to settings
         Alert.alert(
-          translate('onboarding.permissions.notifications.deniedTitle'),
-          translate('onboarding.permissions.notifications.deniedMessage'),
+          translate('onboarding.permissions.notifications.denied_title'),
+          translate('onboarding.permissions.notifications.denied_message'),
           [
             {
               text: translate('common.cancel'),
@@ -58,7 +58,7 @@ export function NotificationPermissionPrimer({
               onPress: () => onComplete(false),
             },
             {
-              text: translate('common.openSettings'),
+              text: translate('common.open_settings'),
               onPress: () => {
                 Linking.openSettings();
                 onComplete(false);

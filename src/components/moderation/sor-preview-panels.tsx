@@ -63,8 +63,8 @@ function ValidationBanner({
         }`}
         tx={
           validationStatus.no_pii_detected
-            ? 'moderation.sorPreview.validation.noPiiDetected'
-            : 'moderation.sorPreview.validation.piiValidationFailed'
+            ? 'moderation.sor_preview.validation.no_pii_detected'
+            : 'moderation.sor_preview.validation.pii_validation_failed'
         }
       />
       {validationStatus.errors.length > 0 && (
@@ -135,48 +135,48 @@ function useUserFacingData(
   return useMemo(
     () => [
       {
-        label: t('moderation.sorPreview.fields.decisionGround'),
+        label: t('moderation.sor_preview.fields.decision_ground'),
         value: userFacing.decision_ground,
       },
       {
-        label: t('moderation.sorPreview.fields.legalReference'),
+        label: t('moderation.sor_preview.fields.legal_reference'),
         value:
           userFacing.legal_reference ||
-          t('moderation.sorPreview.fields.legalReferenceNA'),
+          t('moderation.sor_preview.fields.legal_reference_n_a'),
       },
       {
-        label: t('moderation.sorPreview.fields.contentType'),
+        label: t('moderation.sor_preview.fields.content_type'),
         value: userFacing.content_type,
       },
       {
-        label: t('moderation.sorPreview.fields.factsAndCircumstances'),
+        label: t('moderation.sor_preview.fields.facts_and_circumstances'),
         value: userFacing.facts_and_circumstances,
         multiline: true,
       },
       {
-        label: t('moderation.sorPreview.fields.automatedDetection'),
+        label: t('moderation.sor_preview.fields.automated_detection'),
         value: userFacing.automated_detection
-          ? t('moderation.sorPreview.fields.yes')
-          : t('moderation.sorPreview.fields.no'),
+          ? t('moderation.sor_preview.fields.yes')
+          : t('moderation.sor_preview.fields.no'),
       },
       {
-        label: t('moderation.sorPreview.fields.automatedDecision'),
+        label: t('moderation.sor_preview.fields.automated_decision'),
         value: userFacing.automated_decision
-          ? t('moderation.sorPreview.fields.yes')
-          : t('moderation.sorPreview.fields.no'),
+          ? t('moderation.sor_preview.fields.yes')
+          : t('moderation.sor_preview.fields.no'),
       },
       {
-        label: t('moderation.sorPreview.fields.territorialScope'),
+        label: t('moderation.sor_preview.fields.territorial_scope'),
         value:
           userFacing.territorial_scope?.join(', ') ||
-          t('moderation.sorPreview.fields.territorialScopeGlobal'),
+          t('moderation.sor_preview.fields.territorial_scope_global'),
       },
       {
-        label: t('moderation.sorPreview.fields.redressOptions'),
+        label: t('moderation.sor_preview.fields.redress_options'),
         value: userFacing.redress.join(', '),
       },
       {
-        label: t('moderation.sorPreview.fields.createdAt'),
+        label: t('moderation.sor_preview.fields.created_at'),
         value: formatDate(userFacing.created_at),
       },
     ],
@@ -191,73 +191,75 @@ function useRedactedData(
   return useMemo(
     () => [
       {
-        label: t('moderation.sorPreview.fields.decisionGround'),
+        label: t('moderation.sor_preview.fields.decision_ground'),
         value: redacted.decision_ground,
       },
       {
-        label: t('moderation.sorPreview.fields.legalReference'),
+        label: t('moderation.sor_preview.fields.legal_reference'),
         value:
           redacted.legal_reference ||
-          t('moderation.sorPreview.fields.legalReferenceNA'),
+          t('moderation.sor_preview.fields.legal_reference_n_a'),
       },
       {
-        label: t('moderation.sorPreview.fields.contentType'),
+        label: t('moderation.sor_preview.fields.content_type'),
         value: redacted.content_type,
       },
       {
-        label: t('moderation.sorPreview.fields.automatedDetection'),
+        label: t('moderation.sor_preview.fields.automated_detection'),
         value: redacted.automated_detection
-          ? t('moderation.sorPreview.fields.yes')
-          : t('moderation.sorPreview.fields.no'),
+          ? t('moderation.sor_preview.fields.yes')
+          : t('moderation.sor_preview.fields.no'),
       },
       {
-        label: t('moderation.sorPreview.fields.automatedDecision'),
+        label: t('moderation.sor_preview.fields.automated_decision'),
         value: redacted.automated_decision
-          ? t('moderation.sorPreview.fields.yes')
-          : t('moderation.sorPreview.fields.no'),
+          ? t('moderation.sor_preview.fields.yes')
+          : t('moderation.sor_preview.fields.no'),
       },
       {
-        label: t('moderation.sorPreview.fields.territorialScope'),
+        label: t('moderation.sor_preview.fields.territorial_scope'),
         value:
           redacted.territorial_scope?.join(', ') ||
-          t('moderation.sorPreview.fields.territorialScopeGlobal'),
+          t('moderation.sor_preview.fields.territorial_scope_global'),
       },
       {
-        label: t('moderation.sorPreview.fields.redressOptions'),
+        label: t('moderation.sor_preview.fields.redress_options'),
         value: redacted.redress.join(', '),
       },
       {
-        label: t('moderation.sorPreview.fields.pseudonymizedReporter'),
+        label: t('moderation.sor_preview.fields.pseudonymized_reporter'),
         value: redacted.pseudonymized_reporter_id,
         highlight: true,
       },
       {
-        label: t('moderation.sorPreview.fields.pseudonymizedModerator'),
+        label: t('moderation.sor_preview.fields.pseudonymized_moderator'),
         value: redacted.pseudonymized_moderator_id,
         highlight: true,
       },
       {
-        label: t('moderation.sorPreview.fields.aggregatedReportCount'),
+        label: t('moderation.sor_preview.fields.aggregated_report_count'),
         value:
           redacted.aggregated_data.report_count === 'suppressed'
-            ? t('moderation.sorPreview.fields.aggregatedReportCountSuppressed')
+            ? t(
+                'moderation.sor_preview.fields.aggregated_report_count_suppressed'
+              )
             : String(redacted.aggregated_data.report_count),
         highlight: true,
       },
       {
-        label: t('moderation.sorPreview.fields.evidenceType'),
+        label: t('moderation.sor_preview.fields.evidence_type'),
         value: redacted.aggregated_data.evidence_type,
       },
       {
-        label: t('moderation.sorPreview.fields.contentAge'),
+        label: t('moderation.sor_preview.fields.content_age'),
         value: redacted.aggregated_data.content_age,
       },
       {
-        label: t('moderation.sorPreview.fields.scrubbedAt'),
+        label: t('moderation.sor_preview.fields.scrubbed_at'),
         value: formatDate(redacted.scrubbing_metadata.scrubbed_at),
       },
       {
-        label: t('moderation.sorPreview.fields.scrubbingVersion'),
+        label: t('moderation.sor_preview.fields.scrubbing_version'),
         value: redacted.scrubbing_metadata.scrubbing_version,
       },
     ],
@@ -285,11 +287,11 @@ export function SoRPreviewPanels({
         <View className="flex-1 rounded-xl border border-neutral-200 bg-white dark:border-neutral-700 dark:bg-charcoal-800">
           <View className="border-b border-neutral-200 p-4 dark:border-neutral-700">
             <Text
-              tx="moderation.sorPreview.userFacingTitle"
+              tx="moderation.sor_preview.user_facing_title"
               className="text-base font-semibold text-neutral-900 dark:text-neutral-100"
             />
             <Text
-              tx="moderation.sorPreview.userFacingSubtitle"
+              tx="moderation.sor_preview.user_facing_subtitle"
               className="text-xs text-neutral-600 dark:text-neutral-400"
             />
           </View>
@@ -304,11 +306,11 @@ export function SoRPreviewPanels({
         <View className="flex-1 rounded-xl border border-primary-200 bg-primary-50 dark:border-primary-700 dark:bg-primary-900/10">
           <View className="border-b border-primary-200 p-4 dark:border-primary-700">
             <Text
-              tx="moderation.sorPreview.redactedTitle"
+              tx="moderation.sor_preview.redacted_title"
               className="text-base font-semibold text-primary-900 dark:text-primary-100"
             />
             <Text
-              tx="moderation.sorPreview.redactedSubtitle"
+              tx="moderation.sor_preview.redacted_subtitle"
               className="text-xs text-primary-700 dark:text-primary-300"
             />
           </View>

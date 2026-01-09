@@ -13,9 +13,6 @@ import { Platform } from 'react-native';
 export type FlashListConfig = {
   drawDistance: number;
   removeClippedSubviews: boolean;
-  maxToRenderPerBatch: number;
-  windowSize: number;
-  updateCellsBatchingPeriod: number;
   scrollEventThrottle: number;
 };
 
@@ -31,8 +28,6 @@ export function isLowMemoryDevice(): boolean {
  *
  * Performance tuning for fast scrolling:
  * - Higher drawDistance (800-1200px) pre-renders items before they enter viewport
- * - Larger windowSize (15-21) keeps more items in memory to avoid re-renders
- * - Lower updateCellsBatchingPeriod for smoother updates
  * - scrollEventThrottle at 32ms balances performance vs responsiveness
  *
  * Use case: Strains list, Community feed, Search results
@@ -45,13 +40,6 @@ export function getOptimizedFlashListConfig(): FlashListConfig {
     // Higher values reduce blank areas during fast scrolling
     drawDistance: lowMem ? 800 : 1200,
     removeClippedSubviews: true,
-    // Render more items per batch for smoother scrolling
-    maxToRenderPerBatch: lowMem ? 8 : 12,
-    // Keep more items in memory (viewport multiplier)
-    // Higher = smoother scroll but more memory usage
-    windowSize: lowMem ? 15 : 21,
-    // Lower batching period for more responsive updates
-    updateCellsBatchingPeriod: lowMem ? 50 : 32,
     // 32ms throttle for scroll events (vs 16ms default)
     // Reduces JS bridge traffic while maintaining smooth feel
     scrollEventThrottle: 32,
@@ -72,9 +60,6 @@ export function getMediumFlashListConfig(): FlashListConfig {
   return {
     drawDistance: lowMem ? 500 : 800,
     removeClippedSubviews: true,
-    maxToRenderPerBatch: lowMem ? 6 : 10,
-    windowSize: lowMem ? 10 : 15,
-    updateCellsBatchingPeriod: lowMem ? 50 : 40,
     scrollEventThrottle: 32,
   };
 }

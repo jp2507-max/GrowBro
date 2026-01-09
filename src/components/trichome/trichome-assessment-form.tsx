@@ -44,7 +44,7 @@ function PercentInput({
       render={({ field: { onChange, onBlur, value } }) => (
         <Input
           label={label}
-          placeholder={t('trichome.percentPlaceholder', {
+          placeholder={t('trichome.percent_placeholder', {
             min: 0,
             max: 100,
           })}
@@ -82,7 +82,7 @@ function Disclaimer({ t }: { t: (key: string) => string }) {
   return (
     <View className="mb-4 rounded-md bg-neutral-100 p-3 dark:bg-charcoal-800">
       <Text className="text-xs italic text-neutral-600 dark:text-neutral-400">
-        {t('trichome.assessmentDisclaimer')}
+        {t('trichome.assessment_disclaimer')}
       </Text>
     </View>
   );
@@ -102,8 +102,8 @@ function NotesInput({
         name="notes"
         render={({ field: { onChange, onBlur, value } }) => (
           <Input
-            label={t('trichome.notesLabel')}
-            placeholder={t('trichome.notesPlaceholder')}
+            label={t('trichome.notes_label')}
+            placeholder={t('trichome.notes_placeholder')}
             multiline
             numberOfLines={3}
             onBlur={onBlur}
@@ -137,13 +137,13 @@ export function TrichomeAssessmentForm({
   return (
     <View className={`${className}`} testID="trichome-assessment-form">
       <Text className="mb-4 text-lg font-semibold text-charcoal-950 dark:text-neutral-100">
-        {t('trichome.formTitle')}
+        {t('trichome.form_title')}
       </Text>
       <View className="mb-4">
         <PercentInput
           control={control}
           name="clearPercent"
-          label={t('trichome.clearLabel')}
+          label={t('trichome.clear_label')}
           errors={errors}
           t={t}
         />
@@ -152,7 +152,7 @@ export function TrichomeAssessmentForm({
         <PercentInput
           control={control}
           name="milkyPercent"
-          label={t('trichome.milkyLabel')}
+          label={t('trichome.milky_label')}
           errors={errors}
           t={t}
         />
@@ -161,7 +161,7 @@ export function TrichomeAssessmentForm({
         <PercentInput
           control={control}
           name="amberPercent"
-          label={t('trichome.amberLabel')}
+          label={t('trichome.amber_label')}
           errors={errors}
           t={t}
         />
@@ -170,7 +170,7 @@ export function TrichomeAssessmentForm({
       <NotesInput control={control} t={t} />
       <Disclaimer t={t} />
       <Button
-        label={t('trichome.submitButton')}
+        label={t('trichome.submit_button')}
         onPress={handleSubmit(onSubmit)}
         loading={loading}
         disabled={loading || total === 0}

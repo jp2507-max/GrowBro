@@ -2,6 +2,7 @@ import React, { memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { List, Pressable, Text, View } from '@/components/ui';
+import { formatRelativeTimeTranslated } from '@/lib/datetime/format-relative-time';
 import type { Harvest, HarvestStage } from '@/types';
 import { HarvestStages } from '@/types';
 
@@ -67,7 +68,6 @@ export function HarvestHistoryList({
   testID = 'harvest-history-list',
 }: HarvestHistoryListProps): React.ReactElement {
   const { t } = useTranslation();
-  const relativeTime = useRelativeTime();
 
   const filtered = useMemo(
     () => applyFilters(harvests, filters),
@@ -84,12 +84,11 @@ export function HarvestHistoryList({
     ({ item }: { item: HarvestListItem }) => (
       <HarvestHistoryRow
         item={item}
-        relativeTime={relativeTime}
         onPress={onSelect}
         testID={`${testID}-item-${item.id}`}
       />
     ),
-    [relativeTime, onSelect, testID]
+    [onSelect, testID]
   );
 
   const keyExtractor = useCallback((item: HarvestListItem) => item.id, []);
@@ -114,7 +113,7 @@ export function HarvestHistoryList({
       maintainVisibleContentPosition={{ autoscrollToTopThreshold: 0 }}
       accessibilityRole="list"
       accessibilityLabel={t('harvest.history.accessibility.list')}
-      accessibilityHint={t('harvest.history.accessibility.listHint')}
+      accessibilityHint={t('harvest.history.accessibility.list_hint')}
       ListEmptyComponent={emptyComponent}
       ItemSeparatorComponent={MemoizedSeparator}
       isLoading={isLoading}
@@ -179,7 +178,6 @@ function resolveEmptyVariant(
 
 type RowProps = {
   readonly item: HarvestListItem;
-  readonly relativeTime: (date: Date) => string;
   readonly onPress?: (harvest: Harvest) => void;
   readonly testID?: string;
 };
@@ -190,7 +188,6 @@ type RowProps = {
  */
 const HarvestHistoryRow = memo<RowProps>(function HarvestHistoryRow({
   item,
-  relativeTime,
   onPress,
   testID,
 }: RowProps): React.ReactElement {
@@ -204,20 +201,22 @@ const HarvestHistoryRow = memo<RowProps>(function HarvestHistoryRow({
     });
   }, [item.source, onPress]);
 
+  const relativeTime = useMemo(
+    () =>
+      formatRelativeTimeTranslated(
+        item.updatedAt.toISOString(),
+        'harvest.history.relative'
+      ),
+    [item.updatedAt]
+  );
+
   const rowLabel = useMemo(
     () =>
-      `${t('harvest.history.list.rowLabel', {
+      `${t('harvest.history.list.row_label', {
         stage: t(`harvest.stages.${item.stage}`),
-        time: relativeTime(item.updatedAt),
-      })}${item.dryWeight != null ? t('harvest.history.list.rowLabelWeight', { weight: item.dryWeight }) : ''}${item.conflictSeen ? t('harvest.history.list.rowLabelConflict') : ''}`,
-    [
-      t,
-      item.stage,
-      item.updatedAt,
-      item.dryWeight,
-      item.conflictSeen,
-      relativeTime,
-    ]
+        time: relativeTime,
+      })}${item.dryWeight != null ? t('harvest.history.list.row_label_weight', { weight: item.dryWeight }) : ''}${item.conflictSeen ? t('harvest.history.list.row_label_conflict') : ''}`,
+    [t, item.stage, item.dryWeight, item.conflictSeen, relativeTime]
   );
 
   return (
@@ -225,7 +224,7 @@ const HarvestHistoryRow = memo<RowProps>(function HarvestHistoryRow({
       className="flex-row items-center justify-between px-4 py-3"
       accessibilityRole="button"
       accessibilityLabel={rowLabel}
-      accessibilityHint={t('harvest.history.accessibility.rowHint')}
+      accessibilityHint={t('harvest.history.accessibility.row_hint')}
       testID={testID}
       onPress={handlePress}
     >
@@ -235,7 +234,7 @@ const HarvestHistoryRow = memo<RowProps>(function HarvestHistoryRow({
         </Text>
         <Text className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
           {t('harvest.history.list.updated', {
-            relativeTime: relativeTime(item.updatedAt),
+            relativeTime,
           })}
         </Text>
       </View>
@@ -265,31 +264,3 @@ const Separator = memo(function Separator(): React.ReactElement {
 });
 
 const MemoizedSeparator = Separator;
-
-function useRelativeTime(): (date: Date) => string {
-  const { t } = useTranslation();
-
-  return React.useCallback(
-    (date: Date) => {
-      const diff = Date.now() - date.getTime();
-
-      if (diff < 60_000) {
-        return t('harvest.history.relative.now');
-      }
-
-      const minutes = Math.floor(diff / 60_000);
-      if (minutes < 60) {
-        return t('harvest.history.relative.minutes', { count: minutes });
-      }
-
-      const hours = Math.floor(minutes / 60);
-      if (hours < 24) {
-        return t('harvest.history.relative.hours', { count: hours });
-      }
-
-      const days = Math.floor(hours / 24);
-      return t('harvest.history.relative.days', { count: days });
-    },
-    [t]
-  );
-}

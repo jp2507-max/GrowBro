@@ -20,11 +20,11 @@ export function TrichomeHelperTabs({
         variant={showGuide ? 'default' : 'outline'}
         size="sm"
         onPress={() => onToggleGuide(true)}
-        label={t('trichome.helper.guideTab')}
+        label={t('trichome.helper.guide_tab')}
         className="flex-1"
         testID="show-guide-tab"
-        accessibilityLabel={t('trichome.helper.guideTab')}
-        accessibilityHint={t('trichome.helper.accessibilityGuide')}
+        accessibilityLabel={t('trichome.helper.guide_tab')}
+        accessibilityHint={t('trichome.helper.accessibility_guide')}
       />
       <Button
         variant={!showGuide ? 'default' : 'outline'}
@@ -34,7 +34,7 @@ export function TrichomeHelperTabs({
         className="flex-1"
         testID="show-assessment-tab"
         accessibilityLabel={t('trichome.helper.assessmentTab')}
-        accessibilityHint={t('trichome.helper.accessibilityForm')}
+        accessibilityHint={t('trichome.helper.accessibility_form')}
       />
     </View>
   );

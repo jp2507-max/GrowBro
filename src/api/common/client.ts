@@ -3,6 +3,7 @@ import axios, { type InternalAxiosRequestConfig } from 'axios';
 
 import { categorizeError } from '@/lib/error-handling';
 import { registerCertificatePinningInterceptor } from '@/lib/security/certificate-pinner';
+import { supabase } from '@/lib/supabase';
 import { computeBackoffMs } from '@/lib/sync/backoff';
 
 interface RetryConfig extends InternalAxiosRequestConfig {
@@ -16,6 +17,24 @@ export const client = axios.create({
 });
 
 registerCertificatePinningInterceptor(client);
+
+// Inject auth token from Supabase session
+client.interceptors.request.use(async (config) => {
+  try {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (session?.access_token) {
+      config.headers.Authorization = `Bearer ${session.access_token}`;
+    }
+  } catch (error) {
+    // Log session retrieval error but don't block the request
+    console.warn('Failed to retrieve Supabase session:', error);
+  }
+
+  return config;
+});
 
 // Lightweight retry/backoff without extra deps
 client.interceptors.response.use(

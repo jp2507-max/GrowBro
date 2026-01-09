@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import Animated, {
+  ReduceMotion,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
@@ -19,6 +20,7 @@ const SPRING_CONFIG = {
   damping: 15,
   stiffness: 150,
   mass: 0.8,
+  reduceMotion: ReduceMotion.System,
 };
 
 export function AddPlantFab(): React.ReactElement {
@@ -26,16 +28,16 @@ export function AddPlantFab(): React.ReactElement {
   const { grossHeight } = useBottomTabBarHeight();
   const scale = useSharedValue(1);
 
-  const handlePressIn = React.useCallback(() => {
+  const handlePressIn = React.useCallback((): void => {
     haptics.selection();
     scale.value = withSpring(0.9, SPRING_CONFIG);
   }, [scale]);
 
-  const handlePressOut = React.useCallback(() => {
+  const handlePressOut = React.useCallback((): void => {
     scale.value = withSpring(1, SPRING_CONFIG);
   }, [scale]);
 
-  const handlePress = React.useCallback(() => {
+  const handlePress = React.useCallback((): void => {
     router.push('/plants/create');
   }, [router]);
 

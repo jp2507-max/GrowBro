@@ -1,5 +1,6 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 
+// @ts-ignore - Edge Function npm import
 import {
   ImageMagick,
   initializeImageMagick,
@@ -7,8 +8,11 @@ import {
   MagickGeometry,
   type MagickImage,
 } from 'npm:@imagemagick/magick-wasm@0.0.30';
+// @ts-ignore - Edge Function npm import
 import { createClient, SupabaseClient } from 'npm:@supabase/supabase-js@2';
+// @ts-ignore - Edge Function npm import
 import { encode as encodeBlurhash } from 'npm:blurhash@2.0.5';
+// @ts-ignore - Edge Function npm import
 import { rgbaToThumbHash } from 'npm:thumbhash@0.1.1';
 
 const corsHeaders = {
@@ -19,6 +23,19 @@ const corsHeaders = {
 };
 
 const COMMUNITY_MEDIA_BUCKET = 'community-posts';
+// Note: Keep in sync with COMMUNITY_HELP_CATEGORY in src/lib/community/post-categories.ts
+const ALLOWED_POST_CATEGORIES = [
+  'problem_deficiency',
+  'grow_tips',
+  'harvest',
+  'equipment',
+  'general',
+] as const;
+type PostCategory = (typeof ALLOWED_POST_CATEGORIES)[number];
+
+function isValidCategory(value: string): value is PostCategory {
+  return (ALLOWED_POST_CATEGORIES as readonly string[]).includes(value);
+}
 
 // Fetch configuration constants
 const MAX_BYTES = 50 * 1024 * 1024; // 50MB limit
@@ -30,6 +47,8 @@ interface CreatePostRequest {
   client_tx_id?: string;
   title?: string;
   sourceAssessmentId?: string;
+  strain?: string;
+  category?: string;
   media?:
     | {
         // Server-side processing (web/legacy)
@@ -152,6 +171,43 @@ Deno.serve(async (req: Request) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         }
       );
+    }
+
+    // Validate strain if provided
+    if (requestBody.strain && requestBody.strain.length > 100) {
+      return new Response(
+        JSON.stringify({ error: 'Strain name cannot exceed 100 characters' }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    // Validate category if provided
+    if (requestBody.category && requestBody.category.length > 50) {
+      return new Response(
+        JSON.stringify({ error: 'Category cannot exceed 50 characters' }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    // Validate category against allowed values if provided
+    if (requestBody.category) {
+      if (!isValidCategory(requestBody.category)) {
+        return new Response(
+          JSON.stringify({
+            error: `Invalid category. Must be one of: ${ALLOWED_POST_CATEGORIES.join(', ')}`,
+          }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
     }
 
     let mediaProcessingResult = null;
@@ -279,6 +335,8 @@ Deno.serve(async (req: Request) => {
       user_id: user.id,
       body: requestBody.body,
       client_tx_id: requestBody.client_tx_id,
+      strain: requestBody.strain || null,
+      category: requestBody.category || null,
     };
 
     if (mediaProcessingResult) {
@@ -291,7 +349,22 @@ Deno.serve(async (req: Request) => {
         mediaProcessingResult.thumbnailPath,
       ];
 
+      // Security Check 1: Ensure variants are unique files (no duplicates)
+      if (new Set(pathsToValidate).size !== pathsToValidate.length) {
+        return new Response(
+          JSON.stringify({
+            error:
+              'Invalid media: variants must be distinct files to prevent reference cycles',
+          }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+
       for (const path of pathsToValidate) {
+        // Security Check 3: Path ownership
         if (!path.startsWith(userPrefix)) {
           return new Response(
             JSON.stringify({
@@ -303,6 +376,124 @@ Deno.serve(async (req: Request) => {
               headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             }
           );
+        }
+
+        // Security Check 4: Path Traversal
+        if (path.includes('..') || path.includes('%2e%2e')) {
+          return new Response(
+            JSON.stringify({
+              error: 'Invalid media path: path traversal detected',
+            }),
+            {
+              status: 400,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            }
+          );
+        }
+
+        // Security Check 5: Strict Structure Validation
+        // Expected format: prefix/{hash}/{variant}.{ext}
+        // Remove the prefix to validate the remainder
+        const relativePath = path.substring(userPrefix.length);
+
+        // Regex Explanation:
+        // ^                 Start of string
+        // [a-fA-F0-9]{64}   Hash segment (SHA-256 hex)
+        // \/                Separator
+        // [a-zA-Z0-9._-]+   Variant filename (safe chars only)
+        // \.                Extension dot
+        // [a-zA-Z0-9]+      Extension (e.g., jpg)
+        // $                 End of string
+        if (
+          !/^[a-fA-F0-9]{64}\/[a-zA-Z0-9._-]+\.[a-zA-Z0-9]+$/.test(relativePath)
+        ) {
+          return new Response(
+            JSON.stringify({
+              error:
+                'Invalid media path format. Expected {sha256_hash}/{variant}.ext',
+            }),
+            {
+              status: 400,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            }
+          );
+        }
+      }
+
+      // Security Check 2: Verify all paths have same hash (content-addressable validation)
+      const hashes = pathsToValidate.map((p) => {
+        const relativePath = p.substring(userPrefix.length);
+        return relativePath.split('/')[0];
+      });
+
+      if (new Set(hashes).size !== 1 || !/^[a-fA-F0-9]{64}$/.test(hashes[0])) {
+        return new Response(
+          JSON.stringify({
+            error:
+              'Invalid media: inconsistent or malformed hash in variant paths',
+          }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+
+      // Security Check 6: Verify variant size hierarchy (Original >= Resized >= Thumbnail)
+      // This prevents malicious clients from swapping variants to bypass limits
+      if (hasMobileVariants) {
+        const getFolder = (p: string) => p.split('/').slice(1, 3).join('/');
+        const variantFolder = getFolder(mediaProcessingResult.originalPath);
+
+        // All variants must be in the same folder
+        if (!pathsToValidate.every((p) => getFolder(p) === variantFolder)) {
+          return new Response(
+            JSON.stringify({
+              error: 'Invalid media: all variants must be in the same folder',
+            }),
+            {
+              status: 400,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            }
+          );
+        }
+
+        const { data: folderFiles } = await supabaseClient.storage
+          .from(COMMUNITY_MEDIA_BUCKET)
+          .list(variantFolder);
+
+        if (folderFiles) {
+          const sizes = new Map(
+            folderFiles.map((f) => [f.name, f.metadata?.size ?? 0])
+          );
+          const [origSize, resSize, thumbSize] = pathsToValidate.map(
+            (p) => sizes.get(p.split('/').pop() ?? '') ?? 0
+          );
+
+          if (origSize === 0 || resSize === 0 || thumbSize === 0) {
+            return new Response(
+              JSON.stringify({
+                error: 'Invalid media: variant files not found in storage',
+              }),
+              {
+                status: 400,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              }
+            );
+          }
+
+          if (origSize < resSize || resSize < thumbSize) {
+            return new Response(
+              JSON.stringify({
+                error:
+                  'Invalid media: variant sizes must follow original >= resized >= thumbnail',
+              }),
+              {
+                status: 400,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              }
+            );
+          }
         }
       }
 

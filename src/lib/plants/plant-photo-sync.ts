@@ -61,6 +61,8 @@ type PlantPhotoSyncResult = {
   error: string | null;
   /** Resolved local URI (either existing or newly downloaded) */
   resolvedLocalUri: string | undefined;
+  /** Thumbnail URL for faster initial rendering */
+  thumbnailUrl: string | undefined;
 };
 
 /**
@@ -178,6 +180,7 @@ async function updatePlantLocalImageUrl(
 export function usePlantPhotoSync(plant: Plant | null): PlantPhotoSyncResult {
   const plantId = plant?.id;
   const imageUrl = plant?.imageUrl;
+  const thumbnailUrl = plant?.thumbnailUrl;
   const remoteImagePath = getRemoteImagePath(plant);
 
   const {
@@ -238,6 +241,7 @@ export function usePlantPhotoSync(plant: Plant | null): PlantPhotoSyncResult {
         : 'Sync failed'
       : null,
     resolvedLocalUri: finalUri,
+    thumbnailUrl,
   };
 }
 

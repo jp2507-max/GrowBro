@@ -19,6 +19,7 @@ import { KeyboardProvider } from 'react-native-keyboard-controller';
 
 import { APIProvider } from '@/api';
 import { ConsentModal } from '@/components/consent-modal';
+import { GlassFlashMessage } from '@/components/ui/glass-flash-message';
 import {
   ConsentService,
   hydrateAgeGate,
@@ -152,14 +153,33 @@ function useKeyRotationSetup(): void {
   }, []);
 }
 
+/**
+ * Normalize iOS client ID to full format.
+ * env.js accepts prefix-only format (e.g., "123456-abc123") for backward
+ * compatibility, but GoogleSignin.configure() requires the full format
+ * ("123456-abc123.apps.googleusercontent.com").
+ */
+function normalizeIosClientId(
+  clientId: string | undefined
+): string | undefined {
+  if (!clientId) return undefined;
+  const suffix = '.apps.googleusercontent.com';
+  if (clientId.endsWith(suffix)) return clientId;
+  // Prefix-only format - append suffix
+  if (/^\d+-[A-Za-z0-9_-]+$/.test(clientId)) {
+    return `${clientId}${suffix}`;
+  }
+  // Return as-is; invalid formats will fail at Google SDK level
+  return clientId;
+}
+
 function useGoogleSignInSetup(): void {
   React.useEffect(() => {
     if (!Env.GOOGLE_WEB_CLIENT_ID) return;
+    const iosClientId = normalizeIosClientId(Env.GOOGLE_IOS_CLIENT_ID);
     GoogleSignin.configure({
       webClientId: Env.GOOGLE_WEB_CLIENT_ID,
-      ...(Env.GOOGLE_IOS_CLIENT_ID
-        ? { iosClientId: Env.GOOGLE_IOS_CLIENT_ID }
-        : {}),
+      ...(iosClientId ? { iosClientId } : {}),
     });
   }, []);
 }
@@ -350,12 +370,17 @@ function usePhotoJanitorSetup(isI18nReady: boolean): void {
 function RootLayout(): React.ReactElement {
   const [isFirstTime] = useIsFirstTime();
 
-  /* eslint-disable react-compiler/react-compiler -- Zustand createSelectors pattern creates hook accessors */
+  // Zustand createSelectors pattern: .status() calls ARE hooks, but react-compiler
+  // misinterprets `useX.propertySelector` as referencing hooks as values.
+  // eslint-disable-next-line react-compiler/react-compiler
   const ageGateStatus = useAgeGate.status();
+  // eslint-disable-next-line react-compiler/react-compiler
   const sessionId = useAgeGate.sessionId();
+  // eslint-disable-next-line react-compiler/react-compiler
   const onboardingStatus = useOnboardingState.status();
+  // eslint-disable-next-line react-compiler/react-compiler
   const currentOnboardingStep = useOnboardingState.currentStep();
-  /* eslint-enable react-compiler/react-compiler */
+
   const [isI18nReady, setIsI18nReady] = React.useState(false);
   const [isAuthReady, setIsAuthReady] = React.useState(false);
   const [showConsent, setShowConsent] = React.useState(false);
@@ -460,8 +485,10 @@ function persistConsents(
   });
 }
 
-// Timeout for auth hydration - 5s is generous for token check + signIn
-const HYDRATE_AUTH_TIMEOUT_MS = 5000;
+// Timeout for auth hydration - 12s accommodates slow networks, offline rehydration, and token refresh delays
+// Token refresh operations have a 2s performance threshold, but hydration may need multiple retries
+// and handle poor network conditions, especially when returning from background or cold starts
+const HYDRATE_AUTH_TIMEOUT_MS = 12000;
 
 // Helper to initialize auth storage and hydrate states
 async function initializeAuthAndStates(): Promise<void> {
@@ -582,7 +609,10 @@ function Providers({ children }: ProvidersProps): React.ReactElement {
             <DatabaseProvider database={database}>
               <BottomSheetModalProvider>
                 {children}
-                <FlashMessage position="top" />
+                <FlashMessage
+                  position="top"
+                  MessageComponent={GlassFlashMessage}
+                />
               </BottomSheetModalProvider>
             </DatabaseProvider>
           </APIProvider>

@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { Plant } from '@/api/plants/types';
-import { Image, Pressable, Text, View } from '@/components/ui';
+import { GlassButton, Image, Pressable, Text, View } from '@/components/ui';
 import colors from '@/components/ui/colors';
 import { ArrowLeft } from '@/components/ui/icons';
 import { usePlantPhotoSync } from '@/lib/plants/plant-photo-sync';
@@ -78,17 +78,17 @@ export function PlantDetailHeader({
       )}
 
       {/* Back Button - floating on image */}
-      <Pressable
-        onPress={onBack}
-        className="absolute left-4 z-20 size-10 items-center justify-center rounded-full bg-black/30 active:bg-black/50"
-        style={{ top: insets.top + 8 }}
-        accessibilityRole="button"
-        accessibilityLabel={t('accessibility.common.go_back')}
-        accessibilityHint={t('accessibility.common.return_to_previous')}
-        testID="plant-detail-back-button"
-      >
-        <ArrowLeft color="#fff" width={22} height={22} />
-      </Pressable>
+      <View className="absolute left-4 z-20" style={{ top: insets.top + 8 }}>
+        <GlassButton
+          onPress={onBack}
+          accessibilityLabel={t('accessibility.common.go_back')}
+          accessibilityHint={t('accessibility.common.return_to_previous')}
+          testID="plant-detail-back-button"
+          fallbackClassName="bg-black/30"
+        >
+          <ArrowLeft color="#fff" width={22} height={22} />
+        </GlassButton>
+      </View>
 
       {/* Gradient Overlay with Plant Info */}
       <View className="absolute inset-x-0 bottom-0">

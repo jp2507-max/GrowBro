@@ -114,7 +114,7 @@ export function PermissionPrimerScreen({
             testID={`${testID}-allow-button`}
             accessibilityLabel={translate('onboarding.permissions.allow')}
             accessibilityHint={translate(
-              'onboarding.permissions.allowHint' as TxKeyPath
+              'onboarding.permissions.allow_hint' as TxKeyPath
             )}
           />
         </Animated.View>
@@ -126,16 +126,16 @@ export function PermissionPrimerScreen({
           })}
         >
           <Button
-            label={translate('onboarding.permissions.notNow')}
+            label={translate('onboarding.permissions.not_now')}
             onPress={onNotNow}
             variant="ghost"
             size="lg"
             fullWidth
             disabled={isLoading}
             testID={`${testID}-not-now-button`}
-            accessibilityLabel={translate('onboarding.permissions.notNow')}
+            accessibilityLabel={translate('onboarding.permissions.not_now')}
             accessibilityHint={translate(
-              'onboarding.permissions.notNowHint' as TxKeyPath
+              'onboarding.permissions.not_now_hint' as TxKeyPath
             )}
           />
         </Animated.View>
@@ -151,7 +151,7 @@ export function PermissionPrimerScreen({
         className="mb-6 rounded-lg bg-neutral-100 p-3 dark:bg-neutral-800"
       >
         <Text
-          tx={'onboarding.permissions.privacyNote' as TxKeyPath}
+          tx={'onboarding.permissions.privacy_note' as TxKeyPath}
           className="text-center text-xs text-neutral-600 dark:text-neutral-400"
         />
       </Animated.View>

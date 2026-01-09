@@ -141,8 +141,8 @@ export function CommunityCTAButton({
 
   const isLowConfidence = assessment.calibratedConfidence < 0.7;
   const buttonLabel = isLowConfidence
-    ? t('assessment.community.getSecondOpinion')
-    : t('assessment.community.askCommunity');
+    ? t('assessment.community.get_second_opinion')
+    : t('assessment.community.ask_community');
 
   return (
     <View className="mt-4" testID={testID}>
@@ -154,7 +154,7 @@ export function CommunityCTAButton({
         testID={`${testID}-action`}
       />
       <Text className="mt-2 text-center text-sm text-neutral-600 dark:text-neutral-400">
-        {t('assessment.community.ctaHint')}
+        {t('assessment.community.cta_hint')}
       </Text>
     </View>
   );

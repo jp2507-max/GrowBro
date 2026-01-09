@@ -95,6 +95,26 @@ jest.mock('@sentry/react-native', () => ({
   captureMessage: jest.fn(),
 }));
 
+jest.mock('@/lib/auth/redirect-uri', () => ({
+  isCustomSchemeLink: jest.fn((url: string) => {
+    try {
+      const parsed = new URL(url);
+      return parsed.protocol.startsWith('growbro');
+    } catch {
+      return false;
+    }
+  }),
+  isUniversalLink: jest.fn((url: string) => {
+    try {
+      const parsed = new URL(url);
+      return parsed.protocol === 'https:' && parsed.hostname === 'growbro.app';
+    } catch {
+      return false;
+    }
+  }),
+  UNIVERSAL_LINK_DOMAIN: 'growbro.app',
+}));
+
 describe('parseDeepLink', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -164,6 +184,55 @@ describe('parseDeepLink', () => {
     parseDeepLink(url);
 
     expect(Sentry.captureException).not.toHaveBeenCalled();
+  });
+
+  // Universal Link tests
+  test('parses Universal Link for email verification', () => {
+    const url = 'https://growbro.app/verify-email?token_hash=abc123&type=email';
+    const result = parseDeepLink(url);
+
+    expect(result).toBeTruthy();
+    expect(result?.host).toBe('verify-email');
+    expect(result?.path).toBe('');
+    expect(result?.params.get('token_hash')).toBe('abc123');
+  });
+
+  test('parses Universal Link for password reset', () => {
+    const url = 'https://growbro.app/reset-password?token_hash=xyz789';
+    const result = parseDeepLink(url);
+
+    expect(result).toBeTruthy();
+    expect(result?.host).toBe('reset-password');
+    expect(result?.path).toBe('');
+    expect(result?.params.get('token_hash')).toBe('xyz789');
+  });
+
+  test('parses Universal Link for OAuth callback', () => {
+    const url = 'https://growbro.app/auth/callback?code=oauth123';
+    const result = parseDeepLink(url);
+
+    expect(result).toBeTruthy();
+    expect(result?.host).toBe('auth');
+    expect(result?.path).toBe('/callback');
+    expect(result?.params.get('code')).toBe('oauth123');
+  });
+
+  test('parses growbro-dev scheme for development', () => {
+    const url = 'growbro-dev://verify-email?token_hash=abc123';
+    const result = parseDeepLink(url);
+
+    expect(result).toBeTruthy();
+    expect(result?.host).toBe('verify-email');
+    expect(result?.params.get('token_hash')).toBe('abc123');
+  });
+
+  test('parses growbro-staging scheme for staging', () => {
+    const url = 'growbro-staging://reset-password?token_hash=xyz789';
+    const result = parseDeepLink(url);
+
+    expect(result).toBeTruthy();
+    expect(result?.host).toBe('reset-password');
+    expect(result?.params.get('token_hash')).toBe('xyz789');
   });
 });
 

@@ -72,7 +72,7 @@ describe('PermissionPrimerScreen', () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText('onboarding.permissions.privacyNote')
+          screen.getByText('onboarding.permissions.privacy_note')
         ).toBeOnTheScreen();
       });
     });

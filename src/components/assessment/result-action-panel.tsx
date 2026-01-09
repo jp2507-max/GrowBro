@@ -57,7 +57,7 @@ export function ResultActionPanel({
       {/* Primary Actions */}
       {hasActionPlan && onCreateTasks && (
         <Button
-          label={t('assessment.result.createTasks')}
+          label={t('assessment.result.create_tasks')}
           onPress={onCreateTasks}
           variant="default"
           testID={`${testID}-create-tasks`}
@@ -66,7 +66,7 @@ export function ResultActionPanel({
 
       {onAskCommunity && (
         <Button
-          label={t('assessment.result.askCommunity')}
+          label={t('assessment.result.ask_community')}
           onPress={onAskCommunity}
           variant="outline"
           testID={`${testID}-ask-community`}
@@ -76,7 +76,7 @@ export function ResultActionPanel({
       {/* Secondary Actions */}
       <View className="flex-row gap-3">
         <Button
-          label={t('assessment.result.viewHistory')}
+          label={t('assessment.result.view_history')}
           onPress={handleViewHistory}
           variant="ghost"
           className="flex-1"

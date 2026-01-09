@@ -89,47 +89,47 @@ export function ProfileHeader({
             className="text-lg font-semibold text-charcoal-900 dark:text-neutral-100"
             testID={`${testID}-display-name`}
           >
-            {displayName || translate('profile.setProfilePrompt')}
+            {displayName || translate('profile.set_profile_prompt')}
           </Text>
 
           {statistics && (
             <View className="mt-1 flex-row gap-4" testID={`${testID}-stats`}>
               <Text className="text-sm text-neutral-600 dark:text-neutral-400">
                 {statistics.plantsCount === 0
-                  ? translate('profile.statistics.plantsCount_zero', {
+                  ? translate('profile.statistics.plants_count_zero', {
                       count: statistics.plantsCount,
                     })
                   : statistics.plantsCount === 1
-                    ? translate('profile.statistics.plantsCount_one', {
+                    ? translate('profile.statistics.plants_count_one', {
                         count: statistics.plantsCount,
                       })
-                    : translate('profile.statistics.plantsCount_other', {
+                    : translate('profile.statistics.plants_count_other', {
                         count: statistics.plantsCount,
                       })}
               </Text>
               <Text className="text-sm text-neutral-600 dark:text-neutral-400">
                 {statistics.harvestsCount === 0
-                  ? translate('profile.statistics.harvestsCount_zero', {
+                  ? translate('profile.statistics.harvests_count_zero', {
                       count: statistics.harvestsCount,
                     })
                   : statistics.harvestsCount === 1
-                    ? translate('profile.statistics.harvestsCount_one', {
+                    ? translate('profile.statistics.harvests_count_one', {
                         count: statistics.harvestsCount,
                       })
-                    : translate('profile.statistics.harvestsCount_other', {
+                    : translate('profile.statistics.harvests_count_other', {
                         count: statistics.harvestsCount,
                       })}
               </Text>
               <Text className="text-sm text-neutral-500 dark:text-neutral-400">
                 {statistics.postsCount === 0
-                  ? translate('profile.statistics.postsCount_zero', {
+                  ? translate('profile.statistics.posts_count_zero', {
                       count: statistics.postsCount,
                     })
                   : statistics.postsCount === 1
-                    ? translate('profile.statistics.postsCount_one', {
+                    ? translate('profile.statistics.posts_count_one', {
                         count: statistics.postsCount,
                       })
-                    : translate('profile.statistics.postsCount_other', {
+                    : translate('profile.statistics.posts_count_other', {
                         count: statistics.postsCount,
                       })}
               </Text>

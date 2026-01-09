@@ -8,12 +8,14 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import Animated, {
   useAnimatedStyle,
+  useSharedValue,
   withRepeat,
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
 
 import { Text, View } from '@/components/ui';
+import { withRM } from '@/lib/animations/motion';
 import { formatTimeRemaining } from '@/lib/moderation/sla-calculator';
 import {
   getSLAAccessibilityLabel,
@@ -37,20 +39,27 @@ export function SLABadge({ status, deadline, testID = 'sla-badge' }: Props) {
   const timeRemaining = formatTimeRemaining(nonNegDelta);
   const isOverdue = rawDelta <= 0;
   const shouldAnimate = shouldAnimateIndicator(status);
+  const opacity = useSharedValue(1);
+
+  React.useEffect(() => {
+    if (!shouldAnimate) {
+      opacity.value = 1;
+      return;
+    }
+
+    opacity.value = withRepeat(
+      withSequence(
+        withTiming(1, withRM({ duration: 500 })),
+        withTiming(0.6, withRM({ duration: 500 }))
+      ),
+      -1,
+      true
+    );
+  }, [shouldAnimate]);
 
   const animatedStyle = useAnimatedStyle(() => {
-    if (!shouldAnimate) return {};
-    return {
-      opacity: withRepeat(
-        withSequence(
-          withTiming(1, { duration: 500 }),
-          withTiming(0.6, { duration: 500 })
-        ),
-        -1,
-        true
-      ),
-    };
-  }, [shouldAnimate]);
+    return { opacity: opacity.value };
+  });
 
   return (
     <Animated.View

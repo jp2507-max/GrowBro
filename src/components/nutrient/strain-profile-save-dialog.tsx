@@ -46,7 +46,7 @@ export const StrainProfileSaveDialog = React.forwardRef<
   const modalRef = React.useRef<BottomSheetModal>(null);
 
   const strainProfileSchema = z.object({
-    name: z.string().min(1, t('validation.strainNameRequired')),
+    name: z.string().min(1, t('validation.strain_name_required')),
     notes: z.string().optional(),
     publishPrivately: z.boolean().default(false),
   });
@@ -83,12 +83,12 @@ export const StrainProfileSaveDialog = React.forwardRef<
     <Modal
       ref={modalRef}
       snapPoints={['70%']}
-      title={t('nutrient.saveStrainProfile')}
+      title={t('nutrient.save_strain_profile')}
       testID={testID}
     >
       <View className="flex-1 px-4 pb-6">
         <Text className="mb-4 text-sm text-neutral-600 dark:text-neutral-400">
-          {t('nutrient.strainProfileDescription')}
+          {t('nutrient.strain_profile_description')}
         </Text>
         <NameField control={control} testID={testID} />
         <NotesField control={control} testID={testID} />

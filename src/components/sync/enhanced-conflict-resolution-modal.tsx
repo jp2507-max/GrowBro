@@ -87,7 +87,7 @@ const FIELD_TRANSLATION_KEYS: Partial<Record<string, TxKeyPath>> = {
   phase: 'sync.conflict.field.phase',
   start_date: 'sync.conflict.field.start_date',
   end_date: 'sync.conflict.field.end_date',
-  pH: 'sync.conflict.field.pH',
+  pH: 'sync.conflict.field.p_h',
   ec: 'sync.conflict.field.ec',
   temperature: 'sync.conflict.field.temperature',
   humidity: 'sync.conflict.field.humidity',
@@ -176,12 +176,12 @@ function ConflictFieldCard({
         <View className="mb-2 flex-row items-center justify-between">
           <Text
             className="text-xs font-medium uppercase text-primary-600 dark:text-primary-400"
-            tx="sync.conflict.yourVersion"
+            tx="sync.conflict.your_version"
           />
           <View className="rounded-full bg-primary-100 px-2 py-0.5 dark:bg-primary-900/30">
             <Text
               className="text-xs font-medium text-primary-700 dark:text-primary-300"
-              tx="sync.conflict.thisDeviceLabel"
+              tx="sync.conflict.this_device_label"
             />
           </View>
         </View>
@@ -197,12 +197,12 @@ function ConflictFieldCard({
         <View className="mb-2 flex-row items-center justify-between">
           <Text
             className="text-xs font-medium uppercase text-success-600 dark:text-success-400"
-            tx="sync.conflict.serverVersion"
+            tx="sync.conflict.server_version"
           />
           <View className="rounded-full bg-success-100 px-2 py-0.5 dark:bg-success-900/30">
             <Text
               className="text-xs font-medium text-success-700 dark:text-success-300"
-              tx="sync.conflict.otherDeviceLabel"
+              tx="sync.conflict.other_device_label"
             />
           </View>
         </View>
@@ -255,11 +255,11 @@ function ConflictActions({
             <View className="items-center">
               <Text
                 className="text-sm font-semibold text-primary-700 dark:text-primary-300"
-                tx="sync.conflict.keepLocalButton"
+                tx="sync.conflict.keep_local_button"
               />
               <Text
                 className="text-xs text-neutral-600 dark:text-neutral-400"
-                tx="sync.conflict.localLabel"
+                tx="sync.conflict.local_label"
               />
             </View>
           </Button>
@@ -273,11 +273,11 @@ function ConflictActions({
             <View className="items-center">
               <Text
                 className="text-sm font-semibold text-white"
-                tx="sync.conflict.useServerButton"
+                tx="sync.conflict.use_server_button"
               />
               <Text
                 className="text-xs text-white/80"
-                tx="sync.conflict.remoteLabel"
+                tx="sync.conflict.remote_label"
               />
             </View>
           </Button>
@@ -289,7 +289,7 @@ function ConflictActions({
         testID="dismiss-conflict-button"
         className="min-h-[44px]"
       >
-        <Text tx="sync.conflict.dismissButton" />
+        <Text tx="sync.conflict.dismiss_button" />
       </Button>
     </View>
   );
@@ -317,7 +317,7 @@ export function EnhancedConflictResolutionModal({
         <View className="mb-4">
           <Text
             className="mb-3 text-sm font-medium uppercase text-neutral-500 dark:text-neutral-400"
-            tx="sync.conflict.conflictingFields"
+            tx="sync.conflict.conflicting_fields"
             txOptions={{ count: conflict.conflictFields.length }}
           />
 

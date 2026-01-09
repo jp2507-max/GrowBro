@@ -44,7 +44,7 @@ describe('navigateToSecondOpinion', () => {
       recommendations: [
         {
           action: 'nitrogenFeed',
-          description: 'nutrient.diagnostics.recommendations.nitrogenFeed',
+          description: 'nutrient.diagnostics.recommendations.nitrogen_feed',
           priority: 1,
         },
       ],
@@ -131,7 +131,7 @@ describe('navigateToSecondOpinion', () => {
       recommendations: [
         {
           action: 'rec1',
-          description: 'nutrient.diagnostics.recommendations.nitrogenFeed',
+          description: 'nutrient.diagnostics.recommendations.nitrogen_feed',
           priority: 1,
         },
         {
@@ -142,7 +142,7 @@ describe('navigateToSecondOpinion', () => {
         {
           action: 'rec3',
           description:
-            'nutrient.diagnostics.recommendations.increaseMonitoring',
+            'nutrient.diagnostics.recommendations.increase_monitoring',
           priority: 2,
         },
         {
@@ -169,13 +169,13 @@ describe('navigateToSecondOpinion', () => {
       'nutrient.diagnostics.community.recommendations'
     );
     expect(prefilledBody).toContain(
-      'nutrient.diagnostics.recommendations.nitrogenFeed'
+      'nutrient.diagnostics.recommendations.nitrogen_feed'
     );
     expect(prefilledBody).toContain(
       'nutrient.diagnostics.recommendations.monitor48h'
     );
     expect(prefilledBody).toContain(
-      'nutrient.diagnostics.recommendations.increaseMonitoring'
+      'nutrient.diagnostics.recommendations.increase_monitoring'
     );
     // Fourth recommendation should not be included
     expect(prefilledBody).not.toContain(

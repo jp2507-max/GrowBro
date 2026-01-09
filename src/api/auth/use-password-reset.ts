@@ -9,6 +9,7 @@
 import { createMutation } from 'react-query-kit';
 
 import { logAuthError, trackAuthEvent } from '@/lib/auth/auth-telemetry';
+import { getPasswordResetRedirectUri } from '@/lib/auth/redirect-uri';
 import { supabase } from '@/lib/supabase';
 
 import { mapAuthError } from './error-mapper';
@@ -33,7 +34,7 @@ export const useResetPassword = createMutation({
     const { email } = variables;
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: 'growbro://reset-password',
+      redirectTo: getPasswordResetRedirectUri(),
     });
 
     // Note: Supabase always returns success even if email doesn't exist

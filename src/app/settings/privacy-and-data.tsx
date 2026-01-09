@@ -56,22 +56,22 @@ function useDataExport(onRequestExport: () => void): {
 
       if (shareResult.success) {
         Alert.alert(
-          translate('privacy.exportReadyTitle' as TxKeyPath),
-          translate('privacy.exportReadyBody' as TxKeyPath)
+          translate('privacy.export_ready_title' as TxKeyPath),
+          translate('privacy.export_ready_body' as TxKeyPath)
         );
       } else {
         // Fallback to old behavior if share sheet fails
         Alert.alert(
-          translate('privacy.exportQueuedTitle'),
+          translate('privacy.export_queued_title'),
           eta
-            ? translate('privacy.exportQueuedBody', { eta })
-            : translate('privacy.exportQueuedBodyNoEta')
+            ? translate('privacy.export_queued_body', { eta })
+            : translate('privacy.export_queued_body_no_eta')
         );
       }
     } catch (error) {
       Alert.alert(
-        translate('privacy.exportErrorTitle'),
-        translate('privacy.exportErrorBody', {
+        translate('privacy.export_error_title'),
+        translate('privacy.export_error_body', {
           message: extractErrorMessage(error),
         })
       );
@@ -98,16 +98,16 @@ function useAccountDeletion(signOut: () => void): {
         const result = await deleteAccountInApp();
         const eta = formatEta(result.estimatedCompletion);
         Alert.alert(
-          translate('privacy.deleteAccountQueuedTitle'),
+          translate('privacy.delete_account_queued_title'),
           eta
-            ? translate('privacy.deleteAccountQueuedBody', { eta })
-            : translate('privacy.deleteAccountQueuedBodyNoEta')
+            ? translate('privacy.delete_account_queued_body', { eta })
+            : translate('privacy.delete_account_queued_body_no_eta')
         );
         signOut();
       } catch (error) {
         Alert.alert(
-          translate('privacy.deleteAccountErrorTitle'),
-          translate('privacy.deleteAccountErrorBody', {
+          translate('privacy.delete_account_error_title'),
+          translate('privacy.delete_account_error_body', {
             message: extractErrorMessage(error),
           })
         );
@@ -119,15 +119,15 @@ function useAccountDeletion(signOut: () => void): {
 
   const confirmDeletion = useCallback(() => {
     Alert.alert(
-      translate('privacy.deleteAccountConfirmTitle'),
-      translate('privacy.deleteAccountConfirmBody'),
+      translate('privacy.delete_account_confirm_title'),
+      translate('privacy.delete_account_confirm_body'),
       [
         {
-          text: translate('privacy.deleteAccountConfirmCancel'),
+          text: translate('privacy.delete_account_confirm_cancel'),
           style: 'cancel',
         },
         {
-          text: translate('privacy.deleteAccountConfirmAction'),
+          text: translate('privacy.delete_account_confirm_action'),
           style: 'destructive',
           onPress: () => {
             queueDeletion();
@@ -154,21 +154,21 @@ function WebDeletionSection(): React.ReactElement | null {
   return (
     <View className="gap-2 rounded-lg bg-white p-4 dark:bg-charcoal-900">
       <Text className="text-sm font-semibold text-charcoal-900 dark:text-neutral-100">
-        {translate('privacy.webDeletionHeading')}
+        {translate('privacy.web_deletion_heading')}
       </Text>
       <Text className="text-sm text-neutral-600 dark:text-neutral-400">
-        {translate('privacy.webDeletionPrompt', {
+        {translate('privacy.web_deletion_prompt', {
           url: webDeletionLabel,
         })}
       </Text>
       <Button
-        label={translate('privacy.openWebDeletion')}
+        label={translate('privacy.open_web_deletion')}
         onPress={async () => {
           try {
             if (!webDeletionUrl.startsWith('https://')) {
               Alert.alert(
-                translate('privacy.invalidUrlTitle'),
-                translate('privacy.invalidUrlBody')
+                translate('privacy.invalid_url_title'),
+                translate('privacy.invalid_url_body')
               );
               return;
             }
@@ -178,15 +178,15 @@ function WebDeletionSection(): React.ReactElement | null {
               await Linking.openURL(webDeletionUrl);
             } else {
               Alert.alert(
-                translate('privacy.cannotOpenUrlTitle'),
-                translate('privacy.cannotOpenUrlBody')
+                translate('privacy.cannot_open_url_title'),
+                translate('privacy.cannot_open_url_body')
               );
             }
           } catch (error) {
             console.error('Error opening web deletion URL:', error);
             Alert.alert(
-              translate('privacy.urlErrorTitle'),
-              translate('privacy.urlErrorBody', {
+              translate('privacy.url_error_title'),
+              translate('privacy.url_error_body', {
                 message: extractErrorMessage(error),
               })
             );
@@ -233,7 +233,7 @@ export default function PrivacyAndDataScreen(): React.ReactElement {
               {translate('settings.privacy_and_data')}
             </Text>
             <Text className="text-sm text-neutral-600 dark:text-neutral-400">
-              {translate('privacy.manageDataDescription')}
+              {translate('privacy.manage_data_description')}
             </Text>
           </View>
 

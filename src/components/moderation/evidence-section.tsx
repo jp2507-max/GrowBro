@@ -77,7 +77,7 @@ export function EvidenceSection({
       )}
 
       <Text className="mt-2 text-xs text-neutral-600 dark:text-neutral-400">
-        {t('appeals.notice.evidenceOptional')} ({evidenceUrls.length}/5)
+        {t('appeals.notice.evidence_optional')} ({evidenceUrls.length}/5)
       </Text>
     </View>
   );

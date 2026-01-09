@@ -4,8 +4,16 @@ import Svg, { Path } from 'react-native-svg';
 
 import colors from '../colors';
 
-export const Share = ({ color = colors.neutral[500], ...props }: SvgProps) => (
-  <Svg width={24} height={24} fill="none" viewBox="0 0 24 24" {...props}>
+type IconProps = SvgProps & {
+  size?: number;
+};
+
+export const Share = ({
+  color = colors.neutral[500],
+  size = 24,
+  ...props
+}: IconProps) => (
+  <Svg width={size} height={size} fill="none" viewBox="0 0 24 24" {...props}>
     <Path
       fillRule="evenodd"
       clipRule="evenodd"

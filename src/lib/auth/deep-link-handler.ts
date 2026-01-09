@@ -7,9 +7,11 @@
 
 import * as Sentry from '@sentry/react-native';
 import { router } from 'expo-router';
+import { AppState, type AppStateStatus } from 'react-native';
 import { showMessage } from 'react-native-flash-message';
 
 import { useAuth } from '@/lib/auth';
+import { translate } from '@/lib/i18n';
 import {
   isAllowedAuthHost,
   isAllowedRedirect,
@@ -21,6 +23,8 @@ import {
 } from '@/lib/navigation/deep-link-gate';
 import * as privacyConsent from '@/lib/privacy-consent';
 import { supabase } from '@/lib/supabase';
+
+import { isCustomSchemeLink, isUniversalLink } from './redirect-uri';
 
 /**
  * Parsed deep link result
@@ -34,6 +38,8 @@ export type ParsedDeepLink = {
 /**
  * Parse a deep link URL into components
  *
+ * Supports both custom scheme (growbro://) and Universal Links (https://growbro.app)
+ *
  * @param url - The deep link URL to parse
  * @returns Parsed link data or null if invalid
  */
@@ -45,26 +51,41 @@ export function parseDeepLink(url: string): ParsedDeepLink {
   try {
     const parsed = new URL(url);
 
-    // Only handle growbro:// scheme for security
-    if (parsed.protocol !== 'growbro:') {
-      // Log error to Sentry if consent granted
-      if (privacyConsent.hasConsent('crashReporting')) {
-        Sentry.captureException(new Error('Invalid deep link protocol'), {
-          tags: { feature: 'deep-link-parsing' },
-          extra: {
-            url: sanitizeDeepLinkUrl(url),
-            protocol: parsed.protocol,
-          },
-        });
-      }
-      return null;
+    // Handle Universal Links (https://growbro.app/...)
+    if (isUniversalLink(url)) {
+      // For Universal Links, the path becomes the host in our internal format
+      // e.g., https://growbro.app/verify-email?token_hash=... -> host: 'verify-email'
+      const pathParts = parsed.pathname.split('/').filter(Boolean);
+      const host = pathParts[0] || '';
+      const remainingPath = pathParts.slice(1).join('/');
+
+      return {
+        host,
+        path: remainingPath ? `/${remainingPath}` : '',
+        params: parsed.searchParams,
+      };
     }
 
-    return {
-      host: parsed.hostname,
-      path: parsed.pathname === '/' ? '' : parsed.pathname,
-      params: parsed.searchParams,
-    };
+    // Handle custom scheme (growbro://, growbro-dev://, growbro-staging://)
+    if (isCustomSchemeLink(url)) {
+      return {
+        host: parsed.hostname,
+        path: parsed.pathname === '/' ? '' : parsed.pathname,
+        params: parsed.searchParams,
+      };
+    }
+
+    // Unknown scheme - reject for security
+    if (privacyConsent.hasConsent('crashReporting')) {
+      Sentry.captureException(new Error('Invalid deep link protocol'), {
+        tags: { feature: 'deep-link-parsing' },
+        extra: {
+          url: sanitizeDeepLinkUrl(url),
+          protocol: parsed.protocol,
+        },
+      });
+    }
+    return null;
   } catch (error) {
     // Log error to Sentry if consent granted
     if (privacyConsent.hasConsent('crashReporting')) {
@@ -233,15 +254,263 @@ export async function handlePasswordReset(tokenHash: string): Promise<void> {
 }
 
 /**
- * Handle OAuth callback deep links
+ * Check if an error is a transient network error (safe to retry)
+ * Does not include code exchange errors which are non-idempotent
+ */
+function isTransientNetworkError(error: unknown): boolean {
+  if (!error) return false;
+
+  const errorMessage =
+    error instanceof Error ? error.message.toLowerCase() : '';
+  const errorName = error instanceof Error ? error.name.toLowerCase() : '';
+
+  // OAuth code errors are NOT retryable (code is single-use)
+  const isCodeError =
+    errorMessage.includes('invalid grant') ||
+    errorMessage.includes('invalid code') ||
+    errorMessage.includes('expired') ||
+    errorMessage.includes('authorization code');
+
+  if (isCodeError) return false;
+
+  // Only retry on clear network/connectivity issues
+  return (
+    errorMessage.includes('network request failed') ||
+    errorMessage.includes('fetch failed') ||
+    errorMessage.includes('timeout') ||
+    errorMessage.includes('econnrefused') ||
+    errorMessage.includes('enotfound') ||
+    errorName === 'networkerror' ||
+    errorName === 'fetcherror'
+  );
+}
+
+/**
+ * Check if user already has a valid session
+ * Used to detect successful code exchange despite client timeout
+ */
+async function hasValidSession(): Promise<boolean> {
+  try {
+    const { data, error } = await supabase.auth.getSession();
+    return !error && !!data.session;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * OAuth retry configuration
+ */
+const OAUTH_MAX_RETRIES = 2;
+const OAUTH_RETRY_DELAY_MS = 1500; // 1.5 seconds
+
+const OAUTH_CODE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+
+/**
+ * Track successfully exchanged codes to avoid false positives in retry logic
+ * Cleared on app restart or after TTL
+ */
+const exchangedCodes = new Set<string>();
+
+/**
+ * Track timeouts for exchanged codes to prevent memory leaks
+ */
+const exchangedCodeTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
+const MAX_TIMEOUT_TRACKING = 100;
+
+/**
+ * Clear all tracked timeouts and codes
+ */
+function clearAllTrackedCodes(): void {
+  for (const timeout of exchangedCodeTimeouts.values()) {
+    clearTimeout(timeout);
+  }
+  exchangedCodeTimeouts.clear();
+  exchangedCodes.clear();
+}
+
+/**
+ * Handle app state changes to clean up timers when backgrounded
+ */
+let appStateSubscription: ReturnType<typeof AppState.addEventListener> | null =
+  null;
+
+function setupAppStateCleanup(): void {
+  if (appStateSubscription) return;
+
+  appStateSubscription = AppState.addEventListener(
+    'change',
+    (nextAppState: AppStateStatus) => {
+      if (nextAppState === 'background') {
+        clearAllTrackedCodes();
+      }
+    }
+  );
+}
+
+/**
+ * Track an exchanged code with proper timeout cleanup
+ */
+function trackExchangedCode(code: string): void {
+  // Initialize app state listener on first use
+  if (!appStateSubscription) {
+    setupAppStateCleanup();
+  }
+
+  const existing = exchangedCodeTimeouts.get(code);
+  if (existing) {
+    clearTimeout(existing);
+  }
+
+  // FIFO eviction if we exceed the limit
+  if (exchangedCodeTimeouts.size >= MAX_TIMEOUT_TRACKING) {
+    const firstKey = exchangedCodeTimeouts.keys().next().value;
+    if (firstKey) {
+      const firstTimeout = exchangedCodeTimeouts.get(firstKey);
+      if (firstTimeout) clearTimeout(firstTimeout);
+      exchangedCodeTimeouts.delete(firstKey);
+      exchangedCodes.delete(firstKey);
+    }
+  }
+
+  const timeout = setTimeout(() => {
+    exchangedCodes.delete(code);
+    exchangedCodeTimeouts.delete(code);
+  }, OAUTH_CODE_TTL_MS);
+
+  exchangedCodes.add(code);
+  exchangedCodeTimeouts.set(code, timeout);
+}
+
+/**
+ * Show retry message and retry OAuth callback after delay
+ * Checks for existing session first in case code was already exchanged
+ */
+async function retryOAuthWithDelay(
+  code: string,
+  retryCount: number
+): Promise<void> {
+  console.log(
+    `[OAuth] Transient network error detected, checking for existing session...`
+  );
+
+  // Check if THIS code was already successfully exchanged
+  if (exchangedCodes.has(code)) {
+    console.log('[OAuth] This code was successfully exchanged despite timeout');
+    showMessage({
+      message: 'Sign In Successful',
+      description: 'You have been signed in successfully.',
+      type: 'success',
+    });
+    router.replace('/(app)');
+    return;
+  }
+
+  // Session exists but not from this code - another OAuth flow succeeded
+  const sessionExists = await hasValidSession();
+  if (sessionExists) {
+    console.log(
+      '[OAuth] Different OAuth flow succeeded - abandoning this code exchange'
+    );
+    router.replace('/(app)');
+    return;
+  }
+
+  console.log(
+    `[OAuth] No existing session found, retrying code exchange... (${retryCount + 1}/${OAUTH_MAX_RETRIES})`
+  );
+
+  showMessage({
+    message: translate('auth.network_issue'),
+    description: translate('auth.retrying_connection', {
+      attempt: retryCount + 1,
+      max: OAUTH_MAX_RETRIES,
+    }),
+    type: 'warning',
+    duration: OAUTH_RETRY_DELAY_MS,
+  });
+
+  await new Promise((resolve) => setTimeout(resolve, OAUTH_RETRY_DELAY_MS));
+  return handleOAuthCallback(code, retryCount + 1);
+}
+
+/**
+ * Handle OAuth exchange error
+ */
+/**
+ * Consolidated OAuth error handler
+ */
+function handleOAuthError(
+  error: unknown,
+  retryCount: number,
+  context: 'exchange' | 'unexpected'
+): void {
+  const errorMessage =
+    error instanceof Error ? error.message.toLowerCase() : '';
+  const isCodeReused =
+    errorMessage.includes('invalid grant') ||
+    errorMessage.includes('invalid code');
+
+  if (privacyConsent.hasConsent('crashReporting')) {
+    Sentry.captureException(error, {
+      tags: { feature: 'oauth-callback' },
+      extra: {
+        code: '[REDACTED]',
+        isTransientNetworkError: isTransientNetworkError(error),
+        isCodeReused,
+        retryCount,
+        context,
+        errorMessage: error instanceof Error ? error.message : String(error),
+      },
+    });
+  }
+
+  const isNetwork = isTransientNetworkError(error);
+  const messages = {
+    exchange: {
+      title: translate('auth.sign_in_failed'),
+      network: translate('auth.network_connection_issue'),
+      default: translate('auth.oauth_failed'),
+    },
+    unexpected: {
+      title: translate('auth.oauth_error'),
+      network: translate('auth.network_connection_issue'),
+      default: translate('auth.unexpected_error'),
+    },
+  };
+
+  let description: string;
+  if (isCodeReused) {
+    description = translate('auth.code_already_used');
+  } else if (isNetwork) {
+    description = messages[context].network;
+  } else {
+    description = messages[context].default;
+  }
+
+  showMessage({
+    message: messages[context].title,
+    description,
+    type: 'danger',
+  });
+
+  router.replace('/login');
+}
+
+/**
+ * Handle OAuth callback deep links with retry logic for network errors
  *
  * @param code - Authorization code from OAuth provider
+ * @param retryCount - Current retry attempt (internal use)
  */
-export async function handleOAuthCallback(code: string): Promise<void> {
+export async function handleOAuthCallback(
+  code: string,
+  retryCount = 0
+): Promise<void> {
   if (!code) {
     showMessage({
-      message: 'OAuth Error',
-      description: 'Invalid authorization code.',
+      message: translate('auth.oauth_error'),
+      description: translate('auth.invalid_authorization_code'),
       type: 'danger',
     });
     router.replace('/login');
@@ -252,37 +521,32 @@ export async function handleOAuthCallback(code: string): Promise<void> {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (error) {
-      if (privacyConsent.hasConsent('crashReporting')) {
-        Sentry.captureException(error, {
-          tags: { feature: 'oauth-callback' },
-          extra: { code: '[REDACTED]' },
-        });
+      // Only retry on transient network errors (not code-exchange errors)
+      if (isTransientNetworkError(error) && retryCount < OAUTH_MAX_RETRIES) {
+        return retryOAuthWithDelay(code, retryCount);
       }
 
-      showMessage({
-        message: 'Sign In Failed',
-        description: 'OAuth authentication failed. Please try again.',
-        type: 'danger',
-      });
-
-      router.replace('/login');
+      handleOAuthError(error, retryCount, 'exchange');
       return;
     }
 
+    // Mark code as successfully exchanged
+    trackExchangedCode(code);
+
+    // Success - navigate to app
+    showMessage({
+      message: translate('auth.sign_in_successful'),
+      description: translate('auth.signed_in_successfully'),
+      type: 'success',
+    });
     router.replace('/(app)');
   } catch (error) {
-    if (privacyConsent.hasConsent('crashReporting')) {
-      Sentry.captureException(error, {
-        tags: { feature: 'oauth-callback' },
-        extra: { code: '[REDACTED]' },
-      });
+    // Only retry on transient network errors (not code-exchange errors)
+    if (isTransientNetworkError(error) && retryCount < OAUTH_MAX_RETRIES) {
+      return retryOAuthWithDelay(code, retryCount);
     }
 
-    showMessage({
-      message: 'OAuth Error',
-      description: 'An unexpected error occurred. Please try again.',
-      type: 'danger',
-    });
+    handleOAuthError(error, retryCount, 'unexpected');
   }
 }
 

@@ -94,7 +94,7 @@ function FlaggerCardHeader({ flagger }: { flagger: TrustedFlaggerMetrics }) {
         </Text>
         <Text
           className="text-xs text-neutral-600 dark:text-neutral-400"
-          tx="moderation.flagger.idLabel"
+          tx="moderation.flagger.id_label"
           txOptions={{ id: flagger.flagger_id.slice(0, 8) }}
         />
       </View>
@@ -131,7 +131,7 @@ function FlaggerCardMetrics({ flagger }: { flagger: TrustedFlaggerMetrics }) {
       <View className="flex-1">
         <Text
           className="mb-1 text-xs text-neutral-600 dark:text-neutral-400"
-          tx="moderation.flagger.falsePositive"
+          tx="moderation.flagger.false_positive"
         />
         <Text className="text-center text-sm font-semibold text-neutral-900 dark:text-neutral-100">
           {(flagger.false_positive_rate * 100).toFixed(1)}%
@@ -141,7 +141,7 @@ function FlaggerCardMetrics({ flagger }: { flagger: TrustedFlaggerMetrics }) {
       <View className="flex-1">
         <Text
           className="mb-1 text-xs text-neutral-600 dark:text-neutral-400"
-          tx="moderation.flagger.avgResponse"
+          tx="moderation.flagger.avg_response"
         />
         <Text className="text-center text-sm font-semibold text-neutral-900 dark:text-neutral-100">
           {formatResponseTime(flagger.average_response_time_ms)}
@@ -174,7 +174,7 @@ function FlaggerCardReportVolume({
       <View className="flex-1">
         <Text
           className="mb-1 text-xs text-neutral-600 dark:text-neutral-400"
-          tx="moderation.flagger.totalReports"
+          tx="moderation.flagger.total_reports"
         />
         <Text className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
           {flagger.report_volume.total}
@@ -183,7 +183,7 @@ function FlaggerCardReportVolume({
       <View className="flex-1">
         <Text
           className="mb-1 text-xs text-neutral-600 dark:text-neutral-400"
-          tx="moderation.flagger.thisWeek"
+          tx="moderation.flagger.this_week"
         />
         <Text className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
           {flagger.report_volume.this_week}
@@ -192,7 +192,7 @@ function FlaggerCardReportVolume({
       <View className="flex-1">
         <Text
           className="mb-1 text-xs text-neutral-600 dark:text-neutral-400"
-          tx="moderation.flagger.thisMonth"
+          tx="moderation.flagger.this_month"
         />
         <Text className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
           {flagger.report_volume.this_month}
@@ -214,14 +214,14 @@ function FlaggerCardFooter({
     <View className="flex-row items-center justify-between border-t border-neutral-200 pt-3 dark:border-neutral-700">
       <Text
         className="text-xs text-neutral-600 dark:text-neutral-400"
-        tx="moderation.flagger.lastReviewed"
+        tx="moderation.flagger.last_reviewed"
         txOptions={{ date: formatDate(flagger.last_reviewed_at) }}
       />
       {onFlaggerPress && (
         <Text
           onPress={() => onFlaggerPress(flagger.flagger_id)}
           className="text-xs font-medium text-primary-600 dark:text-primary-400"
-          tx="moderation.flagger.viewDetails"
+          tx="moderation.flagger.view_details"
         />
       )}
     </View>

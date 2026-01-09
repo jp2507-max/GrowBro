@@ -1,5 +1,5 @@
+import { randomUUID } from 'expo-crypto';
 import * as ImageManipulator from 'expo-image-manipulator';
-import { v4 as uuidv4 } from 'uuid';
 
 import type { AssessmentPlantContext } from '@/types/assessment';
 
@@ -31,7 +31,7 @@ export async function redactAssessmentForCommunity(
   );
 
   // 2. Generate new random filename (no linkage to original)
-  const anonymousFilename = `${uuidv4()}.jpg`;
+  const anonymousFilename = `${randomUUID()}.jpg`;
 
   // 3. Sanitize plant context (remove all metadata that might contain PII)
   const sanitizedContext: Partial<AssessmentPlantContext> = {

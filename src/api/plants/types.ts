@@ -1,3 +1,5 @@
+import { type Race } from '@/api/strains/types';
+
 export type { Race } from '@/api/strains/types';
 
 export type PlantStage =
@@ -38,7 +40,7 @@ export type PlantMetadata = {
   strainId?: string;
   strainSlug?: string;
   strainSource?: 'api' | 'custom';
-  strainRace?: import('@/api/strains/types').Race;
+  strainRace?: Race;
 };
 
 export type Plant = {
@@ -53,6 +55,7 @@ export type Plant = {
   health?: PlantHealth;
   notes?: string;
   imageUrl?: string;
+  thumbnailUrl?: string;
   metadata?: PlantMetadata;
   environment?: PlantEnvironment;
   photoperiodType?: PhotoperiodType;

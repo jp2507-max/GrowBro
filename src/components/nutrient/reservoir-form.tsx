@@ -64,7 +64,7 @@ function PHRangeFields({ control, errors }: PHRangeFieldsProps) {
   return (
     <>
       <Text className="mt-2 text-sm font-medium text-neutral-700">
-        {translate('nutrient.reservoir.targetPh')}
+        {translate('nutrient.reservoir.target_ph')}
       </Text>
       <View className="flex-row gap-2">
         <Controller
@@ -106,7 +106,7 @@ function ECRangeFields({ control, errors }: ECRangeFieldsProps) {
   return (
     <>
       <Text className="mt-2 text-sm font-medium text-neutral-700">
-        {translate('nutrient.reservoir.targetEc')}
+        {translate('nutrient.reservoir.target_ec')}
       </Text>
       <View className="flex-row gap-2">
         <Controller
@@ -157,7 +157,7 @@ function BasicInfoFields({
         render={({ field: { onChange, value } }) => (
           <Input
             label={translate('nutrient.reservoir.name')}
-            placeholder={translate('nutrient.reservoir.namePlaceholder')}
+            placeholder={translate('nutrient.reservoir.name_placeholder')}
             value={value}
             onChangeText={onChange}
             error={errors.name?.message}
@@ -252,7 +252,7 @@ function ConfigFields({ control, waterProfileOptions }: ConfigFieldsProps) {
           name="sourceWaterProfileId"
           render={({ field: { onChange, value } }) => (
             <Select
-              label={translate('nutrient.waterProfile.title')}
+              label={translate('nutrient.water_profile.title')}
               options={waterProfileOptions}
               value={value}
               onSelect={(v) => onChange(String(v))}
@@ -270,7 +270,7 @@ function createReservoirSchema() {
     .object({
       name: z
         .string()
-        .min(1, translate('nutrient.reservoir.validation.nameRequired')),
+        .min(1, translate('nutrient.reservoir.validation.name_required')),
       volumeL: z.number().min(1).max(10000),
       medium: z.string(),
       targetPhMin: z.number().min(0).max(14),
@@ -284,12 +284,12 @@ function createReservoirSchema() {
       if (data.targetPhMin >= data.targetPhMax) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'nutrient.reservoir.validation.phMinLessThanMax',
+          message: 'nutrient.reservoir.validation.ph_min_less_than_max',
           path: ['targetPhMin'],
         });
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'nutrient.reservoir.validation.phMaxGreaterThanMin',
+          message: 'nutrient.reservoir.validation.ph_max_greater_than_min',
           path: ['targetPhMax'],
         });
       }
@@ -297,12 +297,12 @@ function createReservoirSchema() {
       if (data.targetEcMin25c >= data.targetEcMax25c) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'nutrient.reservoir.validation.ecMinLessThanMax',
+          message: 'nutrient.reservoir.validation.ec_min_less_than_max',
           path: ['targetEcMin25c'],
         });
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'nutrient.reservoir.validation.ecMaxGreaterThanMin',
+          message: 'nutrient.reservoir.validation.ec_max_greater_than_min',
           path: ['targetEcMax25c'],
         });
       }

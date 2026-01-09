@@ -10,6 +10,7 @@ function createChain(): Chain {
   const chain: Chain = {
     activateAfterLongPress: () => chain,
     minDistance: () => chain,
+    onBegin: () => chain,
     onStart: () => chain,
     onUpdate: () => chain,
     onEnd: () => chain,

@@ -35,15 +35,15 @@ function useWebPortalExport(): {
         const result = await requestDataExport();
         const eta = formatEta(result.estimatedCompletion);
         Alert.alert(
-          translate('privacy.exportQueuedTitle'),
+          translate('privacy.export_queued_title'),
           eta
-            ? translate('privacy.exportQueuedBody', { eta })
-            : translate('privacy.exportQueuedBodyNoEta')
+            ? translate('privacy.export_queued_body', { eta })
+            : translate('privacy.export_queued_body_no_eta')
         );
       } catch (error) {
         Alert.alert(
-          translate('privacy.exportErrorTitle'),
-          translate('privacy.exportErrorBody', {
+          translate('privacy.export_error_title'),
+          translate('privacy.export_error_body', {
             message: extractErrorMessage(error),
           })
         );
@@ -70,15 +70,15 @@ function useWebPortalDeletion(): {
         const result = await requestDeletionViaWeb();
         const eta = formatEta(result.estimatedCompletion);
         Alert.alert(
-          translate('privacy.deleteAccountQueuedTitle'),
+          translate('privacy.delete_account_queued_title'),
           eta
-            ? translate('privacy.deleteAccountQueuedBody', { eta })
-            : translate('privacy.deleteAccountQueuedBodyNoEta')
+            ? translate('privacy.delete_account_queued_body', { eta })
+            : translate('privacy.delete_account_queued_body_no_eta')
         );
       } catch (error) {
         Alert.alert(
-          translate('privacy.deleteAccountErrorTitle'),
-          translate('privacy.deleteAccountErrorBody', {
+          translate('privacy.delete_account_error_title'),
+          translate('privacy.delete_account_error_body', {
             message: extractErrorMessage(error),
           })
         );
@@ -95,16 +95,16 @@ function PortalIntro(): React.ReactElement {
   return (
     <View className="gap-2">
       <Text className="text-2xl font-bold">
-        {translate('privacy.webPortalTitle')}
+        {translate('privacy.web_portal_title')}
       </Text>
       <Text className="text-base text-charcoal-700">
-        {translate('privacy.webPortalIntro')}
+        {translate('privacy.web_portal_intro')}
       </Text>
       <Text className="text-sm text-charcoal-600">
-        {translate('privacy.webPortalAuthNote')}
+        {translate('privacy.web_portal_auth_note')}
       </Text>
       <Link href="/login" asChild>
-        <Button label={translate('privacy.webPortalLogin')} />
+        <Button label={translate('privacy.web_portal_login')} />
       </Link>
     </View>
   );
@@ -118,13 +118,13 @@ function DeletionSection({
   return (
     <View className="gap-3 rounded-lg bg-neutral-100 p-4">
       <Text className="text-lg font-semibold">
-        {translate('privacy.webPortalDeletionHeading')}
+        {translate('privacy.web_portal_deletion_heading')}
       </Text>
       <Text className="text-sm text-charcoal-700">
-        {translate('privacy.webPortalDeletionCopy')}
+        {translate('privacy.web_portal_deletion_copy')}
       </Text>
       <Button
-        label={translate('privacy.webPortalDeletionCta')}
+        label={translate('privacy.web_portal_deletion_cta')}
         onPress={onPress}
       />
     </View>
@@ -139,13 +139,13 @@ function ExportSection({
   return (
     <View className="gap-3 rounded-lg bg-neutral-100 p-4">
       <Text className="text-lg font-semibold">
-        {translate('privacy.webPortalExportHeading')}
+        {translate('privacy.web_portal_export_heading')}
       </Text>
       <Text className="text-sm text-charcoal-700">
-        {translate('privacy.webPortalExportCopy')}
+        {translate('privacy.web_portal_export_copy')}
       </Text>
       <Button
-        label={translate('privacy.webPortalExportCta')}
+        label={translate('privacy.web_portal_export_cta')}
         onPress={onPress}
       />
     </View>

@@ -10,6 +10,7 @@ import {
   FilterModal,
   StrainsHeader,
   StrainsListWithCache,
+  type StrainsListWithCacheProps,
   StrainsOfflineBanner,
   useStrainFilters,
 } from '@/components/strains';
@@ -91,7 +92,7 @@ export default function StrainsScreen(): React.ReactElement {
   const handleStateChange = useCallback(
     (
       state: Parameters<
-        NonNullable<typeof StrainsListWithCache>['props']['onStateChange']
+        NonNullable<StrainsListWithCacheProps['onStateChange']>
       >[0]
     ) => {
       setListState({

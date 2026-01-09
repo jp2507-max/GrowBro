@@ -8,6 +8,7 @@ import 'react-native-url-polyfill/auto';
 import { Env } from '@env';
 import { createClient } from '@supabase/supabase-js';
 import Constants from 'expo-constants';
+import { AppState } from 'react-native';
 
 import { mmkvAuthStorage } from './auth/auth-storage';
 
@@ -18,8 +19,8 @@ const isTestEnvironment =
   (process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID !== undefined);
 
 // Validate environment variables and set up Supabase configuration
-let supabaseUrl: string;
-let supabaseAnonKey: string;
+export let supabaseUrl: string;
+export let supabaseAnonKey: string;
 
 const runtimeEnv =
   typeof process !== 'undefined' && process.env
@@ -96,8 +97,33 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     params: {
       eventsPerSecond: 10,
     },
+    // Reduce spurious disconnects by sending heartbeats more frequently
+    // and allowing more time before considering the connection dead
+    heartbeatIntervalMs: 25_000, // Send heartbeat every 25s (aligns with server default)
+    timeout: 60_000, // Wait 60s before timing out (default is 10s)
+    // Custom exponential backoff: 1s, 2s, 4s, 8s, 16s, max 32s
+    // Matches RealtimeConnectionManager's backoff strategy
+    reconnectAfterMs: (tries: number) => {
+      const baseDelay = 1000;
+      const maxDelay = 32000;
+      return Math.min(baseDelay * Math.pow(2, tries - 1), maxDelay);
+    },
   },
 });
+
+// React Native AppState handling for auth token refresh
+// Per Supabase best practices: stop auto-refresh when backgrounded, restart when foregrounded
+// This prevents unnecessary network requests and conserves resources on mobile
+if (!isTestEnvironment) {
+  // Register once at module load time
+  AppState.addEventListener('change', (state) => {
+    if (state === 'active') {
+      supabase.auth.startAutoRefresh();
+    } else {
+      supabase.auth.stopAutoRefresh();
+    }
+  });
+}
 
 // Export types for TypeScript
 // TODO: Generate types with `supabase gen types typescript`

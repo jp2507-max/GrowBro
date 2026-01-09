@@ -57,7 +57,7 @@ export function analyzeWhiteBalance(
       issue: buildIssue({
         type: 'white_balance',
         severity: 'high',
-        suggestion: 'assessment.camera.quality.whiteBalance',
+        suggestion: 'assessment.camera.quality.white_balance',
       }),
     };
   }
@@ -80,7 +80,7 @@ export function analyzeWhiteBalance(
     issue: buildIssue({
       type: 'white_balance',
       severity,
-      suggestion: 'assessment.camera.quality.whiteBalance',
+      suggestion: 'assessment.camera.quality.white_balance',
     }),
   };
 }

@@ -26,21 +26,6 @@ import {
 } from './reservoir-event-service';
 
 jest.mock('@/lib/watermelon');
-
-// Mock WatermelonDB Q functions
-const mockQ = {
-  where: jest.fn().mockReturnThis(),
-  gte: jest.fn().mockReturnThis(),
-  lte: jest.fn().mockReturnThis(),
-  sortBy: jest.fn().mockReturnThis(),
-  desc: jest.fn().mockReturnThis(),
-  asc: jest.fn().mockReturnThis(),
-};
-
-jest.mock('@nozbe/watermelondb', () => ({
-  ...jest.requireActual('@nozbe/watermelondb'),
-  Q: mockQ,
-}));
 jest.mock('@nozbe/watermelondb/QueryDescription');
 
 // ============================================================================
@@ -48,8 +33,24 @@ jest.mock('@nozbe/watermelondb/QueryDescription');
 // ============================================================================
 
 describe('reservoir-event-service', () => {
-  let mockCollection: any;
-  let mockEvent: any;
+  let mockCollection: {
+    create: jest.Mock;
+    find: jest.Mock;
+    query: jest.Mock;
+  };
+  let mockEvent: {
+    id: string;
+    reservoirId: string;
+    kind: string;
+    deltaEc25c: number;
+    deltaPh: number;
+    note: string;
+    userId: string;
+    createdAt: Date;
+    updatedAt: Date;
+    markAsDeleted: jest.Mock;
+    update: jest.Mock;
+  };
 
   beforeEach(() => {
     // Reset mocks
@@ -90,8 +91,12 @@ describe('reservoir-event-service', () => {
     };
 
     // Mock the database methods
-    (database as any).get = jest.fn().mockReturnValue(mockCollection);
-    (database as any).write = jest.fn().mockImplementation((fn) => fn());
+    (database as unknown as { get: jest.Mock; write: jest.Mock }).get = jest
+      .fn()
+      .mockReturnValue(mockCollection);
+    (database as unknown as { get: jest.Mock; write: jest.Mock }).write = jest
+      .fn()
+      .mockImplementation((fn: () => unknown) => fn());
   });
 
   afterEach(() => {
@@ -120,7 +125,9 @@ describe('reservoir-event-service', () => {
         expect(result.deltaEc25c).toBe(0.5);
         expect(result.deltaPh).toBe(-0.2);
         expect(result.note).toBe('Added nutrients');
-        expect((database as any).write).toHaveBeenCalled();
+        expect(
+          (database as unknown as { write: jest.Mock }).write
+        ).toHaveBeenCalled();
         expect(mockCollection.create).toHaveBeenCalled();
       });
 
@@ -133,7 +140,9 @@ describe('reservoir-event-service', () => {
         await createReservoirEvent(eventData);
 
         expect(mockCollection.create).toHaveBeenCalled();
-        expect((database as any).write).toHaveBeenCalled();
+        expect(
+          (database as unknown as { write: jest.Mock }).write
+        ).toHaveBeenCalled();
       });
 
       test('validates required reservoirId', async () => {
@@ -150,9 +159,10 @@ describe('reservoir-event-service', () => {
       test('validates required kind', async () => {
         const eventData = {
           reservoirId: 'reservoir-1',
-          kind: '' as any,
+          kind: '' as const,
         };
 
+        // @ts-expect-error Testing invalid empty kind for validation
         await expect(createReservoirEvent(eventData)).rejects.toThrow(
           'Event kind is required'
         );
@@ -521,7 +531,9 @@ describe('reservoir-event-service', () => {
         await deleteReservoirEvent('event-1');
 
         expect(mockEvent.markAsDeleted).toHaveBeenCalled();
-        expect((database as any).write).toHaveBeenCalled();
+        expect(
+          (database as unknown as { write: jest.Mock }).write
+        ).toHaveBeenCalled();
         expect(mockCollection.find).toHaveBeenCalledWith('event-1');
       });
 

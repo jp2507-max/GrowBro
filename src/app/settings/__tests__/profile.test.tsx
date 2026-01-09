@@ -515,7 +515,7 @@ describe('ProfileScreen Integration Tests', () => {
       });
 
       const profileToggle = await screen.findByText(
-        'profile.privacy.showProfile'
+        'profile.privacy.show_profile'
       );
       await user.press(profileToggle);
 
@@ -537,7 +537,7 @@ describe('ProfileScreen Integration Tests', () => {
         expect(screen.queryByText('profile.loading')).not.toBeOnTheScreen();
       });
 
-      const dmToggle = await screen.findByText('profile.privacy.allowDMs');
+      const dmToggle = await screen.findByText('profile.privacy.allow_d_ms');
       await user.press(dmToggle);
 
       // State change will be reflected in save

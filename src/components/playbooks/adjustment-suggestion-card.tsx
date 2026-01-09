@@ -22,7 +22,7 @@ function CardHeader({
     <View className="mb-2 flex-row items-center justify-between">
       <View className="flex-row items-center">
         <Text
-          tx="playbooks.adjustments.scheduleAdjustment"
+          tx="playbooks.adjustments.schedule_adjustment"
           className="text-lg font-semibold text-warning-900 dark:text-warning-100"
         />
       </View>
@@ -89,7 +89,7 @@ export function AdjustmentSuggestionCard({
         testID="view-details-button"
       >
         <Text
-          tx="playbooks.adjustments.viewDetails"
+          tx="playbooks.adjustments.view_details"
           className="text-center font-medium text-white"
         />
       </Pressable>

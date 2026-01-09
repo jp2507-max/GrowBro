@@ -1,8 +1,9 @@
 import React from 'react';
-import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
+import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { Button, Text, View } from '@/components/ui';
 import { translate } from '@/lib';
+import { withRM } from '@/lib/animations/motion';
 
 type Props = {
   onConvertToTask?: () => void;
@@ -17,7 +18,7 @@ export function CalendarEmptyState({
       className="flex-1 items-center justify-center gap-6 px-6 py-12"
     >
       <Animated.View
-        entering={FadeIn.duration(300).reduceMotion(ReduceMotion.System)}
+        entering={withRM(FadeIn.duration(300))}
         className="items-center gap-4"
       >
         <Text
@@ -38,11 +39,7 @@ export function CalendarEmptyState({
       </Animated.View>
 
       {onConvertToTask && (
-        <Animated.View
-          entering={FadeIn.duration(300)
-            .delay(150)
-            .reduceMotion(ReduceMotion.System)}
-        >
+        <Animated.View entering={withRM(FadeIn.duration(300).delay(150))}>
           <Button
             label={translate('calendar.empty_state.convert_to_task')}
             onPress={onConvertToTask}

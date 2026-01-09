@@ -69,17 +69,17 @@ export function PlantAssessmentHistorySection({
       >
         <View className="flex-1">
           <Text className="text-base font-semibold text-charcoal-900 dark:text-neutral-100">
-            {translate('plants.assessmentHistory.title')}
+            {translate('plants.assessment_history.title')}
           </Text>
           {count !== null && (
             <Text className="mt-0.5 text-sm text-neutral-600 dark:text-neutral-400">
               {count === 0
-                ? translate('plants.assessmentHistory.count_zero')
+                ? translate('plants.assessment_history.count_zero')
                 : count === 1
-                  ? translate('plants.assessmentHistory.count_one', {
+                  ? translate('plants.assessment_history.count_one', {
                       count,
                     })
-                  : translate('plants.assessmentHistory.count_other', {
+                  : translate('plants.assessment_history.count_other', {
                       count,
                     })}
             </Text>
@@ -95,10 +95,10 @@ export function PlantAssessmentHistorySection({
           {count === 0 ? (
             <View className="items-center py-6">
               <Text className="text-sm text-neutral-500 dark:text-neutral-400">
-                {translate('plants.assessmentHistory.count_zero')}
+                {translate('plants.assessment_history.count_zero')}
               </Text>
               <Text className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                {translate('plants.assessmentHistory.emptyDescription')}
+                {translate('plants.assessment_history.empty_description')}
               </Text>
             </View>
           ) : (

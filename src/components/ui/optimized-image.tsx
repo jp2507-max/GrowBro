@@ -1,3 +1,14 @@
+/**
+ * Optimized Image Component
+ *
+ * Use this component for ALL remote images, especially in lists/feeds.
+ *
+ * Features:
+ * - Handles multiple URI sources (resized > original > thumbnail)
+ * - Intelligent placeholder support (thumbhash > blurhash > fallback)
+ * - Automatic recycling keys for FlashList performance
+ * - Default caching and transition policies
+ */
 import * as React from 'react';
 
 import type { ImgProps } from './image';

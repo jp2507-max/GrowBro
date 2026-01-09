@@ -89,7 +89,7 @@ describe('OriginalDecisionContext', () => {
         'original-decision-policy-violations-value'
       );
       expect(policyViolationsValue).toHaveTextContent(
-        'appeals.label.noPolicyViolations'
+        'appeals.label.no_policy_violations'
       );
     });
   });

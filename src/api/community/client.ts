@@ -9,6 +9,7 @@ import { supabase } from '@/lib/supabase';
 
 import type {
   CommunityAPI,
+  CommunityPostsDiscoverParams,
   ConflictResponse,
   CreateCommentData,
   CreatePostData,
@@ -91,6 +92,223 @@ function sleep(ms: number): Promise<void> {
 }
 
 /**
+ * Parse a composite cursor for top_7d sort: "like_count:created_at"
+ * Returns null if cursor is invalid or not in composite format.
+ * Validates createdAt format to prevent SQL injection.
+ */
+function parseTopSortCursor(
+  cursor: string
+): { likeCount: number; createdAt: string; id?: string } | null {
+  const firstColonIndex = cursor.indexOf(':');
+  if (firstColonIndex === -1) return null;
+
+  const likeCountStr = cursor.substring(0, firstColonIndex);
+  const remainder = cursor.substring(firstColonIndex + 1);
+  const likeCount = parseInt(likeCountStr, 10);
+
+  if (isNaN(likeCount) || !remainder) {
+    return null;
+  }
+
+  // Validate createdAt is a proper ISO 8601 timestamp with microsecond precision
+  // Support optional ID suffix for tie-breaking: likeCount:createdAt:id
+  const iso8601Regex =
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})(?::(.+))?$/;
+
+  const match = remainder.match(iso8601Regex);
+
+  if (!match) {
+    return null;
+  }
+
+  const timestampMatch = remainder.match(
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})/
+  );
+  const createdAt = timestampMatch?.[0];
+  const id =
+    createdAt && remainder.length > createdAt.length
+      ? remainder.substring(createdAt.length + 1) // +1 to skip the colon separator
+      : undefined;
+
+  // Validate id format if present - should be UUID-safe (alphanumeric, hyphens only)
+  if (id && !/^[a-zA-Z0-9-]+$/.test(id)) {
+    return null;
+  }
+
+  // Additional validation: ensure the date can be parsed
+  if (!createdAt) {
+    return null;
+  }
+  const parsedDate = Date.parse(createdAt);
+  if (isNaN(parsedDate) || parsedDate > Date.now()) {
+    return null;
+  }
+
+  return { likeCount, createdAt, id };
+}
+
+/**
+ * Generate a composite cursor for top_7d sort from a post's like_count and created_at.
+ * Normalizes the timestamp to ensure it passes parseTopSortCursor validation.
+ */
+function generateTopSortCursor(
+  likeCount: number,
+  createdAt: string,
+  id?: string
+): string {
+  try {
+    // Parse the createdAt timestamp and normalize to ISO 8601 with millisecond precision
+    const parsedDate = new Date(createdAt);
+
+    // Guard against invalid dates
+    if (isNaN(parsedDate.getTime())) {
+      console.warn(
+        `Invalid date for cursor generation: ${createdAt}, using fallback`
+      );
+      // Use epoch start as fallback for invalid dates
+      return `${likeCount}:1970-01-01T00:00:00.000Z`;
+    }
+
+    // Preserve original timestamp precision to avoid pagination gaps
+    // Postgres TIMESTAMPTZ has microsecond precision, toISOString() truncates to milliseconds
+    // Use original timestamp if it's valid ISO format, otherwise normalize
+    let normalizedTimestamp: string;
+
+    // Check if createdAt is already in valid ISO 8601 format that Postgres returns
+    if (
+      createdAt.match(
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/
+      )
+    ) {
+      normalizedTimestamp = createdAt;
+    } else {
+      normalizedTimestamp = parsedDate.toISOString();
+    }
+
+    const cursor = `${likeCount}:${normalizedTimestamp}`;
+    return id ? `${cursor}:${id}` : cursor;
+  } catch (error) {
+    console.error(
+      `Failed to generate cursor from createdAt: ${createdAt}, using fallback. Error: ${
+        error instanceof Error ? error.message : 'Unknown error'
+      }`
+    );
+    // Use epoch start as fallback for any parsing errors
+    return `${likeCount}:1970-01-01T00:00:00.000Z`;
+  }
+}
+
+/** Context for applying discover filters */
+type DiscoverFilterContext = {
+  trimmedQuery?: string;
+  photosOnly?: boolean;
+  mineOnly?: boolean;
+  userId?: string;
+  sort: 'new' | 'top_7d';
+  sevenDaysAgo: Date;
+  cursor?: string;
+  category?: string | null;
+};
+
+/**
+ * Apply discover filters to a posts query builder.
+ * Extracted to reduce getPostsDiscover method length.
+ */
+function applyDiscoverFilters<
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  T extends PostgrestFilterBuilder<any, any, any, any[], any, any, any>,
+>(builder: T, ctx: DiscoverFilterContext): T {
+  let b = builder.is('deleted_at', null).is('hidden_at', null);
+
+  if (ctx.trimmedQuery) {
+    b = b.ilike('body', `%${ctx.trimmedQuery}%`);
+  }
+  if (ctx.photosOnly) {
+    b = b
+      .not('media_uri', 'is', null)
+      .not('media_resized_uri', 'is', null)
+      .not('media_thumbnail_uri', 'is', null);
+  }
+  if (ctx.mineOnly && ctx.userId) {
+    b = b.eq('user_id', ctx.userId);
+  }
+  if (ctx.sort === 'top_7d') {
+    b = b.gte('created_at', ctx.sevenDaysAgo.toISOString());
+  }
+  // For 'new' sort, apply simple created_at cursor; for 'top_7d', composite cursor handled separately
+  if (ctx.cursor && ctx.sort !== 'top_7d') {
+    b = b.lt('created_at', ctx.cursor);
+  }
+  // Category filtering: null = standard posts (Showcase), string = specific category (Help Station)
+  if (ctx.category === null) {
+    b = b.is('category', null);
+  } else if (typeof ctx.category === 'string') {
+    b = b.eq('category', ctx.category);
+  }
+  return b;
+}
+
+/**
+ * Apply sorting and cursor logic for discover query.
+ * Extracted to reduce getPostsDiscover method length.
+ */
+function applyDiscoverSort<
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  T extends PostgrestFilterBuilder<any, any, any, any[], any, any, any>,
+>(builder: T, sort: 'new' | 'top_7d', cursor?: string): T {
+  let b = builder;
+  if (sort === 'top_7d') {
+    b = b
+      .order('like_count', { ascending: false })
+      .order('created_at', { ascending: false });
+
+    // Apply composite cursor for top_7d sort
+    if (cursor) {
+      const parsed = parseTopSortCursor(cursor);
+      if (parsed) {
+        // Rows come after cursor if:
+        // 1. like_count < cursor
+        // 2. like_count == cursor AND created_at < cursor
+        // 3. like_count == cursor AND created_at == cursor AND id < cursor (tie-breaker)
+        let filter = `like_count.lt.${parsed.likeCount},and(like_count.eq.${parsed.likeCount},created_at.lt."${parsed.createdAt}")`;
+
+        if (parsed.id) {
+          filter += `,and(like_count.eq.${parsed.likeCount},created_at.eq."${parsed.createdAt}",id.lt."${parsed.id}")`;
+        }
+
+        b = b.or(filter);
+      }
+    }
+  } else {
+    b = b.order('created_at', { ascending: false });
+  }
+  return b;
+}
+
+/**
+ * Calculate the next cursor for pagination.
+ * Extracted to reduce getPostsDiscover method length.
+ */
+function calculateNextCursor(
+  posts: Post[],
+  limit: number,
+  sort: 'new' | 'top_7d'
+): string | null {
+  if (posts.length !== limit) {
+    return null;
+  }
+
+  const lastPost = posts[posts.length - 1];
+  return sort === 'top_7d'
+    ? generateTopSortCursor(
+        lastPost.like_count ?? 0,
+        lastPost.created_at,
+        lastPost.id
+      )
+    : lastPost.created_at;
+}
+
+/**
  * Community API client implementation
  * Provides CRUD operations for posts, comments, likes, and profiles
  * All mutating operations support idempotency
@@ -160,6 +378,67 @@ export class CommunityApiClient implements CommunityAPI {
     };
   }
 
+  async getPostsDiscover(
+    params: CommunityPostsDiscoverParams
+  ): Promise<PaginateQuery<Post>> {
+    const {
+      cursor,
+      limit = 20,
+      query,
+      sort = 'new',
+      photosOnly,
+      mineOnly,
+      category,
+    } = params;
+
+    const { data: session } = await this.client.auth.getSession();
+    const userId = session?.session?.user?.id;
+
+    if (mineOnly && !userId) {
+      return { results: [], count: 0, next: null, previous: null };
+    }
+
+    // Build base filter context (shared by count and data queries)
+    const baseFilterCtx: DiscoverFilterContext = {
+      trimmedQuery: query?.trim(),
+      photosOnly,
+      mineOnly,
+      userId,
+      sort,
+      sevenDaysAgo: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+      category,
+    };
+
+    // Count query uses filters WITHOUT cursor to get total matching posts
+    const { count } = await applyDiscoverFilters(
+      this.client.from('posts').select('*', { count: 'exact', head: true }),
+      baseFilterCtx
+    );
+
+    // Data query uses filters WITH cursor for pagination
+    const dataFilterCtx: DiscoverFilterContext = { ...baseFilterCtx, cursor };
+    let queryBuilder = applyDiscoverFilters(
+      this.client.from('posts').select('*'),
+      dataFilterCtx
+    );
+
+    queryBuilder = applyDiscoverSort(queryBuilder, sort, cursor);
+
+    queryBuilder = queryBuilder.limit(limit);
+
+    const posts = await this.getPostsWithCounts(queryBuilder);
+
+    // Generate next cursor based on sort type
+    const next = calculateNextCursor(posts, limit, sort);
+
+    return {
+      results: posts,
+      count: count || 0,
+      next,
+      previous: null,
+    };
+  }
+
   async createPost(
     postData: CreatePostData,
     idempotencyKey?: string,
@@ -196,6 +475,8 @@ export class CommunityApiClient implements CommunityAPI {
             user_id: userId,
             body: postData.body,
             media_uri: postData.media_uri,
+            strain: postData.strain,
+            category: postData.category,
             client_tx_id: headers['X-Client-Tx-Id'],
           })
           .select()
@@ -878,6 +1159,21 @@ export class CommunityApiClient implements CommunityAPI {
     }
 
     return data;
+  }
+
+  async getUserProfiles(userIds: string[]): Promise<UserProfile[]> {
+    if (!userIds.length) return [];
+
+    const { data, error } = await this.client
+      .from('profiles')
+      .select('*')
+      .in('id', userIds);
+
+    if (error) {
+      throw new Error(`Failed to fetch user profiles: ${error.message}`);
+    }
+
+    return data ?? [];
   }
 
   async getUserPosts(

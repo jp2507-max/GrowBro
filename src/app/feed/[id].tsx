@@ -1,123 +1,165 @@
-import { useQueryClient } from '@tanstack/react-query';
-import { Stack, useLocalSearchParams } from 'expo-router';
+/**
+ * Post Detail Screen - "Article View" layout
+ *
+ * Clean page layout architecture:
+ * - Green header (h-[140px]) with title "Beitrag"
+ * - Content sheet overlapping header (-mt-6, rounded-t-[35px])
+ * - NO card wrapper - content lives directly in the sheet
+ * - Compact strain pill instead of large strain card
+ * - Hero image with stats and caption
+ * - Comments section with sticky input footer
+ */
+
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { useColorScheme } from 'nativewind';
 import * as React from 'react';
-import { ScrollView } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
+import type { ScrollView } from 'react-native-gesture-handler';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useComments, usePost } from '@/api/community';
-import { CannabisEducationalBanner } from '@/components/cannabis-educational-banner';
-import { CommentForm } from '@/components/community/comment-form';
-import { CommentList } from '@/components/community/comment-list';
-import { PostCard } from '@/components/community/post-card';
-import { ModerationActions } from '@/components/moderation-actions';
-import {
-  ActivityIndicator,
-  FocusAwareStatusBar,
-  Text,
-  View,
-} from '@/components/ui';
+import { usePost } from '@/api/community';
+import { PostDetailErrorState } from '@/components/community/post-detail-error-state';
+import { PostDetailLoadingState } from '@/components/community/post-detail-loading-state';
+import { usePostDetailState } from '@/components/community/use-post-detail-state';
+import { usePostSharing } from '@/components/community/use-post-sharing';
+import { FocusAwareStatusBar, View } from '@/components/ui';
 import { normalizePostUserId } from '@/lib/community/post-utils';
-import { translate, type TxKeyPath } from '@/lib/i18n';
+import {
+  createOutboxAdapter,
+  useCommunityFeedRealtime,
+} from '@/lib/community/use-community-feed-realtime';
+import { formatRelativeTimeTranslated } from '@/lib/datetime/format-relative-time';
+import { haptics } from '@/lib/haptics';
+import { getHeaderColors } from '@/lib/theme-utils';
+import { database } from '@/lib/watermelon';
+import type { Post } from '@/types/community';
 
-export default function Post() {
+import { PostDetailContent } from './post-detail-content';
+import { PostDetailHeader } from './post-detail-header';
+
+const styles = StyleSheet.create({
+  flex1: { flex: 1 },
+});
+
+export default function PostDetailScreen(): React.ReactElement {
   const local = useLocalSearchParams<{ id: string; commentId?: string }>();
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
+  const headerColors = getHeaderColors(isDark);
+
   const scrollViewRef = React.useRef<ScrollView>(null);
-  const queryClient = useQueryClient();
-  // Note: Comment scrolling would require CommentList component to be updated
-  // to support forwardRef and scrollToComment method
+  const outboxAdapter = React.useMemo(() => createOutboxAdapter(database), []);
+  useCommunityFeedRealtime({ outboxAdapter, postId: local.id });
 
   const {
     data: post,
     isPending,
     isError,
-    refetch,
   } = usePost({
     variables: { postId: local.id },
   });
 
-  const { data: commentsData, isLoading: isLoadingComments } = useComments({
+  const { handleSharePress } = usePostSharing(local.id);
+
+  const {
+    commentBody,
+    setCommentBody,
+    commentInputRef,
+    handleCommentSubmit,
+    isSubmitting,
+    comments,
+    isLoadingComments,
+    highlightedCommentId,
+  } = usePostDetailState({
     postId: local.id,
-    limit: 20,
+    commentId: local.commentId,
   });
 
-  const handleCommentCreated = React.useCallback(() => {
-    void refetch();
-    void queryClient.invalidateQueries({ queryKey: ['comments', local.id] });
-  }, [refetch, queryClient, local.id]);
+  const handleAuthorPress = React.useCallback(() => {
+    if (!post) return;
+    const normalizedPost = normalizePostUserId(post);
+    const userId =
+      normalizedPost.userId === 'invalid-user-id'
+        ? `unknown-user-${normalizedPost.id}`
+        : String(normalizedPost.userId);
+    router.push(`/community/${userId}`);
+  }, [post, router]);
 
-  // TODO: Implement comment scrolling when CommentList supports it
-  // Requires updating CommentList component to expose scrollToComment via ref
-  React.useEffect(() => {
-    if (local.commentId && !isLoadingComments) {
-      // Placeholder for future scroll-to-comment functionality
-      console.log('Navigate to comment:', local.commentId);
-    }
-  }, [local.commentId, isLoadingComments]);
+  const handleStrainPress = React.useCallback(() => {
+    haptics.selection();
+    if (!post?.strain) return;
+    const slug = post.strain
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, '-')
+      .replace(/[^\w-]+/g, '')
+      .replace(/--+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    router.push(`/strains/${slug}`);
+  }, [post?.strain, router]);
 
-  if (isPending) {
-    return (
-      <View className="flex-1 justify-center p-3">
-        <Stack.Screen
-          options={{
-            title: translate('nav.post' as TxKeyPath),
-            headerBackTitle: translate('nav.feed' as TxKeyPath),
-          }}
-        />
-        <FocusAwareStatusBar />
-        <ActivityIndicator />
-      </View>
-    );
-  }
+  if (isPending) return <PostDetailLoadingState />;
+  if (isError || !post) return <PostDetailErrorState />;
 
-  if (isError || !post) {
-    return (
-      <View className="flex-1 justify-center p-3">
-        <Stack.Screen
-          options={{
-            title: translate('nav.post' as TxKeyPath),
-            headerBackTitle: translate('nav.feed' as TxKeyPath),
-          }}
-        />
-        <FocusAwareStatusBar />
-        <Text className="text-center">
-          {translate('errors.postLoad' as TxKeyPath)}
-        </Text>
-      </View>
-    );
-  }
+  const normalizedPost = normalizePostUserId(post);
+  const postUserId =
+    normalizedPost.userId === 'invalid-user-id'
+      ? `unknown-user-${normalizedPost.id}`
+      : String(normalizedPost.userId);
+  const displayUsername = postUserId.slice(0, 8);
+  const relativeTime = formatRelativeTimeTranslated(
+    post.created_at,
+    'common.time_ago'
+  );
+  const hasImage = Boolean(post.media_uri);
 
-  const comments = commentsData?.results ?? [];
+  // Convert Post from API type to component type
+  const postForComponent = {
+    ...normalizedPost,
+    id: String(normalizedPost.id),
+    userId: String(normalizedPost.userId),
+  } as Post;
 
   return (
-    <View className="flex-1">
-      <Stack.Screen
-        options={{
-          title: translate('nav.post'),
-          headerBackTitle: translate('nav.feed'),
-        }}
-      />
+    <View className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
+      <Stack.Screen options={{ headerShown: false }} />
       <FocusAwareStatusBar />
-      <ScrollView ref={scrollViewRef} className="flex-1">
-        <View className="p-3">
-          <CannabisEducationalBanner className="mb-4" />
-          <PostCard post={normalizePostUserId(post)} />
-          <View className="mt-4">
-            <ModerationActions
-              contentId={post.id}
-              authorId={String(post.userId || post.user_id || '')}
-            />
-          </View>
-        </View>
 
-        <View className="mt-6 border-t border-neutral-200 dark:border-neutral-800">
-          <View className="p-4">
-            <Text className="mb-4 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-              {translate('community.comments' as TxKeyPath)}
-            </Text>
-            <CommentList comments={comments} isLoading={isLoadingComments} />
-          </View>
-        </View>
-      </ScrollView>
-      <CommentForm postId={local.id} onCommentCreated={handleCommentCreated} />
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.flex1}
+        keyboardVerticalOffset={0}
+      >
+        <PostDetailHeader
+          onBack={() => router.back()}
+          topInset={insets.top}
+          headerColors={headerColors}
+        />
+
+        <PostDetailContent
+          post={postForComponent}
+          displayUsername={displayUsername}
+          relativeTime={relativeTime}
+          isDark={isDark}
+          hasImage={hasImage}
+          commentBody={commentBody}
+          setCommentBody={setCommentBody}
+          onCommentSubmit={handleCommentSubmit}
+          isSubmitting={isSubmitting}
+          comments={comments}
+          isLoadingComments={isLoadingComments}
+          highlightedCommentId={highlightedCommentId}
+          bottomInset={insets.bottom}
+          commentInputRef={commentInputRef}
+          scrollViewRef={scrollViewRef}
+          onAuthorPress={handleAuthorPress}
+          onStrainPress={handleStrainPress}
+          onSharePress={handleSharePress}
+        />
+      </KeyboardAvoidingView>
     </View>
   );
 }

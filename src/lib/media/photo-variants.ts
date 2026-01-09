@@ -1,3 +1,4 @@
+import * as FileSystem from 'expo-file-system/legacy';
 import * as ImageManipulator from 'expo-image-manipulator';
 
 import type { ExifMetadata, PhotoVariants } from '@/types/photo-storage';
@@ -134,12 +135,14 @@ async function extractMetadata(
   try {
     // Use ImageManipulator to get dimensions
     const result = await ImageManipulator.manipulateAsync(uri, []);
+    const fileInfo = await FileSystem.getInfoAsync(uri);
 
     return {
       width: result.width,
       height: result.height,
       mimeType: 'image/jpeg',
       gpsStripped,
+      fileSize: fileInfo.exists ? fileInfo.size : 0,
     };
   } catch (error) {
     console.warn('Failed to extract metadata:', error);

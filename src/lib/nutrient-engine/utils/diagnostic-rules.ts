@@ -17,8 +17,8 @@ const DEAD_BAND_EC = 0.1;
 export const RULE_CONFIDENCE_THRESHOLD = 0.7;
 
 const SECOND_OPINION_KEY =
-  'nutrient.diagnostics.disclaimers.considerSecondOpinion';
-const LOW_CONFIDENCE_KEY = 'nutrient.diagnostics.disclaimers.lowConfidence';
+  'nutrient.diagnostics.disclaimers.consider_second_opinion';
+const LOW_CONFIDENCE_KEY = 'nutrient.diagnostics.disclaimers.low_confidence';
 
 export type DiagnosticRuleContext = {
   symptoms: Symptom[];
@@ -203,8 +203,8 @@ function evaluatePhDrift(inputs: RuleInputs): RuleResult {
     return null;
   }
 
-  rationale.push('nutrient.diagnostics.rationale.highAlkalinity');
-  rationale.push('nutrient.diagnostics.rationale.phPersistentlyHigh');
+  rationale.push('nutrient.diagnostics.rationale.high_alkalinity');
+  rationale.push('nutrient.diagnostics.rationale.ph_persistently_high');
 
   let historyConfidence = computeHistoryConfidence(
     recent.length,
@@ -221,12 +221,13 @@ function evaluatePhDrift(inputs: RuleInputs): RuleResult {
   const recommendations: Recommendation[] = [
     createRecommendation({
       code: 'PH_DRIFT_BUFFER',
-      descriptionKey: 'nutrient.diagnostics.recommendations.bufferAlkalinity',
+      descriptionKey: 'nutrient.diagnostics.recommendations.buffer_alkalinity',
       priority: 1,
     }),
     createRecommendation({
       code: 'PH_DRIFT_MONITOR',
-      descriptionKey: 'nutrient.diagnostics.recommendations.increaseMonitoring',
+      descriptionKey:
+        'nutrient.diagnostics.recommendations.increase_monitoring',
       priority: 2,
     }),
   ];
@@ -236,7 +237,7 @@ function evaluatePhDrift(inputs: RuleInputs): RuleResult {
       issue: createIssue({
         type: IssueType.PH_DRIFT,
         severity: IssueSeverity.MODERATE,
-        likelyCauseKeys: ['nutrient.diagnostics.causes.highAlkalinity'],
+        likelyCauseKeys: ['nutrient.diagnostics.causes.high_alkalinity'],
       }),
       nutrientCode: undefined,
       confidence,
@@ -284,8 +285,8 @@ function evaluateNitrogenDeficiency(inputs: RuleInputs): RuleResult {
     return null;
   }
 
-  rationale.push('nutrient.diagnostics.rationale.yellowingLowerLeaves');
-  rationale.push('nutrient.diagnostics.rationale.ecBelowTarget');
+  rationale.push('nutrient.diagnostics.rationale.yellowing_lower_leaves');
+  rationale.push('nutrient.diagnostics.rationale.ec_below_target');
 
   let historyConfidence = computeHistoryConfidence(
     recent.length,
@@ -302,7 +303,7 @@ function evaluateNitrogenDeficiency(inputs: RuleInputs): RuleResult {
   const recommendations: Recommendation[] = [
     createRecommendation({
       code: 'N_DEFICIENCY_FEED',
-      descriptionKey: 'nutrient.diagnostics.recommendations.nitrogenFeed',
+      descriptionKey: 'nutrient.diagnostics.recommendations.nitrogen_feed',
       priority: 1,
     }),
     createRecommendation({
@@ -318,7 +319,7 @@ function evaluateNitrogenDeficiency(inputs: RuleInputs): RuleResult {
         type: IssueType.DEFICIENCY,
         severity: IssueSeverity.MODERATE,
         nutrientCode: 'N',
-        likelyCauseKeys: ['nutrient.diagnostics.causes.insufficientNitrogen'],
+        likelyCauseKeys: ['nutrient.diagnostics.causes.insufficient_nitrogen'],
       }),
       nutrientCode: 'N',
       confidence,
@@ -369,8 +370,8 @@ function evaluateToxicity(inputs: RuleInputs): RuleResult {
     return null;
   }
 
-  rationale.push('nutrient.diagnostics.rationale.tipBurnObserved');
-  rationale.push('nutrient.diagnostics.rationale.ecAboveTarget');
+  rationale.push('nutrient.diagnostics.rationale.tip_burn_observed');
+  rationale.push('nutrient.diagnostics.rationale.ec_above_target');
 
   let historyConfidence = computeHistoryConfidence(
     recent.length,
@@ -387,7 +388,7 @@ function evaluateToxicity(inputs: RuleInputs): RuleResult {
   const recommendations: Recommendation[] = [
     createRecommendation({
       code: 'TOXICITY_DILUTE',
-      descriptionKey: 'nutrient.diagnostics.recommendations.diluteReservoir',
+      descriptionKey: 'nutrient.diagnostics.recommendations.dilute_reservoir',
       priority: 1,
     }),
     createRecommendation({
@@ -402,7 +403,7 @@ function evaluateToxicity(inputs: RuleInputs): RuleResult {
       issue: createIssue({
         type: IssueType.TOXICITY,
         severity: IssueSeverity.MODERATE,
-        likelyCauseKeys: ['nutrient.diagnostics.causes.solutionTooStrong'],
+        likelyCauseKeys: ['nutrient.diagnostics.causes.solution_too_strong'],
       }),
       nutrientCode: undefined,
       confidence,

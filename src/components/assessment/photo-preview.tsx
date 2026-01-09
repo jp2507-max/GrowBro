@@ -1,8 +1,7 @@
-import { Image } from 'expo-image';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet } from 'react-native';
 
-import { Button, Text, View } from '@/components/ui';
+import { Button, Image, Text, View } from '@/components/ui';
 import type { CapturedPhoto, QualityIssue } from '@/types/assessment';
 
 type PhotoPreviewProps = {
@@ -27,7 +26,7 @@ export function PhotoPreview({
       case 'exposure':
         return t('assessment.camera.quality.exposure');
       case 'white_balance':
-        return t('assessment.camera.quality.whiteBalance');
+        return t('assessment.camera.quality.white_balance');
       case 'composition':
         return t('assessment.camera.quality.composition');
       default:

@@ -21,6 +21,9 @@ export type Post = {
   hidden_at?: string;
   moderation_reason?: string;
   undo_expires_at?: string;
+  // Optional category/strain fields for future implementation
+  strain?: string;
+  category?: string;
   // Derived UI-only fields
   like_count?: number;
   comment_count?: number;

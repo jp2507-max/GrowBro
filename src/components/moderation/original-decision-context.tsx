@@ -22,7 +22,7 @@ export function OriginalDecisionContext({
         testID="original-decision-title"
         className="mb-2 text-sm font-bold text-charcoal-950 dark:text-neutral-100"
       >
-        {t('appeals.label.originalDecision')}
+        {t('appeals.label.original_decision')}
       </Text>
       <View className="mb-2">
         <Text
@@ -57,14 +57,14 @@ export function OriginalDecisionContext({
           testID="original-decision-policy-violations-label"
           className="text-xs text-neutral-600 dark:text-neutral-400"
         >
-          {t('appeals.label.policyViolations')}
+          {t('appeals.label.policy_violations')}
         </Text>
         <Text
           testID="original-decision-policy-violations-value"
           className="text-sm text-charcoal-950 dark:text-neutral-100"
         >
           {originalDecision.policy_violations.length === 0
-            ? t('appeals.label.noPolicyViolations')
+            ? t('appeals.label.no_policy_violations')
             : originalDecision.policy_violations
                 .map((id) => t(`policies.${id}`, { defaultValue: id }))
                 .join(', ')}

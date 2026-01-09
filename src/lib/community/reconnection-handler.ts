@@ -14,6 +14,10 @@ import { type QueryClient } from '@tanstack/react-query';
 
 import type { OutboxProcessor } from './outbox-processor';
 import { getOutboxProcessor } from './outbox-processor';
+import {
+  isCommunityPostsInfiniteKey,
+  isCommunityUserPostsKey,
+} from './query-keys';
 
 export interface ReconnectionHandlerOptions {
   database: Database;
@@ -43,6 +47,9 @@ export class ReconnectionHandler {
    * Start listening to network state changes
    */
   start(): void {
+    if (this.unsubscribe) {
+      return;
+    }
     this.unsubscribe = NetInfo.addEventListener(this.handleNetworkChange);
     console.log('[ReconnectionHandler] Started listening to network changes');
   }
@@ -56,6 +63,24 @@ export class ReconnectionHandler {
       this.unsubscribe = undefined;
       console.log('[ReconnectionHandler] Stopped listening');
     }
+  }
+
+  /**
+   * Invalidate all community-related queries
+   */
+  private async invalidateCommunityQueries(): Promise<void> {
+    await this.queryClient.invalidateQueries({
+      predicate: (query) => isCommunityPostsInfiniteKey(query.queryKey),
+    });
+    await this.queryClient.invalidateQueries({
+      predicate: (query) => isCommunityUserPostsKey(query.queryKey),
+    });
+    await this.queryClient.invalidateQueries({
+      queryKey: ['community-comments'],
+    });
+    await this.queryClient.invalidateQueries({
+      queryKey: ['community-post'],
+    });
   }
 
   /**
@@ -96,15 +121,27 @@ export class ReconnectionHandler {
       this.onOutboxDrainedCallback?.();
 
       // Invalidate queries to trigger refetch
-      await this.queryClient.invalidateQueries({ queryKey: ['posts'] });
-      await this.queryClient.invalidateQueries({ queryKey: ['comments'] });
-      await this.queryClient.invalidateQueries({ queryKey: ['post-likes'] });
+      await this.invalidateCommunityQueries();
 
       console.log(
         '[ReconnectionHandler] Outbox drained and queries invalidated'
       );
     } catch (error) {
       console.error('[ReconnectionHandler] Error during reconnection:', error);
+
+      // Notify listeners of failure
+      this.onReconnectCallback?.();
+
+      // On error, still try to invalidate queries to show fresh data
+      // even if outbox processing failed
+      try {
+        await this.invalidateCommunityQueries();
+      } catch (invalidateError) {
+        console.error(
+          '[ReconnectionHandler] Failed to invalidate queries:',
+          invalidateError
+        );
+      }
     } finally {
       this.isReconnecting = false;
     }
@@ -146,9 +183,15 @@ export class ReconnectionHandler {
 
 // Singleton instance
 let reconnectionHandlerInstance: ReconnectionHandler | null = null;
+let instanceDatabase: Database | null = null;
+let instanceQueryClient: QueryClient | null = null;
 
 /**
  * Get or create the singleton ReconnectionHandler instance
+ *
+ * NOTE: This singleton is tied to specific database and queryClient instances.
+ * Calling with different instances after initialization will throw an error
+ * to prevent inconsistent state.
  */
 export function getReconnectionHandler(
   database: Database,
@@ -159,6 +202,28 @@ export function getReconnectionHandler(
       database,
       queryClient,
     });
+    instanceDatabase = database;
+    instanceQueryClient = queryClient;
+  } else {
+    // Validate that the same instances are being used
+    if (instanceDatabase !== database || instanceQueryClient !== queryClient) {
+      console.warn(
+        '[ReconnectionHandler] Singleton called with different database/queryClient instances. ' +
+          'Using existing instance. This may indicate an architectural issue.'
+      );
+    }
   }
   return reconnectionHandlerInstance;
+}
+
+/**
+ * Reset the singleton instance (for testing or cleanup)
+ */
+export function resetReconnectionHandler(): void {
+  if (reconnectionHandlerInstance) {
+    reconnectionHandlerInstance.stop();
+    reconnectionHandlerInstance = null;
+    instanceDatabase = null;
+    instanceQueryClient = null;
+  }
 }

@@ -132,7 +132,7 @@ describe('PrivacySettings', () => {
     );
     expect(shareSpy).toHaveBeenCalledWith({
       url: expect.stringContaining('file:///mock/document/privacy-export-'),
-      title: 'privacy.exportData',
+      title: 'privacy.export_data',
     });
     expect(FileSystem.deleteAsync).toHaveBeenCalledWith(
       expect.stringContaining('file:///mock/document/privacy-export-'),
@@ -156,8 +156,8 @@ describe('PrivacySettings', () => {
     await screen.findByTestId('privacy-export-btn');
 
     expect(alertSpy).toHaveBeenCalledWith(
-      'privacy.exportError.title',
-      'privacy.exportError.message',
+      'privacy.export_error.title',
+      'privacy.export_error.message',
       [{ text: 'common.ok' }]
     );
   });

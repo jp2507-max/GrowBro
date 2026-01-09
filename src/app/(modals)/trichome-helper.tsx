@@ -62,20 +62,23 @@ function LatestAssessmentCard({
   return (
     <View className="mt-4 rounded-lg bg-white p-4 dark:bg-charcoal-900">
       <Text className="mb-2 text-sm font-semibold text-charcoal-900 dark:text-neutral-100">
-        {t('trichome.helper.latestAssessmentTitle')}
+        {t('trichome.helper.latest_assessment_title')}
       </Text>
       <Text className="text-xs text-neutral-600 dark:text-neutral-400">
         {new Date(assessment.createdAt).toLocaleDateString()}
       </Text>
       <View className="mt-2 flex-row justify-between">
         <Text className="text-xs text-neutral-500 dark:text-neutral-400">
-          {t('trichome.helper.clearLabelShort')} {assessment.clearPercent || 0}%
+          {t('trichome.helper.clear_label_short')}{' '}
+          {assessment.clearPercent || 0}%
         </Text>
         <Text className="text-xs text-neutral-500 dark:text-neutral-400">
-          {t('trichome.helper.milkyLabelShort')} {assessment.milkyPercent || 0}%
+          {t('trichome.helper.milky_label_short')}{' '}
+          {assessment.milkyPercent || 0}%
         </Text>
         <Text className="text-xs text-neutral-500 dark:text-neutral-400">
-          {t('trichome.helper.amberLabelShort')} {assessment.amberPercent || 0}%
+          {t('trichome.helper.amber_label_short')}{' '}
+          {assessment.amberPercent || 0}%
         </Text>
       </View>
     </View>
@@ -98,7 +101,7 @@ function SuggestionsSection({
   return (
     <View className="mb-6">
       <Text className="mb-3 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-        {t('trichome.helper.harvestSuggestionsTitle')}
+        {t('trichome.helper.harvest_suggestions_title')}
       </Text>
       {suggestions.map((suggestion, index) => (
         <HarvestSuggestionCard
@@ -270,7 +273,7 @@ function ModalHeader({ onClose }: { onClose: () => void }) {
         {t('trichome.helper.header')}
       </Text>
       <Button
-        label={t('trichome.helper.closeButton')}
+        label={t('trichome.helper.close_button')}
         variant="ghost"
         size="sm"
         onPress={onClose}
@@ -294,20 +297,20 @@ function TabBar({
   return (
     <View className="mt-3 flex-row gap-2">
       <TabButton
-        label={t('trichome.helper.guideTab')}
+        label={t('trichome.helper.guide_tab')}
         active={activeTab === 'guide'}
         onPress={() => setActiveTab('guide')}
         testID="guide-tab"
       />
       <TabButton
-        label={t('trichome.helper.assessTab')}
+        label={t('trichome.helper.assess_tab')}
         active={activeTab === 'assess'}
         onPress={() => setActiveTab('assess')}
         disabled={!hasPlantId}
         testID="assess-tab"
       />
       <TabButton
-        label={t('trichome.helper.windowsTab')}
+        label={t('trichome.helper.windows_tab')}
         active={activeTab === 'windows'}
         onPress={() => setActiveTab('windows')}
         testID="windows-tab"
@@ -349,7 +352,7 @@ function TabContent({
       return (
         <View className="rounded-lg bg-white p-4 dark:bg-charcoal-900">
           <Text className="text-center text-neutral-500 dark:text-neutral-400">
-            {t('trichome.helper.loadingGuide')}
+            {t('trichome.helper.loading_guide')}
           </Text>
         </View>
       );
@@ -409,8 +412,8 @@ function useAcceptHandler(
     } catch (error) {
       setSuggestions(previousSuggestions);
       showMessage({
-        message: t('trichome.helper.failedToAcceptSuggestion'),
-        description: t('trichome.helper.pleaseTryAgain'),
+        message: t('trichome.helper.failed_to_accept_suggestion'),
+        description: t('trichome.helper.please_try_again'),
         type: 'danger',
       });
       console.error('Failed to accept harvest suggestion:', error);
@@ -486,7 +489,7 @@ export default function TrichomeHelperModal() {
 
       <View className="border-t border-neutral-200 bg-white px-4 py-3 dark:border-white/10 dark:bg-charcoal-900">
         <Text className="text-center text-xs italic text-neutral-500 dark:text-neutral-400">
-          {t('trichome.helper.footerDisclaimer')}
+          {t('trichome.helper.footer_disclaimer')}
         </Text>
       </View>
     </View>

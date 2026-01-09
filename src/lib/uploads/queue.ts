@@ -1,4 +1,4 @@
-import { Q } from '@nozbe/watermelondb';
+import { type Model, Q } from '@nozbe/watermelondb';
 
 import { computeBackoffMs } from '@/lib/sync/backoff';
 import { canSyncLargeFiles } from '@/lib/sync/network-manager';
@@ -490,16 +490,12 @@ async function updatePlantWithRemotePath(
 ): Promise<void> {
   try {
     // Use inline type for plant record since we only need a few fields
-    type PlantRecord = {
+    type PlantRecord = Model & {
       imageUrl?: string | null;
       metadata?: Record<string, unknown> | null;
       updatedAt: Date;
     };
-    const coll = database.collections.get<
-      PlantRecord & {
-        update: (fn: (rec: PlantRecord) => void) => Promise<void>;
-      }
-    >('plants');
+    const coll = database.collections.get<PlantRecord>('plants');
     const row = await coll.find(plantId);
 
     // Guard against stale overwrites: verify the current imageUrl contains the expected hash

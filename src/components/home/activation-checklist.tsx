@@ -1,6 +1,10 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import Animated, {
+  FadeIn,
+  FadeOut,
+  ReduceMotion,
+} from 'react-native-reanimated';
 
 import { Pressable, Text, View } from '@/components/ui';
 import { useAnalytics } from '@/lib';
@@ -177,8 +181,12 @@ export function ActivationChecklist({
 
   return (
     <Animated.View
-      entering={FadeIn.duration(onboardingMotion.durations.standard)}
-      exiting={FadeOut.duration(onboardingMotion.durations.quick)}
+      entering={FadeIn.duration(
+        onboardingMotion.durations.standard
+      ).reduceMotion(ReduceMotion.System)}
+      exiting={FadeOut.duration(onboardingMotion.durations.quick).reduceMotion(
+        ReduceMotion.System
+      )}
       className={className}
       testID="activation-checklist"
     >

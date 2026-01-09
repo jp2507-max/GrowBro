@@ -26,7 +26,7 @@ function getTaskTypeLabel(
   t: (key: string) => string,
   taskType: string
 ): string {
-  return t(`playbooks.taskTypes.${taskType}`) || taskType;
+  return t(`playbooks.task_types.${taskType}`) || taskType;
 }
 
 function ProgressBar({

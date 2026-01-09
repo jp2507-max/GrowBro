@@ -30,13 +30,13 @@ export function CameraErrorView({
   const getErrorMessage = () => {
     switch (error.category) {
       case 'capture':
-        return t('assessment.camera.errors.captureFailed');
+        return t('assessment.camera.errors.capture_failed');
       case 'storage':
-        return t('assessment.camera.errors.storageFull');
+        return t('assessment.camera.errors.storage_full');
       case 'hardware':
-        return t('assessment.camera.errors.cameraFailed');
+        return t('assessment.camera.errors.camera_failed');
       case 'permission':
-        return t('assessment.camera.permissionDenied.description');
+        return t('assessment.camera.permission_denied.description');
       default:
         return error.message;
     }
@@ -51,7 +51,7 @@ export function CameraErrorView({
 
         <Text className="text-center text-xl font-bold text-neutral-100">
           {error.category === 'permission'
-            ? t('assessment.camera.permissionDenied.title')
+            ? t('assessment.camera.permission_denied.title')
             : t('assessment.camera.errors.title')}
         </Text>
 
@@ -63,7 +63,7 @@ export function CameraErrorView({
           {error.retryable && onRetry && (
             <Button onPress={onRetry} variant="default">
               <Text className="font-semibold text-neutral-100">
-                {t('assessment.camera.permissionDenied.retry')}
+                {t('assessment.camera.permission_denied.retry')}
               </Text>
             </Button>
           )}
@@ -71,7 +71,7 @@ export function CameraErrorView({
           {fallbackHandler && (
             <Button onPress={() => fallbackHandler()} variant="outline">
               <Text className="font-semibold text-neutral-100">
-                {t('assessment.camera.useAlternative')}
+                {t('assessment.camera.use_alternative')}
               </Text>
             </Button>
           )}

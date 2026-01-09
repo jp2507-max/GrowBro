@@ -9,13 +9,10 @@
  */
 
 import React from 'react';
-import Animated, {
-  FadeIn,
-  FadeOut,
-  ReduceMotion,
-} from 'react-native-reanimated';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 
 import { Button, Pressable, Text, View } from '@/components/ui';
+import { withRM } from '@/lib/animations/motion';
 import { translate } from '@/lib/i18n';
 
 interface UndoSnackbarProps {
@@ -25,6 +22,8 @@ interface UndoSnackbarProps {
   onUndo: () => void;
   onDismiss: () => void;
   disabled?: boolean;
+  /** Bottom offset in pixels to position above tab bar */
+  bottomOffset?: number;
   testID?: string;
 }
 
@@ -35,6 +34,7 @@ export function UndoSnackbar({
   onUndo,
   onDismiss,
   disabled = false,
+  bottomOffset = 88,
   testID = 'undo-snackbar',
 }: UndoSnackbarProps): React.ReactElement | null {
   const [remainingSeconds, setRemainingSeconds] = React.useState(0);
@@ -83,12 +83,10 @@ export function UndoSnackbar({
 
   return (
     <Animated.View
-      entering={FadeIn.springify()
-        .damping(22)
-        .stiffness(180)
-        .reduceMotion(ReduceMotion.System)}
-      exiting={FadeOut.duration(250)}
-      className="absolute inset-x-4 bottom-20 z-[1000]"
+      entering={withRM(FadeIn.springify().damping(22).stiffness(180))}
+      exiting={withRM(FadeOut.duration(250))}
+      className="absolute inset-x-4 z-[1000]"
+      style={{ bottom: bottomOffset }}
       testID={testID}
     >
       <View className="flex-row items-center justify-between rounded-lg bg-neutral-900 p-4 shadow-lg dark:bg-neutral-800">

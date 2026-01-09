@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -10,25 +10,32 @@ import type { PhEcReading } from '@/lib/nutrient-engine/types';
 /**
  * Nutrient Readings Screen
  *
- * Displays pH/EC reading history with ability to add new readings
+ * Displays pH/EC reading history with ability to add new readings.
+ * Accepts optional `plantId` query param to filter readings by plant.
+ *
  * Requirements: 2.1, 2.5, 6.2
  */
 export default function NutrientReadingsScreen(): React.ReactElement {
   const { t } = useTranslation();
   const router = useRouter();
+  const { plantId } = useLocalSearchParams<{ plantId?: string }>();
 
   const { data, isLoading, error } = useFetchReadings({
     limit: 100,
+    plantId: plantId ?? undefined,
   });
 
   const handleAddReading = useCallback(() => {
-    router.push('/nutrient/add-reading');
-  }, [router]);
+    const params = plantId ? `?plantId=${plantId}` : '';
+    router.push(`/nutrient/add-reading${params}`);
+  }, [router, plantId]);
 
-  const handleSelectReading = useCallback((reading: PhEcReading) => {
-    // TODO: Navigate to reading detail screen
-    console.log('Selected reading:', reading.id);
-  }, []);
+  const handleSelectReading = useCallback(
+    (reading: PhEcReading) => {
+      router.push(`/nutrient/${reading.id}`);
+    },
+    [router]
+  );
 
   return (
     <View className="flex-1 bg-white dark:bg-charcoal-950">

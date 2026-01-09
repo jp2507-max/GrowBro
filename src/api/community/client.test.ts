@@ -22,7 +22,12 @@ jest.mock('@/lib/community/headers', () => ({
 describe('CommunityApiClient', () => {
   let client: CommunityApiClient;
   let mockSupabaseClient: jest.Mocked<SupabaseClient>;
-  let mockIdempotencyService: any;
+  let mockIdempotencyService: {
+    processWithIdempotency: jest.Mock<
+      Promise<unknown>,
+      [{ operation: () => Promise<unknown> }]
+    >;
+  };
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -68,7 +73,7 @@ describe('CommunityApiClient', () => {
           return Promise.resolve({ data: null, error: null });
         }),
       },
-    } as any;
+    } as unknown as jest.Mocked<SupabaseClient>;
 
     // Mock idempotency service
     mockIdempotencyService = {
@@ -375,7 +380,7 @@ describe('CommunityApiClient', () => {
 
       // Override the operation to actually throw
       mockIdempotencyService.processWithIdempotency.mockImplementation(
-        async (params: { operation: () => Promise<any> }) => {
+        async (params: { operation: () => Promise<unknown> }) => {
           return params.operation();
         }
       );
@@ -677,7 +682,7 @@ describe('CommunityApiClient', () => {
       (mockSupabaseClient.from as jest.Mock).mockReturnValue(insertChain);
 
       mockIdempotencyService.processWithIdempotency.mockImplementation(
-        async (params: { operation: () => Promise<any> }) => {
+        async (params: { operation: () => Promise<unknown> }) => {
           return params.operation();
         }
       );
@@ -711,7 +716,7 @@ describe('CommunityApiClient', () => {
       (mockSupabaseClient.from as jest.Mock).mockReturnValue(insertChain);
 
       mockIdempotencyService.processWithIdempotency.mockImplementation(
-        async (params: { operation: () => Promise<any> }) => {
+        async (params: { operation: () => Promise<unknown> }) => {
           return params.operation();
         }
       );
@@ -735,11 +740,11 @@ describe('CommunityApiClient', () => {
       );
 
       // First from('posts') call - count query
-      const countChain = {
+      const countChain: Record<string, jest.Mock> = {
         select: jest.fn().mockReturnThis(),
         is: jest.fn().mockReturnThis(),
       };
-      (countChain as any).count = jest
+      countChain.count = jest
         .fn()
         .mockResolvedValue({ count: 100, error: null });
 
@@ -794,6 +799,92 @@ describe('CommunityApiClient', () => {
       expect(result.results.length).toBe(2);
       expect(result.next).toBe('2024-01-01T00:00:00Z');
       expect(result.count).toBe(100);
+    });
+  });
+
+  describe('getPostsDiscover', () => {
+    const createBuilder = (count: number = 0) => {
+      const builder: Record<
+        string,
+        | jest.Mock
+        | ((resolve: (value: { count: number }) => void) => Promise<void>)
+      > = {
+        select: jest.fn().mockReturnThis(),
+        is: jest.fn().mockReturnThis(),
+        ilike: jest.fn().mockReturnThis(),
+        or: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        gte: jest.fn().mockReturnThis(),
+        lt: jest.fn().mockReturnThis(),
+        order: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockReturnThis(),
+        then: (resolve: (value: { count: number }) => void) =>
+          Promise.resolve(resolve({ count })),
+      };
+
+      return builder;
+    };
+
+    it('applies top_7d sorting and filters', async () => {
+      (mockSupabaseClient.auth.getSession as jest.Mock).mockResolvedValue({
+        data: { session: null },
+      });
+
+      const countBuilder = createBuilder(0);
+      const dataBuilder = createBuilder();
+      let postCallCount = 0;
+
+      (mockSupabaseClient.from as jest.Mock).mockImplementation(
+        (table: string) => {
+          if (table === 'posts') {
+            postCallCount += 1;
+            return postCallCount === 1 ? countBuilder : dataBuilder;
+          }
+          return {};
+        }
+      );
+
+      const getPostsWithCountsSpy = jest
+        .spyOn(
+          client as unknown as { getPostsWithCounts: () => Promise<never[]> },
+          'getPostsWithCounts'
+        )
+        .mockResolvedValue([]);
+
+      await client.getPostsDiscover({
+        query: 'soil',
+        sort: 'top_7d',
+        photosOnly: true,
+      });
+
+      expect(dataBuilder.ilike).toHaveBeenCalledWith('body', '%soil%');
+      expect(dataBuilder.or).toHaveBeenCalled();
+      expect(dataBuilder.gte).toHaveBeenCalledWith(
+        'created_at',
+        expect.any(String)
+      );
+      expect(dataBuilder.order).toHaveBeenCalledWith('like_count', {
+        ascending: false,
+      });
+      expect(dataBuilder.order).toHaveBeenCalledWith('created_at', {
+        ascending: false,
+      });
+      expect(dataBuilder.limit).toHaveBeenCalledWith(20);
+
+      getPostsWithCountsSpy.mockRestore();
+    });
+
+    it('returns empty when mineOnly and no session', async () => {
+      (mockSupabaseClient.auth.getSession as jest.Mock).mockResolvedValue({
+        data: { session: null },
+      });
+
+      const result = await client.getPostsDiscover({
+        mineOnly: true,
+      });
+
+      expect(result.results).toEqual([]);
+      expect(result.count).toBe(0);
     });
   });
 });

@@ -72,7 +72,7 @@ export function CommentForm({
         multiline
         numberOfLines={3}
         maxLength={MAX_COMMENT_LENGTH + 50}
-        className="mb-2 min-h-[80px] rounded-lg border border-neutral-300 bg-white p-3 text-neutral-900 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+        className="mb-2 min-h-[80px] rounded-xl border border-neutral-200 bg-neutral-100 p-3 text-neutral-900 dark:border-white/10 dark:bg-white/5 dark:text-neutral-100"
         testID={`${testID}-input`}
       />
 

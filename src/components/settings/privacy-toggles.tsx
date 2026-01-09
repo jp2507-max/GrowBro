@@ -36,7 +36,7 @@ export function PrivacyToggles({
         onPress={onToggleShowProfile}
       >
         <Text className="flex-1 text-neutral-900 dark:text-neutral-100">
-          {t('profile.privacy.showProfile')}
+          {t('profile.privacy.show_profile')}
         </Text>
         <View
           className={`size-6 rounded ${showProfileToCommunity ? 'bg-primary-600' : 'bg-neutral-300 dark:bg-neutral-600'}`}
@@ -49,7 +49,7 @@ export function PrivacyToggles({
         onPress={onToggleAllowDMs}
       >
         <Text className="flex-1 text-neutral-900 dark:text-neutral-100">
-          {t('profile.privacy.allowDMs')}
+          {t('profile.privacy.allow_d_ms')}
         </Text>
         <View
           className={`size-6 rounded ${allowDirectMessages ? 'bg-primary-600' : 'bg-neutral-300 dark:bg-neutral-600'}`}

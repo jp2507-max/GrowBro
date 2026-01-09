@@ -21,7 +21,7 @@ export function AppealDetails({
     >
       <View className="mb-3">
         <Text className="text-xs text-neutral-600 dark:text-neutral-400">
-          {t('appeals.label.appealId')}
+          {t('appeals.label.appeal_id')}
         </Text>
         <Text className="font-mono text-sm text-charcoal-950 dark:text-neutral-100">
           {appeal.id}
@@ -30,7 +30,7 @@ export function AppealDetails({
 
       <View className="mb-3">
         <Text className="text-xs text-neutral-600 dark:text-neutral-400">
-          {t('appeals.label.submittedAt')}
+          {t('appeals.label.submitted_at')}
         </Text>
         <Text className="text-sm text-charcoal-950 dark:text-neutral-100">
           {appeal.submitted_at.toLocaleString()}
@@ -55,7 +55,7 @@ export function AppealDetails({
             {t('appeals.label.reviewer')}
           </Text>
           <Text className="text-sm text-charcoal-950 dark:text-neutral-100">
-            {t('appeals.value.assignedToReviewer')}
+            {t('appeals.value.assigned_to_reviewer')}
           </Text>
         </View>
       )}
@@ -63,7 +63,7 @@ export function AppealDetails({
       {appeal.resolved_at && (
         <View>
           <Text className="text-xs text-neutral-600 dark:text-neutral-400">
-            {t('appeals.label.resolvedAt')}
+            {t('appeals.label.resolved_at')}
           </Text>
           <Text className="text-sm text-charcoal-950 dark:text-neutral-100">
             {appeal.resolved_at.toLocaleString()}

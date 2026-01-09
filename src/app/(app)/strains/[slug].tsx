@@ -18,7 +18,7 @@ import { useStrain } from '@/api/strains/use-strain';
 import { FavoriteButtonConnected } from '@/components/strains/favorite-button-connected';
 import { RaceBadge } from '@/components/strains/race-badge';
 import { StrainDetailSkeleton } from '@/components/strains/strain-detail-skeleton';
-import { Image, Pressable, Text, View } from '@/components/ui';
+import { GlassButton, Image, Pressable, Text, View } from '@/components/ui';
 import colors from '@/components/ui/colors';
 import {
   ArrowLeft,
@@ -222,7 +222,7 @@ const HardFactsGrid = ({ strain }: { strain: Strain }): React.ReactElement => {
           numberOfLines={1}
           adjustsFontSizeToFit
         >
-          {translate('strains.hardFacts.floweringTime')}
+          {translate('strains.hard_facts.flowering_time')}
         </Text>
       </View>
 
@@ -244,7 +244,7 @@ const HardFactsGrid = ({ strain }: { strain: Strain }): React.ReactElement => {
           numberOfLines={1}
           adjustsFontSizeToFit
         >
-          {translate('strains.hardFacts.yield')}
+          {translate('strains.hard_facts.yield')}
         </Text>
       </View>
 
@@ -266,7 +266,7 @@ const HardFactsGrid = ({ strain }: { strain: Strain }): React.ReactElement => {
           numberOfLines={1}
           adjustsFontSizeToFit
         >
-          {translate('strains.hardFacts.cultivation')}
+          {translate('strains.hard_facts.cultivation')}
         </Text>
       </View>
     </View>
@@ -353,7 +353,9 @@ const StrainContentSheet = ({
       <View className="h-1.5 w-12 rounded-full bg-neutral-200 dark:bg-white/20" />
     </View>
     <PremiumTagsRow strain={strain} />
-    <Animated.View entering={FadeIn.delay(200).springify()}>
+    <Animated.View
+      entering={FadeIn.delay(200).springify().reduceMotion(ReduceMotion.System)}
+    >
       <HardFactsGrid strain={strain} />
     </Animated.View>
     <View className="px-6 pb-6">
@@ -395,16 +397,15 @@ const FloatingNavButtons = ({
     className="absolute inset-x-0 top-0 z-20 flex-row items-center justify-between px-4"
     style={[{ paddingTop: topInset + 8 }, navStyle]}
   >
-    <Pressable
+    <GlassButton
       onPress={onBack}
-      className="size-10 items-center justify-center rounded-full bg-black/30 backdrop-blur-sm active:bg-black/40"
-      accessibilityRole="button"
       accessibilityLabel={translate('accessibility.common.go_back')}
       accessibilityHint={translate('strains.detail.back_hint')}
       testID="back-button"
+      fallbackClassName="bg-black/30"
     >
       <ArrowLeft color={colors.white} width={24} height={24} />
-    </Pressable>
+    </GlassButton>
     <View className="flex-row gap-3">
       <FavoriteButtonConnected
         strainId={strain.id}
@@ -412,16 +413,15 @@ const FloatingNavButtons = ({
         variant="overlay"
         testID="favorite-button"
       />
-      <Pressable
+      <GlassButton
         onPress={onShare}
-        className="size-10 items-center justify-center rounded-full bg-black/30 backdrop-blur-sm active:bg-black/40"
-        accessibilityRole="button"
         accessibilityLabel={translate('strains.detail.share')}
         accessibilityHint={translate('strains.detail.share_hint')}
         testID="share-button"
+        fallbackClassName="bg-black/30"
       >
         <ShareIcon color={colors.white} width={24} height={24} />
-      </Pressable>
+      </GlassButton>
     </View>
   </Animated.View>
 );

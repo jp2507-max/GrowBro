@@ -17,6 +17,7 @@ import { Text, View } from '@/components/ui';
 import colors from '@/components/ui/colors';
 import { translate } from '@/lib';
 import { useAnimatedScrollList } from '@/lib/animations/animated-scroll-list-provider';
+import { motion, withRM } from '@/lib/animations/motion';
 import type { TxKeyPath } from '@/lib/i18n';
 import { useThemeConfig } from '@/lib/use-theme-config';
 
@@ -139,11 +140,7 @@ function useSharedHeaderAnimation({
     const baseHeight =
       SHARED_TAB_HEIGHTS[routeKey] ?? SHARED_TAB_HEIGHTS[DEFAULT_ROUTE_KEY];
     const target = baseHeight + insetsTop + HEADER_TOP_SPACING;
-    height.value = withSpring(target, {
-      damping: 22,
-      stiffness: 240,
-      mass: 0.9,
-    });
+    height.value = withSpring(target, motion.spring.header);
   }, [height, insetsTop, routeKey]);
 
   // Update header position based on scroll
@@ -255,8 +252,8 @@ function AnimatedPerTabContent({
     <View className="py-1">
       <Animated.View
         key={routeKey}
-        entering={FadeIn.duration(180)}
-        exiting={FadeOut.duration(140)}
+        entering={withRM(FadeIn.duration(motion.dur.sm))}
+        exiting={withRM(FadeOut.duration(motion.dur.sm))}
       >
         <Text
           className="text-base font-semibold text-neutral-900 dark:text-neutral-100"

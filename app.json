@@ -1,0 +1,19 @@
+{
+  "expo": {
+    "userInterfaceStyle": "automatic",
+    "extra": {
+      "eas": {
+        "projectId": "0ce1e1fc-7b61-4a2f-ae2b-790c097ced82"
+      }
+    },
+    "ios": {
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "UIBackgroundModes": ["fetch", "processing"],
+        "BGTaskSchedulerPermittedIdentifiers": [
+          "com.expo.modules.backgroundtask.processing"
+        ]
+      }
+    }
+  }
+}

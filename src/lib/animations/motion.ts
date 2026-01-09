@@ -23,14 +23,32 @@ export const motion = {
     emphasized: Easing.bezier(0.4, 0, 0.2, 1), // Emphasized motion
     decel: Easing.bezier(0, 0, 0.2, 1), // Deceleration
   },
+  spring: {
+    header: {
+      damping: 22,
+      stiffness: 240,
+      mass: 0.9,
+      reduceMotion: ReduceMotion.System,
+    },
+  },
 } as const;
 
 /**
- * Ensures animation respects system Reduced Motion preference
- * Usage: entering={withRM(FadeIn.duration(motion.dur.md))}
+ * Ensures animation respects system Reduced Motion preference.
+ * Supports both Layout Animation builders and timing/spring config objects.
+ * Usage:
+ *   entering={withRM(FadeIn.duration(motion.dur.md))}
+ *   withTiming(1, withRM({ duration: 500 }))
  */
 export function withRM<
-  T extends { reduceMotion?: (v: typeof ReduceMotion.System) => T },
+  T extends
+    | { reduceMotion?: (v: typeof ReduceMotion.System) => T }
+    | Record<string, unknown>,
 >(anim: T): T {
-  return anim.reduceMotion?.(ReduceMotion.System) ?? anim;
+  if (typeof anim.reduceMotion === 'function') {
+    return (anim.reduceMotion as (v: typeof ReduceMotion.System) => T)(
+      ReduceMotion.System
+    );
+  }
+  return { ...anim, reduceMotion: ReduceMotion.System } as T;
 }

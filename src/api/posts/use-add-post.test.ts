@@ -1,5 +1,5 @@
 import type { AttachmentInput } from './use-add-post';
-import { processRemoteAttachment } from './use-add-post';
+import { ensureRemoteAttachmentMetadata } from './use-add-post';
 
 // Mock the download and upload functions
 jest.mock('@/lib/media/photo-storage-service', () => ({
@@ -64,7 +64,7 @@ jest.mock('@/lib/media/file-validation', () => ({
   validateFileSize: jest.fn().mockResolvedValue({ isValid: true, error: null }),
 }));
 
-describe('processRemoteAttachment', () => {
+describe('ensureRemoteAttachmentMetadata', () => {
   test('handles prefill attachments without metadata', async () => {
     // Simulate a prefill attachment from parsePrefillImages()
     const prefillAttachment: AttachmentInput = {
@@ -73,7 +73,7 @@ describe('processRemoteAttachment', () => {
       // No metadata provided (typical for prefill)
     };
 
-    const result = await processRemoteAttachment(prefillAttachment);
+    const result = await ensureRemoteAttachmentMetadata(prefillAttachment);
 
     // Should fall back to downloading and processing the image
     expect(result).toEqual({
@@ -103,7 +103,7 @@ describe('processRemoteAttachment', () => {
       },
     };
 
-    const result = await processRemoteAttachment(attachmentWithMetadata);
+    const result = await ensureRemoteAttachmentMetadata(attachmentWithMetadata);
 
     // Should extract storage paths and use provided metadata
     expect(result).toEqual({
@@ -127,7 +127,7 @@ describe('processRemoteAttachment', () => {
       },
     };
 
-    const result = await processRemoteAttachment(incompleteAttachment);
+    const result = await ensureRemoteAttachmentMetadata(incompleteAttachment);
 
     // Should fall back to downloading and processing instead of throwing
     expect(result).toEqual({
@@ -157,7 +157,7 @@ describe('processRemoteAttachment', () => {
       // No metadata - should still work for non-Supabase URLs
     };
 
-    const result = await processRemoteAttachment(externalAttachment);
+    const result = await ensureRemoteAttachmentMetadata(externalAttachment);
 
     // Should fall back to downloading and processing
     expect(result).toEqual({
@@ -187,7 +187,7 @@ describe('processRemoteAttachment', () => {
       },
     };
 
-    const result = await processRemoteAttachment(signedUrlAttachment);
+    const result = await ensureRemoteAttachmentMetadata(signedUrlAttachment);
 
     // Should extract bucket-relative paths (not full signed URLs)
     expect(result.originalPath).toBe(
@@ -217,7 +217,7 @@ describe('processRemoteAttachment', () => {
       },
     };
 
-    const result = await processRemoteAttachment(publicUrlAttachment);
+    const result = await ensureRemoteAttachmentMetadata(publicUrlAttachment);
 
     // Should extract bucket-relative paths (not full public URLs)
     expect(result.originalPath).toBe(
@@ -245,7 +245,7 @@ describe('processRemoteAttachment', () => {
       },
     };
 
-    const result = await processRemoteAttachment(storagePathAttachment);
+    const result = await ensureRemoteAttachmentMetadata(storagePathAttachment);
 
     // Should pass through storage paths unchanged
     expect(result.originalPath).toBe(
@@ -272,7 +272,9 @@ describe('processRemoteAttachment', () => {
       },
     };
 
-    const result = await processRemoteAttachment(attachmentWithoutVariants);
+    const result = await ensureRemoteAttachmentMetadata(
+      attachmentWithoutVariants
+    );
 
     // Should use original path for all variants
     expect(result.originalPath).toBe(

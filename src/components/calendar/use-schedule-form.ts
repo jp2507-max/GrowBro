@@ -62,22 +62,22 @@ function parseAndValidateTime(
 } {
   const timeMatch = /^(\d{1,2}):(\d{2})$/.exec(timeString);
   if (!timeMatch) {
-    throw new Error(t('calendar.errors.invalidTimeFormat', { timeString }));
+    throw new Error(t('calendar.errors.invalid_time_format', { timeString }));
   }
 
   const hour = parseInt(timeMatch[1], 10);
   const minute = parseInt(timeMatch[2], 10);
 
   if (!Number.isFinite(hour) || !Number.isFinite(minute)) {
-    throw new Error(t('calendar.errors.invalidTimeValues', { hour, minute }));
+    throw new Error(t('calendar.errors.invalid_time_values', { hour, minute }));
   }
 
   if (hour < 0 || hour > 23) {
-    throw new Error(t('calendar.errors.invalidHour', { hour }));
+    throw new Error(t('calendar.errors.invalid_hour', { hour }));
   }
 
   if (minute < 0 || minute > 59) {
-    throw new Error(t('calendar.errors.invalidMinute', { minute }));
+    throw new Error(t('calendar.errors.invalid_minute', { minute }));
   }
 
   return { hour, minute };
@@ -90,7 +90,7 @@ function validateAndConvertDateTime(
 ): string {
   if (!dt.isValid) {
     throw new Error(
-      t('calendar.errors.invalidDateTime', {
+      t('calendar.errors.invalid_date_time', {
         label,
         reason: dt.invalidReason,
         explanation: dt.invalidExplanation,
@@ -100,7 +100,7 @@ function validateAndConvertDateTime(
 
   const isoString = dt.toISO();
   if (!isoString) {
-    throw new Error(t('calendar.errors.failedIsoConversion', { label }));
+    throw new Error(t('calendar.errors.failed_iso_conversion', { label }));
   }
 
   return isoString;
@@ -120,7 +120,7 @@ async function submitSchedule(
   // Defensive validation: callers should validate weekdays for weekly recurrence,
   // but enforce here to avoid silently falling back to daily recurrence.
   if (data.recurrencePattern === 'weekly' && data.weekdays.length === 0) {
-    throw new Error(t('calendar.errors.selectWeeklyDay'));
+    throw new Error(t('calendar.errors.select_weekly_day'));
   }
 
   const { hour, minute } = parseAndValidateTime(data.startTime, t);
@@ -200,7 +200,7 @@ export function useScheduleForm({
       if (data.recurrencePattern === 'weekly' && data.weekdays.length === 0) {
         setError('weekdays', {
           type: 'required',
-          message: t('calendar.errors.selectWeeklyDay'),
+          message: t('calendar.errors.select_weekly_day'),
         });
         return;
       }

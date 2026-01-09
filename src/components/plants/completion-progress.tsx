@@ -43,7 +43,7 @@ export function CompletionProgress({
 
   const displayLabel =
     label ??
-    translate('plants.completionProgress.percentComplete' as TxKeyPath, {
+    translate('plants.completion_progress.percent_complete' as TxKeyPath, {
       percent: Math.round(progress),
     });
 

@@ -227,7 +227,8 @@ type RenderItemProps = {
 };
 
 export function createRenderItem(
-  handleCompleteTask: (task: Task) => void
+  handleCompleteTask: (task: Task) => void,
+  handleTaskPress?: (task: Task) => void
 ): (props: RenderItemProps) => React.ReactElement | null {
   return function renderItem({
     item,
@@ -248,6 +249,7 @@ export function createRenderItem(
             plantName={item.plantName}
             plantImage={item.plantImage}
             onComplete={handleCompleteTask}
+            onPress={handleTaskPress}
             isCompleted={item.isCompleted}
             testID={
               item.isCompleted

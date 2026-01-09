@@ -294,7 +294,7 @@ describe('HarvestChartContainer', () => {
       });
 
       expect(
-        screen.getByText('harvest.chart.error.renderFailed')
+        screen.getByText('harvest.chart.error.render_failed')
       ).toBeOnTheScreen();
     });
   });

@@ -10,6 +10,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 import Animated, {
+  ReduceMotion,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
@@ -19,6 +20,7 @@ import Animated, {
 
 import { motion } from '@/lib/animations/motion';
 import type { TxKeyPath } from '@/lib/i18n';
+import { useReduceMotionEnabled } from '@/lib/strains/accessibility';
 
 type SkeletonProps = {
   width?: number | string;
@@ -44,18 +46,30 @@ export function Skeleton({
 }: SkeletonProps) {
   const { t } = useTranslation();
   const opacity = useSharedValue(1);
+  const reduceMotion = useReduceMotionEnabled();
 
   React.useEffect(() => {
+    if (reduceMotion) {
+      opacity.value = 1;
+      return;
+    }
+
     // Shimmer animation with Reduced Motion support
     opacity.value = withRepeat(
       withSequence(
-        withTiming(0.5, { duration: motion.dur.lg }),
-        withTiming(1, { duration: motion.dur.lg })
+        withTiming(0.5, {
+          duration: motion.dur.lg,
+          reduceMotion: ReduceMotion.System,
+        }),
+        withTiming(1, {
+          duration: motion.dur.lg,
+          reduceMotion: ReduceMotion.System,
+        })
       ),
       -1, // Infinite repeat
       false
     );
-  }, [opacity]);
+  }, [opacity, reduceMotion]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,

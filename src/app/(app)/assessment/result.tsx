@@ -151,7 +151,7 @@ function AssessmentResultLayout({
 
   return (
     <>
-      <Stack.Screen options={{ title: t('assessment.result.screenTitle') }} />
+      <Stack.Screen options={{ title: t('assessment.result.screen_title') }} />
       <ScrollView
         className="flex-1 bg-neutral-50 dark:bg-charcoal-950"
         contentContainerClassName="pb-16"
@@ -174,7 +174,7 @@ function AssessmentResultLayout({
               </Text>
               <Text className="mt-3 text-sm text-neutral-600 dark:text-neutral-400">
                 {result.topClass.description ||
-                  t('assessment.result.noDescription')}
+                  t('assessment.result.no_description')}
               </Text>
               <CommunityCTAButton
                 assessment={result}
@@ -183,7 +183,7 @@ function AssessmentResultLayout({
               />
               <Button
                 className="mt-4"
-                label={t('assessment.result.retakePhotos')}
+                label={t('assessment.result.retake_photos')}
                 onPress={onRetake}
                 variant="outline"
                 testID="result-retake-photos-button"
@@ -196,17 +196,17 @@ function AssessmentResultLayout({
               {t('assessment.result.details')}
             </Text>
             <Text className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
-              {t('assessment.result.modelVersion', {
+              {t('assessment.result.model_version', {
                 modelVersion: result.modelVersion,
               })}
             </Text>
             <Text className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-              {t('assessment.result.processingTime', {
+              {t('assessment.result.processing_time', {
                 processingTimeMs: result.processingTimeMs,
               })}
             </Text>
             <Text className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-              {t('assessment.result.plantId', {
+              {t('assessment.result.plant_id', {
                 plantId: plantContext.id || t('assessment.result.unknown'),
               })}
             </Text>
@@ -215,14 +215,14 @@ function AssessmentResultLayout({
           {retakeRecommended && guidance && (
             <View className="dark:bg-warning-950 mt-6 rounded-xl border border-warning-400 bg-warning-50 p-4 dark:border-warning-500">
               <Text className="text-lg font-semibold text-warning-900 dark:text-warning-100">
-                {t('assessment.result.photoQualityTitle')}
+                {t('assessment.result.photo_quality_title')}
               </Text>
               <Text className="mt-1 text-sm text-warning-800 dark:text-warning-200">
                 {guidance.tips[0]}
               </Text>
               <Button
                 className="mt-4"
-                label={t('assessment.result.viewPhotoTips')}
+                label={t('assessment.result.view_photo_tips')}
                 onPress={onOpenRetakeModal}
                 variant="outline"
                 testID="result-view-photo-tips-button"
@@ -254,12 +254,12 @@ function MissingAssessmentSession({
 
   return (
     <View className="flex-1 items-center justify-center bg-neutral-50 px-6 dark:bg-charcoal-950">
-      <Stack.Screen options={{ title: t('assessment.result.screenTitle') }} />
+      <Stack.Screen options={{ title: t('assessment.result.screen_title') }} />
       <Text className="mb-6 text-center text-lg text-neutral-900 dark:text-neutral-100">
-        {t('assessment.result.dataUnavailable')}
+        {t('assessment.result.data_unavailable')}
       </Text>
       <Button
-        label={t('assessment.result.backToHome')}
+        label={t('assessment.result.back_to_home')}
         onPress={onDismiss}
         testID="missing-session-dismiss-button"
       />

@@ -46,7 +46,7 @@ const baseDiagnosticResult: DiagnosticResult = {
   recommendations: [
     {
       action: 'nitrogenFeed',
-      description: 'nutrient.diagnostics.recommendations.nitrogenFeed',
+      description: 'nutrient.diagnostics.recommendations.nitrogen_feed',
       priority: 1,
       code: 'N_DEFICIENCY_FEED',
       context: { source: 'ai' },
@@ -59,7 +59,7 @@ const baseDiagnosticResult: DiagnosticResult = {
   rulesConfidence: 0.82,
   aiConfidence: 0.88,
   confidenceThreshold: 0.78,
-  rationale: ['nutrient.diagnostics.rationale.yellowingLowerLeaves'],
+  rationale: ['nutrient.diagnostics.rationale.yellowing_lower_leaves'],
   disclaimerKeys: [],
   needsSecondOpinion: false,
   confidenceFlags: [],
@@ -137,8 +137,8 @@ describe('DiagnosticResultCard', () => {
       const resultWithDisclaimers: DiagnosticResult = {
         ...baseDiagnosticResult,
         disclaimerKeys: [
-          'nutrient.diagnostics.disclaimers.lowConfidence',
-          'nutrient.diagnostics.disclaimers.aiOnlyPrimary',
+          'nutrient.diagnostics.disclaimers.low_confidence',
+          'nutrient.diagnostics.disclaimers.ai_only_primary',
         ],
       };
 
@@ -312,7 +312,7 @@ describe('DiagnosticResultCard', () => {
       await screen.findByTestId('diagnostic-result-card');
 
       expect(
-        screen.queryByText('nutrient.diagnostics.confidenceBreakdown')
+        screen.queryByText('nutrient.diagnostics.confidence_breakdown')
       ).not.toBeOnTheScreen();
     });
 

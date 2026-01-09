@@ -39,7 +39,7 @@ export function ConflictResolutionModal({
       <ScrollView className="flex-1 p-4">
         <View className="mb-4">
           <Text className="mb-2 text-xs font-medium uppercase text-neutral-500 dark:text-neutral-400">
-            {translate('sync.conflict.conflictingFields')}
+            {translate('sync.conflict.conflicting_fields')}
           </Text>
           {conflict.conflictFields.map((field) => (
             <View
@@ -52,7 +52,7 @@ export function ConflictResolutionModal({
 
               <View className="mb-2">
                 <Text className="mb-1 text-xs font-medium text-primary-600 dark:text-primary-400">
-                  {translate('sync.conflict.yourVersion')}
+                  {translate('sync.conflict.your_version')}
                 </Text>
                 <View className="rounded bg-primary-50 p-2 dark:bg-primary-950">
                   <Text className="font-mono text-xs text-neutral-800 dark:text-neutral-200">
@@ -63,7 +63,7 @@ export function ConflictResolutionModal({
 
               <View>
                 <Text className="mb-1 text-xs font-medium text-success-600 dark:text-success-400">
-                  {translate('sync.conflict.serverVersion')}
+                  {translate('sync.conflict.server_version')}
                 </Text>
                 <View className="dark:bg-success-950 rounded bg-success-50 p-2">
                   <Text className="font-mono text-xs text-neutral-800 dark:text-neutral-200">
@@ -88,13 +88,13 @@ export function ConflictResolutionModal({
             <Button
               variant="outline"
               onPress={() => onResolve('keep-local')}
-              label={translate('sync.conflict.restoreButton')}
+              label={translate('sync.conflict.restore_button')}
             />
           </View>
           <View className="flex-1">
             <Button
               onPress={() => onResolve('accept-server')}
-              label={translate('sync.conflict.acceptButton')}
+              label={translate('sync.conflict.accept_button')}
             />
           </View>
         </View>
@@ -102,7 +102,7 @@ export function ConflictResolutionModal({
           <Button
             variant="ghost"
             onPress={onDismiss}
-            label={translate('sync.conflict.dismissButton')}
+            label={translate('sync.conflict.dismiss_button')}
           />
         </View>
       </View>

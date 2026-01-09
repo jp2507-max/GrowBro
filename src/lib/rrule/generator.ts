@@ -1,5 +1,5 @@
 import { DateTime } from 'luxon';
-import type { Options, Weekday } from 'rrule';
+import type { ByWeekday, Options, Weekday, WeekdayStr } from 'rrule';
 import { RRule, rrulestr } from 'rrule';
 
 // Error codes for RRULE validation
@@ -84,6 +84,16 @@ export class RRULEGenerator {
     SA: RRule.SA,
     SU: RRule.SU,
   };
+
+  private static readonly WEEKDAY_CODES: WeekdayStr[] = [
+    'MO',
+    'TU',
+    'WE',
+    'TH',
+    'FR',
+    'SA',
+    'SU',
+  ];
 
   /**
    * Generate a daily RRULE string
@@ -288,34 +298,55 @@ export class RRULEGenerator {
         parsed.origOptions || parsed.options || {};
 
       if (opts.byweekday) {
-        // Convert rrule.js weekday objects back to our WeekDay format
+        // Convert rrule.js weekday values back to our WeekDay format
         const weekdays = Array.isArray(opts.byweekday)
           ? opts.byweekday
           : [opts.byweekday];
-        return weekdays.map((wd: Weekday) => {
-          // Map rrule.js weekday constants to our string format
-          switch (wd) {
-            case RRule.MO:
-              return 'MO';
-            case RRule.TU:
-              return 'TU';
-            case RRule.WE:
-              return 'WE';
-            case RRule.TH:
-              return 'TH';
-            case RRule.FR:
-              return 'FR';
-            case RRule.SA:
-              return 'SA';
-            case RRule.SU:
-              return 'SU';
-            default:
-              return 'MO'; // fallback
+        function toWeekday(value: ByWeekday): WeekDay | null {
+          if (typeof value === 'string') {
+            const upper = value.toUpperCase();
+            if (RRULEGenerator.WEEKDAY_CODES.includes(upper as WeekdayStr)) {
+              return upper as WeekDay;
+            }
+            return null;
           }
-        });
+          const index = typeof value === 'number' ? value : value.weekday;
+          const normalized = ((index % 7) + 7) % 7;
+          return RRULEGenerator.WEEKDAY_CODES[normalized] ?? null;
+        }
+        const validWeekdays: WeekDay[] = [];
+        const invalidValues: unknown[] = [];
+
+        for (const wd of weekdays) {
+          const result = toWeekday(wd);
+          if (result !== null) {
+            validWeekdays.push(result);
+          } else {
+            invalidValues.push(wd);
+          }
+        }
+
+        // Log warnings for invalid weekday values
+        if (invalidValues.length > 0) {
+          console.warn(
+            'Invalid weekday values found in RRULE - these will be filtered out:',
+            {
+              rruleString,
+              invalidValues,
+              validCount: validWeekdays.length,
+              invalidCount: invalidValues.length,
+            }
+          );
+        }
+
+        return validWeekdays;
       }
       return [];
-    } catch {
+    } catch (err) {
+      console.error('Failed to parse weekdays from RRULE:', {
+        rruleString,
+        error: err instanceof Error ? err.message : String(err),
+      });
       return [];
     }
   }

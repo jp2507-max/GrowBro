@@ -14,7 +14,7 @@ import {
   captureAndStore,
   downloadRemoteImage,
 } from '@/lib/media/photo-storage-service';
-import { supabase } from '@/lib/supabase';
+import { supabase, supabaseUrl } from '@/lib/supabase';
 
 export const attachmentInputSchema = z
   .object({
@@ -32,6 +32,12 @@ export const attachmentInputSchema = z
 
 // Derive TypeScript type from schema for single source of truth
 export type AttachmentInput = z.infer<typeof attachmentInputSchema>;
+
+// Note: 'problem_deficiency' must match COMMUNITY_HELP_CATEGORY from @/lib/community/post-categories
+export const categorySchema = z
+  .enum(['grow_tips', 'harvest', 'equipment', 'general', 'problem_deficiency'])
+  .optional();
+export const strainSchema = z.string().trim().min(1).max(100).optional();
 
 // Type for remote attachment metadata
 interface RemoteAttachmentMetadata {
@@ -58,8 +64,14 @@ function isSupabaseStorageUri(uri: string | undefined): boolean {
     return true;
   }
 
+  // Security: strict check to ensure URL belongs to our Supabase project
+  // We append a slash to prevent prefix attacks (e.g. project-id-evil.com)
+  const baseUrl = supabaseUrl.endsWith('/') ? supabaseUrl : `${supabaseUrl}/`;
+
   return (
-    uri.includes('/storage/v1/object/') && uri.includes('/community-posts/')
+    uri.startsWith(baseUrl) &&
+    uri.includes('/storage/v1/object/') &&
+    uri.includes('/community-posts/')
   );
 }
 
@@ -114,6 +126,8 @@ type Variables = {
   body: string;
   attachments?: AttachmentInput[];
   sourceAssessmentId?: string;
+  strain?: string;
+  category?: string;
 };
 type Response = Post;
 
@@ -173,6 +187,13 @@ const processRemoteAttachmentWithoutMetadata = async (
   attachment: AttachmentInput,
   uploadedPaths: string[]
 ): Promise<MediaPayload> => {
+  // SECURITY: Validate URI before downloading to prevent SSRF
+  if (!isSupabaseStorageUri(attachment.uri)) {
+    throw new Error(
+      'Only Supabase storage URIs are allowed for remote attachments. External URLs are not supported for security reasons.'
+    );
+  }
+
   // For true prefill attachments without ANY metadata, download the remote image
   // and process it like a local file to get proper Supabase Storage paths
   console.warn(
@@ -240,16 +261,29 @@ const processRemoteAttachmentWithoutMetadata = async (
   }
 };
 
-// Helper function to process remote attachments
-export const processRemoteAttachment = async (
+// Helper function to ensure remote attachments have complete metadata,
+// falling back to downloading and re-processing if needed.
+export const ensureRemoteAttachmentMetadata = async (
   attachment: AttachmentInput,
   uploadedPaths: string[] = []
 ): Promise<MediaPayload> => {
   const metadata = attachment.metadata as RemoteAttachmentMetadata | undefined;
   const uri = attachment.uri!;
 
+  // SECURITY: Only allow Supabase storage URIs
   if (!isSupabaseStorageUri(uri)) {
-    return processRemoteAttachmentWithoutMetadata(attachment, uploadedPaths);
+    throw new Error(
+      'Only Supabase storage URIs are allowed for remote attachments. External URLs are not supported for security reasons.'
+    );
+  }
+
+  // SECURITY: Validate path before processing
+  const originalPath = extractSupabaseStoragePath(uri);
+  if (
+    originalPath &&
+    (originalPath.includes('..') || originalPath.includes('%2e%2e'))
+  ) {
+    throw new Error('Path traversal detected in storage path');
   }
 
   const width = Number(metadata?.width ?? metadata?.dimensions?.width ?? 0);
@@ -257,34 +291,48 @@ export const processRemoteAttachment = async (
   const bytes = Number(metadata?.bytes ?? attachment.size ?? 0);
   const hasCompleteMetadata = width > 0 && height > 0 && bytes > 0;
 
-  // ISSUE: This logic is too strict for prefilled attachments from assessments.
-  // Some Supabase signed URLs come without metadata (width, height, bytes) but should
-  // still be processed by downloading and re-uploading to get proper metadata.
-  // Instead of throwing an error, we should fall back to the download-and-process path.
-  if (!hasCompleteMetadata) {
-    // FIXED: Fall back to downloading and processing Supabase URLs with missing metadata
+  const aspectRatio =
+    metadata?.aspectRatio ?? (height > 0 ? width / height : 1);
+
+  // Extract and validate storage paths
+  const resizedPath = metadata?.resizedPath
+    ? extractSupabaseStoragePath(metadata.resizedPath)
+    : null;
+  const thumbnailPath = metadata?.thumbnailPath
+    ? extractSupabaseStoragePath(metadata.thumbnailPath)
+    : null;
+
+  // SECURITY: Validate all paths for traversal attempts
+  [resizedPath, thumbnailPath].forEach((path) => {
+    if (path && (path.includes('..') || path.includes('%2e%2e'))) {
+      throw new Error('Path traversal detected in storage path');
+    }
+  });
+
+  // Validate that we have proper, distinct paths for all variants
+  const hasValidPaths =
+    originalPath &&
+    resizedPath &&
+    thumbnailPath &&
+    originalPath !== resizedPath &&
+    originalPath !== thumbnailPath;
+
+  if (!hasCompleteMetadata || !hasValidPaths) {
+    console.warn(
+      '[ensureRemoteAttachmentMetadata] Incomplete metadata or invalid variants, triggering fallback download. usage_metric:processing_fallback',
+      {
+        uri,
+        metadata,
+        paths: { originalPath, resizedPath, thumbnailPath },
+      }
+    );
     return processRemoteAttachmentWithoutMetadata(attachment, uploadedPaths);
   }
 
-  const aspectRatio = metadata?.aspectRatio ?? width / height;
-
-  // Extract storage paths from signed URLs (if present) for edge function validation
-  // The edge function requires bucket-relative paths (e.g., "community-posts/user_id/hash/original.jpg")
-  // not full signed URLs
-  const originalPath = extractSupabaseStoragePath(uri) ?? uri;
-  const resizedPath = isSupabaseStorageUri(metadata?.resizedPath)
-    ? (extractSupabaseStoragePath(metadata!.resizedPath!) ??
-      metadata!.resizedPath!)
-    : originalPath;
-  const thumbnailPath = isSupabaseStorageUri(metadata?.thumbnailPath)
-    ? (extractSupabaseStoragePath(metadata!.thumbnailPath!) ??
-      metadata!.thumbnailPath!)
-    : originalPath;
-
   return {
-    originalPath,
-    resizedPath,
-    thumbnailPath,
+    originalPath: originalPath!,
+    resizedPath: resizedPath!,
+    thumbnailPath: thumbnailPath!,
     width,
     height,
     aspectRatio,
@@ -314,8 +362,8 @@ const processAttachments = async (
         mediaPayloads.push(mediaPayload);
       } else {
         // Remote prefill attachment - may need downloading if no metadata
-        // Process through our attachment handler which will download if needed
-        const mediaPayload = await processRemoteAttachment(
+        // Ensure we have complete metadata, downloading and reprocessing if necessary
+        const mediaPayload = await ensureRemoteAttachmentMetadata(
           attachment,
           uploadedPaths
         );
@@ -342,6 +390,17 @@ export const useAddPost = createMutation<Response, Variables, AxiosError>({
       }
     }
 
+    // Validate strain and category
+    const strainValidation = strainSchema.safeParse(variables.strain);
+    if (!strainValidation.success) {
+      throw new Error(`Invalid strain: ${strainValidation.error.message}`);
+    }
+
+    const categoryValidation = categorySchema.safeParse(variables.category);
+    if (!categoryValidation.success) {
+      throw new Error(`Invalid category: ${categoryValidation.error.message}`);
+    }
+
     // Process first photo attachment if present (backend only supports single media)
     const { mediaPayloads, uploadedPaths } =
       variables.attachments && variables.attachments.length > 0
@@ -350,13 +409,15 @@ export const useAddPost = createMutation<Response, Variables, AxiosError>({
 
     try {
       return await client({
-        url: 'posts/add',
+        url: 'create-post',
         method: 'POST',
         data: {
           title: variables.title,
           body: variables.body,
           media: mediaPayloads.length > 0 ? mediaPayloads[0] : undefined,
           sourceAssessmentId: variables.sourceAssessmentId,
+          strain: variables.strain,
+          category: variables.category,
         },
       }).then((response) => response.data);
     } catch (error) {

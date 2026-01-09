@@ -62,6 +62,7 @@ SENTRY_DSN=
 - [Components](https://starter.obytes.com/ui-and-theme/components)
 - [Forms](https://starter.obytes.com/ui-and-theme/Forms)
 - [Data fetching](https://starter.obytes.com/guides/data-fetching)
+- [Project Dependencies](./docs/dependencies.md)
 - [Contribute to starter](https://starter.obytes.com/how-to-contribute/)
 
 ## 🔧 Features

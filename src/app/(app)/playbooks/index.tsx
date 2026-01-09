@@ -165,7 +165,7 @@ export default function PlaybooksScreen() {
         {loading ? (
           <CenteredMessage message={t('common.loading')} />
         ) : error ? (
-          <CenteredMessage message={t('playbooks.loadError')} />
+          <CenteredMessage message={t('playbooks.load_error')} />
         ) : (
           <PlaybookSelectionList
             playbooks={playbooks}

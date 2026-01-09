@@ -113,7 +113,7 @@ export function SortableDayView({
       <View style={styles.header}>
         <Text className="text-lg font-semibold">{dateString}</Text>
         <Text className="text-xs text-neutral-500">
-          {t('calendar.taskCount', { count: tasks.length })}
+          {t('calendar.task_count', { count: tasks.length })}
         </Text>
       </View>
 
@@ -130,7 +130,7 @@ export function SortableDayView({
       ) : (
         <View style={styles.emptyState}>
           <Text className="text-neutral-500">
-            {t('calendar.noTasksForDay')}
+            {t('calendar.no_tasks_for_day')}
           </Text>
         </View>
       )}

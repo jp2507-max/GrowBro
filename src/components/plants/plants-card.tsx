@@ -6,11 +6,9 @@ import Animated, {
   useSharedValue,
   type SharedValue,
 } from 'react-native-reanimated';
-// @ts-expect-error - Reanimated 4.x type exports issue
-import { interpolate } from 'react-native-reanimated';
 
 import type { Plant } from '@/api';
-import { Image, Pressable, Text, View } from '@/components/ui';
+import { OptimizedImage, Pressable, Text, View } from '@/components/ui';
 import { ArrowRight } from '@/components/ui/icons/arrow-right';
 import colors from '@/components/ui/colors';
 import { useAnimatedScrollList } from '@/lib/animations/animated-scroll-list-provider';
@@ -141,7 +139,7 @@ function PlantCardImage({
   colors: StageColors;
 }): React.ReactElement {
   // Auto-sync plant photo from remote if missing locally
-  const { resolvedLocalUri } = usePlantPhotoSync(plant);
+  const { resolvedLocalUri, thumbnailUrl } = usePlantPhotoSync(plant);
 
   return (
     <View
@@ -149,10 +147,12 @@ function PlantCardImage({
       style={{ backgroundColor: colors.badgeBg }}
     >
       {resolvedLocalUri ? (
-        <Image
-          source={{ uri: resolvedLocalUri }}
+        <OptimizedImage
+          uri={resolvedLocalUri}
+          thumbnailUri={thumbnailUrl}
           className="size-full"
           contentFit="cover"
+          recyclingKey={plant.id}
           testID={`plant-card-${plant.id}-image`}
         />
       ) : (
@@ -344,16 +344,13 @@ export function PlantCard({
     const start = effItemY.value - 1;
     const mid = effItemY.value;
     const end = effItemY.value + h;
-    const scale = interpolate(
-      listOffsetY.value,
-      [start, mid, end],
-      [1, 1, 0.98]
+    const offset = listOffsetY.value;
+    const scaleProgress = Math.min(
+      Math.max((offset - mid) / (end - mid), 0),
+      1
     );
-    const translateY = interpolate(
-      listOffsetY.value,
-      [start - 1, start, start + 1],
-      [0, 0, 1]
-    );
+    const scale = 1 - 0.02 * scaleProgress;
+    const translateY = Math.min(Math.max(offset - start, 0), 1);
     return { transform: [{ translateY }, { scale }] };
   });
 

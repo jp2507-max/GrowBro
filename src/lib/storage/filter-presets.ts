@@ -1,13 +1,14 @@
-import { MMKV } from 'react-native-mmkv';
-
+/**
+ * Filter Presets Storage
+ *
+ * Uses the shared MMKV storage instance with namespaced keys
+ * to avoid storage fragmentation.
+ */
 import type { StrainFilters } from '@/api/strains/types';
 
-const FILTER_PRESETS_KEY = 'strains_filter_presets';
-const MAX_PRESETS = 5;
+import { storage, STORAGE_KEYS } from '../storage';
 
-const storage = new MMKV({
-  id: 'strains-filter-storage',
-});
+const MAX_PRESETS = 5;
 
 export interface FilterPreset {
   id: string;
@@ -21,7 +22,7 @@ export interface FilterPreset {
  */
 export function getFilterPresets(): FilterPreset[] {
   try {
-    const json = storage.getString(FILTER_PRESETS_KEY);
+    const json = storage.getString(STORAGE_KEYS.STRAINS_FILTER_PRESETS);
     if (!json) return [];
     return JSON.parse(json) as FilterPreset[];
   } catch (error) {
@@ -46,7 +47,7 @@ export function saveFilterPreset(name: string, filters: StrainFilters): void {
     };
 
     const updated = [newPreset, ...presets].slice(0, MAX_PRESETS);
-    storage.set(FILTER_PRESETS_KEY, JSON.stringify(updated));
+    storage.set(STORAGE_KEYS.STRAINS_FILTER_PRESETS, JSON.stringify(updated));
   } catch (error) {
     console.error('[FilterPresets] Failed to save preset:', error);
   }
@@ -59,7 +60,7 @@ export function removeFilterPreset(id: string): void {
   try {
     const presets = getFilterPresets();
     const filtered = presets.filter((preset) => preset.id !== id);
-    storage.set(FILTER_PRESETS_KEY, JSON.stringify(filtered));
+    storage.set(STORAGE_KEYS.STRAINS_FILTER_PRESETS, JSON.stringify(filtered));
   } catch (error) {
     console.error('[FilterPresets] Failed to remove preset:', error);
   }
@@ -70,7 +71,7 @@ export function removeFilterPreset(id: string): void {
  */
 export function clearFilterPresets(): void {
   try {
-    storage.delete(FILTER_PRESETS_KEY);
+    storage.delete(STORAGE_KEYS.STRAINS_FILTER_PRESETS);
   } catch (error) {
     console.error('[FilterPresets] Failed to clear presets:', error);
   }

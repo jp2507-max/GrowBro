@@ -17,7 +17,6 @@ import * as SecureStore from 'expo-secure-store';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, ScrollView } from 'react-native';
-import { MMKV } from 'react-native-mmkv';
 
 import { useRequestAccountDeletion } from '@/api/auth/use-request-account-deletion';
 import { ReAuthModal, useReAuthModal } from '@/components/auth/re-auth-modal';
@@ -30,6 +29,7 @@ import {
 } from '@/components/ui';
 import { AlertCircle, Trash } from '@/components/ui/icons';
 import { showErrorMessage, showSuccessMessage, useAuth } from '@/lib';
+import { clearAuthStorage } from '@/lib/auth/auth-storage';
 import { database } from '@/lib/watermelon';
 
 /**
@@ -84,9 +84,8 @@ async function clearLocalData(): Promise<void> {
       await database.unsafeResetDatabase();
     });
 
-    // 2. Clear MMKV storage (auth state, preferences, cached settings)
-    const mmkvStorage = new MMKV({ id: 'auth-storage' });
-    mmkvStorage.clearAll();
+    // 2. Clear MMKV auth storage (auth state, preferences, cached settings)
+    await clearAuthStorage();
 
     // 3. Clear SecureStore keys (sensitive credentials and encryption keys)
     const secureStoreKeys = [

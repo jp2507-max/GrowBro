@@ -8,11 +8,19 @@
  * - Pending retry UI on failure
  */
 
+import type { QueryKey, UseMutationResult } from '@tanstack/react-query';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { randomUUID } from 'expo-crypto';
 import { showMessage } from 'react-native-flash-message';
-import { v4 as uuidv4 } from 'uuid';
 
 import type { PaginateQuery } from '@/api/types';
+import {
+  communityPostKey,
+  isCommunityCommentsKey,
+  isCommunityPostsInfiniteKey,
+  isCommunityUserPostsKey,
+} from '@/lib/community/query-keys';
+import { translate, type TxKeyPath } from '@/lib/i18n';
 import { database } from '@/lib/watermelon';
 import type { OutboxModel } from '@/lib/watermelon-models/outbox';
 import type { PostComment } from '@/types/community';
@@ -24,21 +32,26 @@ const apiClient = getCommunityApiClient();
 interface CreateCommentVariables {
   postId: string;
   body: string;
+  // Optional keys for idempotency - usually injected by the hook wrapper
+  idempotencyKey?: string;
+  clientTxId?: string;
 }
 
 interface CreateCommentContext {
-  previousComments?: PaginateQuery<PostComment>;
+  previousComments?: [QueryKey, PaginateQuery<PostComment> | undefined][];
   tempComment: PostComment;
+  idempotencyKey: string;
+  clientTxId: string;
 }
 
 // Validation utilities
 function validateCommentBody(body: string): void {
   if (!body || body.trim().length === 0) {
-    throw new ValidationError('Comment body cannot be empty');
+    throw new ValidationError('community.comment_body_empty');
   }
 
   if (body.length > 500) {
-    throw new ValidationError('Comment cannot exceed 500 characters');
+    throw new ValidationError('community.comment_too_long');
   }
 }
 
@@ -83,8 +96,13 @@ async function queueCommentInOutbox(payload: {
 }
 
 // Optimistic update utilities
-function createTempComment(postId: string, body: string): PostComment {
-  const tempId = `temp-${uuidv4()}`;
+function createTempComment(
+  postId: string,
+  body: string,
+  clientTxId: string
+): PostComment {
+  // Use clientTxId for deterministic ID across retries
+  const tempId = `temp-${postId}-${clientTxId}`;
   return {
     id: tempId,
     post_id: postId,
@@ -100,24 +118,28 @@ function optimisticallyAddComment(
   postId: string,
   tempComment: PostComment
 ): void {
-  const previousComments = queryClient.getQueryData<PaginateQuery<PostComment>>(
-    ['comments', postId]
-  );
+  queryClient.setQueriesData<PaginateQuery<PostComment>>(
+    {
+      predicate: (query) =>
+        isCommunityCommentsKey(query.queryKey) && query.queryKey[1] === postId,
+    },
+    (previousComments) => {
+      if (previousComments) {
+        return {
+          ...previousComments,
+          results: [...previousComments.results, tempComment],
+          count: (previousComments.count || 0) + 1,
+        };
+      }
 
-  if (previousComments) {
-    queryClient.setQueryData<PaginateQuery<PostComment>>(['comments', postId], {
-      ...previousComments,
-      results: [...previousComments.results, tempComment],
-      count: (previousComments.count || 0) + 1,
-    });
-  } else {
-    queryClient.setQueryData<PaginateQuery<PostComment>>(['comments', postId], {
-      results: [tempComment],
-      count: 1,
-      next: null,
-      previous: null,
-    });
-  }
+      return {
+        results: [tempComment],
+        count: 1,
+        next: null,
+        previous: null,
+      };
+    }
+  );
 }
 
 // Success handling utility
@@ -127,19 +149,21 @@ function replaceTempCommentWithServerComment(
   context: { tempComment: PostComment; newComment: PostComment }
 ): void {
   const { tempComment, newComment } = context;
-  const currentComments = queryClient.getQueryData<PaginateQuery<PostComment>>([
-    'comments',
-    postId,
-  ]);
-
-  if (currentComments) {
-    queryClient.setQueryData<PaginateQuery<PostComment>>(['comments', postId], {
-      ...currentComments,
-      results: currentComments.results.map((comment) =>
-        comment.id === tempComment.id ? newComment : comment
-      ),
-    });
-  }
+  queryClient.setQueriesData<PaginateQuery<PostComment>>(
+    {
+      predicate: (query) =>
+        isCommunityCommentsKey(query.queryKey) && query.queryKey[1] === postId,
+    },
+    (currentComments) => {
+      if (!currentComments) return currentComments;
+      return {
+        ...currentComments,
+        results: currentComments.results.map((comment) =>
+          comment.id === tempComment.id ? newComment : comment
+        ),
+      };
+    }
+  );
 }
 
 // Error handling utilities
@@ -148,17 +172,19 @@ function handleValidationError(
   postId: string,
   context: {
     error: ValidationError;
-    previousComments?: PaginateQuery<PostComment>;
+    previousComments?: [QueryKey, PaginateQuery<PostComment> | undefined][];
   }
 ): void {
   const { error, previousComments } = context;
   if (previousComments) {
-    queryClient.setQueryData(['comments', postId], previousComments);
+    previousComments.forEach(([key, data]) => {
+      queryClient.setQueryData(key, data);
+    });
   }
 
   showMessage({
-    message: 'Invalid comment',
-    description: error.message,
+    message: translate('community.invalid_comment'),
+    description: translate(error.message as TxKeyPath),
     type: 'danger',
     duration: 3000,
   });
@@ -166,56 +192,126 @@ function handleValidationError(
 
 function handleNetworkError(): void {
   showMessage({
-    message: 'Comment queued for retry',
-    description: 'Will automatically retry when connection is restored',
+    message: translate('community.comment_queued'),
+    description: translate('community.comment_queued_description'),
     type: 'warning',
     duration: 3000,
   });
 }
 
-/**
- * Optimistically create a comment
- */
-export function useCreateComment() {
-  const queryClient = useQueryClient();
+function handleOutboxQueueError(
+  context: CreateCommentContext | undefined,
+  queryClient: ReturnType<typeof useQueryClient>
+): void {
+  if (context?.previousComments) {
+    context.previousComments.forEach(([key, data]) => {
+      queryClient.setQueryData(key, data);
+    });
+  }
+  showMessage({
+    message: translate('community.comment_offline_failed'),
+    description: translate('community.comment_offline_failed_description'),
+    type: 'danger',
+    duration: 3000,
+  });
+}
 
-  return useMutation<
-    PostComment,
-    Error,
-    CreateCommentVariables,
-    CreateCommentContext
-  >({
-    mutationFn: async ({ postId, body }) => {
-      validateCommentBody(body);
+function invalidateCommentRelatedQueries(
+  queryClient: ReturnType<typeof useQueryClient>,
+  postId: string
+): void {
+  queryClient.invalidateQueries({
+    predicate: (query) =>
+      isCommunityCommentsKey(query.queryKey) && query.queryKey[1] === postId,
+  });
+  queryClient.invalidateQueries({
+    predicate: (query) => isCommunityPostsInfiniteKey(query.queryKey),
+  });
+  queryClient.invalidateQueries({
+    predicate: (query) => isCommunityUserPostsKey(query.queryKey),
+  });
+  queryClient.invalidateQueries({
+    queryKey: communityPostKey(postId),
+  });
+}
 
-      const idempotencyKey = uuidv4();
-      const clientTxId = uuidv4();
+async function performCreateCommentMutation({
+  postId,
+  body,
+  idempotencyKey,
+  clientTxId,
+}: CreateCommentVariables) {
+  validateCommentBody(body);
 
-      await queueCommentInOutbox({ postId, body, clientTxId, idempotencyKey });
+  try {
+    return await apiClient.createComment(
+      { postId, body },
+      idempotencyKey!,
+      clientTxId!
+    );
+  } catch (error) {
+    if (error instanceof ValidationError) {
+      throw error;
+    }
 
-      const comment = await apiClient.createComment(
-        { postId, body },
-        idempotencyKey,
-        clientTxId
-      );
+    try {
+      await queueCommentInOutbox({
+        postId,
+        body,
+        clientTxId: clientTxId!,
+        idempotencyKey: idempotencyKey!,
+      });
+      // Rethrow original error to trigger onError -> handleNetworkError (show queued toast)
+      throw error;
+    } catch (queueError) {
+      // If queueing also fails, throw specific error
+      if (queueError === error) throw error;
 
-      return comment;
-    },
+      const err = new Error(
+        'Failed to queue comment in outbox'
+      ) as ErrorWithCode;
+      err.code = OUTBOX_QUEUE_FAILED;
+      throw err;
+    }
+  }
+}
 
-    onMutate: async ({ postId, body }) => {
-      await queryClient.cancelQueries({ queryKey: ['comments', postId] });
-
-      const previousComments = queryClient.getQueryData<
+// Factory to create mutation options - extracted to reduce hook body size
+function createMutationOptions(queryClient: ReturnType<typeof useQueryClient>) {
+  return {
+    mutationFn: performCreateCommentMutation,
+    onMutate: async ({
+      postId,
+      body,
+      idempotencyKey,
+      clientTxId,
+    }: CreateCommentVariables) => {
+      await queryClient.cancelQueries({
+        predicate: (query) =>
+          isCommunityCommentsKey(query.queryKey) &&
+          query.queryKey[1] === postId,
+      });
+      const previousComments = queryClient.getQueriesData<
         PaginateQuery<PostComment>
-      >(['comments', postId]);
-      const tempComment = createTempComment(postId, body);
-
+      >({
+        predicate: (query) =>
+          isCommunityCommentsKey(query.queryKey) &&
+          query.queryKey[1] === postId,
+      });
+      const tempComment = createTempComment(postId, body, clientTxId!);
       optimisticallyAddComment(queryClient, postId, tempComment);
-
-      return { previousComments, tempComment };
+      return {
+        previousComments,
+        tempComment,
+        idempotencyKey: idempotencyKey!,
+        clientTxId: clientTxId!,
+      };
     },
-
-    onSuccess: (newComment, variables, context) => {
+    onSuccess: (
+      newComment: PostComment,
+      variables: CreateCommentVariables,
+      context: CreateCommentContext | undefined
+    ): void => {
       if (context) {
         replaceTempCommentWithServerComment(queryClient, variables.postId, {
           tempComment: context.tempComment,
@@ -223,36 +319,62 @@ export function useCreateComment() {
         });
       }
     },
-
-    onError: (error, variables, context) => {
+    onError: (
+      error: Error,
+      variables: CreateCommentVariables,
+      context: CreateCommentContext | undefined
+    ): void => {
       if (error instanceof ValidationError) {
         handleValidationError(queryClient, variables.postId, {
           error,
           previousComments: context?.previousComments,
         });
       } else if (hasErrorCode(error, OUTBOX_QUEUE_FAILED)) {
-        if (context?.previousComments) {
-          queryClient.setQueryData(
-            ['comments', variables.postId],
-            context.previousComments
-          );
-        }
-        showMessage({
-          message: 'Could not save comment offline',
-          description: 'Please try again.',
-          type: 'danger',
-          duration: 3000,
-        });
+        handleOutboxQueueError(context, queryClient);
       } else {
         handleNetworkError();
       }
     },
-
-    onSettled: (data, error, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: ['comments', variables.postId],
-      });
-      queryClient.invalidateQueries({ queryKey: ['posts'] });
+    onSettled: (
+      _data: PostComment | undefined,
+      _error: Error | null,
+      variables: CreateCommentVariables
+    ): void => {
+      invalidateCommentRelatedQueries(queryClient, variables.postId);
     },
-  });
+  };
+}
+
+function enrichVariables(variables: CreateCommentVariables) {
+  return {
+    ...variables,
+    idempotencyKey: variables.idempotencyKey || randomUUID(),
+    clientTxId: variables.clientTxId || randomUUID(),
+  };
+}
+
+/**
+ * Optimistically create a comment
+ */
+export function useCreateComment(): UseMutationResult<
+  PostComment,
+  Error,
+  CreateCommentVariables,
+  CreateCommentContext
+> {
+  const queryClient = useQueryClient();
+  const mutation = useMutation<
+    PostComment,
+    Error,
+    CreateCommentVariables,
+    CreateCommentContext
+  >(createMutationOptions(queryClient));
+
+  return {
+    ...mutation,
+    mutate: (variables, options) =>
+      mutation.mutate(enrichVariables(variables), options),
+    mutateAsync: (variables, options) =>
+      mutation.mutateAsync(enrichVariables(variables), options),
+  };
 }

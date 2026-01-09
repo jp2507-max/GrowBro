@@ -16,6 +16,7 @@ import {
   type PlantFormValues,
   type PlantPhotoInfo,
 } from '@/components/plants/plant-form';
+import { PlantNutrientSection } from '@/components/plants/plant-nutrient-section';
 import { PlantStatsGrid } from '@/components/plants/plant-stats-grid';
 import {
   ActivityIndicator,
@@ -164,6 +165,9 @@ function PlantContentSheet({
             onHarvestPress={handleHarvestPress}
           />
         </View>
+
+        {/* pH/EC Readings Section */}
+        <PlantNutrientSection plantId={plantId} />
 
         <PlantAssessmentHistorySection
           plantId={plantId}

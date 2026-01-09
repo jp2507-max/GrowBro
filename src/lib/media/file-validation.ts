@@ -5,7 +5,7 @@
  * - 5.4: Guard against large originals to prevent memory issues
  */
 
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 
 const MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024; // 20MB
 

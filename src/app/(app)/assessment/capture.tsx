@@ -1,7 +1,7 @@
+import { randomUUID } from 'expo-crypto';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { type ReactNode, useCallback, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator } from 'react-native';
-import { v4 as uuidv4 } from 'uuid';
 
 import { AdaptiveCameraCapture } from '@/components/assessment/adaptive-camera-capture';
 import { PermissionDenied } from '@/components/assessment/permission-denied';
@@ -203,7 +203,7 @@ function useAssessmentSession() {
   const params = useLocalSearchParams();
   const assessmentIdRef = useRef<string | null>(null);
   if (!assessmentIdRef.current) {
-    assessmentIdRef.current = uuidv4();
+    assessmentIdRef.current = randomUUID();
   }
   const assessmentId = assessmentIdRef.current!;
 
@@ -253,7 +253,7 @@ export default function AssessmentCaptureScreen() {
       } catch (error) {
         console.error('Assessment inference failed:', error);
         setCapturedPhotos([]);
-        showErrorMessage(translateDynamic('assessment.errors.analysisFailed'));
+        showErrorMessage(translateDynamic('assessment.errors.analysis_failed'));
       }
     },
     [assessmentId, plantContext, router]
@@ -287,9 +287,9 @@ export default function AssessmentCaptureScreen() {
       }
     } catch (error) {
       console.error('Failed to store photo:', error);
-      setPhotoError(translateDynamic('assessment.errors.photoStorageFailed'));
+      setPhotoError(translateDynamic('assessment.errors.photo_storage_failed'));
       showErrorMessage(
-        translateDynamic('assessment.errors.photoStorageFailed')
+        translateDynamic('assessment.errors.photo_storage_failed')
       );
     } finally {
       setIsProcessing(false);

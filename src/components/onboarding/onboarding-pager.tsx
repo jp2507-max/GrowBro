@@ -20,13 +20,13 @@ import type {
 import { useWindowDimensions } from 'react-native';
 import {
   // @ts-ignore - Reanimated 4.x type exports issue
-  interpolate,
   useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
 } from 'react-native-reanimated';
 
 import { FocusAwareStatusBar, View } from '@/components/ui';
+import { ctaGateToLastIndex } from '@/lib/animations';
 import { AnimatedIndexProvider } from '@/lib/animations/index-context';
 import {
   trackOnboardingComplete,
@@ -83,7 +83,7 @@ export function OnboardingPager({
   const { width } = useWindowDimensions();
   const scrollRef = React.useRef<ScrollView | null>(null);
   const activeIndex = useSharedValue(0);
-  const lastIndex = slides.length - 1;
+  const lastIndex = Math.max(slides.length - 1, 0);
   const trackingRef = React.useRef<TrackingState>({
     startTime: Date.now(),
     slideTimes: { 0: Date.now() },
@@ -105,13 +105,7 @@ export function OnboardingPager({
   const ctaStyle = useAnimatedStyle(() => {
     'worklet';
     if (lastIndex === 0) return { opacity: 1 };
-    return {
-      opacity: interpolate(
-        activeIndex.value,
-        [Math.max(lastIndex - 1, 0), lastIndex],
-        [0, 1]
-      ),
-    };
+    return { opacity: ctaGateToLastIndex(activeIndex, lastIndex).opacity };
   });
 
   const handleScrollEnd = React.useCallback(

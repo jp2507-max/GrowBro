@@ -60,8 +60,8 @@ export function CameraPermissionPrimer({
       } else if (!granted) {
         // Permission permanently denied, guide to settings
         Alert.alert(
-          translate('onboarding.permissions.camera.deniedTitle'),
-          translate('onboarding.permissions.camera.deniedMessage'),
+          translate('onboarding.permissions.camera.denied_title'),
+          translate('onboarding.permissions.camera.denied_message'),
           [
             {
               text: translate('common.cancel'),
@@ -69,7 +69,7 @@ export function CameraPermissionPrimer({
               onPress: () => onComplete(false),
             },
             {
-              text: translate('common.openSettings'),
+              text: translate('common.open_settings'),
               onPress: () => {
                 if (Platform.OS === 'ios') {
                   Linking.openURL('app-settings:');

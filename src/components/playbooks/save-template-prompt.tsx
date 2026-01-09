@@ -38,7 +38,7 @@ function StatsDisplay({
     <View className="mb-6 rounded-lg bg-primary-50 p-4 dark:bg-primary-900/20">
       <View className="flex-row items-center justify-between">
         <Text className="text-sm font-medium text-charcoal-700 dark:text-neutral-300">
-          {t('playbooks.customizationLevel')}
+          {t('playbooks.customization_level')}
         </Text>
         <Text className="text-lg font-bold text-primary-600 dark:text-primary-400">
           {Math.round(percentage)}%
@@ -46,7 +46,7 @@ function StatsDisplay({
       </View>
       <View className="mt-2 flex-row items-center justify-between">
         <Text className="text-xs text-neutral-600 dark:text-neutral-400">
-          {t('playbooks.customizedTasks')}
+          {t('playbooks.customized_tasks')}
         </Text>
         <Text className="text-sm font-medium text-charcoal-700 dark:text-neutral-300">
           {customized} / {total}
@@ -69,10 +69,10 @@ function CommunityToggle({
     <View className="mb-6 flex-row items-center justify-between rounded-lg bg-neutral-50 p-4 dark:bg-charcoal-800">
       <View className="flex-1">
         <Text className="text-sm font-medium text-charcoal-900 dark:text-neutral-100">
-          {t('playbooks.shareWithCommunity')}
+          {t('playbooks.share_with_community')}
         </Text>
         <Text className="mt-1 text-xs text-neutral-600 dark:text-neutral-400">
-          {t('playbooks.shareWithCommunityHint')}
+          {t('playbooks.share_with_community_hint')}
         </Text>
       </View>
       <Button
@@ -131,10 +131,10 @@ export function SaveTemplatePrompt({
       <View className="mx-4 w-full max-w-lg rounded-2xl bg-white p-6 dark:bg-charcoal-900">
         <View className="mb-4">
           <Text className="text-xl font-semibold text-charcoal-900 dark:text-neutral-100">
-            {t('playbooks.saveAsTemplate')}
+            {t('playbooks.save_as_template')}
           </Text>
           <Text className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
-            {t('playbooks.saveAsTemplateDescription', {
+            {t('playbooks.save_as_template_description', {
               percentage: Math.round(customizationPercentage),
               customized: customizedTasks,
               total: totalTasks,
@@ -151,12 +151,12 @@ export function SaveTemplatePrompt({
 
         <View className="mb-4">
           <Text className="mb-2 text-sm font-medium text-charcoal-700 dark:text-neutral-300">
-            {t('playbooks.templateName')}
+            {t('playbooks.template_name')}
           </Text>
           <Input
             value={name}
             onChangeText={setName}
-            placeholder={t('playbooks.templateNamePlaceholder')}
+            placeholder={t('playbooks.template_name_placeholder')}
             testID="template-name-input"
           />
         </View>
@@ -168,11 +168,11 @@ export function SaveTemplatePrompt({
           <Input
             value={tags}
             onChangeText={setTags}
-            placeholder={t('playbooks.tagsPlaceholder')}
+            placeholder={t('playbooks.tags_placeholder')}
             testID="template-tags-input"
           />
           <Text className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-            {t('playbooks.tagsHint')}
+            {t('playbooks.tags_hint')}
           </Text>
         </View>
 

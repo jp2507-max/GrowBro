@@ -10,12 +10,12 @@
  */
 
 import { useRouter } from 'expo-router';
-import { DateTime } from 'luxon';
 import * as React from 'react';
 import { Pressable } from 'react-native';
 
 import { Text, View } from '@/components/ui';
 import type { AssessmentQueryResult } from '@/lib/assessment/assessment-queries';
+import { formatRelativeTimeTranslated } from '@/lib/datetime/format-relative-time';
 
 type AssessmentHistoryCardProps = {
   assessment: AssessmentQueryResult;
@@ -47,8 +47,10 @@ export function AssessmentHistoryCard({
     : null;
 
   const relativeTime = React.useMemo(() => {
-    const dt = DateTime.fromJSDate(assessment.createdAt);
-    return dt.toRelative() ?? 'Unknown';
+    return formatRelativeTimeTranslated(
+      assessment.createdAt.toISOString(),
+      'common.time_ago'
+    );
   }, [assessment.createdAt]);
 
   const statusColor = React.useMemo(() => {

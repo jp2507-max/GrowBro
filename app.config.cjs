@@ -196,6 +196,8 @@ function createExpoConfig(config) {
         BGTaskSchedulerPermittedIdentifiers: [
           'com.expo.modules.backgroundtask.processing',
         ],
+        // Enable iOS 26 liquid glass effect (false = use new design system)
+        UIDesignRequiresCompatibility: false,
       },
     },
     experiments: {
@@ -214,9 +216,8 @@ function createExpoConfig(config) {
           autoVerify: true,
           data: [
             {
-              scheme: 'growbro',
+              scheme: Env.SCHEME,
               host: '*',
-              pathPrefix: '/inventory',
             },
           ],
           category: ['BROWSABLE', 'DEFAULT'],
@@ -231,6 +232,7 @@ function createExpoConfig(config) {
       // Fix CocoaPods CDN source issue on EAS builds
       './plugins/with-podfile-source.js',
       // Added from app.json (merged into this config)
+      'expo-web-browser',
       'expo-secure-store',
       [
         'expo-local-authentication',
@@ -256,13 +258,55 @@ function createExpoConfig(config) {
       'expo-system-ui',
       'expo-router',
       'expo-apple-authentication',
-      [
-        '@react-native-google-signin/google-signin',
-        {
-          iosUrlScheme:
-            'com.googleusercontent.apps.706160531301-45q4did3e81681uhhq046642r3voumt2',
-        },
-      ],
+      // Google Sign-In: derive iosUrlScheme from GOOGLE_IOS_CLIENT_ID env var
+      // The URL scheme is the reversed client ID: com.googleusercontent.apps.<client-id-prefix>
+      ...(() => {
+        const rawClientId = Env.GOOGLE_IOS_CLIENT_ID;
+        if (!rawClientId) return [];
+
+        // Validate and derive the iOS URL scheme from the client ID
+        // Expected format: "<numeric-id>-<hash>.apps.googleusercontent.com"
+        // Example: "123456789012-abc123def456.apps.googleusercontent.com"
+        // Validate full client ID format first
+        const expectedSuffix = '.apps.googleusercontent.com';
+        const fullPattern =
+          /^\d+-[A-Za-z0-9_-]+\.apps\.googleusercontent\.com$/;
+        const prefixPattern = /^\d+-[A-Za-z0-9_-]+$/;
+
+        let clientIdPrefix;
+        if (fullPattern.test(rawClientId)) {
+          // Valid full format: extract the prefix
+          clientIdPrefix = rawClientId.slice(0, -expectedSuffix.length);
+        } else if (rawClientId.includes('.apps.googleusercontent.com')) {
+          // Has suffix but invalid format
+          throw new Error(
+            `GOOGLE_IOS_CLIENT_ID has invalid format: "${rawClientId}". ` +
+              `Expected: "<numeric-id>-<hash>.apps.googleusercontent.com" ` +
+              `(e.g., "123456789012-abc123def456.apps.googleusercontent.com")`
+          );
+        } else if (prefixPattern.test(rawClientId)) {
+          // Just the prefix - auto-append the suffix
+          clientIdPrefix = rawClientId;
+          console.warn(
+            `⚠️  GOOGLE_IOS_CLIENT_ID appears to be just the prefix. ` +
+              `Auto-appending suffix to use: "${rawClientId}.apps.googleusercontent.com"`
+          );
+        } else {
+          // Completely invalid
+          throw new Error(
+            `GOOGLE_IOS_CLIENT_ID has invalid format: "${rawClientId}". ` +
+              `Expected: "<numeric-id>-<hash>.apps.googleusercontent.com" ` +
+              `(e.g., "123456789012-abc123def456.apps.googleusercontent.com")`
+          );
+        }
+
+        // Prefix is already validated, no need for additional sanitization
+        const iosUrlScheme = `com.googleusercontent.apps.${clientIdPrefix}`;
+
+        return [
+          ['@react-native-google-signin/google-signin', { iosUrlScheme }],
+        ];
+      })(),
       [
         'expo-build-properties',
         {

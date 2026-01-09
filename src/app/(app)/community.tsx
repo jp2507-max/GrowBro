@@ -1,39 +1,97 @@
+/**
+ * Community Screen - "Deep Garden" Gallery Layout
+ *
+ * Instagram-style visual-first feed with:
+ * - Clean dark green header with glass-style filter button
+ * - Overlapping rounded sheet for content
+ * - Dismissible slim compliance banner as first item
+ * - Clean PostCard components with 4:5 images
+ * - Terracotta FAB for creating posts
+ */
+
 import { useFocusEffect, useScrollToTop } from '@react-navigation/native';
 import type { FlashListProps, FlashListRef } from '@shopify/flash-list';
 import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import React, { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import Animated from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import type { Post } from '@/api';
-import { usePostsInfinite } from '@/api';
-import { useUndoDeletePost } from '@/api/community';
-import { CannabisEducationalBanner } from '@/components/cannabis-educational-banner';
+import { useUndoDeletePost, useUserProfiles } from '@/api/community';
+import type { CommunityPostSort, Post } from '@/api/community/types';
+import { useCommunityPostsInfinite } from '@/api/community/use-posts-infinite';
 import { AgeGatedPostCard } from '@/components/community/age-gated-post-card';
 import { AgeVerificationPrompt } from '@/components/community/age-verification-prompt';
+import { CommunityDiscoveryEmptyState } from '@/components/community/community-discovery-empty-state';
+import { CommunityDiscoveryFilters } from '@/components/community/community-discovery-filters';
 import { CommunityEmptyState } from '@/components/community/community-empty-state';
 import { CommunityErrorBoundary } from '@/components/community/community-error-boundary';
 import { CommunityErrorCard } from '@/components/community/community-error-card';
+import { CommunityFab } from '@/components/community/community-fab';
 import { CommunityFooterLoader } from '@/components/community/community-footer-loader';
+import { CommunityHeader } from '@/components/community/community-header';
 import { CommunitySkeletonList } from '@/components/community/community-skeleton-list';
 import { OfflineIndicator } from '@/components/community/offline-indicator';
+import { OutboxBanner } from '@/components/community/outbox-banner';
 import { UndoSnackbar } from '@/components/community/undo-snackbar';
-import { ComposeBtn } from '@/components/compose-btn';
-import { FocusAwareStatusBar, Text, View } from '@/components/ui';
+import {
+  FocusAwareStatusBar,
+  Modal,
+  type ModalRef,
+  View,
+} from '@/components/ui';
+import { ComplianceBanner } from '@/components/ui/compliance-banner';
 import { translate, useAnalytics } from '@/lib';
 import { sanitizeCommunityErrorType } from '@/lib/analytics';
 import { useAnimatedScrollList } from '@/lib/animations/animated-scroll-list-provider';
 import { useBottomTabBarHeight } from '@/lib/animations/use-bottom-tab-bar-height';
+import { COMMUNITY_HELP_CATEGORY } from '@/lib/community/post-categories';
+import { normalizePostUserId } from '@/lib/community/post-utils';
+import {
+  createOutboxAdapter,
+  useCommunityFeedRealtime,
+} from '@/lib/community/use-community-feed-realtime';
+import {
+  getCachedUsernames,
+  setCachedUsernames,
+} from '@/lib/community/username-cache';
 import { getOptimizedFlashListConfig } from '@/lib/flashlist-config';
-import { useScreenErrorLogger } from '@/lib/hooks';
-import type { TxKeyPath } from '@/lib/i18n';
+import { haptics } from '@/lib/haptics';
+import { useDebouncedValue, useScreenErrorLogger } from '@/lib/hooks';
 import { useAgeGatedFeed } from '@/lib/moderation/use-age-gated-feed';
+import { database } from '@/lib/watermelon';
 
 const AnimatedFlashList = Animated.createAnimatedComponent(
   FlashList
 ) as React.ComponentClass<FlashListProps<Post>>;
 
-function useCommunityData() {
+type CommunityQueryParams = {
+  query?: string;
+  sort?: CommunityPostSort;
+  photosOnly?: boolean;
+  mineOnly?: boolean;
+  limit?: number;
+  category?: string | null;
+};
+
+type CommunityMode = 'showcase' | 'help';
+
+type FilterBundle = {
+  searchText: string;
+  sort: CommunityPostSort;
+  photosOnly: boolean;
+  mineOnly: boolean;
+};
+
+const DEFAULT_FILTER_BUNDLE: FilterBundle = {
+  searchText: '',
+  sort: 'new',
+  photosOnly: false,
+  mineOnly: false,
+};
+
+function useCommunityData(params: CommunityQueryParams) {
   const {
     data,
     isLoading,
@@ -42,8 +100,18 @@ function useCommunityData() {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
+    isFetching,
     refetch,
-  } = usePostsInfinite();
+  } = useCommunityPostsInfinite({
+    variables: {
+      query: params.query,
+      sort: params.sort,
+      photosOnly: params.photosOnly,
+      mineOnly: params.mineOnly,
+      limit: params.limit,
+      category: params.category,
+    },
+  });
 
   const [isRefreshing, setIsRefreshing] = React.useState(false);
 
@@ -70,6 +138,7 @@ function useCommunityData() {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
+    isFetching,
     refetch,
     error,
     isRefreshing,
@@ -110,7 +179,9 @@ function useSkeletonVisibility(isLoading: boolean, postsLength: number) {
 
 // eslint-disable-next-line max-lines-per-function
 export default function CommunityScreen(): React.ReactElement {
+  const { t } = useTranslation();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const {
     listRef: sharedListRef,
     scrollHandler,
@@ -120,7 +191,6 @@ export default function CommunityScreen(): React.ReactElement {
     () => sharedListRef as React.RefObject<FlashListRef<Post>>,
     [sharedListRef]
   );
-  // useScrollToTop accepts refs with scrollTo/scrollToOffset methods
   useScrollToTop(
     listRef as React.RefObject<{
       scrollToOffset: (params: { offset?: number; animated?: boolean }) => void;
@@ -136,8 +206,62 @@ export default function CommunityScreen(): React.ReactElement {
       };
     }, [resetScrollState])
   );
+
   const analytics = useAnalytics();
   const undoMutation = useUndoDeletePost();
+  const outboxAdapter = React.useMemo(() => createOutboxAdapter(database), []);
+  useCommunityFeedRealtime({ outboxAdapter });
+  const filterSheetRef = React.useRef<ModalRef>(null);
+
+  // Segment state: 0 = Showcase, 1 = Help Station
+  const [selectedIndex, setSelectedIndex] = React.useState(0);
+  const mode: CommunityMode = selectedIndex === 1 ? 'help' : 'showcase';
+
+  // Per-segment filter bundles
+  const [showcaseFilters, setShowcaseFilters] = React.useState<FilterBundle>(
+    DEFAULT_FILTER_BUNDLE
+  );
+  const [helpFilters, setHelpFilters] = React.useState<FilterBundle>(
+    DEFAULT_FILTER_BUNDLE
+  );
+
+  // Get active filter bundle based on mode
+  const activeFilters = mode === 'help' ? helpFilters : showcaseFilters;
+  const setActiveFilters =
+    mode === 'help' ? setHelpFilters : setShowcaseFilters;
+
+  const debouncedSearchText = useDebouncedValue(
+    activeFilters.searchText.trim(),
+    200
+  );
+
+  // Derive category from mode: Showcase = null (posts with no category), Help = help category
+  const category = mode === 'help' ? COMMUNITY_HELP_CATEGORY : null;
+
+  const hasActiveFilters =
+    activeFilters.sort !== 'new' ||
+    activeFilters.photosOnly ||
+    activeFilters.mineOnly;
+  const isDiscoveryActive =
+    hasActiveFilters || activeFilters.searchText.trim().length > 0;
+
+  // Segment labels for the header
+  const segmentLabels: [string, string] = React.useMemo(
+    () => [
+      t('community.segments.showcase'),
+      t('community.segments.help_station'),
+    ],
+    [t]
+  );
+
+  const handleSegmentChange = React.useCallback(
+    (index: number) => {
+      setSelectedIndex(index);
+      // Scroll to top when switching segments
+      listRef.current?.scrollToOffset({ offset: 0, animated: true });
+    },
+    [listRef]
+  );
 
   const [undoState, setUndoState] = React.useState<{
     postId: string | number;
@@ -157,7 +281,14 @@ export default function CommunityScreen(): React.ReactElement {
     refetch,
     isRefreshing,
     handleRefresh,
-  } = useCommunityData();
+  } = useCommunityData({
+    query: debouncedSearchText.length > 0 ? debouncedSearchText : undefined,
+    sort: activeFilters.sort,
+    photosOnly: activeFilters.photosOnly,
+    mineOnly: activeFilters.mineOnly,
+    limit: 20,
+    category,
+  });
 
   const {
     filterPosts,
@@ -174,6 +305,63 @@ export default function CommunityScreen(): React.ReactElement {
     [filterPosts, posts]
   );
 
+  const [activePostId, setActivePostId] = React.useState<
+    string | number | null
+  >(null);
+
+  const profileUserIds = React.useMemo(() => {
+    const ids = new Set<string>();
+    for (const post of filteredPosts) {
+      const normalized = normalizePostUserId(post);
+      const userId = normalized.userId;
+      if (!userId || userId === 'invalid-user-id') continue;
+      const id = String(userId);
+      if (id.startsWith('unknown-')) continue;
+      ids.add(id);
+    }
+    return Array.from(ids).sort();
+  }, [filteredPosts]);
+
+  const cachedUsernames = React.useMemo(
+    () => getCachedUsernames(profileUserIds),
+    [profileUserIds]
+  );
+
+  const missingProfileIds = React.useMemo(() => {
+    if (profileUserIds.length === 0) return [];
+    if (cachedUsernames.size === 0) return profileUserIds;
+    return profileUserIds.filter((id) => !cachedUsernames.has(id));
+  }, [cachedUsernames, profileUserIds]);
+
+  const { data: userProfiles } = useUserProfiles({
+    variables: { userIds: missingProfileIds },
+    enabled: missingProfileIds.length > 0,
+    staleTime: 1000 * 60 * 30,
+    gcTime: 1000 * 60 * 60,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  });
+
+  const profileUsernameById = React.useMemo(() => {
+    const map = new Map<string, string>(cachedUsernames);
+    if (userProfiles?.length) {
+      for (const profile of userProfiles) {
+        map.set(profile.id, profile.username);
+      }
+    }
+    return map;
+  }, [cachedUsernames, userProfiles]);
+
+  React.useEffect(() => {
+    if (!userProfiles?.length) return;
+    setCachedUsernames(userProfiles);
+  }, [userProfiles]);
+
+  const handleCardPressIn = React.useCallback((postId: string | number) => {
+    setActivePostId(postId);
+  }, []);
+
   const isSkeletonVisible = useSkeletonVisibility(isLoading, posts.length);
   const hasTrackedViewRef = React.useRef(false);
   const trackedEmptyReasonsRef = React.useRef<Set<'initial_load' | 'refresh'>>(
@@ -188,7 +376,7 @@ export default function CommunityScreen(): React.ReactElement {
     screen: 'community',
     feature: 'community-feed',
     action: 'fetch',
-    queryKey: 'posts-infinite',
+    queryKey: 'community-posts-infinite',
     metadata: {
       postsCount: posts.length,
       isFetchingNextPage,
@@ -239,8 +427,22 @@ export default function CommunityScreen(): React.ReactElement {
   }, [refetch]);
 
   const onCreatePress = React.useCallback(() => {
-    router.push('/add-post');
-  }, [router]);
+    // Pass mode param for Help Station so AddPost can set category
+    if (mode === 'help') {
+      router.push('/add-post?mode=help');
+    } else {
+      router.push('/add-post');
+    }
+  }, [router, mode]);
+
+  const handleFilterPress = React.useCallback(() => {
+    filterSheetRef.current?.present();
+  }, []);
+
+  const handleClearFilters = React.useCallback(() => {
+    setActiveFilters(DEFAULT_FILTER_BUNDLE);
+    filterSheetRef.current?.dismiss();
+  }, [setActiveFilters]);
 
   const handlePostDelete = React.useCallback(
     (postId: string | number, undoExpiresAt: string) => {
@@ -271,26 +473,98 @@ export default function CommunityScreen(): React.ReactElement {
   }, [router]);
 
   const renderItem = React.useCallback(
-    ({ item }: { item: Post }) => (
-      <AgeGatedPostCard
-        post={item}
-        isAgeVerified={isAgeVerified}
-        onDelete={handlePostDelete}
-        onVerifyPress={handleVerifyPress}
-      />
-    ),
-    [handlePostDelete, isAgeVerified, handleVerifyPress]
+    ({ item }: { item: Post }) => {
+      const normalized = normalizePostUserId(item);
+      const userId = normalized.userId;
+      const displayUsername =
+        userId && userId !== 'invalid-user-id'
+          ? (profileUsernameById.get(String(userId)) ?? null)
+          : null;
+
+      return (
+        <AgeGatedPostCard
+          post={item}
+          isAgeVerified={isAgeVerified}
+          onDelete={handlePostDelete}
+          onVerifyPress={handleVerifyPress}
+          displayUsername={displayUsername}
+          enableSharedTransition={activePostId === item.id}
+          onCardPressIn={handleCardPressIn}
+        />
+      );
+    },
+    [
+      activePostId,
+      handleCardPressIn,
+      handlePostDelete,
+      handleVerifyPress,
+      isAgeVerified,
+      profileUsernameById,
+    ]
   );
 
   const listEmpty = React.useCallback(() => {
     if (isSkeletonVisible) return <CommunitySkeletonList />;
     if (isError) return <CommunityErrorCard onRetry={onRetry} />;
+    if (isDiscoveryActive) {
+      return (
+        <CommunityDiscoveryEmptyState onClearFilters={handleClearFilters} />
+      );
+    }
     return <CommunityEmptyState onCreatePress={onCreatePress} />;
-  }, [isSkeletonVisible, isError, onRetry, onCreatePress]);
+  }, [
+    isSkeletonVisible,
+    isError,
+    isDiscoveryActive,
+    handleClearFilters,
+    onRetry,
+    onCreatePress,
+  ]);
 
   const listFooter = React.useCallback(
     () => <CommunityFooterLoader isVisible={isFetchingNextPage} />,
     [isFetchingNextPage]
+  );
+
+  const listHeader = React.useCallback(
+    () => (
+      <View className="px-4 pt-4">
+        {/* Dismissible Compliance Banner */}
+        <ComplianceBanner />
+
+        {/* Offline & Outbox indicators */}
+        <OfflineIndicator onRetrySync={refetch} />
+        <OutboxBanner />
+
+        {/* Age verification prompt */}
+        {requiresVerification && !isAgeCheckLoading && (
+          <AgeVerificationPrompt
+            visible={showAgePrompt}
+            onDismiss={() => setShowAgePrompt(false)}
+            contentType="feed"
+          />
+        )}
+
+        {/* Inline error for existing posts */}
+        {posts.length > 0 && isError && (
+          <View className="pb-4">
+            <CommunityErrorCard
+              onRetry={onRetry}
+              testID="community-inline-error"
+            />
+          </View>
+        )}
+      </View>
+    ),
+    [
+      refetch,
+      requiresVerification,
+      isAgeCheckLoading,
+      showAgePrompt,
+      posts.length,
+      isError,
+      onRetry,
+    ]
   );
 
   const onEndReached = React.useCallback(() => {
@@ -298,63 +572,95 @@ export default function CommunityScreen(): React.ReactElement {
     void fetchNextPage();
   }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
-  const showPostsCount = !isSkeletonVisible;
-  const postsCountKey: TxKeyPath = React.useMemo(() => {
-    if (posts.length === 0) return 'community.posts_count_zero';
-    if (posts.length === 1) return 'community.posts_count_one';
-    return 'community.posts_count_other';
-  }, [posts.length]);
-  const postsCountLabel = translate(postsCountKey, {
-    count: posts.length,
-  });
+  const getItemType = React.useCallback((item: Post) => {
+    return item.media_uri ? 'post-with-media' : 'post-text-only';
+  }, []);
+
+  const flashListConfig = React.useMemo(
+    () => getOptimizedFlashListConfig(),
+    []
+  );
+
+  const handleFilterPressWithHaptics = React.useCallback(() => {
+    haptics.selection();
+    handleFilterPress();
+  }, [handleFilterPress]);
 
   return (
     <>
       <CommunityErrorBoundary>
-        <CommunityListView
-          listRef={listRef}
-          posts={filteredPosts}
-          renderItem={renderItem}
-          onEndReached={onEndReached}
-          scrollHandler={scrollHandler}
-          grossHeight={grossHeight}
-          isRefreshing={isRefreshing}
-          onRefresh={handleRefresh}
-          listHeader={
-            <View className="px-4 pb-4">
-              <CannabisEducationalBanner />
-              <OfflineIndicator onRetrySync={refetch} />
-              {requiresVerification && !isAgeCheckLoading && (
-                <AgeVerificationPrompt
-                  visible={showAgePrompt}
-                  onDismiss={() => setShowAgePrompt(false)}
-                  contentType="feed"
-                />
-              )}
-              {showPostsCount ? (
-                <Text
-                  className="pt-4 text-sm text-neutral-600 dark:text-neutral-300"
-                  accessibilityRole="text"
-                  testID="community-posts-count"
-                >
-                  {postsCountLabel}
-                </Text>
-              ) : null}
-              {posts.length > 0 && isError ? (
-                <View className="pt-4">
-                  <CommunityErrorCard
-                    onRetry={onRetry}
-                    testID="community-inline-error"
-                  />
-                </View>
-              ) : null}
+        <View className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
+          <FocusAwareStatusBar />
+
+          {/* Shared Header Component */}
+          <CommunityHeader
+            insets={insets}
+            hasActiveFilters={hasActiveFilters}
+            onFilterPress={handleFilterPressWithHaptics}
+            selectedIndex={selectedIndex}
+            onSegmentChange={handleSegmentChange}
+            segmentLabels={segmentLabels}
+          />
+
+          {/* Content Sheet - Overlapping header with curved top */}
+          <View className="z-10 -mt-8 flex-1 overflow-hidden rounded-t-[35px] bg-neutral-50 dark:bg-stone-950">
+            {/* Drag indicator pill */}
+            <View className="w-full items-center pb-2 pt-4">
+              <View className="h-1 w-10 rounded-full bg-neutral-300 dark:bg-charcoal-700" />
             </View>
-          }
-          listEmpty={listEmpty}
-          listFooter={listFooter}
-          onCreatePress={onCreatePress}
-        />
+
+            <View className="flex-1" testID="community-screen">
+              <AnimatedFlashList
+                // @ts-expect-error - AnimatedFlashList ref type mismatch with FlashListRef
+                ref={listRef}
+                data={filteredPosts as Post[]}
+                renderItem={renderItem}
+                getItemType={getItemType}
+                keyExtractor={(item: Post) => String(item.id)}
+                onEndReached={onEndReached}
+                onEndReachedThreshold={0.4}
+                // @ts-expect-error - Reanimated scroll handler type is incompatible with FlashList onScroll
+                onScroll={scrollHandler}
+                scrollEventThrottle={flashListConfig.scrollEventThrottle}
+                removeClippedSubviews={flashListConfig.removeClippedSubviews}
+                drawDistance={flashListConfig.drawDistance}
+                refreshing={isRefreshing}
+                onRefresh={handleRefresh}
+                contentContainerStyle={{ paddingBottom: grossHeight + 80 }}
+                ListHeaderComponent={listHeader}
+                ListEmptyComponent={listEmpty}
+                ListFooterComponent={listFooter}
+              />
+
+              {/* Terracotta FAB for creating posts - changes style for Help mode */}
+              <CommunityFab onPress={onCreatePress} mode={mode} />
+            </View>
+          </View>
+        </View>
       </CommunityErrorBoundary>
+
+      <Modal
+        ref={filterSheetRef}
+        snapPoints={['70%']}
+        title={translate('community.filters_label')}
+      >
+        <CommunityDiscoveryFilters
+          sort={activeFilters.sort}
+          photosOnly={activeFilters.photosOnly}
+          mineOnly={activeFilters.mineOnly}
+          onSortChange={(sort) =>
+            setActiveFilters((prev) => ({ ...prev, sort }))
+          }
+          onPhotosOnlyChange={(photosOnly) =>
+            setActiveFilters((prev) => ({ ...prev, photosOnly }))
+          }
+          onMineOnlyChange={(mineOnly) =>
+            setActiveFilters((prev) => ({ ...prev, mineOnly }))
+          }
+          onClearAll={handleClearFilters}
+        />
+      </Modal>
+
       <UndoSnackbar
         visible={!!undoState}
         message={translate('accessibility.community.post_deleted')}
@@ -362,78 +668,8 @@ export default function CommunityScreen(): React.ReactElement {
         onUndo={handleUndo}
         onDismiss={handleDismissUndo}
         disabled={undoMutation.isPending}
+        bottomOffset={grossHeight + 16}
       />
     </>
-  );
-}
-
-function CommunityListView({
-  listRef,
-  posts,
-  renderItem,
-  onEndReached,
-  scrollHandler,
-  grossHeight,
-  isRefreshing,
-  onRefresh,
-  listHeader,
-  listEmpty,
-  listFooter,
-  onCreatePress,
-}: {
-  listRef: React.RefObject<FlashListRef<Post>>;
-  posts: Post[];
-  renderItem: ({ item }: { item: Post }) => React.ReactElement;
-  onEndReached: () => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  scrollHandler: any; // Reanimated scroll handler type is incompatible with FlashList onScroll
-  grossHeight: number;
-  isRefreshing: boolean;
-  onRefresh: () => void;
-  listHeader: React.ComponentType<unknown> | React.ReactElement | null;
-  listEmpty: React.ComponentType<unknown> | React.ReactElement | null;
-  listFooter: React.ComponentType<unknown> | React.ReactElement | null;
-  onCreatePress: () => void;
-}): React.ReactElement {
-  const getItemType = React.useCallback((item: Post) => {
-    // Differentiate posts with media from text-only for FlashList performance
-    return item.media_uri ? 'post-with-media' : 'post-text-only';
-  }, []);
-
-  // Get optimized FlashList configuration for device capabilities
-  const flashListConfig = React.useMemo(
-    () => getOptimizedFlashListConfig(),
-    []
-  );
-
-  return (
-    <View className="flex-1" testID="community-screen">
-      <FocusAwareStatusBar />
-      <AnimatedFlashList
-        // @ts-expect-error - AnimatedFlashList ref type mismatch with FlashListRef
-        ref={listRef}
-        data={posts}
-        renderItem={renderItem}
-        getItemType={getItemType}
-        keyExtractor={(item: Post) => String(item.id)}
-        onEndReached={onEndReached}
-        onEndReachedThreshold={0.4}
-        onScroll={scrollHandler}
-        scrollEventThrottle={flashListConfig.scrollEventThrottle}
-        // Performance optimizations for fast scrolling
-        removeClippedSubviews={flashListConfig.removeClippedSubviews}
-        drawDistance={flashListConfig.drawDistance}
-        maxToRenderPerBatch={flashListConfig.maxToRenderPerBatch}
-        windowSize={flashListConfig.windowSize}
-        updateCellsBatchingPeriod={flashListConfig.updateCellsBatchingPeriod}
-        refreshing={isRefreshing}
-        onRefresh={onRefresh}
-        contentContainerStyle={{ paddingBottom: grossHeight + 16 }}
-        ListHeaderComponent={listHeader}
-        ListEmptyComponent={listEmpty}
-        ListFooterComponent={listFooter}
-      />
-      <ComposeBtn onPress={onCreatePress} />
-    </View>
   );
 }

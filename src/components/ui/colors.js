@@ -51,6 +51,15 @@ module.exports = {
     // Primary container - semi-transparent green for badges/active states
     primaryContainer: 'rgba(22, 163, 74, 0.18)', // #16A34A at 18% opacity
     onPrimaryContainer: '#86EFAC', // Light mint green text (primary-300)
+    // Glass pill tab bar
+    glassPill: 'rgba(28, 25, 23, 0.70)', // Frosted glass overlay
+    glassCapsule: 'rgba(255, 255, 255, 0.22)', // Active tab capsule - prominent glass
+  },
+
+  // Light mode glass surfaces
+  lightSurface: {
+    glassPill: 'rgba(255, 255, 255, 0.85)', // Frosted glass overlay
+    glassCapsule: 'rgba(0, 0, 0, 0.08)', // Active tab capsule
   },
 
   // Sheet colors for bottom sheets and modals
