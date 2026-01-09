@@ -24,7 +24,13 @@ const corsHeaders = {
 
 const COMMUNITY_MEDIA_BUCKET = 'community-posts';
 // Note: Keep in sync with COMMUNITY_HELP_CATEGORY in src/lib/community/post-categories.ts
-const ALLOWED_POST_CATEGORIES = ['problem_deficiency'] as const;
+const ALLOWED_POST_CATEGORIES = [
+  'problem_deficiency',
+  'grow_tips',
+  'harvest',
+  'equipment',
+  'general',
+] as const;
 type PostCategory = (typeof ALLOWED_POST_CATEGORIES)[number];
 
 function isValidCategory(value: string): value is PostCategory {
@@ -421,24 +427,83 @@ Deno.serve(async (req: Request) => {
 
         // Regex Explanation:
         // ^                 Start of string
-        // [a-zA-Z0-9._-]+   Hash segment (safe chars only)
+        // [a-fA-F0-9]{64}   Hash segment (SHA-256 hex)
         // \/                Separator
         // [a-zA-Z0-9._-]+   Variant filename (safe chars only)
         // \.                Extension dot
         // [a-zA-Z0-9]+      Extension (e.g., jpg)
         // $                 End of string
         if (
-          !/^[a-zA-Z0-9._-]+\/[a-zA-Z0-9._-]+\.[a-zA-Z0-9]+$/.test(relativePath)
+          !/^[a-fA-F0-9]{64}\/[a-zA-Z0-9._-]+\.[a-zA-Z0-9]+$/.test(relativePath)
         ) {
           return new Response(
             JSON.stringify({
-              error: 'Invalid media path format. Expected {hash}/{variant}.ext',
+              error:
+                'Invalid media path format. Expected {sha256_hash}/{variant}.ext',
             }),
             {
               status: 400,
               headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             }
           );
+        }
+      }
+
+      // Security Check 5: Verify variant size hierarchy (Original >= Resized >= Thumbnail)
+      // This prevents malicious clients from swapping variants to bypass limits
+      if (hasMobileVariants) {
+        const getFolder = (p: string) => p.split('/').slice(1, 3).join('/');
+        const variantFolder = getFolder(mediaProcessingResult.originalPath);
+
+        // All variants must be in the same folder
+        if (!pathsToValidate.every((p) => getFolder(p) === variantFolder)) {
+          return new Response(
+            JSON.stringify({
+              error: 'Invalid media: all variants must be in the same folder',
+            }),
+            {
+              status: 400,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            }
+          );
+        }
+
+        const { data: folderFiles } = await supabaseClient.storage
+          .from(COMMUNITY_MEDIA_BUCKET)
+          .list(variantFolder);
+
+        if (folderFiles) {
+          const sizes = new Map(
+            folderFiles.map((f) => [f.name, f.metadata?.size ?? 0])
+          );
+          const [origSize, resSize, thumbSize] = pathsToValidate.map(
+            (p) => sizes.get(p.split('/').pop() ?? '') ?? 0
+          );
+
+          if (origSize === 0 || resSize === 0 || thumbSize === 0) {
+            return new Response(
+              JSON.stringify({
+                error: 'Invalid media: variant files not found in storage',
+              }),
+              {
+                status: 400,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              }
+            );
+          }
+
+          if (origSize < resSize || resSize < thumbSize) {
+            return new Response(
+              JSON.stringify({
+                error:
+                  'Invalid media: variant sizes must follow original >= resized >= thumbnail',
+              }),
+              {
+                status: 400,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              }
+            );
+          }
         }
       }
 

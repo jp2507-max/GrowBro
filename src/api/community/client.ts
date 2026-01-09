@@ -135,7 +135,7 @@ function parseTopSortCursor(
     return null;
   }
   const parsedDate = Date.parse(createdAt);
-  if (isNaN(parsedDate)) {
+  if (isNaN(parsedDate) || parsedDate > Date.now()) {
     return null;
   }
 
@@ -220,9 +220,9 @@ function applyDiscoverFilters<
   }
   if (ctx.photosOnly) {
     b = b
-      .or('media_uri.not.is.null')
-      .or('media_resized_uri.not.is.null')
-      .or('media_thumbnail_uri.not.is.null');
+      .not('media_uri', 'is', null)
+      .not('media_resized_uri', 'is', null)
+      .not('media_thumbnail_uri', 'is', null);
   }
   if (ctx.mineOnly && ctx.userId) {
     b = b.eq('user_id', ctx.userId);
@@ -268,7 +268,7 @@ function applyDiscoverSort<
         let filter = `like_count.lt.${parsed.likeCount},and(like_count.eq.${parsed.likeCount},created_at.lt."${parsed.createdAt}")`;
 
         if (parsed.id) {
-          filter += `,and(like_count.eq.${parsed.likeCount},created_at.eq."${parsed.createdAt}",id.lt."${parsed.id}")`;
+          filter += `,and(like_count.eq.${parsed.likeCount},created_at.eq."${parsed.createdAt}",id.gt."${parsed.id}")`;
         }
 
         b = b.or(filter);

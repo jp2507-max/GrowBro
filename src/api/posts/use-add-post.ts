@@ -14,7 +14,7 @@ import {
   captureAndStore,
   downloadRemoteImage,
 } from '@/lib/media/photo-storage-service';
-import { supabase } from '@/lib/supabase';
+import { supabase, supabaseUrl } from '@/lib/supabase';
 
 export const attachmentInputSchema = z
   .object({
@@ -64,8 +64,14 @@ function isSupabaseStorageUri(uri: string | undefined): boolean {
     return true;
   }
 
+  // Security: strict check to ensure URL belongs to our Supabase project
+  // We append a slash to prevent prefix attacks (e.g. project-id-evil.com)
+  const baseUrl = supabaseUrl.endsWith('/') ? supabaseUrl : `${supabaseUrl}/`;
+
   return (
-    uri.includes('/storage/v1/object/') && uri.includes('/community-posts/')
+    uri.startsWith(baseUrl) &&
+    uri.includes('/storage/v1/object/') &&
+    uri.includes('/community-posts/')
   );
 }
 

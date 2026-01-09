@@ -203,25 +203,18 @@ const client = z.object({
 
   // iOS client ID from Google Cloud Console
   // Expected format: "<numeric-id>-<hash>.apps.googleusercontent.com"
-  // Also accepts just the prefix "<numeric-id>-<hash>" for backward compatibility
-  // Note: Both env.js and app.config.cjs accept prefix-only format consistently
   GOOGLE_IOS_CLIENT_ID: z
     .string()
     .refine(
       (val) => {
         if (!val) return true; // Allow empty/undefined
         // Full format: <numeric-id>-<alphanumeric-with-underscores-and-hyphens>.apps.googleusercontent.com
-        if (/^\d+-[A-Za-z0-9_-]+\.apps\.googleusercontent\.com$/.test(val))
-          return true;
-        // Prefix-only format: <numeric-id>-<alphanumeric-with-underscores-and-hyphens>
-        // Note: Runtime normalization in _layout.tsx expects this format
-        if (/^\d+-[A-Za-z0-9_-]+$/.test(val)) return true;
-        return false;
+        return /^\d+-[A-Za-z0-9_-]+\.apps\.googleusercontent\.com$/.test(val);
       },
       {
         message:
           'GOOGLE_IOS_CLIENT_ID must be in format "<numeric-id>-<hash>.apps.googleusercontent.com" ' +
-          'or just the prefix "<numeric-id>-<hash>" (e.g., "123456789012-abc123def456")',
+          '(e.g., "123456789012-abc123def456.apps.googleusercontent.com")',
       }
     )
     .optional(),

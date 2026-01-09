@@ -285,12 +285,14 @@ function createExpoConfig(config) {
               `(e.g., "123456789012-abc123def456.apps.googleusercontent.com")`
           );
         } else if (prefixPattern.test(rawClientId)) {
-          // Just the prefix - accept with warning
+          // Just the prefix - auto-append the suffix
           clientIdPrefix = rawClientId;
           console.warn(
             `⚠️  GOOGLE_IOS_CLIENT_ID appears to be just the prefix. ` +
-              `Full format should be: "${rawClientId}.apps.googleusercontent.com"`
+              `Auto-appending suffix to use: "${rawClientId}.apps.googleusercontent.com"`
           );
+          // Use the full format for runtime compatibility
+          rawClientId = `${rawClientId}.apps.googleusercontent.com`;
         } else {
           // Completely invalid
           throw new Error(

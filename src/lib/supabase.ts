@@ -19,8 +19,8 @@ const isTestEnvironment =
   (process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID !== undefined);
 
 // Validate environment variables and set up Supabase configuration
-let supabaseUrl: string;
-let supabaseAnonKey: string;
+export let supabaseUrl: string;
+export let supabaseAnonKey: string;
 
 const runtimeEnv =
   typeof process !== 'undefined' && process.env
