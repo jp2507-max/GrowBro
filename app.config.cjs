@@ -291,8 +291,6 @@ function createExpoConfig(config) {
             `⚠️  GOOGLE_IOS_CLIENT_ID appears to be just the prefix. ` +
               `Auto-appending suffix to use: "${rawClientId}.apps.googleusercontent.com"`
           );
-          // Use the full format for runtime compatibility
-          rawClientId = `${rawClientId}.apps.googleusercontent.com`;
         } else {
           // Completely invalid
           throw new Error(

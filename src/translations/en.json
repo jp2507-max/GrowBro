@@ -83,9 +83,9 @@
     "common": {
       "action_button_hint": "Performs {{label}} action",
       "back_hint": "Navigates back to the previous screen",
-      "collapse_section_hint": "[EN] Doppeltippen, um den Abschnitt zu reduzieren",
+      "collapse_section_hint": "Double-tap to collapse section",
       "confirm_date_hint": "Confirms the selected date.",
-      "expand_section_hint": "[EN] Doppeltippen, um den Abschnitt zu erweitern",
+      "expand_section_hint": "Double-tap to expand section",
       "go_back": "Go back",
       "loading_hint": "Content is loading, please wait",
       "loading_label": "Loading",

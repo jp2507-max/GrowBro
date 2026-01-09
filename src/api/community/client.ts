@@ -268,7 +268,7 @@ function applyDiscoverSort<
         let filter = `like_count.lt.${parsed.likeCount},and(like_count.eq.${parsed.likeCount},created_at.lt."${parsed.createdAt}")`;
 
         if (parsed.id) {
-          filter += `,and(like_count.eq.${parsed.likeCount},created_at.eq."${parsed.createdAt}",id.gt."${parsed.id}")`;
+          filter += `,and(like_count.eq.${parsed.likeCount},created_at.eq."${parsed.createdAt}",id.lt."${parsed.id}")`;
         }
 
         b = b.or(filter);

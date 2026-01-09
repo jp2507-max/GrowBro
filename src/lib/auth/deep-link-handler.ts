@@ -315,6 +315,7 @@ const exchangedCodes = new Set<string>();
  * Track timeouts for exchanged codes to prevent memory leaks
  */
 const exchangedCodeTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
+const MAX_TIMEOUT_TRACKING = 100;
 
 /**
  * Track an exchanged code with proper timeout cleanup
@@ -323,6 +324,17 @@ function trackExchangedCode(code: string): void {
   const existing = exchangedCodeTimeouts.get(code);
   if (existing) {
     clearTimeout(existing);
+  }
+
+  // FIFO eviction if we exceed the limit
+  if (exchangedCodeTimeouts.size >= MAX_TIMEOUT_TRACKING) {
+    const firstKey = exchangedCodeTimeouts.keys().next().value;
+    if (firstKey) {
+      const firstTimeout = exchangedCodeTimeouts.get(firstKey);
+      if (firstTimeout) clearTimeout(firstTimeout);
+      exchangedCodeTimeouts.delete(firstKey);
+      exchangedCodes.delete(firstKey);
+    }
   }
 
   const timeout = setTimeout(() => {

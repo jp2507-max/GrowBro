@@ -266,7 +266,7 @@ export const ensureRemoteAttachmentMetadata = async (
   // SECURITY: Only allow Supabase storage URIs
   if (!isSupabaseStorageUri(uri)) {
     throw new Error(
-      'Only Supabase storage URIs are allowed for remote attachments'
+      'Only Supabase storage URIs are allowed for remote attachments. External URLs are not supported for security reasons.'
     );
   }
 

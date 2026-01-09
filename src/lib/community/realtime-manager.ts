@@ -362,15 +362,7 @@ export class RealtimeConnectionManager {
    */
   private async pollUpdates(): Promise<void> {
     console.log('Polling for updates...');
-    if (!this.callbacks.onPollRefresh) {
-      console.error(
-        '[Realtime] CRITICAL: Polling active but onPollRefresh not implemented. ' +
-          'Data will NOT update. This is a bug in consumer implementation. Stopping polling.'
-      );
-      this.stopPolling();
-      return;
-    }
-    this.callbacks.onPollRefresh();
+    this.callbacks.onPollRefresh?.();
   }
 
   /**

@@ -392,8 +392,27 @@ Deno.serve(async (req: Request) => {
         );
       }
 
+      // Security Check 2: Verify all paths have same hash (content-addressable validation)
+      const hashes = pathsToValidate.map((p) => {
+        const relativePath = p.substring(userPrefix.length);
+        return relativePath.split('/')[0];
+      });
+
+      if (new Set(hashes).size !== 1 || !/^[a-fA-F0-9]{64}$/.test(hashes[0])) {
+        return new Response(
+          JSON.stringify({
+            error:
+              'Invalid media: inconsistent or malformed hash in variant paths',
+          }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+
       for (const path of pathsToValidate) {
-        // Security Check 2: Path ownership
+        // Security Check 3: Path ownership
         if (!path.startsWith(userPrefix)) {
           return new Response(
             JSON.stringify({
@@ -407,7 +426,7 @@ Deno.serve(async (req: Request) => {
           );
         }
 
-        // Security Check 3: Path Traversal
+        // Security Check 4: Path Traversal
         if (path.includes('..') || path.includes('%2e%2e')) {
           return new Response(
             JSON.stringify({
@@ -420,7 +439,7 @@ Deno.serve(async (req: Request) => {
           );
         }
 
-        // Security Check 4: Strict Structure Validation
+        // Security Check 5: Strict Structure Validation
         // Expected format: prefix/{hash}/{variant}.{ext}
         // Remove the prefix to validate the remainder
         const relativePath = path.substring(userPrefix.length);
@@ -449,7 +468,7 @@ Deno.serve(async (req: Request) => {
         }
       }
 
-      // Security Check 5: Verify variant size hierarchy (Original >= Resized >= Thumbnail)
+      // Security Check 6: Verify variant size hierarchy (Original >= Resized >= Thumbnail)
       // This prevents malicious clients from swapping variants to bypass limits
       if (hasMobileVariants) {
         const getFolder = (p: string) => p.split('/').slice(1, 3).join('/');
