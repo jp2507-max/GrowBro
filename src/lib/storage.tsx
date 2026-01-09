@@ -52,6 +52,7 @@ export const STORAGE_KEYS = {
 
   // Community
   COMMUNITY_COMPLIANCE_DISMISSED: 'community.complianceBannerDismissed',
+  COMMUNITY_USERNAMES_CACHE: 'community.usernames.v1',
 } as const;
 
 // Support & Feedback MMKV Storage Keys

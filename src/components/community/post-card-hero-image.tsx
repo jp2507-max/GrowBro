@@ -18,7 +18,7 @@ const styles = StyleSheet.create({
   image: {
     // 4:3 aspect ratio for clean visual-first design
     aspectRatio: 4 / 3,
-    width: '100%' as const,
+    width: '100%',
   },
 });
 
@@ -30,6 +30,7 @@ export type PostCardHeroImageProps = {
   blurhash?: string | null;
   thumbhash?: string | null;
   displayUsername: string;
+  enableSharedTransition?: boolean;
   testID: string;
 };
 
@@ -41,8 +42,9 @@ export function PostCardHeroImage({
   blurhash,
   thumbhash,
   displayUsername,
+  enableSharedTransition,
   testID,
-}: PostCardHeroImageProps) {
+}: PostCardHeroImageProps): React.ReactElement {
   const imageProps = React.useMemo(
     () =>
       getCommunityImageProps({
@@ -60,7 +62,9 @@ export function PostCardHeroImage({
     <AnimatedImage
       className="w-full"
       style={styles.image}
-      sharedTransitionTag={communityPostHeroTag(postId)}
+      sharedTransitionTag={
+        enableSharedTransition ? communityPostHeroTag(postId) : undefined
+      }
       accessibilityIgnoresInvertColors
       accessibilityLabel={translate('accessibility.community.post_image', {
         author: displayUsername,

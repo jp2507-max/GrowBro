@@ -71,17 +71,17 @@ export function AppealSubmissionForm({
     if (!trimmedUrl) return;
 
     if (!isValidUrl(trimmedUrl)) {
-      setError(t('appeals.error.invalidUrl'));
+      setError(t('appeals.error.invalid_url'));
       return;
     }
 
     if (evidenceUrls.includes(trimmedUrl)) {
-      setError(t('appeals.error.duplicateUrl'));
+      setError(t('appeals.error.duplicate_url'));
       return;
     }
 
     if (evidenceUrls.length >= 5) {
-      setError(t('appeals.error.maxEvidenceReached'));
+      setError(t('appeals.error.max_evidence_reached'));
       return;
     }
 
@@ -97,7 +97,7 @@ export function AppealSubmissionForm({
   const handleSubmit = async () => {
     // Validate counter-arguments length (min 50 chars per schema)
     if ((counterArguments?.trim().length ?? 0) < 50) {
-      setError(t('appeals.error.counterArgumentsTooShort'));
+      setError(t('appeals.error.counter_arguments_too_short'));
       return;
     }
 
@@ -111,7 +111,7 @@ export function AppealSubmissionForm({
       });
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : t('appeals.error.submitFailed')
+        err instanceof Error ? err.message : t('appeals.error.submit_failed')
       );
     } finally {
       setIsSubmitting(false);

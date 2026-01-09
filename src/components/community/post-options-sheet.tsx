@@ -23,7 +23,9 @@ export const PostOptionsSheet = React.forwardRef<
     <Modal
       ref={ref}
       snapPoints={['25%']}
-      title={t('community.postOptions.title', { defaultValue: 'Post Options' })}
+      title={t('community.post_options.title', {
+        defaultValue: 'Post Options',
+      })}
       enableDynamicSizing={false}
     >
       <BottomSheetView className="px-4 pb-8">
@@ -32,17 +34,17 @@ export const PostOptionsSheet = React.forwardRef<
           onPress={onDelete}
           disabled={isDeleting}
           accessibilityRole="button"
-          accessibilityLabel={t('community.postOptions.delete', {
+          accessibilityLabel={t('community.post_options.delete', {
             defaultValue: 'Delete post',
           })}
-          accessibilityHint={t('community.postOptions.deleteHint', {
+          accessibilityHint={t('community.post_options.delete_hint', {
             defaultValue: 'Deletes this post with a 15 second undo window',
           })}
           className="flex-row items-center gap-3 rounded-xl bg-danger-50 p-4 active:opacity-70 dark:bg-danger-900/20"
         >
           <Trash size={22} color={colors.danger[500]} />
           <Text className="flex-1 text-base font-medium text-danger-600 dark:text-danger-400">
-            {t('community.postOptions.delete', { defaultValue: 'Delete' })}
+            {t('community.post_options.delete', { defaultValue: 'Delete' })}
           </Text>
         </Pressable>
       </BottomSheetView>

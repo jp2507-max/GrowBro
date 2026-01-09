@@ -98,7 +98,7 @@ function PlaybookAdjustmentItem({
 
       {adjustment.suggestedDaysDelta !== undefined ? (
         <Text className="mt-1 text-xs text-neutral-600 dark:text-neutral-400">
-          {t('assessment.playbook.suggestedTimingAdjustment', {
+          {t('assessment.playbook.suggested_timing_adjustment', {
             sign:
               adjustment.suggestedDaysDelta > 0
                 ? '+'
@@ -125,7 +125,7 @@ function PlaybookAdjustmentItem({
           onPress={() => onAccept(adjustment)}
           className="mt-3"
           testID={`${testID}-accept-${index}`}
-          tx="assessment.playbook.applyAdjustment"
+          tx="assessment.playbook.apply_adjustment"
         />
       ) : null}
     </View>
@@ -163,7 +163,7 @@ export function PlaybookAdjustmentCard({
               {t('assessment.playbook.title')}
             </Text>
             <Text className="mt-0.5 text-sm text-primary-700 dark:text-primary-300">
-              {t('assessment.playbook.suggestionCount', {
+              {t('assessment.playbook.suggestion_count', {
                 count: adjustments.length,
               })}
             </Text>

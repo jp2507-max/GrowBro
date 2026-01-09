@@ -81,7 +81,7 @@ export function VisionCameraCapture({
       <View className="flex-1 items-center justify-center bg-charcoal-950">
         <ActivityIndicator size="large" color={colors.white} />
         <Text className="mt-4 text-neutral-300">
-          {t('assessment.camera.errors.cameraFailed')}
+          {t('assessment.camera.errors.camera_failed')}
         </Text>
       </View>
     );
@@ -112,13 +112,13 @@ export function VisionCameraCapture({
           testID="capture-button"
           accessibilityRole="button"
           accessibilityLabel={t('assessment.camera.actions.capture')}
-          accessibilityHint={t('assessment.camera.actions.captureHint')}
+          accessibilityHint={t('assessment.camera.actions.capture_hint')}
         >
           {isCapturing ? (
             <View
               accessible={true}
               accessibilityLabel={t('assessment.camera.status.capturing')}
-              accessibilityHint={t('assessment.camera.status.capturingHint')}
+              accessibilityHint={t('assessment.camera.status.capturing_hint')}
               accessibilityRole="progressbar"
             >
               <ActivityIndicator size="small" color={colors.black} />

@@ -32,11 +32,16 @@ const apiClient = getCommunityApiClient();
 interface CreateCommentVariables {
   postId: string;
   body: string;
+  // Optional keys for idempotency - usually injected by the hook wrapper
+  idempotencyKey?: string;
+  clientTxId?: string;
 }
 
 interface CreateCommentContext {
   previousComments?: [QueryKey, PaginateQuery<PostComment> | undefined][];
   tempComment: PostComment;
+  idempotencyKey: string;
+  clientTxId: string;
 }
 
 // Validation utilities
@@ -91,8 +96,13 @@ async function queueCommentInOutbox(payload: {
 }
 
 // Optimistic update utilities
-function createTempComment(postId: string, body: string): PostComment {
-  const tempId = `temp-${randomUUID()}`;
+function createTempComment(
+  postId: string,
+  body: string,
+  clientTxId: string
+): PostComment {
+  // Use clientTxId for deterministic ID across retries
+  const tempId = `temp-${postId}-${clientTxId}`;
   return {
     id: tempId,
     post_id: postId,
@@ -225,39 +235,38 @@ function invalidateCommentRelatedQueries(
   });
 }
 
-/**
- * Optimistically create a comment
- */
-export function useCreateComment(): UseMutationResult<
-  PostComment,
-  Error,
-  CreateCommentVariables,
-  CreateCommentContext
-> {
-  const queryClient = useQueryClient();
-
-  return useMutation<
-    PostComment,
-    Error,
-    CreateCommentVariables,
-    CreateCommentContext
-  >({
-    mutationFn: async ({ postId, body }): Promise<PostComment> => {
+// Factory to create mutation options - extracted to reduce hook body size
+function createMutationOptions(queryClient: ReturnType<typeof useQueryClient>) {
+  return {
+    mutationFn: async ({
+      postId,
+      body,
+      idempotencyKey,
+      clientTxId,
+    }: CreateCommentVariables) => {
       validateCommentBody(body);
-
-      const idempotencyKey = randomUUID();
-      const clientTxId = randomUUID();
-
-      await queueCommentInOutbox({ postId, body, clientTxId, idempotencyKey });
-
+      const finalIdempotencyKey = idempotencyKey || randomUUID();
+      const finalClientTxId = clientTxId || randomUUID();
+      await queueCommentInOutbox({
+        postId,
+        body,
+        clientTxId: finalClientTxId,
+        idempotencyKey: finalIdempotencyKey,
+      });
       return apiClient.createComment(
         { postId, body },
-        idempotencyKey,
-        clientTxId
+        finalIdempotencyKey,
+        finalClientTxId
       );
     },
-
-    onMutate: async ({ postId, body }): Promise<CreateCommentContext> => {
+    onMutate: async ({
+      postId,
+      body,
+      idempotencyKey,
+      clientTxId,
+    }: CreateCommentVariables) => {
+      const finalIdempotencyKey = idempotencyKey || randomUUID();
+      const finalClientTxId = clientTxId || randomUUID();
       await queryClient.cancelQueries({
         predicate: (query) =>
           isCommunityCommentsKey(query.queryKey) &&
@@ -270,12 +279,20 @@ export function useCreateComment(): UseMutationResult<
           isCommunityCommentsKey(query.queryKey) &&
           query.queryKey[1] === postId,
       });
-      const tempComment = createTempComment(postId, body);
+      const tempComment = createTempComment(postId, body, finalClientTxId);
       optimisticallyAddComment(queryClient, postId, tempComment);
-      return { previousComments, tempComment };
+      return {
+        previousComments,
+        tempComment,
+        idempotencyKey: finalIdempotencyKey,
+        clientTxId: finalClientTxId,
+      };
     },
-
-    onSuccess: (newComment, variables, context): void => {
+    onSuccess: (
+      newComment: PostComment,
+      variables: CreateCommentVariables,
+      context: CreateCommentContext | undefined
+    ): void => {
       if (context) {
         replaceTempCommentWithServerComment(queryClient, variables.postId, {
           tempComment: context.tempComment,
@@ -283,8 +300,11 @@ export function useCreateComment(): UseMutationResult<
         });
       }
     },
-
-    onError: (error, variables, context): void => {
+    onError: (
+      error: Error,
+      variables: CreateCommentVariables,
+      context: CreateCommentContext | undefined
+    ): void => {
       if (error instanceof ValidationError) {
         handleValidationError(queryClient, variables.postId, {
           error,
@@ -296,9 +316,46 @@ export function useCreateComment(): UseMutationResult<
         handleNetworkError();
       }
     },
-
-    onSettled: (_data, _error, variables): void => {
+    onSettled: (
+      _data: PostComment | undefined,
+      _error: Error | null,
+      variables: CreateCommentVariables
+    ): void => {
       invalidateCommentRelatedQueries(queryClient, variables.postId);
     },
-  });
+  };
+}
+
+function enrichVariables(variables: CreateCommentVariables) {
+  return {
+    ...variables,
+    idempotencyKey: variables.idempotencyKey || randomUUID(),
+    clientTxId: variables.clientTxId || randomUUID(),
+  };
+}
+
+/**
+ * Optimistically create a comment
+ */
+export function useCreateComment(): UseMutationResult<
+  PostComment,
+  Error,
+  CreateCommentVariables,
+  CreateCommentContext
+> {
+  const queryClient = useQueryClient();
+  const mutation = useMutation<
+    PostComment,
+    Error,
+    CreateCommentVariables,
+    CreateCommentContext
+  >(createMutationOptions(queryClient));
+
+  return {
+    ...mutation,
+    mutate: (variables, options) =>
+      mutation.mutate(enrichVariables(variables), options),
+    mutateAsync: (variables, options) =>
+      mutation.mutateAsync(enrichVariables(variables), options),
+  };
 }

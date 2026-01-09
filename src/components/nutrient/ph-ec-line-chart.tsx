@@ -182,7 +182,7 @@ const PhEcLineChartComponent = ({
           thickness: 1.5,
           dashWidth: 4,
           dashGap: 4,
-          labelText: t('nutrient.targetMax'),
+          labelText: t('nutrient.target_max'),
           labelTextStyle: {
             color: colors.neutral[600],
             fontSize: 9,
@@ -194,7 +194,7 @@ const PhEcLineChartComponent = ({
           thickness: 1.5,
           dashWidth: 4,
           dashGap: 4,
-          labelText: t('nutrient.targetMin'),
+          labelText: t('nutrient.target_min'),
           labelTextStyle: {
             color: colors.neutral[600],
             fontSize: 9,
@@ -222,10 +222,10 @@ const PhEcLineChartComponent = ({
       >
         <Text className="mb-2 text-center text-4xl">📊</Text>
         <Text className="text-center text-base text-neutral-600 dark:text-neutral-400">
-          {t('nutrient.chart.noData')}
+          {t('nutrient.chart.no_data')}
         </Text>
         <Text className="mt-1 text-center text-sm text-neutral-500 dark:text-neutral-500">
-          {t('nutrient.chart.startLogging')}
+          {t('nutrient.chart.start_logging')}
         </Text>
       </View>
     );
@@ -238,11 +238,11 @@ const PhEcLineChartComponent = ({
       <View testID={testID} className="px-4 py-2">
         <View className="mb-3 flex-row items-center justify-between">
           <Text className="text-lg font-semibold text-charcoal-950 dark:text-neutral-100">
-            {metric === 'ph' ? t('nutrient.phTrend') : t('nutrient.ecTrend')}
+            {metric === 'ph' ? t('nutrient.ph_trend') : t('nutrient.ec_trend')}
           </Text>
           <View className="rounded-md bg-neutral-100 px-2 py-1 dark:bg-charcoal-800">
             <Text className="text-xs text-neutral-600 dark:text-neutral-400">
-              {t('nutrient.targetRange')}: {targetMin.toFixed(1)}–
+              {t('nutrient.target_range')}: {targetMin.toFixed(1)}–
               {targetMax.toFixed(1)}
             </Text>
           </View>
@@ -251,7 +251,7 @@ const PhEcLineChartComponent = ({
         {events && events.length > 0 && (
           <View className="mt-2 rounded-md bg-primary-50 px-3 py-2 dark:bg-primary-950">
             <Text className="text-xs text-primary-700 dark:text-primary-300">
-              {t('nutrient.chart.eventMarkersNote', {
+              {t('nutrient.chart.event_markers_note', {
                 count: events.length,
               })}
             </Text>

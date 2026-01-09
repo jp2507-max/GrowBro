@@ -93,10 +93,10 @@ export default function TemplateListScreen(): React.JSX.Element {
       <View className="flex-1">
         <View className="px-4 py-3">
           <Text className="text-2xl font-bold text-charcoal-900 dark:text-neutral-100">
-            {t('nutrient.feedingTemplates')}
+            {t('nutrient.feeding_templates')}
           </Text>
           <Text className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-            {t('nutrient.templatesDescription')}
+            {t('nutrient.templates_description')}
           </Text>
         </View>
 
@@ -108,7 +108,7 @@ export default function TemplateListScreen(): React.JSX.Element {
         {loading ? (
           <EmptyState message={t('common.loading')} />
         ) : templates.length === 0 ? (
-          <EmptyState message={t('nutrient.noTemplatesFound')} />
+          <EmptyState message={t('nutrient.no_templates_found')} />
         ) : (
           <FlashList
             data={templates}
@@ -125,7 +125,7 @@ export default function TemplateListScreen(): React.JSX.Element {
           style={{ paddingBottom: Math.max(insets.bottom, 16) }}
         >
           <Button
-            label={t('nutrient.createTemplate')}
+            label={t('nutrient.create_template')}
             onPress={handleCreateNew}
             testID="create-template-btn"
           />

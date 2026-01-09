@@ -36,7 +36,7 @@ export function ReservoirSelector({
         testID={testID}
       >
         <Text className="text-center text-sm text-neutral-600">
-          {translate('nutrient.reservoir.noReservoirs')}
+          {translate('nutrient.reservoir.no_reservoirs')}
         </Text>
       </View>
     );
@@ -44,7 +44,7 @@ export function ReservoirSelector({
 
   return (
     <Select
-      label={translate('nutrient.reservoir.selectReservoir')}
+      label={translate('nutrient.reservoir.select_reservoir')}
       options={options}
       value={selectedId}
       onSelect={(v) => onSelect(String(v))}

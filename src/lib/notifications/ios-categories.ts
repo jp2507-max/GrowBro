@@ -50,13 +50,13 @@ function createCategoryDefinitions(): CategoryDefinition[] {
           identifier: 'REPLY',
           buttonTitle: i18n.t('notifications.actions.reply'),
           textInput: {
-            submitButtonTitle: i18n.t('notifications.actions.replySubmit'),
-            placeholder: i18n.t('notifications.actions.replyPlaceholder'),
+            submitButtonTitle: i18n.t('notifications.actions.reply_submit'),
+            placeholder: i18n.t('notifications.actions.reply_placeholder'),
           },
         },
         {
           identifier: 'VIEW_PROFILE',
-          buttonTitle: i18n.t('notifications.actions.viewProfile'),
+          buttonTitle: i18n.t('notifications.actions.view_profile'),
           options: { opensAppToForeground: true },
         },
       ],
@@ -67,7 +67,7 @@ function createCategoryDefinitions(): CategoryDefinition[] {
       actions: [
         {
           identifier: 'VIEW_POST',
-          buttonTitle: i18n.t('notifications.actions.viewPost'),
+          buttonTitle: i18n.t('notifications.actions.view_post'),
           options: { opensAppToForeground: true },
         },
       ],
@@ -77,7 +77,7 @@ function createCategoryDefinitions(): CategoryDefinition[] {
       actions: [
         {
           identifier: 'MARK_DONE',
-          buttonTitle: i18n.t('notifications.actions.markDone'),
+          buttonTitle: i18n.t('notifications.actions.mark_done'),
           options: { opensAppToForeground: true },
         },
         {
@@ -95,7 +95,7 @@ function createCategoryDefinitions(): CategoryDefinition[] {
       actions: [
         {
           identifier: 'VIEW_DETAILS',
-          buttonTitle: i18n.t('notifications.actions.viewDetails'),
+          buttonTitle: i18n.t('notifications.actions.view_details'),
           options: { opensAppToForeground: true },
         },
         {

@@ -16,7 +16,7 @@ import Animated, {
 import type { Strain } from '@/api/strains/types';
 import { useStrainsInfiniteWithCache } from '@/api/strains/use-strains-infinite-with-cache';
 import { RaceBadge } from '@/components/strains/race-badge';
-import { Image, Text } from '@/components/ui';
+import { OptimizedImage, Text } from '@/components/ui';
 import colors from '@/components/ui/colors';
 import { CaretDown, Leaf, Search } from '@/components/ui/icons';
 import { Modal, useModal } from '@/components/ui/modal';
@@ -59,11 +59,18 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 // ---------------------------------------------------------------------------
 // StrainThumbnail - Contact-list style thumbnail with fallback
 // ---------------------------------------------------------------------------
-function StrainThumbnail({ imageUrl }: { imageUrl?: string }) {
+function StrainThumbnail({
+  strainId,
+  imageUrl,
+}: {
+  strainId: string;
+  imageUrl?: string;
+}) {
   if (imageUrl) {
     return (
-      <Image
-        source={{ uri: imageUrl }}
+      <OptimizedImage
+        uri={imageUrl}
+        recyclingKey={strainId}
         className="mr-3 size-10 rounded-full bg-neutral-100 dark:bg-charcoal-800"
         contentFit="cover"
       />
@@ -100,6 +107,11 @@ function StrainOption({
   const animatedBgStyle = useAnimatedStyle(() => ({
     backgroundColor: rgbaFromRgb(PRIMARY_500_RGB, bgOpacity.value),
   }));
+
+  React.useEffect(() => {
+    scale.value = 1;
+    bgOpacity.value = 0;
+  }, [bgOpacity, scale, strain.id]);
 
   const handlePressIn = React.useCallback((): void => {
     scale.value = withTiming(0.97, {
@@ -146,7 +158,7 @@ function StrainOption({
       onPressOut={handlePressOut}
       onPress={handlePress}
     >
-      <StrainThumbnail imageUrl={strain.imageUrl} />
+      <StrainThumbnail strainId={strain.id} imageUrl={strain.imageUrl} />
       <View className="flex-1 flex-row items-center gap-3">
         <Text
           className={`text-base ${
@@ -221,6 +233,7 @@ type StrainPickerModalProps = {
   modal: ReturnType<typeof useModal>;
   searchQuery: string;
   setSearchQuery: React.Dispatch<React.SetStateAction<string>>;
+  setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
   strains: Strain[];
   value?: string;
   isFetching: boolean;
@@ -246,6 +259,7 @@ function StrainPickerModal({
   modal,
   searchQuery,
   setSearchQuery,
+  setIsOpen,
   strains,
   value,
   isFetching,
@@ -271,10 +285,14 @@ function StrainPickerModal({
       handleIndicatorStyle={handleStyle}
       animationConfigs={animationConfigs}
       enablePanDownToClose
+      onDismiss={() => {
+        setSearchQuery('');
+        setIsOpen(false);
+      }}
     >
       <View className="flex-1 px-4 pb-6">
         <Text className="mb-4 text-center text-lg font-semibold text-charcoal-800 dark:text-neutral-100">
-          {t('feed.addPost.selectStrain')}
+          {t('feed.add_post.select_strain')}
         </Text>
 
         {/* Polished Search Bar - soft look matching Create Post inputs */}
@@ -333,7 +351,7 @@ function StrainPickerTrigger({
   testID,
 }: StrainPickerTriggerProps) {
   const { t } = useTranslation();
-  const displayValue = value || placeholder || t('feed.addPost.selectStrain');
+  const displayValue = value || placeholder || t('feed.add_post.select_strain');
 
   return (
     <View className="mb-4">
@@ -349,8 +367,8 @@ function StrainPickerTrigger({
         className="flex-row items-center justify-between rounded-2xl border-2 border-neutral-200 bg-white px-5 py-4 dark:border-white/10 dark:bg-white/10"
         onPress={onPress}
         accessibilityRole="button"
-        accessibilityLabel={label || t('feed.addPost.selectStrain')}
-        accessibilityHint={t('feed.addPost.strainHint')}
+        accessibilityLabel={label || t('feed.add_post.select_strain')}
+        accessibilityHint={t('feed.add_post.strain_hint')}
         testID={`${testID}-trigger`}
       >
         <Text
@@ -473,6 +491,7 @@ export function StrainPicker({
         modal={modal}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
+        setIsOpen={setIsOpen}
         strains={strains}
         value={value}
         isFetching={isFetching}

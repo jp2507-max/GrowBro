@@ -38,7 +38,7 @@ export function CommunityDiscoveryFilters({
             checked={sort === 'new'}
             onChange={() => onSortChange('new')}
             accessibilityLabel={translate('community.sort_newest')}
-            accessibilityHint={translate('accessibility.common.toggleHint')}
+            accessibilityHint={translate('accessibility.common.toggle_hint')}
             label={translate('community.sort_newest')}
             testID={`${testID}-sort-new`}
           />
@@ -46,7 +46,7 @@ export function CommunityDiscoveryFilters({
             checked={sort === 'top_7d'}
             onChange={() => onSortChange('top_7d')}
             accessibilityLabel={translate('community.sort_top_7d')}
-            accessibilityHint={translate('accessibility.common.toggleHint')}
+            accessibilityHint={translate('accessibility.common.toggle_hint')}
             label={translate('community.sort_top_7d')}
             testID={`${testID}-sort-top`}
           />
@@ -60,7 +60,7 @@ export function CommunityDiscoveryFilters({
             checked={photosOnly}
             onChange={onPhotosOnlyChange}
             accessibilityLabel={translate('community.filter_photos_only')}
-            accessibilityHint={translate('accessibility.common.toggleHint')}
+            accessibilityHint={translate('accessibility.common.toggle_hint')}
             label={translate('community.filter_photos_only')}
             testID={`${testID}-photos-only`}
           />
@@ -68,7 +68,7 @@ export function CommunityDiscoveryFilters({
             checked={mineOnly}
             onChange={onMineOnlyChange}
             accessibilityLabel={translate('community.filter_my_posts')}
-            accessibilityHint={translate('accessibility.common.toggleHint')}
+            accessibilityHint={translate('accessibility.common.toggle_hint')}
             label={translate('community.filter_my_posts')}
             testID={`${testID}-mine-only`}
           />

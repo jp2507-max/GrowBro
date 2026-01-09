@@ -43,7 +43,7 @@ const CheckboxExample = () => {
       onChange={setChecked}
       accessibilityLabel={translate('inputs.accept_terms_label' as TxKeyPath)}
       accessibilityHint={translate(
-        'accessibility.common.toggleHint' as TxKeyPath
+        'accessibility.common.toggle_hint' as TxKeyPath
       )}
       className="pb-2"
       testID="checkbox-example"
@@ -62,7 +62,7 @@ const RadioExample = () => {
       onChange={setSelected}
       accessibilityLabel="radio button"
       accessibilityHint={translate(
-        'accessibility.common.toggleHint' as TxKeyPath
+        'accessibility.common.toggle_hint' as TxKeyPath
       )}
       className="pb-2"
     >
@@ -80,7 +80,7 @@ const SwitchExample = () => {
       onChange={setActive}
       accessibilityLabel={translate('inputs.switch_label' as TxKeyPath)}
       accessibilityHint={translate(
-        'accessibility.common.toggleHint' as TxKeyPath
+        'accessibility.common.toggle_hint' as TxKeyPath
       )}
       className="pb-2"
     >

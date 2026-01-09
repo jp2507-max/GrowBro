@@ -210,7 +210,7 @@ function CreatePostHeader({
       style={{ paddingTop: insets.top + HEADER_PADDING_TOP }}
     >
       <Text className="text-3xl font-bold tracking-tight text-white">
-        {t('feed.addPost.title')}
+        {t('feed.add_post.title')}
       </Text>
     </View>
   );
@@ -280,7 +280,7 @@ function PostHeroPhotoSection({
                   className="text-primary-800 dark:text-primary-300"
                 />
                 <Text className="mt-3 font-medium text-primary-900/70 dark:text-primary-100/70">
-                  {translateDynamic('feed.addPost.addPhoto') ||
+                  {translateDynamic('feed.add_post.add_photo') ||
                     'Foto hinzufügen'}
                 </Text>
               </View>
@@ -355,22 +355,22 @@ function PostFormContent({
       />
 
       <View className="mb-4">
-        <MicroLabel>{t('feed.addPost.titleLabel')}</MicroLabel>
+        <MicroLabel>{t('feed.add_post.title_label')}</MicroLabel>
         <Input
           value={titleValue}
           onChangeText={(text) => setValue('title', text)}
-          placeholder={t('feed.addPost.titlePlaceholder')}
+          placeholder={t('feed.add_post.title_placeholder')}
           testID="title"
           className="rounded-xl border border-neutral-200 bg-white p-4 dark:border-white/10 dark:bg-charcoal-900"
         />
       </View>
 
       <View className="mb-4">
-        <MicroLabel>{t('feed.addPost.contentLabel')}</MicroLabel>
+        <MicroLabel>{t('feed.add_post.content_label')}</MicroLabel>
         <Input
           value={bodyValue}
           onChangeText={(text) => setValue('body', text)}
-          placeholder={t('feed.addPost.contentPlaceholder')}
+          placeholder={t('feed.add_post.content_placeholder')}
           multiline
           textAlignVertical="top"
           testID="body-input"
@@ -379,7 +379,7 @@ function PostFormContent({
       </View>
 
       <View className="mb-4">
-        <MicroLabel>{t('feed.addPost.strainLabel')}</MicroLabel>
+        <MicroLabel>{t('feed.add_post.strain_label')}</MicroLabel>
         <StrainPicker
           value={selectedStrain}
           onSelect={setSelectedStrain}
@@ -390,7 +390,7 @@ function PostFormContent({
       <Button
         className="mt-8 h-auto w-full rounded-2xl bg-terracotta-500 py-4 shadow-lg shadow-terracotta-500/40 active:bg-terracotta-600"
         textClassName="text-white text-lg font-semibold"
-        label={t('feed.addPost.publishButton')}
+        label={t('feed.add_post.publish_button')}
         loading={isPending}
         onPress={() => {
           haptics.medium();
@@ -405,6 +405,57 @@ function PostFormContent({
 }
 
 // ---------------------------------------------------------------------------
+// Photo action handler - extracted to reduce component size
+// ---------------------------------------------------------------------------
+type PhotoActionOptions = {
+  source: 'camera' | 'library';
+  t: ReturnType<typeof useTranslation>['t'];
+  setIsProcessing: (v: boolean) => void;
+  setAttachments: React.Dispatch<React.SetStateAction<AttachmentInput[]>>;
+};
+
+async function executePhotoAction(opts: PhotoActionOptions): Promise<void> {
+  const { source, t, setIsProcessing, setAttachments } = opts;
+  try {
+    setIsProcessing(true);
+    if (source === 'camera') {
+      const permission = await ImagePicker.requestCameraPermissionsAsync();
+      if (!permission.granted) {
+        showErrorMessage(t('harvest.photo.errors.camera_permission_denied'));
+        return;
+      }
+    }
+    const result =
+      source === 'camera'
+        ? await ImagePicker.launchCameraAsync({
+            mediaTypes: ['images'],
+            quality: 1,
+            allowsEditing: false,
+          })
+        : await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ['images'],
+            quality: 1,
+            allowsMultipleSelection: false,
+          });
+    if (!result.canceled && result.assets[0]) {
+      const photo = result.assets[0];
+      setAttachments([
+        {
+          uri: photo.uri,
+          filename: photo.fileName || `photo-${Date.now()}.jpg`,
+          mimeType: 'image/jpeg',
+        },
+      ]);
+    }
+  } catch (error) {
+    console.error('Failed to capture/select photo:', error);
+    showErrorMessage(t('harvest.photo.errors.capture_failed'));
+  } finally {
+    setIsProcessing(false);
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Main Screen
 // ---------------------------------------------------------------------------
 export default function AddPost(): React.JSX.Element {
@@ -412,7 +463,7 @@ export default function AddPost(): React.JSX.Element {
   const router = useRouter();
   const params = useLocalSearchParams();
   const insets = useSafeAreaInsets();
-  const translatedHint = translateDynamic('assessment.community.ctaHint');
+  const translatedHint = translateDynamic('assessment.community.cta_hint');
   const { handleSubmit, setValue, watch } = useForm<FormType>({
     resolver: zodResolver(schema),
     defaultValues: { title: '', body: '' },
@@ -435,68 +486,24 @@ export default function AddPost(): React.JSX.Element {
     translatedHint,
   });
 
-  const handlePhotoAction = React.useCallback(
-    async (source: 'camera' | 'library') => {
-      try {
-        setIsProcessingPhoto(true);
-        if (source === 'camera') {
-          const permission = await ImagePicker.requestCameraPermissionsAsync();
-          if (!permission.granted) {
-            showErrorMessage(
-              t('harvest.photo.errors.camera_permission_denied')
-            );
-            return;
-          }
-        }
-        const result =
-          source === 'camera'
-            ? await ImagePicker.launchCameraAsync({
-                mediaTypes: ['images'],
-                quality: 1,
-                allowsEditing: false,
-              })
-            : await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ['images'],
-                quality: 1,
-                allowsMultipleSelection: false,
-              });
-        if (!result.canceled && result.assets[0]) {
-          const photo = result.assets[0];
-          setAttachments([
-            {
-              uri: photo.uri,
-              filename: photo.fileName || `photo-${Date.now()}.jpg`,
-              mimeType: 'image/jpeg',
-            },
-          ]);
-        }
-      } catch (error) {
-        console.error('Failed to capture/select photo:', error);
-        showErrorMessage(t('harvest.photo.errors.capture_failed'));
-      } finally {
-        setIsProcessingPhoto(false);
-      }
-    },
-    [t]
-  );
-
   const handlePhotoPress = React.useCallback(() => {
+    const opts = { t, setIsProcessing: setIsProcessingPhoto, setAttachments };
     Alert.alert(
       t('harvest.photo.alerts.photo_options_title'),
       t('harvest.photo.choose_source'),
       [
         {
           text: t('harvest.photo.actions.take_photo'),
-          onPress: () => handlePhotoAction('camera'),
+          onPress: () => executePhotoAction({ ...opts, source: 'camera' }),
         },
         {
           text: t('harvest.photo.actions.choose_from_library'),
-          onPress: () => handlePhotoAction('library'),
+          onPress: () => executePhotoAction({ ...opts, source: 'library' }),
         },
         { text: t('harvest.photo.cancel'), style: 'cancel' },
       ]
     );
-  }, [t, handlePhotoAction]);
+  }, [t]);
 
   // Determine if we're in help mode from URL params
   const isHelpMode = params.mode === 'help';

@@ -65,10 +65,10 @@ function PlaybookContent({
 
           <View className="mt-6">
             <Text className="mb-2 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-              {t('playbooks.whatYouGet')}
+              {t('playbooks.what_you_get')}
             </Text>
             <Text className="text-base text-neutral-500 dark:text-neutral-400">
-              {t('playbooks.detailDescription')}
+              {t('playbooks.detail_description')}
             </Text>
           </View>
         </View>
@@ -79,7 +79,7 @@ function PlaybookContent({
         style={{ paddingBottom: Math.max(insets.bottom, 16) }}
       >
         <Button
-          label={t('playbooks.applyToPlant')}
+          label={t('playbooks.apply_to_plant')}
           onPress={onApply}
           className="w-full"
         />
@@ -123,7 +123,7 @@ export default function PlaybookDetailScreen() {
   }, [params.id, router]);
 
   if (loading) return <LoadingState />;
-  if (!preview) return <NotFoundState message={t('playbooks.notFound')} />;
+  if (!preview) return <NotFoundState message={t('playbooks.not_found')} />;
 
   return <PlaybookContent preview={preview} onApply={handleApply} />;
 }

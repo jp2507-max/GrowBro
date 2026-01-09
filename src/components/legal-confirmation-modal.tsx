@@ -72,7 +72,7 @@ function LegalDocumentSection({
           onValueChange={onChange}
           testID={`legal-switch-${documentType}`}
           accessibilityLabel={title}
-          accessibilityHint={translate('accessibility.common.toggleHint')}
+          accessibilityHint={translate('accessibility.common.toggle_hint')}
         />
       </View>
       <Text className="text-sm text-neutral-600 dark:text-neutral-400">

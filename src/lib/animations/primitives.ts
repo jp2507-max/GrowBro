@@ -97,7 +97,8 @@ export function crossfadeAroundIndex(params: CrossfadeParams): number {
   'worklet';
   const { activeIndex, centerIndex, window = 0.5, opts } = params;
   if (window <= 0) {
-    return applySpring(activeIndex.value === centerIndex ? 1 : 0, opts);
+    const isCentered = Math.abs(activeIndex.value - centerIndex) < 1e-3;
+    return applySpring(isCentered ? 1 : 0, opts);
   }
 
   const distance = Math.abs(activeIndex.value - centerIndex);

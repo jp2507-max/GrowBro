@@ -21,35 +21,35 @@ type DiagnosticCheckItem = {
 const DIAGNOSTIC_CHECKS: DiagnosticCheckItem[] = [
   {
     id: 'ph-check',
-    nameKey: 'assessment.diagnostics.phCheck',
-    instructionsKey: 'assessment.diagnostics.phInstructions',
+    nameKey: 'assessment.diagnostics.ph_check',
+    instructionsKey: 'assessment.diagnostics.ph_instructions',
     estimatedMinutes: 5,
     taskType: 'ph-measurement',
   },
   {
     id: 'ec-check',
-    nameKey: 'assessment.diagnostics.ecCheck',
-    instructionsKey: 'assessment.diagnostics.ecInstructions',
+    nameKey: 'assessment.diagnostics.ec_check',
+    instructionsKey: 'assessment.diagnostics.ec_instructions',
     estimatedMinutes: 5,
     taskType: 'ec-measurement',
   },
   {
     id: 'light-check',
-    nameKey: 'assessment.diagnostics.lightCheck',
-    instructionsKey: 'assessment.diagnostics.lightInstructions',
+    nameKey: 'assessment.diagnostics.light_check',
+    instructionsKey: 'assessment.diagnostics.light_instructions',
     estimatedMinutes: 10,
     taskType: 'light-measurement',
   },
   {
     id: 'pest-check',
-    nameKey: 'assessment.diagnostics.pestCheck',
-    instructionsKey: 'assessment.diagnostics.pestInstructions',
+    nameKey: 'assessment.diagnostics.pest_check',
+    instructionsKey: 'assessment.diagnostics.pest_instructions',
     estimatedMinutes: 5,
   },
   {
     id: 'watering-check',
-    nameKey: 'assessment.diagnostics.wateringCheck',
-    instructionsKey: 'assessment.diagnostics.wateringInstructions',
+    nameKey: 'assessment.diagnostics.watering_check',
+    instructionsKey: 'assessment.diagnostics.watering_instructions',
     estimatedMinutes: 5,
   },
 ];
@@ -128,7 +128,7 @@ export function DiagnosticChecklist({
                   </Text>
                   {check.estimatedMinutes && (
                     <Text className="text-xs text-neutral-600 dark:text-neutral-400">
-                      {t('assessment.diagnostics.estimatedTime', {
+                      {t('assessment.diagnostics.estimated_time', {
                         minutes: check.estimatedMinutes,
                       })}
                     </Text>
@@ -153,7 +153,7 @@ export function DiagnosticChecklist({
               {/* Create task button */}
               {check.taskType && (
                 <Button
-                  label={t('assessment.diagnostics.createTask')}
+                  label={t('assessment.diagnostics.create_task')}
                   onPress={() => handleCreateTask(check)}
                   variant="outline"
                   size="sm"

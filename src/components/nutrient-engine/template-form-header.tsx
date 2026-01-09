@@ -29,14 +29,14 @@ export function TemplateFormHeader({
 
   const mediumOptions = useMemo(
     () => [
-      { label: t('nutrient.mediumOptions.soil'), value: GrowingMedium.SOIL },
-      { label: t('nutrient.mediumOptions.coco'), value: GrowingMedium.COCO },
-      { label: t('nutrient.mediumOptions.hydro'), value: GrowingMedium.HYDRO },
+      { label: t('nutrient.medium_options.soil'), value: GrowingMedium.SOIL },
+      { label: t('nutrient.medium_options.coco'), value: GrowingMedium.COCO },
+      { label: t('nutrient.medium_options.hydro'), value: GrowingMedium.HYDRO },
       {
-        label: t('nutrient.mediumOptions.soilless'),
+        label: t('nutrient.medium_options.soilless'),
         value: GrowingMedium.SOILLESS,
       },
-      { label: t('nutrient.mediumOptions.peat'), value: GrowingMedium.PEAT },
+      { label: t('nutrient.medium_options.peat'), value: GrowingMedium.PEAT },
     ],
     [t]
   );
@@ -44,7 +44,7 @@ export function TemplateFormHeader({
   return (
     <>
       <Text className="mb-4 text-xl font-semibold text-neutral-900 dark:text-neutral-100">
-        {isEdit ? t('nutrient.editTemplate') : t('nutrient.createTemplate')}
+        {isEdit ? t('nutrient.editTemplate') : t('nutrient.create_template')}
       </Text>
 
       <ControlledInput

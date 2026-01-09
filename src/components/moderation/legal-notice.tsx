@@ -9,10 +9,10 @@ export function LegalNotice() {
   return (
     <View className="mt-4">
       <Text className="text-xs text-neutral-600 dark:text-neutral-400">
-        {t('appeals.legal.freeOfCharge')}
+        {t('appeals.legal.free_of_charge')}
       </Text>
       <Text className="mt-1 text-xs text-neutral-600 dark:text-neutral-400">
-        {t('appeals.legal.humanReviewGuarantee')}
+        {t('appeals.legal.human_review_guarantee')}
       </Text>
     </View>
   );

@@ -191,12 +191,12 @@ function showExactAlarmPrimer(): void {
   }
 
   Alert.alert(
-    i18n.t('notifications.exactAlarm.title'),
-    i18n.t('notifications.exactAlarm.body'),
+    i18n.t('notifications.exact_alarm.title'),
+    i18n.t('notifications.exact_alarm.body'),
     [
       { text: i18n.t('common.cancel'), style: 'cancel' },
       {
-        text: i18n.t('notifications.exactAlarm.cta'),
+        text: i18n.t('notifications.exact_alarm.cta'),
         onPress: () => {
           void openExactAlarmSettings();
         },

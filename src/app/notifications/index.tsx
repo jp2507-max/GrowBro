@@ -81,7 +81,9 @@ function NotificationHeader({
         </Pressable>
       </View>
       <Pressable
-        accessibilityHint={translate('notifications.inbox.archived.toggleHint')}
+        accessibilityHint={translate(
+          'notifications.inbox.archived.toggle_hint'
+        )}
         accessibilityRole="button"
         className="self-start rounded-full border border-neutral-200 px-4 py-2 dark:border-neutral-700"
         onPress={() => onToggleArchived(!includeArchived)}

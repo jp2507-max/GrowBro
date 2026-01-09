@@ -44,7 +44,9 @@ export function HarvestHistoryEmpty({
       className="flex-1 items-center justify-center gap-4 px-6 py-12"
       accessibilityRole="summary"
       accessibilityLabel={translate('harvest.history.accessibility.summary')}
-      accessibilityHint={translate('harvest.history.accessibility.summaryHint')}
+      accessibilityHint={translate(
+        'harvest.history.accessibility.summary_hint'
+      )}
       testID={testID}
     >
       <Text className="text-center text-lg font-semibold text-charcoal-900 dark:text-neutral-100">
@@ -60,10 +62,10 @@ export function HarvestHistoryEmpty({
           onPress={onCreateHarvest}
           testID={testID ? `${testID}-create` : undefined}
           accessibilityLabel={translate(
-            'harvest.history.accessibility.emptyCreate'
+            'harvest.history.accessibility.empty_create'
           )}
           accessibilityHint={translate(
-            'harvest.history.accessibility.emptyCreateHint'
+            'harvest.history.accessibility.empty_create_hint'
           )}
         />
       ) : null}
@@ -71,7 +73,7 @@ export function HarvestHistoryEmpty({
       {variant === 'filtered' && onClearFilters ? (
         <Button
           className="mt-2"
-          label={translate('harvest.history.actions.clearFilters')}
+          label={translate('harvest.history.actions.clear_filters')}
           onPress={onClearFilters}
           variant="outline"
           testID={testID ? `${testID}-clear-filters` : undefined}

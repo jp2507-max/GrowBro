@@ -49,7 +49,7 @@ export function AssessmentHistoryCard({
   const relativeTime = React.useMemo(() => {
     return formatRelativeTimeTranslated(
       assessment.createdAt.toISOString(),
-      'common.timeAgo'
+      'common.time_ago'
     );
   }, [assessment.createdAt]);
 

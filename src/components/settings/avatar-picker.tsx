@@ -32,7 +32,7 @@ export function AvatarPicker({
             source={{ uri: avatarUrl }}
             className="size-24 rounded-full"
             accessibilityLabel={t('profile.avatar.label')}
-            accessibilityHint={t('profile.avatar.tapToChange')}
+            accessibilityHint={t('profile.avatar.tap_to_change')}
             accessibilityIgnoresInvertColors
           />
         ) : (
@@ -50,7 +50,7 @@ export function AvatarPicker({
         )}
       </Pressable>
       <Text className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
-        {t('profile.avatar.tapToChange')}
+        {t('profile.avatar.tap_to_change')}
       </Text>
     </View>
   );

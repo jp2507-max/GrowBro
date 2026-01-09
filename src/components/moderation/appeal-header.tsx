@@ -9,10 +9,10 @@ export function AppealHeader() {
   return (
     <View className="mb-6">
       <Text className="mb-2 text-2xl font-bold text-charcoal-950 dark:text-neutral-100">
-        {t('appeals.title.submitAppeal')}
+        {t('appeals.title.submit_appeal')}
       </Text>
       <Text className="text-sm text-neutral-600 dark:text-neutral-400">
-        {t('appeals.subtitle.humanReview')}
+        {t('appeals.subtitle.human_review')}
       </Text>
     </View>
   );

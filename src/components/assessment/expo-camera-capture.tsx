@@ -102,7 +102,7 @@ export function ExpoCameraCapture({
         <Button
           testID="capture-button"
           accessibilityLabel={t('assessment.camera.actions.capture')}
-          accessibilityHint={t('assessment.camera.actions.captureHint')}
+          accessibilityHint={t('assessment.camera.actions.capture_hint')}
           onPress={handleCapture}
           disabled={isCapturing}
           className="size-20 rounded-full bg-neutral-100"
@@ -112,7 +112,7 @@ export function ExpoCameraCapture({
               size="small"
               color={colors.charcoal[950]}
               accessibilityLabel={t('assessment.camera.status.capturing')}
-              accessibilityHint={t('assessment.camera.status.capturingHint')}
+              accessibilityHint={t('assessment.camera.status.capturing_hint')}
             />
           ) : (
             <View className="size-16 rounded-full border-4 border-charcoal-950 bg-neutral-100" />

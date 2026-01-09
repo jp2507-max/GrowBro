@@ -3,7 +3,7 @@
  * Provides scale animation for card press interactions
  */
 
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import {
   ReduceMotion,
   useAnimatedStyle,
@@ -19,12 +19,18 @@ type UseCardAnimationReturn = {
   onPressOut: () => void;
 };
 
-export function useCardAnimation(): UseCardAnimationReturn {
+export function useCardAnimation(
+  resetKey?: string | number
+): UseCardAnimationReturn {
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }));
+
+  useEffect(() => {
+    scale.value = 1;
+  }, [resetKey, scale]);
 
   const onPressIn = useCallback(() => {
     scale.value = withSpring(0.98, {

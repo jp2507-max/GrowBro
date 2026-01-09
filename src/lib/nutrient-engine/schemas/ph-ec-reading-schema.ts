@@ -21,26 +21,30 @@ const phEcErrorMap: z.ZodErrorMap = (issue, ctx) => {
       if (issue.received === 'undefined') {
         switch (issue.path[0]) {
           case 'ph':
-            return { message: translate('nutrient.validation.phRequired') };
+            return { message: translate('nutrient.validation.ph_required') };
           case 'ecRaw':
-            return { message: translate('nutrient.validation.ecRequired') };
+            return { message: translate('nutrient.validation.ec_required') };
           case 'tempC':
-            return { message: translate('nutrient.validation.tempRequired') };
+            return { message: translate('nutrient.validation.temp_required') };
           case 'ppmScale':
             return {
-              message: translate('nutrient.validation.ppmScaleRequired'),
+              message: translate('nutrient.validation.ppm_scale_required'),
             };
         }
       }
       switch (issue.path[0]) {
         case 'ph':
-          return { message: translate('nutrient.validation.phInvalidType') };
+          return { message: translate('nutrient.validation.ph_invalid_type') };
         case 'ecRaw':
-          return { message: translate('nutrient.validation.ecInvalidType') };
+          return { message: translate('nutrient.validation.ec_invalid_type') };
         case 'tempC':
-          return { message: translate('nutrient.validation.tempInvalidType') };
+          return {
+            message: translate('nutrient.validation.temp_invalid_type'),
+          };
         case 'ppmScale':
-          return { message: translate('nutrient.validation.ppmScaleInvalid') };
+          return {
+            message: translate('nutrient.validation.ppm_scale_invalid'),
+          };
       }
       break;
 
@@ -48,19 +52,19 @@ const phEcErrorMap: z.ZodErrorMap = (issue, ctx) => {
       switch (issue.path[0]) {
         case 'ph':
           return {
-            message: translate('nutrient.validation.phMin', {
+            message: translate('nutrient.validation.ph_min', {
               min: issue.minimum,
             }),
           };
         case 'ecRaw':
           return {
-            message: translate('nutrient.validation.ecMin', {
+            message: translate('nutrient.validation.ec_min', {
               min: issue.minimum,
             }),
           };
         case 'tempC':
           return {
-            message: translate('nutrient.validation.tempMin', {
+            message: translate('nutrient.validation.temp_min', {
               min: issue.minimum,
             }),
           };
@@ -71,25 +75,25 @@ const phEcErrorMap: z.ZodErrorMap = (issue, ctx) => {
       switch (issue.path[0]) {
         case 'ph':
           return {
-            message: translate('nutrient.validation.phMax', {
+            message: translate('nutrient.validation.ph_max', {
               max: issue.maximum,
             }),
           };
         case 'ecRaw':
           return {
-            message: translate('nutrient.validation.ecMax', {
+            message: translate('nutrient.validation.ec_max', {
               max: issue.maximum,
             }),
           };
         case 'tempC':
           return {
-            message: translate('nutrient.validation.tempMax', {
+            message: translate('nutrient.validation.temp_max', {
               max: issue.maximum,
             }),
           };
         case 'note':
           return {
-            message: translate('nutrient.validation.noteMaxLength', {
+            message: translate('nutrient.validation.note_max_length', {
               max: issue.maximum,
             }),
           };
@@ -98,7 +102,7 @@ const phEcErrorMap: z.ZodErrorMap = (issue, ctx) => {
 
     case z.ZodIssueCode.invalid_enum_value:
       if (issue.path[0] === 'ppmScale') {
-        return { message: translate('nutrient.validation.ppmScaleInvalid') };
+        return { message: translate('nutrient.validation.ppm_scale_invalid') };
       }
       break;
   }

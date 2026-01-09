@@ -66,6 +66,24 @@ export class ReconnectionHandler {
   }
 
   /**
+   * Invalidate all community-related queries
+   */
+  private async invalidateCommunityQueries(): Promise<void> {
+    await this.queryClient.invalidateQueries({
+      predicate: (query) => isCommunityPostsInfiniteKey(query.queryKey),
+    });
+    await this.queryClient.invalidateQueries({
+      predicate: (query) => isCommunityUserPostsKey(query.queryKey),
+    });
+    await this.queryClient.invalidateQueries({
+      queryKey: ['community-comments'],
+    });
+    await this.queryClient.invalidateQueries({
+      queryKey: ['community-post'],
+    });
+  }
+
+  /**
    * Handle network state change
    */
   private handleNetworkChange = async (state: NetInfoState): Promise<void> => {
@@ -103,18 +121,7 @@ export class ReconnectionHandler {
       this.onOutboxDrainedCallback?.();
 
       // Invalidate queries to trigger refetch
-      await this.queryClient.invalidateQueries({
-        predicate: (query) => isCommunityPostsInfiniteKey(query.queryKey),
-      });
-      await this.queryClient.invalidateQueries({
-        predicate: (query) => isCommunityUserPostsKey(query.queryKey),
-      });
-      await this.queryClient.invalidateQueries({
-        queryKey: ['community-comments'],
-      });
-      await this.queryClient.invalidateQueries({
-        queryKey: ['community-post'],
-      });
+      await this.invalidateCommunityQueries();
 
       console.log(
         '[ReconnectionHandler] Outbox drained and queries invalidated'
@@ -128,18 +135,7 @@ export class ReconnectionHandler {
       // On error, still try to invalidate queries to show fresh data
       // even if outbox processing failed
       try {
-        await this.queryClient.invalidateQueries({
-          predicate: (query) => isCommunityPostsInfiniteKey(query.queryKey),
-        });
-        await this.queryClient.invalidateQueries({
-          predicate: (query) => isCommunityUserPostsKey(query.queryKey),
-        });
-        await this.queryClient.invalidateQueries({
-          queryKey: ['community-comments'],
-        });
-        await this.queryClient.invalidateQueries({
-          queryKey: ['community-post'],
-        });
+        await this.invalidateCommunityQueries();
       } catch (invalidateError) {
         console.error(
           '[ReconnectionHandler] Failed to invalidate queries:',

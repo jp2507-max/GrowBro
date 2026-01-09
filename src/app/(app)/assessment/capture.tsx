@@ -253,7 +253,7 @@ export default function AssessmentCaptureScreen() {
       } catch (error) {
         console.error('Assessment inference failed:', error);
         setCapturedPhotos([]);
-        showErrorMessage(translateDynamic('assessment.errors.analysisFailed'));
+        showErrorMessage(translateDynamic('assessment.errors.analysis_failed'));
       }
     },
     [assessmentId, plantContext, router]
@@ -287,9 +287,9 @@ export default function AssessmentCaptureScreen() {
       }
     } catch (error) {
       console.error('Failed to store photo:', error);
-      setPhotoError(translateDynamic('assessment.errors.photoStorageFailed'));
+      setPhotoError(translateDynamic('assessment.errors.photo_storage_failed'));
       showErrorMessage(
-        translateDynamic('assessment.errors.photoStorageFailed')
+        translateDynamic('assessment.errors.photo_storage_failed')
       );
     } finally {
       setIsProcessing(false);

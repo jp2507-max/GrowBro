@@ -39,8 +39,8 @@ const useAddItemSchema = () => {
       z.object({
         name: z
           .string()
-          .min(1, t('inventory.form.validation.nameRequired'))
-          .max(100, t('inventory.form.validation.nameMaxLength')),
+          .min(1, t('inventory.form.validation.name_required'))
+          .max(100, t('inventory.form.validation.name_max_length')),
         category: z.enum([
           'Nutrients',
           'Seeds',
@@ -51,16 +51,16 @@ const useAddItemSchema = () => {
         ]),
         unitOfMeasure: z
           .string()
-          .min(1, t('inventory.form.validation.unitRequired'))
-          .max(20, t('inventory.form.validation.unitMaxLength')),
+          .min(1, t('inventory.form.validation.unit_required'))
+          .max(20, t('inventory.form.validation.unit_max_length')),
         trackingMode: z.enum(['simple', 'batched']),
         isConsumable: z.boolean(),
         minStock: z
           .number()
-          .min(0, t('inventory.form.validation.minStockPositive')),
+          .min(0, t('inventory.form.validation.min_stock_positive')),
         reorderMultiple: z
           .number()
-          .min(1, t('inventory.form.validation.reorderMultipleMin')),
+          .min(1, t('inventory.form.validation.reorder_multiple_min')),
         leadTimeDays: z.number().min(0).optional(),
         sku: z.string().max(50).optional(),
         barcode: z.string().max(50).optional(),

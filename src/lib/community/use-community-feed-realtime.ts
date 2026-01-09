@@ -630,6 +630,12 @@ export function useCommunityFeedRealtime(options: RealtimeOptions) {
             stopReconciliation();
           }
         },
+        onPollRefresh: () => {
+          console.log(
+            'Poll refresh triggered, invalidating community feed queries...'
+          );
+          invalidateCommunityFeedQueries(queryClient);
+        },
       },
       postId
     );

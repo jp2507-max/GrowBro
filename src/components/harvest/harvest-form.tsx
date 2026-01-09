@@ -81,15 +81,15 @@ function UnitToggle({
   return (
     <View className="mb-4 flex-row items-center" testID={testID}>
       <Text className="mr-3 text-base text-charcoal-900 dark:text-neutral-100">
-        {t('harvest.modal.unitToggle')}:
+        {t('harvest.modal.unit_toggle')}:
       </Text>
       <View className="flex-row overflow-hidden rounded-lg border border-neutral-300 dark:border-neutral-700">
         <Pressable
           onPress={() => onChange('g')}
           className={`px-6 py-3 ${unit === 'g' ? 'bg-primary-600' : 'bg-neutral-100 dark:bg-neutral-800'}`}
           accessibilityRole="button"
-          accessibilityLabel={t('harvest.units.gramsLong')}
-          accessibilityHint={t('harvest.accessibility.unitToggle')}
+          accessibilityLabel={t('harvest.units.grams_long')}
+          accessibilityHint={t('harvest.accessibility.unit_toggle')}
           accessibilityState={{ selected: unit === 'g' }}
           testID={`${testID}-grams`}
           style={touchTargetStyles.minimum}
@@ -97,15 +97,15 @@ function UnitToggle({
           <Text
             className={`text-sm font-medium ${unit === 'g' ? 'text-white' : 'text-neutral-900 dark:text-neutral-100'}`}
           >
-            {t('harvest.units.gramsLong')}
+            {t('harvest.units.grams_long')}
           </Text>
         </Pressable>
         <Pressable
           onPress={() => onChange('oz')}
           className={`px-6 py-3 ${unit === 'oz' ? 'bg-primary-600' : 'bg-neutral-100 dark:bg-neutral-800'}`}
           accessibilityRole="button"
-          accessibilityLabel={t('harvest.units.ouncesLong')}
-          accessibilityHint={t('harvest.accessibility.unitToggle')}
+          accessibilityLabel={t('harvest.units.ounces_long')}
+          accessibilityHint={t('harvest.accessibility.unit_toggle')}
           accessibilityState={{ selected: unit === 'oz' }}
           testID={`${testID}-ounces`}
           style={touchTargetStyles.minimum}
@@ -113,7 +113,7 @@ function UnitToggle({
           <Text
             className={`text-sm font-medium ${unit === 'oz' ? 'text-white' : 'text-neutral-900 dark:text-neutral-100'}`}
           >
-            {t('harvest.units.ouncesLong')}
+            {t('harvest.units.ounces_long')}
           </Text>
         </Pressable>
       </View>
@@ -180,31 +180,31 @@ function WeightInputs({
       <WeightInput
         control={control}
         name="wetWeight"
-        label={t('harvest.modal.wetWeight')}
+        label={t('harvest.modal.wet_weight')}
         unit={currentUnit}
         error={
           errors.wetWeight?.message ? t(errors.wetWeight.message) : undefined
         }
         testID="wet-weight-input"
-        accessibilityHint={t('harvest.accessibility.wetWeightInput')}
+        accessibilityHint={t('harvest.accessibility.wet_weight_input')}
       />
 
       <WeightInput
         control={control}
         name="dryWeight"
-        label={t('harvest.modal.dryWeight')}
+        label={t('harvest.modal.dry_weight')}
         unit={currentUnit}
         error={
           errors.dryWeight?.message ? t(errors.dryWeight.message) : undefined
         }
         testID="dry-weight-input"
-        accessibilityHint={t('harvest.accessibility.dryWeightInput')}
+        accessibilityHint={t('harvest.accessibility.dry_weight_input')}
       />
 
       <WeightInput
         control={control}
         name="trimmingsWeight"
-        label={t('harvest.modal.trimmingsWeight')}
+        label={t('harvest.modal.trimmings_weight')}
         unit={currentUnit}
         error={
           errors.trimmingsWeight?.message
@@ -212,7 +212,7 @@ function WeightInputs({
             : undefined
         }
         testID="trimmings-weight-input"
-        accessibilityHint={t('harvest.accessibility.trimmingsWeightInput')}
+        accessibilityHint={t('harvest.accessibility.trimmings_weight_input')}
       />
     </>
   );
@@ -232,15 +232,15 @@ function NotesField({
       render={({ field: { onChange, onBlur, value } }) => (
         <Input
           label={t('harvest.modal.notes')}
-          placeholder={t('harvest.modal.notesPlaceholder')}
+          placeholder={t('harvest.modal.notes_placeholder')}
           multiline
           numberOfLines={4}
           onBlur={onBlur}
           onChangeText={onChange}
           value={value}
           testID="notes-input"
-          accessibilityLabel={t('harvest.accessibility.notesInput')}
-          accessibilityHint={t('harvest.accessibility.notesHint')}
+          accessibilityLabel={t('harvest.accessibility.notes_input')}
+          accessibilityHint={t('harvest.accessibility.notes_hint')}
         />
       )}
     />
@@ -297,8 +297,8 @@ function ActionButtons({
             onPress={onCancel}
             disabled={isSubmitting}
             testID="cancel-button"
-            accessibilityLabel={t('harvest.accessibility.cancelButton')}
-            accessibilityHint={t('harvest.accessibility.cancelHint')}
+            accessibilityLabel={t('harvest.accessibility.cancel_button')}
+            accessibilityHint={t('harvest.accessibility.cancel_hint')}
           />
         </View>
         <View className="flex-1">
@@ -312,8 +312,8 @@ function ActionButtons({
             loading={isSubmitting}
             disabled={isSubmitting}
             testID="submit-button"
-            accessibilityLabel={t('harvest.accessibility.submitButton')}
-            accessibilityHint={t('harvest.accessibility.submitHint')}
+            accessibilityLabel={t('harvest.accessibility.submit_button')}
+            accessibilityHint={t('harvest.accessibility.submit_hint')}
           />
         </View>
       </View>
@@ -506,7 +506,7 @@ export function HarvestForm({
       } catch (error) {
         console.error('[HarvestForm] Submit error:', error);
         showMessage({
-          message: t('harvest.error.createFailed'),
+          message: t('harvest.error.create_failed'),
           type: 'danger',
         });
       } finally {

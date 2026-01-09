@@ -101,7 +101,7 @@ export const RetakeGuidanceModal = React.forwardRef<
         {/* Primary issue */}
         <View className="dark:bg-warning-950 mb-4 rounded-lg bg-warning-100 p-4">
           <Text className="mb-1 text-sm font-semibold text-warning-900 dark:text-warning-100">
-            {t('assessment.retake.primaryIssue')}
+            {t('assessment.retake.primary_issue')}
           </Text>
           <Text className="text-base text-warning-800 dark:text-warning-200">
             {issueDescription}
@@ -111,7 +111,7 @@ export const RetakeGuidanceModal = React.forwardRef<
         {/* Tips */}
         <View className="mb-6">
           <Text className="mb-3 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-            {t('assessment.retake.tipsTitle')}
+            {t('assessment.retake.tips_title')}
           </Text>
           <View className="gap-3">
             {guidance.tips.map((tip, index) => (
@@ -130,7 +130,7 @@ export const RetakeGuidanceModal = React.forwardRef<
         {/* Action buttons */}
         <View className="gap-3">
           <Button
-            label={t('assessment.retake.retakeNow')}
+            label={t('assessment.retake.retake_now')}
             onPress={handleRetakeNow}
             testID={`${testID}-retake-button`}
           />

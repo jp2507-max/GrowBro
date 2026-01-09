@@ -60,8 +60,8 @@ const CONSENT_TOGGLES: ToggleConfig[] = [
     titleTx: 'consent.telemetry.title' as TxKeyPath,
     subtitleTx: 'consent.telemetry.subtitle' as TxKeyPath,
     impactTx: 'consent.telemetry.impact' as TxKeyPath,
-    infoTitleTx: 'consent.telemetry.infoTitle' as TxKeyPath,
-    infoBodyTx: 'consent.telemetry.infoBody' as TxKeyPath,
+    infoTitleTx: 'consent.telemetry.info_title' as TxKeyPath,
+    infoBodyTx: 'consent.telemetry.info_body' as TxKeyPath,
     testID: 'consent-telemetry',
   },
   {
@@ -75,17 +75,17 @@ const CONSENT_TOGGLES: ToggleConfig[] = [
   {
     key: 'aiTraining',
     isPrivacy: false,
-    titleTx: 'consent.aiTraining.title' as TxKeyPath,
-    subtitleTx: 'consent.aiTraining.subtitle' as TxKeyPath,
-    impactTx: 'consent.aiTraining.impact' as TxKeyPath,
+    titleTx: 'consent.ai_training.title' as TxKeyPath,
+    subtitleTx: 'consent.ai_training.subtitle' as TxKeyPath,
+    impactTx: 'consent.ai_training.impact' as TxKeyPath,
     testID: 'consent-aiTraining',
   },
   {
     key: 'crashDiagnostics',
     isPrivacy: false,
-    titleTx: 'consent.crashDiagnostics.title' as TxKeyPath,
-    subtitleTx: 'consent.crashDiagnostics.subtitle' as TxKeyPath,
-    impactTx: 'consent.crashDiagnostics.impact' as TxKeyPath,
+    titleTx: 'consent.crash_diagnostics.title' as TxKeyPath,
+    subtitleTx: 'consent.crash_diagnostics.subtitle' as TxKeyPath,
+    impactTx: 'consent.crash_diagnostics.impact' as TxKeyPath,
     testID: 'consent-crashDiagnostics',
   },
   {
@@ -94,18 +94,18 @@ const CONSENT_TOGGLES: ToggleConfig[] = [
     titleTx: 'consent.analytics.title' as TxKeyPath,
     subtitleTx: 'consent.analytics.subtitle' as TxKeyPath,
     impactTx: 'consent.analytics.impact' as TxKeyPath,
-    infoTitleTx: 'consent.analytics.infoTitle' as TxKeyPath,
-    infoBodyTx: 'consent.analytics.infoBody' as TxKeyPath,
+    infoTitleTx: 'consent.analytics.info_title' as TxKeyPath,
+    infoBodyTx: 'consent.analytics.info_body' as TxKeyPath,
     testID: 'consent-analytics',
   },
   {
     key: 'crashReporting',
     isPrivacy: true,
-    titleTx: 'consent.crashReporting.title' as TxKeyPath,
-    subtitleTx: 'consent.crashReporting.subtitle' as TxKeyPath,
-    impactTx: 'consent.crashReporting.impact' as TxKeyPath,
-    infoTitleTx: 'consent.crashReporting.infoTitle' as TxKeyPath,
-    infoBodyTx: 'consent.crashReporting.infoBody' as TxKeyPath,
+    titleTx: 'consent.crash_reporting.title' as TxKeyPath,
+    subtitleTx: 'consent.crash_reporting.subtitle' as TxKeyPath,
+    impactTx: 'consent.crash_reporting.impact' as TxKeyPath,
+    infoTitleTx: 'consent.crash_reporting.info_title' as TxKeyPath,
+    infoBodyTx: 'consent.crash_reporting.info_body' as TxKeyPath,
     testID: 'consent-crashReporting',
   },
   {
@@ -114,18 +114,18 @@ const CONSENT_TOGGLES: ToggleConfig[] = [
     titleTx: 'consent.personalized.title' as TxKeyPath,
     subtitleTx: 'consent.personalized.subtitle' as TxKeyPath,
     impactTx: 'consent.personalized.impact' as TxKeyPath,
-    infoTitleTx: 'consent.personalized.infoTitle' as TxKeyPath,
-    infoBodyTx: 'consent.personalized.infoBody' as TxKeyPath,
+    infoTitleTx: 'consent.personalized.info_title' as TxKeyPath,
+    infoBodyTx: 'consent.personalized.info_body' as TxKeyPath,
     testID: 'consent-personalized',
   },
   {
     key: 'sessionReplay',
     isPrivacy: true,
-    titleTx: 'consent.sessionReplay.title' as TxKeyPath,
-    subtitleTx: 'consent.sessionReplay.subtitle' as TxKeyPath,
-    impactTx: 'consent.sessionReplay.impact' as TxKeyPath,
-    infoTitleTx: 'consent.sessionReplay.infoTitle' as TxKeyPath,
-    infoBodyTx: 'consent.sessionReplay.infoBody' as TxKeyPath,
+    titleTx: 'consent.session_replay.title' as TxKeyPath,
+    subtitleTx: 'consent.session_replay.subtitle' as TxKeyPath,
+    impactTx: 'consent.session_replay.impact' as TxKeyPath,
+    infoTitleTx: 'consent.session_replay.info_title' as TxKeyPath,
+    infoBodyTx: 'consent.session_replay.info_body' as TxKeyPath,
     testID: 'consent-sessionReplay',
   },
 ];
@@ -188,15 +188,15 @@ function QuickOptOutActions({
   return (
     <View className="mb-6 rounded-lg border border-danger-200 bg-danger-50 p-4 dark:border-danger-800 dark:bg-danger-900/20">
       <Text className="mb-2 text-sm font-medium text-danger-800 dark:text-danger-200">
-        {translate('consent.quickOptOut.title')}
+        {translate('consent.quick_opt_out.title')}
       </Text>
       <Text className="mb-3 text-xs text-danger-600 dark:text-danger-300">
-        {translate('consent.quickOptOut.description')}
+        {translate('consent.quick_opt_out.description')}
       </Text>
       <View className="flex-row gap-2">
         <View className="flex-1">
           <Button
-            label={translate('consent.optOutAll')}
+            label={translate('consent.opt_out_all')}
             onPress={onOptOutAll}
             variant="destructive"
             testID="opt-out-all-btn"
@@ -304,7 +304,7 @@ function ConsentActions({
       <Button
         label={
           isFirstRun
-            ? translate('consent.getStarted')
+            ? translate('consent.get_started')
             : translate('consent.save')
         }
         onPress={onSave}
@@ -394,8 +394,8 @@ function useOptOut(
         };
       });
       Alert.alert(
-        translate('consent.optOutSuccess.title'),
-        translate('consent.optOutSuccess.message'),
+        translate('consent.opt_out_success.title'),
+        translate('consent.opt_out_success.message'),
         [{ text: translate('common.ok') }]
       );
       // Construct a complete PrivacyConsent object by merging persisted
@@ -411,8 +411,8 @@ function useOptOut(
       onComplete?.(fullConsent);
     } catch {
       Alert.alert(
-        translate('consent.optOutError.title'),
-        translate('consent.optOutError.message'),
+        translate('consent.opt_out_error.title'),
+        translate('consent.opt_out_error.message'),
         [{ text: translate('common.ok') }]
       );
     }
@@ -493,14 +493,16 @@ function computeTitleKey(mode: ConsentManagerMode): TxKeyPath {
     mode === 'first-run'
       ? 'consent.first_run_title'
       : mode === 'opt-out'
-        ? 'consent.optOutTitle'
-        : 'consent.settingsTitle'
+        ? 'consent.opt_out_title'
+        : 'consent.settings_title'
   ) as TxKeyPath;
 }
 
 function computeSubtitleKey(mode: ConsentManagerMode): TxKeyPath | null {
   return (
-    mode === 'opt-out' ? 'consent.optOutSubtitle' : 'consent.settingsSubtitle'
+    mode === 'opt-out'
+      ? 'consent.opt_out_subtitle'
+      : 'consent.settings_subtitle'
   ) as TxKeyPath;
 }
 
@@ -551,7 +553,7 @@ function ConsentFooter({
       />
       <View className="mt-3">
         <Text className="text-xs text-neutral-500 dark:text-neutral-400">
-          {translate('consent.lastUpdated', {
+          {translate('consent.last_updated', {
             date: new Date(privacyConsent.lastUpdated).toLocaleDateString(),
           })}
         </Text>

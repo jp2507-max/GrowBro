@@ -74,16 +74,16 @@ function showPersonalizedDataInfo(): void {
 
 function showSessionReplayInfo(): void {
   Alert.alert(
-    translate('privacy.sessionReplay.title'),
-    translate('privacy.sessionReplay.body'),
+    translate('privacy.session_replay.title'),
+    translate('privacy.session_replay.body'),
     [{ text: translate('common.ok') }]
   );
 }
 
 function showAiModelImprovementInfo(): void {
   Alert.alert(
-    translate('privacy.aiModelImprovement.title'),
-    translate('privacy.aiModelImprovement.body'),
+    translate('privacy.ai_model_improvement.title'),
+    translate('privacy.ai_model_improvement.body'),
     [{ text: translate('common.ok') }]
   );
 }
@@ -98,8 +98,8 @@ function showAnalyticsInfo(): void {
 
 function showCrashReportingInfo(): void {
   Alert.alert(
-    translate('privacy.crashReporting.title'),
-    translate('privacy.crashReporting.body'),
+    translate('privacy.crash_reporting.title'),
+    translate('privacy.crash_reporting.body'),
     [{ text: translate('common.ok') }]
   );
 }
@@ -126,7 +126,7 @@ async function handleDataExport(): Promise<void> {
       console.error(
         '[PrivacySettings] No valid file system directory available for export'
       );
-      showErrorMessage(translate('privacy.exportError.message'));
+      showErrorMessage(translate('privacy.export_error.message'));
       return;
     }
 
@@ -138,11 +138,11 @@ async function handleDataExport(): Promise<void> {
       Platform.OS === 'ios'
         ? {
             url: tempFileUri,
-            title: translate('privacy.exportData'),
+            title: translate('privacy.export_data'),
           }
         : {
             message: tempFileUri,
-            title: translate('privacy.exportData'),
+            title: translate('privacy.export_data'),
           };
 
     const shareResult = await Share.share(shareOptions);
@@ -174,8 +174,8 @@ async function handleDataExport(): Promise<void> {
     if (!isPlatformCancellation) {
       console.error('[PrivacySettings] Data export failed:', error);
       Alert.alert(
-        translate('privacy.exportError.title'),
-        translate('privacy.exportError.message'),
+        translate('privacy.export_error.title'),
+        translate('privacy.export_error.message'),
         [{ text: translate('common.ok') }]
       );
     }
@@ -198,8 +198,8 @@ function PrivacyToggles({
   return (
     <View className="space-y-4">
       <ToggleRow
-        title={translate('privacy.crashReporting.title')}
-        subtitle={translate('privacy.crashReporting.subtitle')}
+        title={translate('privacy.crash_reporting.title')}
+        subtitle={translate('privacy.crash_reporting.subtitle')}
         value={consent.crashReporting}
         onChange={(value) => updateConsent('crashReporting', value)}
         onInfoPress={showCrashReportingInfo}
@@ -225,8 +225,8 @@ function PrivacyToggles({
       />
 
       <ToggleRow
-        title={translate('privacy.sessionReplay.title')}
-        subtitle={translate('privacy.sessionReplay.subtitle')}
+        title={translate('privacy.session_replay.title')}
+        subtitle={translate('privacy.session_replay.subtitle')}
         value={consent.sessionReplay}
         onChange={(value) => updateConsent('sessionReplay', value)}
         onInfoPress={showSessionReplayInfo}
@@ -234,8 +234,8 @@ function PrivacyToggles({
       />
 
       <ToggleRow
-        title={translate('privacy.aiModelImprovement.title')}
-        subtitle={translate('privacy.aiModelImprovement.subtitle')}
+        title={translate('privacy.ai_model_improvement.title')}
+        subtitle={translate('privacy.ai_model_improvement.subtitle')}
         value={consent.aiModelImprovement}
         onChange={(value) => updateConsent('aiModelImprovement', value)}
         onInfoPress={showAiModelImprovementInfo}
@@ -280,8 +280,8 @@ function PrivacyActions({
     if (onAccountDeletion) onAccountDeletion();
     else
       Alert.alert(
-        translate('privacy.deleteAccount'),
-        translate('privacy.deleteAccount'),
+        translate('privacy.delete_account'),
+        translate('privacy.delete_account'),
         [{ text: translate('common.ok') }]
       );
   };
@@ -302,13 +302,13 @@ function PrivacyActions({
       />
       {}
       <Button
-        label={translate('privacy.exportData')}
+        label={translate('privacy.export_data')}
         onPress={handleExportWithCallback}
         testID="privacy-export-btn"
       />
       {}
       <Button
-        label={translate('privacy.deleteAccount')}
+        label={translate('privacy.delete_account')}
         onPress={handleDeleteAccount}
         testID="privacy-delete-btn"
       />
@@ -339,7 +339,7 @@ function PrivacySettingsContent({
         className="mt-4 text-xs text-charcoal-500 dark:text-charcoal-400"
         testID="privacy-settings-last-updated"
       >
-        {translate('privacy.lastUpdated', {
+        {translate('privacy.last_updated', {
           date: new Date(consent.lastUpdated).toLocaleDateString(),
         })}
       </Text>

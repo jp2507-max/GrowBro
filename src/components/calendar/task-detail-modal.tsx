@@ -7,7 +7,7 @@ import { twMerge } from 'tailwind-merge';
 
 import { Modal, Pressable, Text, useModal, View } from '@/components/ui';
 import colors from '@/components/ui/colors';
-import { ArrowRight, Check, Trash } from '@/components/ui/icons';
+import { Check, Edit, Trash } from '@/components/ui/icons';
 import { BottomSheetView } from '@/components/ui/modal';
 import { haptics } from '@/lib/haptics';
 import { translate } from '@/lib/i18n';
@@ -63,7 +63,6 @@ function ActionButton({
   testID?: string;
 }): React.ReactElement {
   const handlePress = React.useCallback(() => {
-    haptics.selection();
     onPress();
   }, [onPress]);
 
@@ -141,7 +140,10 @@ function useModalDarkModeStyles(): ModalStyles {
     [isDark]
   );
 
-  return { backgroundStyle, handleStyle };
+  return React.useMemo(
+    () => ({ backgroundStyle, handleStyle }),
+    [backgroundStyle, handleStyle]
+  );
 }
 
 export function TaskDetailModal({
@@ -168,6 +170,7 @@ export function TaskDetailModal({
 
   const handleEdit = React.useCallback(() => {
     if (task && onEdit) {
+      haptics.selection();
       onEdit(task);
       dismiss();
     }
@@ -193,8 +196,8 @@ export function TaskDetailModal({
         handleIndicatorStyle={handleStyle}
       >
         <BottomSheetView style={styles.content}>
-          <Text className="text-center text-neutral-500">
-            {translate('calendar.noTaskSelected')}
+          <Text className="text-center text-neutral-500 dark:text-neutral-400">
+            {translate('calendar.no_task_selected')}
           </Text>
         </BottomSheetView>
       </Modal>
@@ -261,7 +264,7 @@ export function TaskDetailModal({
           )}
           {onEdit && (
             <ActionButton
-              icon={<ArrowRight color={colors.neutral[600]} />}
+              icon={<Edit size={20} color={colors.neutral[600]} />}
               label={translate('calendar.task_detail.edit')}
               variant="default"
               onPress={handleEdit}

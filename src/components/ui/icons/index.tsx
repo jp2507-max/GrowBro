@@ -8,6 +8,7 @@ export * from './caret-down';
 export * from './check';
 export * from './chevron-right';
 export * from './droplet';
+export * from './edit';
 export * from './feed';
 export * from './feedback';
 export * from './file-text';

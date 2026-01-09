@@ -41,6 +41,8 @@ export type PostCardViewProps = {
   displayUsername: string;
   isOwnPost: boolean;
   onDelete?: (postId: number | string, undoExpiresAt: string) => void;
+  enableSharedTransition?: boolean;
+  onCardPressIn?: (postId: number | string) => void;
   testID: string;
   handleAuthorPress: (e: PressEvent) => void;
   handleCommentPress: (e: PressEvent) => void;
@@ -52,15 +54,27 @@ export function PostCardView({
   displayUsername,
   isOwnPost,
   onDelete,
+  enableSharedTransition,
+  onCardPressIn,
   testID,
   handleAuthorPress,
   handleCommentPress,
 }: PostCardViewProps): React.ReactElement {
   const { colorScheme } = useColorScheme();
   const deleteMutation = useDeletePost();
-  const { animatedStyle, onPressIn, onPressOut } = useCardAnimation();
+  const { animatedStyle, onPressIn, onPressOut } = useCardAnimation(postId);
   const { optionsSheetRef, handleOptionsPress, handleDeleteConfirm } =
     useCardInteractions({ postId, onDelete, deleteMutation });
+  const allowSharedTransition = enableSharedTransition ?? true;
+
+  const handlePressIn = React.useCallback(() => {
+    onPressIn();
+    onCardPressIn?.(postId);
+  }, [onPressIn, onCardPressIn, postId]);
+
+  const handlePressOut = React.useCallback(() => {
+    onPressOut();
+  }, [onPressOut]);
 
   const iconColor =
     colorScheme === 'dark' ? colors.neutral[400] : colors.neutral[600];
@@ -69,7 +83,7 @@ export function PostCardView({
   const hasImage = Boolean(post.media_uri);
   const relativeTime = formatRelativeTimeTranslated(
     post.created_at,
-    'common.timeAgo'
+    'common.time_ago'
   );
 
   return (
@@ -86,8 +100,8 @@ export function PostCardView({
             }
             accessibilityRole="link"
             testID={testID}
-            onPressIn={onPressIn}
-            onPressOut={onPressOut}
+            onPressIn={handlePressIn}
+            onPressOut={handlePressOut}
           >
             <View
               className="mx-5 mb-6 overflow-hidden rounded-3xl border border-neutral-200 bg-white dark:border-white/10 dark:bg-charcoal-900"
@@ -112,6 +126,7 @@ export function PostCardView({
                   blurhash={post.media_blurhash}
                   thumbhash={post.media_thumbhash}
                   displayUsername={displayUsername}
+                  enableSharedTransition={allowSharedTransition}
                   testID={testID}
                 />
               )}

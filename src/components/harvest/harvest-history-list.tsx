@@ -113,7 +113,7 @@ export function HarvestHistoryList({
       maintainVisibleContentPosition={{ autoscrollToTopThreshold: 0 }}
       accessibilityRole="list"
       accessibilityLabel={t('harvest.history.accessibility.list')}
-      accessibilityHint={t('harvest.history.accessibility.listHint')}
+      accessibilityHint={t('harvest.history.accessibility.list_hint')}
       ListEmptyComponent={emptyComponent}
       ItemSeparatorComponent={MemoizedSeparator}
       isLoading={isLoading}
@@ -212,10 +212,10 @@ const HarvestHistoryRow = memo<RowProps>(function HarvestHistoryRow({
 
   const rowLabel = useMemo(
     () =>
-      `${t('harvest.history.list.rowLabel', {
+      `${t('harvest.history.list.row_label', {
         stage: t(`harvest.stages.${item.stage}`),
         time: relativeTime,
-      })}${item.dryWeight != null ? t('harvest.history.list.rowLabelWeight', { weight: item.dryWeight }) : ''}${item.conflictSeen ? t('harvest.history.list.rowLabelConflict') : ''}`,
+      })}${item.dryWeight != null ? t('harvest.history.list.row_label_weight', { weight: item.dryWeight }) : ''}${item.conflictSeen ? t('harvest.history.list.row_label_conflict') : ''}`,
     [t, item.stage, item.dryWeight, item.conflictSeen, relativeTime]
   );
 
@@ -224,7 +224,7 @@ const HarvestHistoryRow = memo<RowProps>(function HarvestHistoryRow({
       className="flex-row items-center justify-between px-4 py-3"
       accessibilityRole="button"
       accessibilityLabel={rowLabel}
-      accessibilityHint={t('harvest.history.accessibility.rowHint')}
+      accessibilityHint={t('harvest.history.accessibility.row_hint')}
       testID={testID}
       onPress={handlePress}
     >

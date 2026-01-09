@@ -56,7 +56,7 @@ describe('AboutScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     // Default: OTA enabled
-    (Updates.isEnabled as any) = true;
+    (Updates as { isEnabled: boolean }).isEnabled = true;
   });
 
   afterEach(cleanup);
@@ -326,7 +326,7 @@ describe('AboutScreen', () => {
 
   describe('OTA Updates - Disabled', () => {
     beforeEach(() => {
-      (Updates.isEnabled as any) = false;
+      (Updates as { isEnabled: boolean }).isEnabled = false;
     });
 
     test('shows store managed message when OTA disabled', async () => {
@@ -451,7 +451,7 @@ describe('AboutScreen', () => {
           expect.any(Error)
         );
         expect(showErrorMessage).toHaveBeenCalledWith(
-          translate('settings.about.openLinkError')
+          translate('settings.about.open_link_error')
         );
       });
 
@@ -477,7 +477,7 @@ describe('AboutScreen', () => {
           expect.any(Error)
         );
         expect(showErrorMessage).toHaveBeenCalledWith(
-          translate('settings.about.openLinkError')
+          translate('settings.about.open_link_error')
         );
       });
 

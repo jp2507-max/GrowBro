@@ -77,7 +77,9 @@ export function StrainsHeader({
             }
             onPress={handleFavoritesPress}
             accessibilityLabel={translate('strains.favorites.title')}
-            accessibilityHint={translate('strains.favoritesAccessibilityHint')}
+            accessibilityHint={translate(
+              'strains.favorites_accessibility_hint'
+            )}
             testID="strains-favorites-button"
           />
           <HeaderIconButton

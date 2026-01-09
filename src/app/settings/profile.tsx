@@ -117,15 +117,15 @@ function ProfileFormFields({
         <ControlledInput
           control={control}
           name="displayName"
-          label={t('profile.displayName.label')}
-          placeholder={t('profile.displayName.placeholder')}
+          label={t('profile.display_name.label')}
+          placeholder={t('profile.display_name.placeholder')}
           error={errors.displayName?.message}
           maxLength={30}
           testID="profile-display-name"
         />
         <ValidationError
           error={errors.displayName}
-          fieldLabel={t('profile.displayName.label')}
+          fieldLabel={t('profile.display_name.label')}
           testID="display-name-error"
         />
       </View>
@@ -171,7 +171,7 @@ function ProfileFormFields({
           onPress={() => setShowProfileToCommunity(!showProfileToCommunity)}
         >
           <Text className="flex-1 text-neutral-900 dark:text-neutral-100">
-            {t('profile.privacy.showProfile')}
+            {t('profile.privacy.show_profile')}
           </Text>
           <View
             className={`size-6 rounded ${showProfileToCommunity ? 'bg-primary-600' : 'bg-neutral-300 dark:bg-neutral-600'}`}
@@ -185,7 +185,7 @@ function ProfileFormFields({
           onPress={() => setAllowDirectMessages(!allowDirectMessages)}
         >
           <Text className="flex-1 text-neutral-900 dark:text-neutral-100">
-            {t('profile.privacy.allowDMs')}
+            {t('profile.privacy.allow_d_ms')}
           </Text>
           <View
             className={`size-6 rounded ${allowDirectMessages ? 'bg-primary-600' : 'bg-neutral-300 dark:bg-neutral-600'}`}
@@ -398,8 +398,8 @@ export default function ProfileScreen() {
         console.error('Avatar upload failed:', error);
         setAvatarStatus('failed');
         showErrorToast(
-          t('profile.avatar.uploadFailed'),
-          t('profile.avatar.uploadFailedMessage')
+          t('profile.avatar.upload_failed'),
+          t('profile.avatar.upload_failed_message')
         );
       }
     },
@@ -415,12 +415,12 @@ export default function ProfileScreen() {
       // Show action sheet
       Alert.alert(t('profile.avatar.title'), t('profile.avatar.subtitle'), [
         {
-          text: t('profile.avatar.takePhoto'),
+          text: t('profile.avatar.take_photo'),
           onPress: async () => {
             if (!cameraPermission.granted) {
               Alert.alert(
-                t('profile.avatar.permissionDenied'),
-                t('profile.avatar.permissionMessage')
+                t('profile.avatar.permission_denied'),
+                t('profile.avatar.permission_message')
               );
               return;
             }
@@ -438,7 +438,7 @@ export default function ProfileScreen() {
           },
         },
         {
-          text: t('profile.avatar.chooseLibrary'),
+          text: t('profile.avatar.choose_library'),
           onPress: async () => {
             const result = await requestSelectedPhotos();
             if (result.granted && result.selection && result.selection[0]) {
@@ -513,16 +513,19 @@ export default function ProfileScreen() {
 
         if (syncResult.success) {
           showSuccessToast(
-            t('profile.saveSuccess'),
-            t('profile.saveSuccessMessage')
+            t('profile.save_success'),
+            t('profile.save_success_message')
           );
           router.back();
         } else {
-          showErrorToast(t('profile.saveFailed'), syncResult.error);
+          showErrorToast(t('profile.save_failed'), syncResult.error);
         }
       } catch (error) {
         console.error('Profile save failed:', error);
-        showErrorToast(t('profile.saveFailed'), t('profile.saveFailedMessage'));
+        showErrorToast(
+          t('profile.save_failed'),
+          t('profile.save_failed_message')
+        );
       }
     },
     [

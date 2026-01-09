@@ -1099,6 +1099,21 @@ export class CommunityApiClient implements CommunityAPI {
     return data;
   }
 
+  async getUserProfiles(userIds: string[]): Promise<UserProfile[]> {
+    if (!userIds.length) return [];
+
+    const { data, error } = await this.client
+      .from('profiles')
+      .select('*')
+      .in('id', userIds);
+
+    if (error) {
+      throw new Error(`Failed to fetch user profiles: ${error.message}`);
+    }
+
+    return data ?? [];
+  }
+
   async getUserPosts(
     userId: string,
     cursor?: string,

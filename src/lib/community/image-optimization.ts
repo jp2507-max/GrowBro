@@ -56,7 +56,7 @@ export function getCommunityImageProps(props: {
 
   // Generate recycling key
   const effectiveRecyclingKey =
-    recyclingKey ?? thumbnailUri ?? resizedUri ?? uri ?? undefined;
+    recyclingKey ?? resizedUri ?? uri ?? thumbnailUri ?? undefined;
 
   return {
     source,

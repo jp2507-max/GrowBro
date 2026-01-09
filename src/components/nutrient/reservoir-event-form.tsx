@@ -47,7 +47,7 @@ function PHDeltaField({
         name="phDelta"
         render={({ field: { onChange, value } }) => (
           <Input
-            label={translate('nutrient.event.phDelta')}
+            label={translate('nutrient.event.ph_delta')}
             placeholder="0.0"
             keyboardType="decimal-pad"
             value={value?.toString() ?? ''}
@@ -58,7 +58,7 @@ function PHDeltaField({
         )}
       />
       <Text className="text-xs text-neutral-500">
-        {translate('nutrient.event.phDeltaHint')}
+        {translate('nutrient.event.ph_delta_hint')}
       </Text>
     </>
   );
@@ -78,7 +78,7 @@ function ECDeltaField({
         name="ecDelta"
         render={({ field: { onChange, value } }) => (
           <Input
-            label={translate('nutrient.event.ecDelta')}
+            label={translate('nutrient.event.ec_delta')}
             placeholder="0.0"
             keyboardType="decimal-pad"
             value={value?.toString() ?? ''}
@@ -89,7 +89,7 @@ function ECDeltaField({
         )}
       />
       <Text className="text-xs text-neutral-500">
-        {translate('nutrient.event.ecDeltaHint')}
+        {translate('nutrient.event.ec_delta_hint')}
       </Text>
     </>
   );
@@ -127,7 +127,7 @@ function FormFields({
         render={({ field: { onChange, value } }) => (
           <Input
             label={translate('nutrient.event.note')}
-            placeholder={translate('nutrient.event.notePlaceholder')}
+            placeholder={translate('nutrient.event.note_placeholder')}
             multiline
             numberOfLines={3}
             value={value ?? ''}
@@ -164,7 +164,7 @@ export function ReservoirEventForm({
   return (
     <View className="gap-4 p-4" testID={testID}>
       <Text className="text-lg font-semibold text-neutral-900">
-        {translate('nutrient.event.logEvent')}
+        {translate('nutrient.event.log_event')}
       </Text>
 
       <FormFields control={control} errors={errors} />

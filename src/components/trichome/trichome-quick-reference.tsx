@@ -14,7 +14,7 @@ export function TrichomeQuickReference({
     <View className="rounded-lg border border-neutral-200 bg-white p-4 dark:border-charcoal-800 dark:bg-charcoal-900">
       <Text
         className="mb-3 text-sm font-semibold text-neutral-900 dark:text-neutral-100"
-        tx="trichome.helper.quickReference"
+        tx="trichome.helper.quick_reference"
       />
       {guide.stages.map((stage, index) => (
         <View

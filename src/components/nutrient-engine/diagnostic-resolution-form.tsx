@@ -70,9 +70,9 @@ export function DiagnosticResolutionForm({
       </Text>
 
       <Input
-        label={translate('nutrient.diagnostics.resolution.notesLabel')}
+        label={translate('nutrient.diagnostics.resolution.notes_label')}
         placeholder={translate(
-          'nutrient.diagnostics.resolution.notesPlaceholder'
+          'nutrient.diagnostics.resolution.notes_placeholder'
         )}
         value={notes}
         onChangeText={setNotes}

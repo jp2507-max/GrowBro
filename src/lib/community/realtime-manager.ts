@@ -25,6 +25,7 @@ type RealtimeCallbacks = {
   onCommentChange?: (event: RealtimeEvent<PostComment>) => void | Promise<void>;
   onLikeChange?: (event: RealtimeEvent<PostLike>) => void | Promise<void>;
   onConnectionStateChange?: (state: ConnectionState) => void;
+  onPollRefresh?: () => void;
 };
 
 /**
@@ -347,18 +348,12 @@ export class RealtimeConnectionManager {
 
   /**
    * Poll for updates when real-time is unavailable
-   * Triggers refetch by toggling connection state to notify listeners
+   * Notifies listeners to refetch data via dedicated polling callback
    */
   private async pollUpdates(): Promise<void> {
     console.log('Polling for updates...');
-    // Notify listeners by temporarily changing state
-    // This triggers React Query refetch in components listening to connection state
-    const previousState = this.connectionState;
-    this.callbacks.onConnectionStateChange?.('disconnected');
-    // Restore state after a brief delay to trigger update detection
-    setTimeout(() => {
-      this.callbacks.onConnectionStateChange?.(previousState);
-    }, 100);
+    // Emit dedicated poll refresh event for components to handle
+    this.callbacks.onPollRefresh?.();
   }
 
   /**

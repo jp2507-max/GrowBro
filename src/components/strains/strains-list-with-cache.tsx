@@ -18,12 +18,12 @@ import type { ReanimatedScrollEvent } from 'react-native-reanimated/lib/typescri
 import type { Strain } from '@/api';
 import type { StrainFilters } from '@/api/strains/types';
 import { useOfflineAwareStrains } from '@/api/strains/use-strains-infinite-with-cache';
+import { StrainCard } from '@/components/strains/strain-card';
 import {
   DEFAULT_ITEM_HEIGHT,
   extractStrainKey,
   getStrainItemType,
   overrideStrainItemLayout,
-  renderStrainItem,
 } from '@/lib/strains/list-helpers';
 import { getOptimizedFlashListConfig } from '@/lib/strains/measure-item-size';
 import { useListComponents } from '@/lib/strains/use-list-components';
@@ -78,6 +78,9 @@ export function StrainsListWithCache({
   testID = 'strains-list-with-cache',
   onStateChange,
 }: StrainsListWithCacheProps) {
+  const [activeStrainId, setActiveStrainId] = React.useState<string | null>(
+    null
+  );
   const queryKey = JSON.stringify({
     q: searchQuery,
     f: filters,
@@ -155,12 +158,28 @@ export function StrainsListWithCache({
     onRetry,
   });
 
+  const handleStrainPressIn = React.useCallback((strainId: string) => {
+    setActiveStrainId(strainId);
+  }, []);
+
+  const renderItem = React.useCallback(
+    ({ item }: { item: Strain }) => (
+      <StrainCard
+        strain={item}
+        testID={`strain-card-${item.id}`}
+        enableSharedTransition={item.id === activeStrainId}
+        onStartNavigation={handleStrainPressIn}
+      />
+    ),
+    [activeStrainId, handleStrainPressIn]
+  );
+
   return (
     <AnimatedFlashList
       ref={listRef as React.Ref<FlashListRef<Strain>>}
       testID={testID}
       data={strains}
-      renderItem={renderStrainItem}
+      renderItem={renderItem}
       keyExtractor={extractStrainKey}
       getItemType={getStrainItemType}
       overrideItemLayout={overrideStrainItemLayout}

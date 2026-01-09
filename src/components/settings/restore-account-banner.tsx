@@ -33,8 +33,8 @@ function useCancelDeletionHandler(onDismiss?: () => void) {
 
   const handleCancelDeletion = () => {
     Alert.alert(
-      translate('settings.delete_account.restoreBanner.confirmTitle'),
-      translate('settings.delete_account.restoreBanner.confirmMessage'),
+      translate('settings.delete_account.restore_banner.confirm_title'),
+      translate('settings.delete_account.restore_banner.confirm_message'),
       [
         {
           text: translate('common.cancel'),
@@ -42,23 +42,25 @@ function useCancelDeletionHandler(onDismiss?: () => void) {
         },
         {
           text: translate(
-            'settings.delete_account.restoreBanner.confirmButton'
+            'settings.delete_account.restore_banner.confirm_button'
           ),
           style: 'default',
           onPress: async () => {
             try {
               await cancelDeletion.mutateAsync();
               Alert.alert(
-                translate('settings.delete_account.restoreBanner.successTitle'),
                 translate(
-                  'settings.delete_account.restoreBanner.successMessage'
+                  'settings.delete_account.restore_banner.success_title'
+                ),
+                translate(
+                  'settings.delete_account.restore_banner.success_message'
                 )
               );
               onDismiss?.();
             } catch {
               Alert.alert(
                 translate('common.error'),
-                translate('settings.delete_account.restoreBanner.cancelError')
+                translate('settings.delete_account.restore_banner.cancel_error')
               );
             }
           },
@@ -94,7 +96,7 @@ export function RestoreAccountBanner({
       <View className="mb-2 flex-row items-center">
         <Text className="mr-2 text-2xl">⚠️</Text>
         <Text className="flex-1 text-base font-semibold text-warning-900 dark:text-warning-100">
-          {translate('settings.delete_account.restoreBanner.title')}
+          {translate('settings.delete_account.restore_banner.title')}
         </Text>
         {/* Dismiss Button */}
         <Button
@@ -110,7 +112,7 @@ export function RestoreAccountBanner({
 
       {/* Message */}
       <Text className="mb-3 text-sm text-warning-800 dark:text-warning-200">
-        {translate('settings.delete_account.restoreBanner.message', {
+        {translate('settings.delete_account.restore_banner.message', {
           days: daysRemaining,
         })}
       </Text>
@@ -127,7 +129,7 @@ export function RestoreAccountBanner({
           testID="restore-banner-cancel-deletion"
         >
           <Text className="font-semibold text-white">
-            {translate('settings.delete_account.restoreBanner.cancelButton')}
+            {translate('settings.delete_account.restore_banner.cancel_button')}
           </Text>
         </Button>
       </View>
@@ -135,7 +137,7 @@ export function RestoreAccountBanner({
       {/* Days Remaining Badge */}
       <View className="mt-3 flex-row items-center justify-center rounded-md bg-warning-100 py-2 dark:bg-warning-900">
         <Text className="text-xs font-medium text-warning-900 dark:text-warning-100">
-          {translate('settings.delete_account.restoreBanner.daysRemaining', {
+          {translate('settings.delete_account.restore_banner.days_remaining', {
             days: daysRemaining,
           })}
         </Text>

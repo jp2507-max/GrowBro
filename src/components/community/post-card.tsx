@@ -15,7 +15,7 @@ import React from 'react';
 
 import { useUserProfile } from '@/api/community';
 import type { Post as ApiPost } from '@/api/posts';
-import { getOptionalAuthenticatedUserId } from '@/lib/auth/user-utils';
+import { useAuth } from '@/lib/auth';
 import { normalizePostUserId } from '@/lib/community/post-utils';
 import { translate } from '@/lib/i18n';
 
@@ -25,22 +25,23 @@ import type { PressEvent } from './types';
 type PostCardProps = {
   post: ApiPost;
   onDelete?: (postId: number | string, undoExpiresAt: string) => void;
+  displayUsername?: string | null;
+  enableSharedTransition?: boolean;
+  onCardPressIn?: (postId: number | string) => void;
   testID?: string;
 };
 
 function PostCardComponent({
   post,
   onDelete,
+  displayUsername: displayUsernameOverride,
+  enableSharedTransition,
+  onCardPressIn,
   testID = 'post-card',
 }: PostCardProps): React.ReactElement {
   const router = useRouter();
-  const [currentUserId, setCurrentUserId] = React.useState<
-    string | null | undefined
-  >(undefined);
-
-  React.useEffect(() => {
-    getOptionalAuthenticatedUserId().then(setCurrentUserId);
-  }, []);
+  const authStatus = useAuth.use.status();
+  const currentUserId = useAuth.use.user()?.id ?? null;
 
   const normalizedPost = React.useMemo(() => normalizePostUserId(post), [post]);
 
@@ -61,20 +62,26 @@ function PostCardComponent({
   const { data: userProfile } = useUserProfile({
     variables: { userId: postUserId },
     enabled:
+      displayUsernameOverride === undefined &&
       !!postUserId &&
       postUserId !== 'invalid-user-id' &&
       !postUserId.startsWith('unknown-'),
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    staleTime: 1000 * 60 * 30,
+    gcTime: 1000 * 60 * 60,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 
   const displayUsername =
-    userProfile?.username ||
+    displayUsernameOverride ??
+    userProfile?.username ??
     (postUserId.startsWith('unknown-')
       ? translate('accessibility.community.unknown_user')
       : translate('accessibility.community.anonymous_user'));
 
   const isOwnPost =
-    currentUserId !== undefined &&
+    authStatus !== 'idle' &&
     currentUserId !== null &&
     postUserId === currentUserId;
 
@@ -99,8 +106,10 @@ function PostCardComponent({
       post={post}
       postId={postId}
       displayUsername={displayUsername}
-      isOwnPost={!!isOwnPost}
+      isOwnPost={isOwnPost}
       onDelete={onDelete}
+      enableSharedTransition={enableSharedTransition}
+      onCardPressIn={onCardPressIn}
       testID={testID}
       handleAuthorPress={handleAuthorPress}
       handleCommentPress={handleCommentPress}
@@ -127,6 +136,9 @@ export const PostCard = React.memo(
       prevProps.post.created_at === nextProps.post.created_at &&
       prevProps.post.userId === nextProps.post.userId &&
       prevProps.onDelete === nextProps.onDelete &&
+      prevProps.displayUsername === nextProps.displayUsername &&
+      prevProps.enableSharedTransition === nextProps.enableSharedTransition &&
+      prevProps.onCardPressIn === nextProps.onCardPressIn &&
       prevProps.testID === nextProps.testID
     );
   }

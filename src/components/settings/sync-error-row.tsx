@@ -33,7 +33,7 @@ export function SyncErrorRow({
         <View className="flex-1">
           <Text
             className="text-sm font-medium text-danger-800 dark:text-danger-200"
-            tx="settings.sync.syncFailed"
+            tx="settings.sync.sync_failed"
           />
           <Text className="mt-1 text-xs text-danger-700 dark:text-danger-300">
             {error.message}
@@ -41,7 +41,7 @@ export function SyncErrorRow({
           {lastSyncAttempt && (
             <Text
               className="mt-1 text-xs text-danger-600 dark:text-danger-400"
-              tx="settings.sync.lastAttempt"
+              tx="settings.sync.last_attempt"
               txOptions={{ attempt: lastSyncAttempt }}
             />
           )}

@@ -11,36 +11,38 @@ jest.mock('react-i18next', () => ({
     t: (key: string) => {
       // Return the key for testing purposes
       const translations: Record<string, string> = {
-        'moderation.sorPreview.fields.decisionGround': 'Decision Ground',
-        'moderation.sorPreview.fields.legalReference': 'Legal Reference',
-        'moderation.sorPreview.fields.contentType': 'Content Type',
-        'moderation.sorPreview.fields.automatedDetection':
+        'moderation.sor_preview.fields.decision_ground': 'Decision Ground',
+        'moderation.sor_preview.fields.legal_reference': 'Legal Reference',
+        'moderation.sor_preview.fields.content_type': 'Content Type',
+        'moderation.sor_preview.fields.automated_detection':
           'Automated Detection',
-        'moderation.sorPreview.fields.automatedDecision': 'Automated Decision',
-        'moderation.sorPreview.fields.territorialScope': 'Territorial Scope',
-        'moderation.sorPreview.fields.redressOptions': 'Redress Options',
-        'moderation.sorPreview.fields.pseudonymizedReporter':
+        'moderation.sor_preview.fields.automated_decision':
+          'Automated Decision',
+        'moderation.sor_preview.fields.territorial_scope': 'Territorial Scope',
+        'moderation.sor_preview.fields.redress_options': 'Redress Options',
+        'moderation.sor_preview.fields.pseudonymized_reporter':
           'Pseudonymized Reporter',
-        'moderation.sorPreview.fields.pseudonymizedModerator':
+        'moderation.sor_preview.fields.pseudonymized_moderator':
           'Pseudonymized Moderator',
-        'moderation.sorPreview.fields.aggregatedReportCount':
+        'moderation.sor_preview.fields.aggregated_report_count':
           'Aggregated Report Count',
-        'moderation.sorPreview.fields.aggregatedReportCountSuppressed':
+        'moderation.sor_preview.fields.aggregated_report_count_suppressed':
           'Suppressed (k-anonymity)',
-        'moderation.sorPreview.fields.evidenceType': 'Evidence Type',
-        'moderation.sorPreview.fields.contentAge': 'Content Age',
-        'moderation.sorPreview.fields.scrubbedAt': 'Scrubbed At',
-        'moderation.sorPreview.fields.scrubbingVersion': 'Scrubbing Version',
-        'moderation.sorPreview.fields.factsAndCircumstances':
+        'moderation.sor_preview.fields.evidence_type': 'Evidence Type',
+        'moderation.sor_preview.fields.content_age': 'Content Age',
+        'moderation.sor_preview.fields.scrubbed_at': 'Scrubbed At',
+        'moderation.sor_preview.fields.scrubbing_version': 'Scrubbing Version',
+        'moderation.sor_preview.fields.facts_and_circumstances':
           'Facts & Circumstances',
-        'moderation.sorPreview.fields.createdAt': 'Created At',
-        'moderation.sorPreview.fields.yes': 'Yes',
-        'moderation.sorPreview.fields.no': 'No',
-        'moderation.sorPreview.fields.legalReferenceNA': 'N/A',
-        'moderation.sorPreview.fields.territorialScopeGlobal': 'Global',
-        'moderation.sorPreview.userFacingTitle': 'User-Facing SoR',
-        'moderation.sorPreview.redactedTitle': 'Redacted SoR (EC Submission)',
-        'moderation.sorPreview.validation.noPiiDetected': '✓ No PII Detected',
+        'moderation.sor_preview.fields.created_at': 'Created At',
+        'moderation.sor_preview.fields.yes': 'Yes',
+        'moderation.sor_preview.fields.no': 'No',
+        'moderation.sor_preview.fields.legal_reference_n_a': 'N/A',
+        'moderation.sor_preview.fields.territorial_scope_global': 'Global',
+        'moderation.sor_preview.user_facing_title': 'User-Facing SoR',
+        'moderation.sor_preview.redacted_title': 'Redacted SoR (EC Submission)',
+        'moderation.sor_preview.validation.no_pii_detected':
+          '✓ No PII Detected',
         'moderation.transformed': '(transformed)',
       };
       return translations[key] || key;

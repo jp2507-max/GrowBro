@@ -25,7 +25,7 @@ function ReadingDetailError({ error }: { error: AccessDeniedError | Error }) {
         className="flex-1 items-center justify-center bg-white p-4 dark:bg-charcoal-950"
       >
         <Text className="text-center text-neutral-600">
-          {t('nutrient.accessDenied')}
+          {t('nutrient.access_denied')}
         </Text>
       </View>
     );
@@ -37,7 +37,7 @@ function ReadingDetailError({ error }: { error: AccessDeniedError | Error }) {
       className="flex-1 items-center justify-center bg-white p-4 dark:bg-charcoal-950"
     >
       <Text className="text-center text-neutral-600">
-        {t('nutrient.errorLoadingReading')}
+        {t('nutrient.error_loading_reading')}
       </Text>
     </View>
   );
@@ -65,7 +65,7 @@ function ReadingDetailNotFound() {
       className="flex-1 items-center justify-center bg-white p-4 dark:bg-charcoal-950"
     >
       <Text className="text-center text-neutral-600">
-        {t('nutrient.readingNotFound')}
+        {t('nutrient.reading_not_found')}
       </Text>
     </View>
   );

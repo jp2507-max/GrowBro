@@ -61,7 +61,7 @@ function WindowCard({
       <View className="mb-3 rounded-md bg-white p-3 dark:bg-charcoal-900">
         <Text
           className="mb-2 text-xs font-semibold uppercase text-neutral-600 dark:text-neutral-400"
-          tx="trichome.trichomeRatio"
+          tx="trichome.trichome_ratio"
         />
         <View className="flex-row justify-between">
           <View className="flex-1">

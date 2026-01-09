@@ -7,8 +7,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import Animated, {
-  cancelAnimation,
-  ReduceMotion,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
@@ -17,6 +15,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { Text, View } from '@/components/ui';
+import { withRM } from '@/lib/animations/motion';
 import { formatTimeRemaining } from '@/lib/moderation/sla-calculator';
 import {
   getSLAAccessibilityLabel,
@@ -24,7 +23,6 @@ import {
   shouldAnimateIndicator,
   SLA_COLORS,
 } from '@/lib/moderation/sla-indicators';
-import { useReduceMotionEnabled } from '@/lib/strains/accessibility';
 import type { SLAStatus } from '@/types/moderation';
 
 type Props = {
@@ -41,31 +39,23 @@ export function SLABadge({ status, deadline, testID = 'sla-badge' }: Props) {
   const timeRemaining = formatTimeRemaining(nonNegDelta);
   const isOverdue = rawDelta <= 0;
   const shouldAnimate = shouldAnimateIndicator(status);
-  const reduceMotion = useReduceMotionEnabled();
   const opacity = useSharedValue(1);
 
-  React.useEffect((): (() => void) => {
-    if (!shouldAnimate || reduceMotion) {
-      cancelAnimation(opacity);
+  React.useEffect(() => {
+    if (!shouldAnimate) {
       opacity.value = 1;
-      return () => {
-        cancelAnimation(opacity);
-      };
+      return;
     }
 
     opacity.value = withRepeat(
       withSequence(
-        withTiming(1, { duration: 500, reduceMotion: ReduceMotion.System }),
-        withTiming(0.6, { duration: 500, reduceMotion: ReduceMotion.System })
+        withTiming(1, withRM({ duration: 500 })),
+        withTiming(0.6, withRM({ duration: 500 }))
       ),
       -1,
       true
     );
-
-    return () => {
-      cancelAnimation(opacity);
-    };
-  }, [opacity, reduceMotion, shouldAnimate]);
+  }, [shouldAnimate]);
 
   const animatedStyle = useAnimatedStyle(() => {
     return { opacity: opacity.value };

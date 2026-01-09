@@ -32,8 +32,8 @@ export function NameField({
       name="name"
       render={({ field, fieldState }) => (
         <Input
-          label={t('nutrient.strainName')}
-          placeholder={t('nutrient.strainNamePlaceholder')}
+          label={t('nutrient.strain_name')}
+          placeholder={t('nutrient.strain_name_placeholder')}
           value={field.value}
           onChangeText={field.onChange}
           error={fieldState.error?.message}
@@ -61,7 +61,7 @@ export function NotesField({
       render={({ field }) => (
         <Input
           label={t('nutrient.notes')}
-          placeholder={t('nutrient.strainNotesPlaceholder')}
+          placeholder={t('nutrient.strain_notes_placeholder')}
           value={field.value ?? ''}
           onChangeText={field.onChange}
           multiline
@@ -90,7 +90,7 @@ export function PublishToggleField({
       render={({ field }) => (
         <View className="mt-3 flex-row items-center justify-between">
           <Text className="flex-1 text-sm text-neutral-700 dark:text-neutral-300">
-            {t('nutrient.publishPrivately')}
+            {t('nutrient.publish_privately')}
           </Text>
           <Button
             variant={field.value ? 'default' : 'outline'}

@@ -47,10 +47,10 @@ export function PhEcTrendChartContainer({
 
   const TIME_RANGE_OPTIONS = React.useMemo(
     () => [
-      { label: t('nutrient.timeRange.7days'), value: '7' },
-      { label: t('nutrient.timeRange.30days'), value: '30' },
-      { label: t('nutrient.timeRange.90days'), value: '90' },
-      { label: t('nutrient.timeRange.all'), value: 'all' },
+      { label: t('nutrient.time_range.7days'), value: '7' },
+      { label: t('nutrient.time_range.30days'), value: '30' },
+      { label: t('nutrient.time_range.90days'), value: '90' },
+      { label: t('nutrient.time_range.all'), value: 'all' },
     ],
     [t]
   );
@@ -103,14 +103,14 @@ export function PhEcTrendChartContainer({
         {/* View Mode Toggle */}
         <View className="flex-row items-center gap-2">
           <Button
-            label={t('nutrient.viewChart')}
+            label={t('nutrient.view_chart')}
             onPress={() => setViewMode('chart')}
             variant={viewMode === 'chart' ? 'default' : 'outline'}
             size="sm"
             testID={safeBase ? `${safeBase}.viewChart` : undefined}
           />
           <Button
-            label={t('nutrient.viewList')}
+            label={t('nutrient.view_list')}
             onPress={() => setViewMode('list')}
             variant={viewMode === 'list' ? 'default' : 'outline'}
             size="sm"

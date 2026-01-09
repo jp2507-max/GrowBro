@@ -22,6 +22,9 @@ interface AgeGatedPostCardProps {
   isAgeVerified: boolean;
   onDelete?: (postId: number | string, undoExpiresAt: string) => void;
   onVerifyPress?: () => void;
+  displayUsername?: string | null;
+  enableSharedTransition?: boolean;
+  onCardPressIn?: (postId: number | string) => void;
   testID?: string;
 }
 
@@ -30,6 +33,9 @@ export function AgeGatedPostCard({
   isAgeVerified,
   onDelete,
   onVerifyPress,
+  displayUsername,
+  enableSharedTransition,
+  onCardPressIn,
   testID = 'age-gated-post-card',
 }: AgeGatedPostCardProps): React.ReactElement {
   // Check if post is age-restricted
@@ -37,7 +43,16 @@ export function AgeGatedPostCard({
 
   // If not age-restricted or user is verified, show normal post
   if (!isAgeRestricted || isAgeVerified) {
-    return <PostCard post={post} onDelete={onDelete} testID={testID} />;
+    return (
+      <PostCard
+        post={post}
+        onDelete={onDelete}
+        testID={testID}
+        displayUsername={displayUsername}
+        enableSharedTransition={enableSharedTransition}
+        onCardPressIn={onCardPressIn}
+      />
+    );
   }
 
   // Show placeholder for age-restricted content

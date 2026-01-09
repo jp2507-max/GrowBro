@@ -33,10 +33,7 @@ type DotProps = {
 };
 
 function Dot({ index, activeIndex }: DotProps): React.ReactElement {
-  const inputRange = React.useMemo(
-    (): [number, number, number] => [index - 1, index, index + 1],
-    [index]
-  );
+  const inputRange: [number, number, number] = [index - 1, index, index + 1];
 
   const rStyle = useAnimatedStyle(() => {
     'worklet';

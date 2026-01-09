@@ -118,8 +118,8 @@ export function SuccessMessage({
       testID={testID}
       accessibilityRole="alert"
       accessibilityLiveRegion="polite"
-      accessibilityLabel={t('settings.validation.successLabel', { message })}
-      accessibilityHint={t('settings.successHint')}
+      accessibilityLabel={t('settings.validation.success_label', { message })}
+      accessibilityHint={t('settings.success_hint')}
     >
       <Text className="mr-2 text-lg">✓</Text>
       <Text className="flex-1 text-success-800 dark:text-success-200">

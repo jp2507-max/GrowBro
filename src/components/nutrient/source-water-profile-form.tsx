@@ -15,7 +15,9 @@ const profileSchema = z.object({
   name: z.string().refine(
     (val) => val.length > 0,
     () => ({
-      message: translate('nutrient.waterProfile.form.validation.nameRequired'),
+      message: translate(
+        'nutrient.water_profile.form.validation.name_required'
+      ),
     })
   ),
   baselineEc25c: z.number().min(0).max(5.0),
@@ -46,7 +48,7 @@ function BaselineECField({ control, errors }: FieldProps) {
         name="baselineEc25c"
         render={({ field: { onChange, value } }) => (
           <Input
-            label={translate('nutrient.waterProfile.form.baselineEc')}
+            label={translate('nutrient.water_profile.form.baseline_ec')}
             placeholder="0.2"
             keyboardType="decimal-pad"
             value={value?.toString() ?? ''}
@@ -57,7 +59,7 @@ function BaselineECField({ control, errors }: FieldProps) {
         )}
       />
       <Text className="text-xs text-neutral-500">
-        {translate('nutrient.waterProfile.form.baselineEcHelper')}
+        {translate('nutrient.water_profile.form.baseline_ec_helper')}
       </Text>
     </>
   );
@@ -71,7 +73,7 @@ function AlkalinityField({ control, errors }: FieldProps) {
         name="alkalinityMgPerL"
         render={({ field: { onChange, value } }) => (
           <Input
-            label={translate('nutrient.waterProfile.form.alkalinity')}
+            label={translate('nutrient.water_profile.form.alkalinity')}
             placeholder="80"
             keyboardType="number-pad"
             value={value?.toString() ?? ''}
@@ -82,7 +84,7 @@ function AlkalinityField({ control, errors }: FieldProps) {
         )}
       />
       <Text className="text-xs text-neutral-500">
-        {translate('nutrient.waterProfile.form.alkalinityHelper')}
+        {translate('nutrient.water_profile.form.alkalinity_helper')}
       </Text>
     </>
   );
@@ -96,7 +98,7 @@ function HardnessField({ control, errors }: FieldProps) {
         name="hardnessMgPerL"
         render={({ field: { onChange, value } }) => (
           <Input
-            label={translate('nutrient.waterProfile.form.hardness')}
+            label={translate('nutrient.water_profile.form.hardness')}
             placeholder="150"
             keyboardType="number-pad"
             value={value?.toString() ?? ''}
@@ -107,7 +109,7 @@ function HardnessField({ control, errors }: FieldProps) {
         )}
       />
       <Text className="text-xs text-neutral-500">
-        {translate('nutrient.waterProfile.form.hardnessHelper')}
+        {translate('nutrient.water_profile.form.hardness_helper')}
       </Text>
     </>
   );
@@ -121,9 +123,9 @@ function WaterProfileFormFields({ control, errors }: FieldProps) {
         name="name"
         render={({ field: { onChange, value } }) => (
           <Input
-            label={translate('nutrient.waterProfile.form.name')}
+            label={translate('nutrient.water_profile.form.name')}
             placeholder={translate(
-              'nutrient.waterProfile.form.namePlaceholder'
+              'nutrient.water_profile.form.name_placeholder'
             )}
             value={value}
             onChangeText={onChange}
@@ -139,7 +141,7 @@ function WaterProfileFormFields({ control, errors }: FieldProps) {
 
       <View className="rounded-lg bg-primary-50 p-3">
         <Text className="text-xs text-primary-900">
-          {translate('nutrient.waterProfile.form.educationalNote')}
+          {translate('nutrient.water_profile.form.educational_note')}
         </Text>
       </View>
     </>
@@ -171,7 +173,7 @@ export function SourceWaterProfileForm({
   return (
     <View className="gap-4 p-4" testID={testID}>
       <Text className="text-lg font-semibold text-neutral-900">
-        {translate('nutrient.waterProfile.form.name')}
+        {translate('nutrient.water_profile.form.name')}
       </Text>
 
       <WaterProfileFormFields control={control} errors={errors} />

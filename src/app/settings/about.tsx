@@ -73,8 +73,8 @@ export default function AboutScreen() {
             error instanceof Error ? error.message : 'Failed to open app store',
         });
         Alert.alert(
-          translate('settings.about.openStoreErrorTitle'),
-          translate('settings.about.openStoreErrorMessage')
+          translate('settings.about.open_store_error_title'),
+          translate('settings.about.open_store_error_message')
         );
         return;
       }
@@ -181,7 +181,7 @@ export default function AboutScreen() {
       await Linking.openURL(WEBSITE_URL);
     } catch (error) {
       console.error('Failed to open website:', error);
-      showErrorMessage(translate('settings.about.openLinkError'));
+      showErrorMessage(translate('settings.about.open_link_error'));
     }
   };
 
@@ -190,7 +190,7 @@ export default function AboutScreen() {
       await Linking.openURL(GITHUB_URL);
     } catch (error) {
       console.error('Failed to open GitHub:', error);
-      showErrorMessage(translate('settings.about.openLinkError'));
+      showErrorMessage(translate('settings.about.open_link_error'));
     }
   };
 

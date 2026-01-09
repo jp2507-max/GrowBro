@@ -29,6 +29,7 @@ describe('RealtimeConnectionManager', () => {
       onCommentChange: jest.fn(),
       onLikeChange: jest.fn(),
       onConnectionStateChange: jest.fn(),
+      onPollRefresh: jest.fn(),
     };
   });
 
@@ -68,6 +69,35 @@ describe('RealtimeConnectionManager', () => {
   describe('Polling Fallback', () => {
     it('should not be polling initially', () => {
       expect(manager.isPollingActive()).toBe(false);
+    });
+
+    it('should call onPollRefresh during polling', async () => {
+      // Mock a failed connection that triggers polling
+      const mockSupabase = require('@/lib/supabase').supabase;
+      mockSupabase.channel.mockReturnValueOnce({
+        on: jest.fn().mockReturnThis(),
+        subscribe: jest.fn((callback) => {
+          // Simulate connection failure leading to polling
+          setTimeout(() => {
+            callback('CHANNEL_ERROR');
+            // After max retries, should start polling
+            setTimeout(() => {
+              if (manager.isPollingActive()) {
+                expect(mockCallbacks.onPollRefresh).toHaveBeenCalled();
+              }
+            }, 100);
+          }, 10);
+          return { unsubscribe: jest.fn() };
+        }),
+        removeChannel: jest.fn(),
+      });
+
+      manager.subscribe(mockCallbacks);
+
+      // Wait for polling to start
+      await new Promise((resolve) => setTimeout(resolve, 200));
+
+      expect(mockCallbacks.onPollRefresh).toHaveBeenCalled();
     });
 
     it('should track polling state', async () => {

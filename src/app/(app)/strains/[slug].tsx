@@ -222,7 +222,7 @@ const HardFactsGrid = ({ strain }: { strain: Strain }): React.ReactElement => {
           numberOfLines={1}
           adjustsFontSizeToFit
         >
-          {translate('strains.hardFacts.floweringTime')}
+          {translate('strains.hard_facts.flowering_time')}
         </Text>
       </View>
 
@@ -244,7 +244,7 @@ const HardFactsGrid = ({ strain }: { strain: Strain }): React.ReactElement => {
           numberOfLines={1}
           adjustsFontSizeToFit
         >
-          {translate('strains.hardFacts.yield')}
+          {translate('strains.hard_facts.yield')}
         </Text>
       </View>
 
@@ -266,7 +266,7 @@ const HardFactsGrid = ({ strain }: { strain: Strain }): React.ReactElement => {
           numberOfLines={1}
           adjustsFontSizeToFit
         >
-          {translate('strains.hardFacts.cultivation')}
+          {translate('strains.hard_facts.cultivation')}
         </Text>
       </View>
     </View>

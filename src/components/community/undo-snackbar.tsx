@@ -9,13 +9,10 @@
  */
 
 import React from 'react';
-import Animated, {
-  FadeIn,
-  FadeOut,
-  ReduceMotion,
-} from 'react-native-reanimated';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 
 import { Button, Pressable, Text, View } from '@/components/ui';
+import { withRM } from '@/lib/animations/motion';
 import { translate } from '@/lib/i18n';
 
 interface UndoSnackbarProps {
@@ -86,11 +83,8 @@ export function UndoSnackbar({
 
   return (
     <Animated.View
-      entering={FadeIn.springify()
-        .damping(22)
-        .stiffness(180)
-        .reduceMotion(ReduceMotion.System)}
-      exiting={FadeOut.duration(250).reduceMotion(ReduceMotion.System)}
+      entering={withRM(FadeIn.springify().damping(22).stiffness(180))}
+      exiting={withRM(FadeOut.duration(250))}
       className="absolute inset-x-4 z-[1000]"
       style={{ bottom: bottomOffset }}
       testID={testID}

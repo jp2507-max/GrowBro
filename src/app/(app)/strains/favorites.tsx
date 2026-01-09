@@ -8,7 +8,7 @@ import { useNavigation, useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import React, { useLayoutEffect } from 'react';
 import { type ListRenderItemInfo, StyleSheet } from 'react-native';
-import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
@@ -27,7 +27,9 @@ import colors from '@/components/ui/colors';
 import { ArrowLeft, Settings } from '@/components/ui/icons';
 import { translate } from '@/lib';
 import { useAnimatedScrollList } from '@/lib/animations/animated-scroll-list-provider';
+import { createStaggeredFadeIn } from '@/lib/animations/stagger';
 import { useBottomTabBarHeight } from '@/lib/animations/use-bottom-tab-bar-height';
+import { getMediumFlashListConfig } from '@/lib/flashlist-config';
 import { haptics } from '@/lib/haptics';
 import { useNetworkStatus } from '@/lib/hooks';
 import { parsePercentageRange } from '@/lib/strains/normalization';
@@ -35,6 +37,7 @@ import { useFavorites } from '@/lib/strains/use-favorites';
 import type { FavoriteStrain } from '@/types/strains';
 
 const LIST_BOTTOM_EXTRA = 16;
+const MAX_ENTERING_ANIMATIONS = 12;
 
 const AnimatedFlashList = Animated.createAnimatedComponent(
   FlashList as React.ComponentType<FlashListProps<FavoriteStrain>>
@@ -142,9 +145,24 @@ function createStrainFromSnapshot(item: FavoriteStrain) {
   };
 }
 
-function FavoriteItem({ item }: { item: FavoriteStrain }) {
+function FavoriteItem({
+  item,
+  enableSharedTransition,
+  onStartNavigation,
+}: {
+  item: FavoriteStrain;
+  enableSharedTransition?: boolean;
+  onStartNavigation?: (strainId: string) => void;
+}) {
   const strain = createStrainFromSnapshot(item);
-  return <StrainCard strain={strain} testID={`favorite-card-${item.id}`} />;
+  return (
+    <StrainCard
+      strain={strain}
+      testID={`favorite-card-${item.id}`}
+      enableSharedTransition={enableSharedTransition}
+      onStartNavigation={onStartNavigation}
+    />
+  );
 }
 
 type FavoritesHeaderProps = {
@@ -255,18 +273,37 @@ export default function FavoritesScreen(): React.ReactElement {
     [favorites, sortBy, sortDirection]
   );
 
+  const [activeStrainId, setActiveStrainId] = React.useState<string | null>(
+    null
+  );
+
+  const handleStrainPressIn = React.useCallback((strainId: string) => {
+    setActiveStrainId(strainId);
+  }, []);
+
+  const flashListConfig = React.useMemo(() => getMediumFlashListConfig(), []);
+
   const renderItem = React.useCallback(
     ({ item, index }: ListRenderItemInfo<FavoriteStrain>) => (
       <Animated.View
-        entering={FadeIn.delay(index * 50)
-          .springify()
-          .damping(12)
-          .reduceMotion(ReduceMotion.System)}
+        entering={
+          index < MAX_ENTERING_ANIMATIONS
+            ? createStaggeredFadeIn(index, {
+                baseDelay: 0,
+                staggerDelay: 50,
+                duration: 300,
+              })
+            : undefined
+        }
       >
-        <FavoriteItem item={item} />
+        <FavoriteItem
+          item={item}
+          enableSharedTransition={item.id === activeStrainId}
+          onStartNavigation={handleStrainPressIn}
+        />
       </Animated.View>
     ),
-    []
+    [activeStrainId, handleStrainPressIn]
   );
 
   const keyExtractor = React.useCallback((item: FavoriteStrain) => item.id, []);
@@ -310,8 +347,9 @@ export default function FavoritesScreen(): React.ReactElement {
         getItemType={() => 'favorite'}
         estimatedItemSize={280}
         onScroll={scrollHandler}
-        scrollEventThrottle={16}
-        removeClippedSubviews={true}
+        scrollEventThrottle={flashListConfig.scrollEventThrottle}
+        removeClippedSubviews={flashListConfig.removeClippedSubviews}
+        drawDistance={flashListConfig.drawDistance}
         contentContainerStyle={[
           styles.listContentContainer,
           listContentPadding,

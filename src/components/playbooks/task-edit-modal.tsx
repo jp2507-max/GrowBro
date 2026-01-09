@@ -29,7 +29,7 @@ function ModalHeader({ isEdited, t }: { isEdited: boolean; t: TFunction }) {
   return (
     <View className="mb-4 flex-row items-center justify-between">
       <Text className="text-xl font-semibold text-charcoal-900 dark:text-neutral-100">
-        {t('playbooks.editTask')}
+        {t('playbooks.edit_task')}
       </Text>
       {isEdited && (
         <View
@@ -53,7 +53,7 @@ function InheritanceWarning({ show, t }: { show: boolean; t: TFunction }) {
       testID="inheritance-warning"
     >
       <Text className="text-sm text-warning-700 dark:text-warning-300">
-        {t('playbooks.excludedFromBulkShift')}
+        {t('playbooks.excluded_from_bulk_shift')}
       </Text>
     </View>
   );
@@ -103,24 +103,24 @@ export function TaskEditModal({
 
         <View className="mb-4">
           <Text className="mb-2 text-sm font-medium text-charcoal-700 dark:text-neutral-300">
-            {t('playbooks.taskTitle')}
+            {t('playbooks.task_title')}
           </Text>
           <Input
             value={title}
             onChangeText={setTitle}
-            placeholder={t('playbooks.taskTitlePlaceholder')}
+            placeholder={t('playbooks.task_title_placeholder')}
             testID="task-title-input"
           />
         </View>
 
         <View className="mb-4">
           <Text className="mb-2 text-sm font-medium text-charcoal-700 dark:text-neutral-300">
-            {t('playbooks.taskDescription')}
+            {t('playbooks.task_description')}
           </Text>
           <Input
             value={description}
             onChangeText={setDescription}
-            placeholder={t('playbooks.taskDescriptionPlaceholder')}
+            placeholder={t('playbooks.task_description_placeholder')}
             multiline
             numberOfLines={3}
             testID="task-description-input"
@@ -129,18 +129,18 @@ export function TaskEditModal({
 
         <View className="mb-6">
           <Text className="mb-2 text-sm font-medium text-charcoal-700 dark:text-neutral-300">
-            {t('playbooks.customNotes')}
+            {t('playbooks.custom_notes')}
           </Text>
           <Input
             value={customNotes}
             onChangeText={setCustomNotes}
-            placeholder={t('playbooks.customNotesPlaceholder')}
+            placeholder={t('playbooks.custom_notes_placeholder')}
             multiline
             numberOfLines={3}
             testID="custom-notes-input"
           />
           <Text className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-            {t('playbooks.customNotesHint')}
+            {t('playbooks.custom_notes_hint')}
           </Text>
         </View>
 

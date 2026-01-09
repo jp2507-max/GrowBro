@@ -19,10 +19,10 @@ function TemplateHeader() {
   return (
     <View className="px-4 py-6">
       <Text className="text-3xl font-bold text-charcoal-900 dark:text-neutral-100">
-        {t('playbooks.communityTemplates')}
+        {t('playbooks.community_templates')}
       </Text>
       <Text className="mt-2 text-base text-neutral-600 dark:text-neutral-400">
-        {t('playbooks.communityDescription')}
+        {t('playbooks.community_description')}
       </Text>
     </View>
   );
@@ -138,7 +138,7 @@ export default function CommunityTemplatesScreen() {
         {loading ? (
           <LoadingState message={t('common.loading')} />
         ) : templates.length === 0 ? (
-          <EmptyState message={t('playbooks.noTemplates')} />
+          <EmptyState message={t('playbooks.no_templates')} />
         ) : (
           <FlashList
             data={templates}

@@ -32,7 +32,8 @@ function TemplateHeader({ template }: { template: CommunityTemplate }) {
           </Text>
         </View>
         <Text className="text-sm text-neutral-600 dark:text-neutral-400">
-          {t('playbooks.templates.detail.authorPrefix')} {template.authorHandle}
+          {t('playbooks.templates.detail.author_prefix')}{' '}
+          {template.authorHandle}
         </Text>
       </View>
     </View>
@@ -88,7 +89,7 @@ function TemplateRating({
       <View className="flex-row items-center justify-between">
         <View>
           <Text className="text-xs text-neutral-500 dark:text-neutral-400">
-            {t('playbooks.templates.detail.communityRating')}
+            {t('playbooks.templates.detail.community_rating')}
           </Text>
           <View className="flex-row items-center gap-2">
             <Text className="text-2xl font-bold text-charcoal-900 dark:text-neutral-100">
@@ -107,7 +108,7 @@ function TemplateRating({
             size="sm"
             onPress={() => onRate(template)}
           >
-            <Text>{t('playbooks.templates.detail.rateButton')}</Text>
+            <Text>{t('playbooks.templates.detail.rate_button')}</Text>
           </Button>
         )}
       </View>
@@ -121,10 +122,10 @@ function TemplateLicense({ license }: { license: string }) {
   return (
     <View className="mb-4 rounded-lg bg-primary-50 p-3 dark:bg-primary-950">
       <Text className="mb-1 text-xs font-medium text-primary-700 dark:text-primary-300">
-        {t('playbooks.templates.detail.licensePrefix')} {license}
+        {t('playbooks.templates.detail.license_prefix')} {license}
       </Text>
       <Text className="text-xs text-primary-600 dark:text-primary-400">
-        {t('playbooks.templates.detail.licenseDescription')}
+        {t('playbooks.templates.detail.license_description')}
       </Text>
     </View>
   );
@@ -136,7 +137,7 @@ function TemplatePhases({ phases }: { phases: string[] }) {
   return (
     <View className="mb-4">
       <Text className="mb-2 text-lg font-semibold text-charcoal-900 dark:text-neutral-100">
-        {t('playbooks.templates.detail.growthPhases')}
+        {t('playbooks.templates.detail.growth_phases')}
       </Text>
       <View className="flex-row flex-wrap gap-2">
         {phases.map((phase) => (
@@ -160,7 +161,7 @@ function TemplateStepsPreview({ template }: { template: CommunityTemplate }) {
   return (
     <View className="mb-6">
       <Text className="mb-2 text-lg font-semibold text-charcoal-900 dark:text-neutral-100">
-        {t('playbooks.templates.detail.tasksPreview', {
+        {t('playbooks.templates.detail.tasks_preview', {
           total: template.steps.length,
         })}
       </Text>
@@ -180,7 +181,7 @@ function TemplateStepsPreview({ template }: { template: CommunityTemplate }) {
         ))}
         {template.steps.length > 5 && (
           <Text className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
-            {t('playbooks.templates.detail.moreTasks', {
+            {t('playbooks.templates.detail.more_tasks', {
               count: template.steps.length - 5,
             })}
           </Text>
@@ -222,12 +223,12 @@ export function TemplateDetailView({
           size="lg"
         >
           <Text className="font-semibold">
-            {t('playbooks.templates.detail.adoptButton')}
+            {t('playbooks.templates.detail.adopt_button')}
           </Text>
         </Button>
 
         <Text className="mt-2 text-center text-xs text-neutral-500 dark:text-neutral-400">
-          {t('playbooks.templates.detail.adoptDescription')}
+          {t('playbooks.templates.detail.adopt_description')}
         </Text>
       </View>
     </ScrollView>

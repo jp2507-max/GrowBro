@@ -39,6 +39,26 @@ const BOTTOM_PADDING_EXTRA = 24;
 // Utility functions
 // -----------------------------------------------------------------------------
 
+function debounce<T extends (...args: unknown[]) => unknown>(
+  func: T,
+  wait: number
+): (...args: Parameters<T>) => Promise<ReturnType<T>> {
+  let timeout: NodeJS.Timeout;
+  return (...args: Parameters<T>) => {
+    return new Promise<ReturnType<T>>((resolve, reject) => {
+      clearTimeout(timeout);
+      timeout = setTimeout(async () => {
+        try {
+          const result = (await func(...args)) as ReturnType<T>;
+          resolve(result);
+        } catch (error) {
+          reject(error);
+        }
+      }, wait);
+    });
+  };
+}
+
 function isEphemeralTask(task: Task): boolean {
   return task.id.startsWith('series:') || task.metadata?.ephemeral === true;
 }
@@ -118,7 +138,7 @@ function useCalendarData(selectedDate: DateTime): {
   taskCounts: Map<string, number>;
   plantMap: Map<string, PlantInfo>;
   isLoading: boolean;
-  refetch: () => Promise<void>;
+  refetch: () => Promise<void | Promise<void>>;
 } {
   const [tasks, setTasks] = useState<{ pending: Task[]; completed: Task[] }>({
     pending: [],
@@ -192,12 +212,15 @@ function useCalendarData(selectedDate: DateTime): {
     }
   }, [rangeStartMillis, rangeEndMillis, selectedDayMillis]);
 
+  // Debounced version of loadData to prevent redundant fetches during rapid date changes
+  const debouncedLoadData = useMemo(() => debounce(loadData, 300), [loadData]);
+
   useEffect(() => {
     let cancelled = false;
     const requestIdAtMount = requestIdRef.current;
 
     const run = async () => {
-      await loadData();
+      await debouncedLoadData();
       if (cancelled) {
         // prevent any follow-up state if you add more later
         return;
@@ -210,18 +233,23 @@ function useCalendarData(selectedDate: DateTime): {
       // increment the stored request ID to invalidate in-flight calls
       requestIdRef.current = requestIdAtMount + 1;
     };
-  }, [loadData]);
+  }, [debouncedLoadData]);
 
-  // Derive day-specific tasks and overall counts
-  const { dayPendingTasks, dayCompletedTasks, taskCounts } = useMemo(() => {
+  // Memoize task counts separately from day filtering to avoid rebuilding on every selectedDay change
+  const taskCounts = useMemo(
+    () => buildTaskCounts([...tasks.pending, ...tasks.completed]),
+    [tasks]
+  );
+
+  // Derive day-specific tasks
+  const { dayPendingTasks, dayCompletedTasks } = useMemo(() => {
     const dayStart = DateTime.fromMillis(selectedDayMillis);
 
     return {
       dayPendingTasks: filterTasksForDay(tasks.pending, dayStart),
       dayCompletedTasks: filterTasksForDay(tasks.completed, dayStart),
-      taskCounts: buildTaskCounts([...tasks.pending, ...tasks.completed]),
     };
-  }, [tasks, selectedDayMillis]);
+  }, [tasks.pending, tasks.completed, selectedDayMillis]);
 
   return {
     dayPendingTasks,
@@ -229,7 +257,7 @@ function useCalendarData(selectedDate: DateTime): {
     taskCounts,
     plantMap,
     isLoading,
-    refetch: loadData,
+    refetch: debouncedLoadData,
   };
 }
 

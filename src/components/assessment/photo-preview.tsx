@@ -26,7 +26,7 @@ export function PhotoPreview({
       case 'exposure':
         return t('assessment.camera.quality.exposure');
       case 'white_balance':
-        return t('assessment.camera.quality.whiteBalance');
+        return t('assessment.camera.quality.white_balance');
       case 'composition':
         return t('assessment.camera.quality.composition');
       default:

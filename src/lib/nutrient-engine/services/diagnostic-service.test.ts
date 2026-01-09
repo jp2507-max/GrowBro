@@ -114,8 +114,8 @@ describe('evaluateAndPersistDiagnostic', () => {
 
   const baseRuleRecommendations: Recommendation[] = [
     {
-      action: 'nutrient.diagnostics.actions.N_DEFICIENCY_FEED',
-      description: 'nutrient.diagnostics.recommendations.nitrogenFeed',
+      action: 'nutrient.diagnostics.actions._n__d_e_f_i_c_i_e_n_c_y__f_e_e_d',
+      description: 'nutrient.diagnostics.recommendations.nitrogen_feed',
       priority: 1,
       code: 'N_DEFICIENCY_FEED',
     },
@@ -134,8 +134,8 @@ describe('evaluateAndPersistDiagnostic', () => {
       confidence: 0.86,
       recommendations: [
         {
-          action: 'nutrient.diagnostics.actions.TOXICITY_DILUTE',
-          description: 'nutrient.diagnostics.recommendations.diluteReservoir',
+          action: 'nutrient.diagnostics.actions._t_o_x_i_c_i_t_y__d_i_l_u_t_e',
+          description: 'nutrient.diagnostics.recommendations.dilute_reservoir',
           priority: 1,
           code: 'TOXICITY_DILUTE',
         },
@@ -223,11 +223,11 @@ describe('evaluateAndPersistDiagnostic', () => {
       expect.arrayContaining([
         'rule.rationale',
         'ai.lowConfidence',
-        'nutrient.diagnostics.rationale.aiBelowThreshold',
+        'nutrient.diagnostics.rationale.ai_below_threshold',
       ])
     );
     expect(result?.disclaimerKeys).toContain(
-      'nutrient.diagnostics.disclaimers.lowConfidence'
+      'nutrient.diagnostics.disclaimers.low_confidence'
     );
   });
 
@@ -247,7 +247,7 @@ describe('evaluateAndPersistDiagnostic', () => {
       DiagnosticConfidenceFlag.AI_ONLY_GUIDANCE
     );
     expect(result?.disclaimerKeys).toContain(
-      'nutrient.diagnostics.disclaimers.aiOnlyPrimary'
+      'nutrient.diagnostics.disclaimers.ai_only_primary'
     );
   });
 
@@ -278,7 +278,7 @@ describe('evaluateAndPersistDiagnostic', () => {
     expect(result?.confidence).toBe(0.65);
     expect(result?.needsSecondOpinion).toBe(true);
     expect(result?.disclaimerKeys).toContain(
-      'nutrient.diagnostics.disclaimers.considerSecondOpinion'
+      'nutrient.diagnostics.disclaimers.consider_second_opinion'
     );
   });
 
@@ -309,10 +309,10 @@ describe('evaluateAndPersistDiagnostic', () => {
     expect(result?.confidence).toBe(0.42);
     expect(result?.needsSecondOpinion).toBe(true);
     expect(result?.disclaimerKeys).toContain(
-      'nutrient.diagnostics.disclaimers.lowConfidence'
+      'nutrient.diagnostics.disclaimers.low_confidence'
     );
     expect(result?.disclaimerKeys).toContain(
-      'nutrient.diagnostics.disclaimers.considerSecondOpinion'
+      'nutrient.diagnostics.disclaimers.consider_second_opinion'
     );
   });
 });

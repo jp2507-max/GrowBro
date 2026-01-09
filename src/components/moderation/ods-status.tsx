@@ -38,7 +38,7 @@ export function OdsStatus({ appeal }: { appeal: Appeal }) {
             testID="ods-status-submittedAt-label"
             className="text-xs text-neutral-600 dark:text-neutral-400"
           >
-            {t('appeals.ods.label.submittedAt')}
+            {t('appeals.ods.label.submitted_at')}
           </Text>
           <Text
             testID="ods-status-submittedAt-value"
@@ -53,13 +53,13 @@ export function OdsStatus({ appeal }: { appeal: Appeal }) {
           testID="ods-status-targetResolution-label"
           className="text-xs text-neutral-600 dark:text-neutral-400"
         >
-          {t('appeals.ods.label.targetResolution')}
+          {t('appeals.ods.label.target_resolution')}
         </Text>
         <Text
           testID="ods-status-targetResolution-value"
           className="text-sm text-charcoal-950 dark:text-neutral-100"
         >
-          {t('appeals.ods.value.withinDays', { days: 90 })}
+          {t('appeals.ods.value.within_days', { days: 90 })}
         </Text>
       </View>
     </View>

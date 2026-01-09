@@ -40,7 +40,7 @@ export function CommentList({
         <ActivityIndicator />
         <Text
           className="mt-2 text-sm text-neutral-500 dark:text-neutral-400"
-          tx="community.commentList.loading"
+          tx="community.comment_list.loading"
         />
       </View>
     );
@@ -51,7 +51,7 @@ export function CommentList({
       <View className="items-center py-8" testID={`${testID}-empty`}>
         <Text
           className="text-sm text-neutral-500 dark:text-neutral-400"
-          tx="community.commentList.empty"
+          tx="community.comment_list.empty"
         />
       </View>
     );

@@ -10,6 +10,7 @@ import { router } from 'expo-router';
 import { showMessage } from 'react-native-flash-message';
 
 import { useAuth } from '@/lib/auth';
+import { translate } from '@/lib/i18n';
 import {
   isAllowedAuthHost,
   isAllowedRedirect,
@@ -252,23 +253,48 @@ export async function handlePasswordReset(tokenHash: string): Promise<void> {
 }
 
 /**
- * Check if an error is a network error
+ * Check if an error is a transient network error (safe to retry)
+ * Does not include code exchange errors which are non-idempotent
  */
-function isNetworkError(error: unknown): boolean {
+function isTransientNetworkError(error: unknown): boolean {
   if (!error) return false;
 
   const errorMessage =
     error instanceof Error ? error.message.toLowerCase() : '';
   const errorName = error instanceof Error ? error.name.toLowerCase() : '';
 
+  // OAuth code errors are NOT retryable (code is single-use)
+  const isCodeError =
+    errorMessage.includes('invalid grant') ||
+    errorMessage.includes('invalid code') ||
+    errorMessage.includes('expired') ||
+    errorMessage.includes('authorization code');
+
+  if (isCodeError) return false;
+
+  // Only retry on clear network/connectivity issues
   return (
-    errorMessage.includes('network') ||
-    errorMessage.includes('fetch') ||
+    errorMessage.includes('network request failed') ||
+    errorMessage.includes('fetch failed') ||
     errorMessage.includes('timeout') ||
-    errorMessage.includes('connection') ||
+    errorMessage.includes('econnrefused') ||
+    errorMessage.includes('enotfound') ||
     errorName === 'networkerror' ||
     errorName === 'fetcherror'
   );
+}
+
+/**
+ * Check if user already has a valid session
+ * Used to detect successful code exchange despite client timeout
+ */
+async function hasValidSession(): Promise<boolean> {
+  try {
+    const { data, error } = await supabase.auth.getSession();
+    return !error && !!data.session;
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -279,18 +305,41 @@ const OAUTH_RETRY_DELAY_MS = 1500; // 1.5 seconds
 
 /**
  * Show retry message and retry OAuth callback after delay
+ * Checks for existing session first in case code was already exchanged
  */
 async function retryOAuthWithDelay(
   code: string,
   retryCount: number
 ): Promise<void> {
   console.log(
-    `[OAuth] Network error detected, retrying... (${retryCount + 1}/${OAUTH_MAX_RETRIES})`
+    `[OAuth] Transient network error detected, checking for existing session...`
+  );
+
+  // Check if session was created despite the timeout
+  const sessionExists = await hasValidSession();
+  if (sessionExists) {
+    console.log(
+      '[OAuth] Session already exists - code was successfully exchanged despite timeout'
+    );
+    showMessage({
+      message: 'Sign In Successful',
+      description: 'You have been signed in successfully.',
+      type: 'success',
+    });
+    router.replace('/(app)');
+    return;
+  }
+
+  console.log(
+    `[OAuth] No existing session found, retrying code exchange... (${retryCount + 1}/${OAUTH_MAX_RETRIES})`
   );
 
   showMessage({
-    message: 'Network Issue',
-    description: `Connection problem detected. Retrying... (${retryCount + 1}/${OAUTH_MAX_RETRIES})`,
+    message: translate('auth.network_issue'),
+    description: translate('auth.retrying_connection', {
+      attempt: retryCount + 1,
+      max: OAUTH_MAX_RETRIES,
+    }),
     type: 'warning',
     duration: OAUTH_RETRY_DELAY_MS,
   });
@@ -302,52 +351,59 @@ async function retryOAuthWithDelay(
 /**
  * Handle OAuth exchange error
  */
-function handleOAuthExchangeError(error: unknown, retryCount: number): void {
-  if (privacyConsent.hasConsent('crashReporting')) {
-    Sentry.captureException(error, {
-      tags: { feature: 'oauth-callback' },
-      extra: {
-        code: '[REDACTED]',
-        isNetworkError: isNetworkError(error),
-        retryCount,
-      },
-    });
-  }
-
-  const description = isNetworkError(error)
-    ? 'Network connection issue. Please check your internet and try again.'
-    : 'OAuth authentication failed. The authorization code may be invalid or expired.';
-
-  showMessage({
-    message: 'Sign In Failed',
-    description,
-    type: 'danger',
-  });
-
-  router.replace('/login');
-}
-
 /**
- * Handle unexpected OAuth error
+ * Consolidated OAuth error handler
  */
-function handleOAuthUnexpectedError(error: unknown, retryCount: number): void {
+function handleOAuthError(
+  error: unknown,
+  retryCount: number,
+  context: 'exchange' | 'unexpected'
+): void {
+  const errorMessage =
+    error instanceof Error ? error.message.toLowerCase() : '';
+  const isCodeReused =
+    errorMessage.includes('invalid grant') ||
+    errorMessage.includes('invalid code');
+
   if (privacyConsent.hasConsent('crashReporting')) {
     Sentry.captureException(error, {
       tags: { feature: 'oauth-callback' },
       extra: {
         code: '[REDACTED]',
-        isNetworkError: isNetworkError(error),
+        isTransientNetworkError: isTransientNetworkError(error),
+        isCodeReused,
         retryCount,
+        context,
+        errorMessage: error instanceof Error ? error.message : String(error),
       },
     });
   }
 
-  const description = isNetworkError(error)
-    ? 'Network connection issue. Please check your internet and try again.'
-    : 'An unexpected error occurred. Please try again.';
+  const isNetwork = isTransientNetworkError(error);
+  const messages = {
+    exchange: {
+      title: translate('auth.sign_in_failed'),
+      network: translate('auth.network_connection_issue'),
+      default: translate('auth.oauth_failed'),
+    },
+    unexpected: {
+      title: translate('auth.oauth_error'),
+      network: translate('auth.network_connection_issue'),
+      default: translate('auth.unexpected_error'),
+    },
+  };
+
+  let description: string;
+  if (isCodeReused) {
+    description = translate('auth.code_already_used');
+  } else if (isNetwork) {
+    description = messages[context].network;
+  } else {
+    description = messages[context].default;
+  }
 
   showMessage({
-    message: 'OAuth Error',
+    message: messages[context].title,
     description,
     type: 'danger',
   });
@@ -367,8 +423,8 @@ export async function handleOAuthCallback(
 ): Promise<void> {
   if (!code) {
     showMessage({
-      message: 'OAuth Error',
-      description: 'Invalid authorization code.',
+      message: translate('auth.oauth_error'),
+      description: translate('auth.invalid_authorization_code'),
       type: 'danger',
     });
     router.replace('/login');
@@ -379,24 +435,29 @@ export async function handleOAuthCallback(
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (error) {
-      // Retry on network errors
-      if (isNetworkError(error) && retryCount < OAUTH_MAX_RETRIES) {
+      // Only retry on transient network errors (not code-exchange errors)
+      if (isTransientNetworkError(error) && retryCount < OAUTH_MAX_RETRIES) {
         return retryOAuthWithDelay(code, retryCount);
       }
 
-      handleOAuthExchangeError(error, retryCount);
+      handleOAuthError(error, retryCount, 'exchange');
       return;
     }
 
     // Success - navigate to app
+    showMessage({
+      message: translate('auth.sign_in_successful'),
+      description: translate('auth.signed_in_successfully'),
+      type: 'success',
+    });
     router.replace('/(app)');
   } catch (error) {
-    // Retry on network errors
-    if (isNetworkError(error) && retryCount < OAUTH_MAX_RETRIES) {
+    // Only retry on transient network errors (not code-exchange errors)
+    if (isTransientNetworkError(error) && retryCount < OAUTH_MAX_RETRIES) {
       return retryOAuthWithDelay(code, retryCount);
     }
 
-    handleOAuthUnexpectedError(error, retryCount);
+    handleOAuthError(error, retryCount, 'unexpected');
   }
 }
 

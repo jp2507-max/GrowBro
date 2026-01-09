@@ -152,7 +152,7 @@ function TaskAdjustmentRow({
       accessibilityState={{ checked: selected }}
       accessibilityLabel={`${adjustment.taskTitle}, ${adjustment.reason}`}
       accessibilityHint={t('nutrient.toggleTaskHint', {
-        status: selected ? t('common.selected') : t('common.notSelected'),
+        status: selected ? t('common.selected') : t('common.not_selected'),
       })}
       onPress={onToggle}
       className={`mb-3 rounded-lg border p-3 ${severityColors[adjustment.severity]} ${

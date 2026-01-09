@@ -116,13 +116,13 @@ function CaptureButton({
       variant="outline"
       className="min-h-[44px]"
       accessibilityLabel={t('harvest.photo.addPhoto')}
-      accessibilityHint={t('harvest.photo.chooseSource')}
+      accessibilityHint={t('harvest.photo.choose_source')}
       testID="photo-capture-button"
     >
       {isProcessing ? (
         <View className="flex-row items-center gap-2">
           <ActivityIndicator size="small" />
-          <Text>{t('harvest.photo.processingPhoto')}</Text>
+          <Text>{t('harvest.photo.processing_photo')}</Text>
         </View>
       ) : (
         <Text>{buttonText ? t(buttonText) : t('harvest.photo.addPhoto')}</Text>
@@ -170,7 +170,7 @@ function createPhotoCaptureHandler({
         return;
       }
       const message =
-        err instanceof Error ? err.message : t('harvest.photo.captureFailed');
+        err instanceof Error ? err.message : t('harvest.photo.capture_failed');
       setState({ isProcessing: false, error: message });
       onError?.(err instanceof Error ? err : new Error(message));
     }
@@ -184,7 +184,7 @@ function createPhotoOptionsHandler(
   t: (key: string) => string
 ): () => void {
   return () => {
-    Alert.alert(t('harvest.photo.title'), t('harvest.photo.chooseSource'), [
+    Alert.alert(t('harvest.photo.title'), t('harvest.photo.choose_source'), [
       {
         text: t('harvest.photo.takePhoto'),
         onPress: () => handlePhotoCapture(captureFromCamera),

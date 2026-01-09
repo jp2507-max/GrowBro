@@ -20,13 +20,13 @@ export function CaptureGuidance({
   const getGuidanceText = () => {
     switch (mode) {
       case 'leaf-top':
-        return t('assessment.camera.guidance.leafTop');
+        return t('assessment.camera.guidance.leaf_top');
       case 'leaf-bottom':
-        return t('assessment.camera.guidance.leafBottom');
+        return t('assessment.camera.guidance.leaf_bottom');
       case 'whole-plant':
-        return t('assessment.camera.guidance.wholePlant');
+        return t('assessment.camera.guidance.whole_plant');
       default:
-        return t('assessment.camera.guidance.wholePlant');
+        return t('assessment.camera.guidance.whole_plant');
     }
   };
 
@@ -34,7 +34,7 @@ export function CaptureGuidance({
     <View className="absolute inset-x-0 top-0 z-10 bg-charcoal-950/80 px-6 py-4">
       <View className="items-center gap-2">
         <Text className="text-center text-sm font-semibold text-neutral-100">
-          {t('assessment.camera.progress.photoCount', {
+          {t('assessment.camera.progress.photo_count', {
             current: photoCount + 1,
             total: maxPhotos,
           })}

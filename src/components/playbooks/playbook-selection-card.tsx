@@ -26,10 +26,10 @@ type PlaybookSelectionCardProps = {
 };
 
 const SETUP_LABEL_KEYS: Record<PlaybookSetup, string> = {
-  auto_indoor: 'playbooks.selection.autoIndoor',
-  auto_outdoor: 'playbooks.selection.autoOutdoor',
-  photo_indoor: 'playbooks.selection.photoIndoor',
-  photo_outdoor: 'playbooks.selection.photoOutdoor',
+  auto_indoor: 'playbooks.selection.auto_indoor',
+  auto_outdoor: 'playbooks.selection.auto_outdoor',
+  photo_indoor: 'playbooks.selection.photo_indoor',
+  photo_outdoor: 'playbooks.selection.photo_outdoor',
 };
 
 export function getSetupDisplayLabel(
@@ -67,7 +67,7 @@ function PhaseBreakdownItem({
           {t('playbooks.durationDays', { count: durationDays })}
         </Text>
         <Text className="text-xs text-neutral-600 dark:text-neutral-400">
-          {t('playbooks.taskCount', { count: taskCount })}
+          {t('playbooks.task_count', { count: taskCount })}
         </Text>
       </View>
     </View>
@@ -143,7 +143,7 @@ function PlaybookCardBreakdown({
   return (
     <View className="gap-2">
       <Text className="text-xs font-medium uppercase text-neutral-500 dark:text-neutral-400">
-        {t('playbooks.selection.phaseBreakdownTitle')}
+        {t('playbooks.selection.phase_breakdown_title')}
       </Text>
       {phaseBreakdown.map((phase, index) => (
         <PhaseBreakdownItem
@@ -169,7 +169,7 @@ function PlaybookCardEstimated({
   return (
     <View className="mt-3 rounded-lg bg-primary-50 p-2 dark:bg-primary-900/10">
       <Text className="text-xs text-primary-700 dark:text-primary-300">
-        {t('playbooks.selection.estimatedRange', {
+        {t('playbooks.selection.estimated_range', {
           start: new Date(estimatedStartDate).toLocaleDateString(),
           end: new Date(estimatedEndDate).toLocaleDateString(),
         })}

@@ -89,32 +89,32 @@ function EventMarkerRow({ event }: { event: EventMarker }): React.ReactElement {
   > = {
     FILL: {
       icon: '💧',
-      label: t('nutrient.eventTypes.fill'),
+      label: t('nutrient.event_types.fill'),
       color: 'text-primary-600',
     },
     DILUTE: {
       icon: '🌊',
-      label: t('nutrient.eventTypes.dilute'),
+      label: t('nutrient.event_types.dilute'),
       color: 'text-primary-500',
     },
     ADD_NUTRIENT: {
       icon: '🧪',
-      label: t('nutrient.eventTypes.addNutrient'),
+      label: t('nutrient.event_types.add_nutrient'),
       color: 'text-success-600',
     },
     PH_UP: {
       icon: '⬆️',
-      label: t('nutrient.eventTypes.phUp'),
+      label: t('nutrient.event_types.ph_up'),
       color: 'text-warning-600',
     },
     PH_DOWN: {
       icon: '⬇️',
-      label: t('nutrient.eventTypes.phDown'),
+      label: t('nutrient.event_types.ph_down'),
       color: 'text-warning-600',
     },
     CHANGE: {
       icon: '🔄',
-      label: t('nutrient.eventTypes.change'),
+      label: t('nutrient.event_types.change'),
       color: 'text-neutral-600',
     },
   };
@@ -194,7 +194,7 @@ export function PhEcTrendChart({
     <View testID={testID} className="flex-1">
       <View className="mb-3 rounded-lg bg-neutral-50 p-3">
         <Text className="mb-1 text-xs font-medium text-neutral-600">
-          {t('nutrient.targetRanges')}
+          {t('nutrient.target_ranges')}
         </Text>
         <View className="flex-row gap-4">
           <Text className="text-sm text-neutral-700">
@@ -203,7 +203,7 @@ export function PhEcTrendChart({
           </Text>
           <Text className="text-sm text-neutral-700">
             {t('nutrient.ec')}: {ecRange.min.toFixed(1)}–
-            {ecRange.max.toFixed(1)} {t('units.msPerCm')}
+            {ecRange.max.toFixed(1)} {t('units.ms_per_cm')}
           </Text>
         </View>
       </View>

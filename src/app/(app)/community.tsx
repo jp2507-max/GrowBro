@@ -18,7 +18,7 @@ import { useTranslation } from 'react-i18next';
 import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useUndoDeletePost } from '@/api/community';
+import { useUndoDeletePost, useUserProfiles } from '@/api/community';
 import type { CommunityPostSort, Post } from '@/api/community/types';
 import { useCommunityPostsInfinite } from '@/api/community/use-posts-infinite';
 import { AgeGatedPostCard } from '@/components/community/age-gated-post-card';
@@ -47,10 +47,15 @@ import { sanitizeCommunityErrorType } from '@/lib/analytics';
 import { useAnimatedScrollList } from '@/lib/animations/animated-scroll-list-provider';
 import { useBottomTabBarHeight } from '@/lib/animations/use-bottom-tab-bar-height';
 import { COMMUNITY_HELP_CATEGORY } from '@/lib/community/post-categories';
+import { normalizePostUserId } from '@/lib/community/post-utils';
 import {
   createOutboxAdapter,
   useCommunityFeedRealtime,
 } from '@/lib/community/use-community-feed-realtime';
+import {
+  getCachedUsernames,
+  setCachedUsernames,
+} from '@/lib/community/username-cache';
 import { getOptimizedFlashListConfig } from '@/lib/flashlist-config';
 import { haptics } from '@/lib/haptics';
 import { useDebouncedValue, useScreenErrorLogger } from '@/lib/hooks';
@@ -300,6 +305,63 @@ export default function CommunityScreen(): React.ReactElement {
     [filterPosts, posts]
   );
 
+  const [activePostId, setActivePostId] = React.useState<
+    string | number | null
+  >(null);
+
+  const profileUserIds = React.useMemo(() => {
+    const ids = new Set<string>();
+    for (const post of filteredPosts) {
+      const normalized = normalizePostUserId(post);
+      const userId = normalized.userId;
+      if (!userId || userId === 'invalid-user-id') continue;
+      const id = String(userId);
+      if (id.startsWith('unknown-')) continue;
+      ids.add(id);
+    }
+    return Array.from(ids).sort();
+  }, [filteredPosts]);
+
+  const cachedUsernames = React.useMemo(
+    () => getCachedUsernames(profileUserIds),
+    [profileUserIds]
+  );
+
+  const missingProfileIds = React.useMemo(() => {
+    if (profileUserIds.length === 0) return [];
+    if (cachedUsernames.size === 0) return profileUserIds;
+    return profileUserIds.filter((id) => !cachedUsernames.has(id));
+  }, [cachedUsernames, profileUserIds]);
+
+  const { data: userProfiles } = useUserProfiles({
+    variables: { userIds: missingProfileIds },
+    enabled: missingProfileIds.length > 0,
+    staleTime: 1000 * 60 * 30,
+    gcTime: 1000 * 60 * 60,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  });
+
+  const profileUsernameById = React.useMemo(() => {
+    const map = new Map<string, string>(cachedUsernames);
+    if (userProfiles?.length) {
+      for (const profile of userProfiles) {
+        map.set(profile.id, profile.username);
+      }
+    }
+    return map;
+  }, [cachedUsernames, userProfiles]);
+
+  React.useEffect(() => {
+    if (!userProfiles?.length) return;
+    setCachedUsernames(userProfiles);
+  }, [userProfiles]);
+
+  const handleCardPressIn = React.useCallback((postId: string | number) => {
+    setActivePostId(postId);
+  }, []);
+
   const isSkeletonVisible = useSkeletonVisibility(isLoading, posts.length);
   const hasTrackedViewRef = React.useRef(false);
   const trackedEmptyReasonsRef = React.useRef<Set<'initial_load' | 'refresh'>>(
@@ -411,15 +473,34 @@ export default function CommunityScreen(): React.ReactElement {
   }, [router]);
 
   const renderItem = React.useCallback(
-    ({ item }: { item: Post }) => (
-      <AgeGatedPostCard
-        post={item}
-        isAgeVerified={isAgeVerified}
-        onDelete={handlePostDelete}
-        onVerifyPress={handleVerifyPress}
-      />
-    ),
-    [handlePostDelete, isAgeVerified, handleVerifyPress]
+    ({ item }: { item: Post }) => {
+      const normalized = normalizePostUserId(item);
+      const userId = normalized.userId;
+      const displayUsername =
+        userId && userId !== 'invalid-user-id'
+          ? (profileUsernameById.get(String(userId)) ?? null)
+          : null;
+
+      return (
+        <AgeGatedPostCard
+          post={item}
+          isAgeVerified={isAgeVerified}
+          onDelete={handlePostDelete}
+          onVerifyPress={handleVerifyPress}
+          displayUsername={displayUsername}
+          enableSharedTransition={activePostId === item.id}
+          onCardPressIn={handleCardPressIn}
+        />
+      );
+    },
+    [
+      activePostId,
+      handleCardPressIn,
+      handlePostDelete,
+      handleVerifyPress,
+      isAgeVerified,
+      profileUsernameById,
+    ]
   );
 
   const listEmpty = React.useCallback(() => {

@@ -22,7 +22,7 @@ export function PermissionDenied({ onRetry, onCancel }: PermissionDeniedProps) {
     } catch (error) {
       console.warn('[PermissionDenied] Failed to open settings:', error);
       showMessage({
-        message: t('assessment.camera.permissionDenied.openSettingsFailed'),
+        message: t('assessment.camera.permission_denied.open_settings_failed'),
         type: 'warning',
       });
     }
@@ -32,10 +32,10 @@ export function PermissionDenied({ onRetry, onCancel }: PermissionDeniedProps) {
     <View className="flex-1 items-center justify-center bg-charcoal-950 px-6">
       <View className="items-center gap-4">
         <Text className="text-center text-2xl font-bold text-neutral-100">
-          {t('assessment.camera.permissionDenied.title')}
+          {t('assessment.camera.permission_denied.title')}
         </Text>
         <Text className="text-center text-base text-neutral-300">
-          {t('assessment.camera.permissionDenied.description')}
+          {t('assessment.camera.permission_denied.description')}
         </Text>
 
         <View className="mt-6 w-full gap-3">
@@ -45,7 +45,7 @@ export function PermissionDenied({ onRetry, onCancel }: PermissionDeniedProps) {
             testID="permissionDenied.openSettings"
           >
             <Text className="font-semibold text-neutral-100">
-              {t('assessment.camera.permissionDenied.openSettings')}
+              {t('assessment.camera.permission_denied.open_settings')}
             </Text>
           </Button>
 
@@ -56,7 +56,7 @@ export function PermissionDenied({ onRetry, onCancel }: PermissionDeniedProps) {
               testID="permissionDenied.retry"
             >
               <Text className="font-semibold text-neutral-100">
-                {t('assessment.camera.permissionDenied.retry')}
+                {t('assessment.camera.permission_denied.retry')}
               </Text>
             </Button>
           )}

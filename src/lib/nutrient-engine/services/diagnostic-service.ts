@@ -35,11 +35,11 @@ const HISTORY_WINDOW_HOURS_DEFAULT = 72;
 const MAX_HISTORY_SAMPLES = 60;
 
 const SECOND_OPINION_KEY =
-  'nutrient.diagnostics.disclaimers.considerSecondOpinion';
-const LOW_CONFIDENCE_KEY = 'nutrient.diagnostics.disclaimers.lowConfidence';
+  'nutrient.diagnostics.disclaimers.consider_second_opinion';
+const LOW_CONFIDENCE_KEY = 'nutrient.diagnostics.disclaimers.low_confidence';
 const AI_BELOW_THRESHOLD_RATIONALE =
-  'nutrient.diagnostics.rationale.aiBelowThreshold';
-const AI_ONLY_WARNING_KEY = 'nutrient.diagnostics.disclaimers.aiOnlyPrimary';
+  'nutrient.diagnostics.rationale.ai_below_threshold';
+const AI_ONLY_WARNING_KEY = 'nutrient.diagnostics.disclaimers.ai_only_primary';
 
 export type AiDiagnosticHypothesis = {
   hypothesisId?: string;

@@ -58,6 +58,15 @@ export const useUserProfile = createQuery<
   fetcher: ({ userId }) => getCommunityApiClient().getUserProfile(userId),
 });
 
+export const useUserProfiles = createQuery<
+  UserProfile[],
+  { userIds: string[] },
+  AxiosError
+>({
+  queryKey: ['community-user-profiles'],
+  fetcher: ({ userIds }) => getCommunityApiClient().getUserProfiles(userIds),
+});
+
 // ==================== Comment Queries ====================
 
 export const useComments = ({

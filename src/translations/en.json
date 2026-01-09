@@ -1,7 +1,7 @@
 {
   "accessibility": {
     "appeals": {
-      "counterArguments": {
+      "counter_arguments": {
         "hint": "Provide specific reasons why you believe this content should not be moderated. Include any relevant context or evidence.",
         "label": "Counter Arguments",
         "placeholder": "Explain your counter arguments here..."
@@ -50,22 +50,22 @@
         "status": "{{pendingCount}} pending, {{processingCount}} processing"
       },
       "result": {
-        "backToHome": "Back to home",
+        "back_to_home": "Back to home",
         "confidence": "Confidence: {{confidencePercent}}%",
-        "dataUnavailable": "Assessment data is no longer available.",
+        "data_unavailable": "Assessment data is no longer available.",
         "details": "Assessment details",
         "low_confidence": "Assessment complete. Not confident enough to identify the issue. Confidence {{confidence}} percent. {{count, plural, one {One photo analyzed.} other {# photos analyzed.}}}",
         "mode_cloud": "in the cloud",
         "mode_device": "on device",
-        "modelVersion": "Model version: {{modelVersion}}",
-        "noDescription": "No additional description available.",
-        "photoQualityTitle": "Photo quality could be improved",
-        "plantId": "Plant ID: {{plantId}}",
-        "processingTime": "Processing time: {{processingTimeMs}} ms",
-        "retakePhotos": "Retake photos",
+        "model_version": "Model version: {{modelVersion}}",
+        "no_description": "No additional description available.",
+        "photo_quality_title": "Photo quality could be improved",
+        "plant_id": "Plant ID: {{plantId}}",
+        "processing_time": "Processing time: {{processingTimeMs}} ms",
+        "retake_photos": "Retake photos",
         "success": "Assessment complete. Detected {{className}} with {{confidence}} percent confidence. Analysis ran {{mode}}. {{count, plural, one {One photo analyzed.} other {# photos analyzed.}}}",
         "unknown": "Unknown",
-        "viewPhotoTips": "View photo tips"
+        "view_photo_tips": "View photo tips"
       },
       "taxonomy": {
         "hint": "Double-tap to see visual cues and description.",
@@ -83,7 +83,9 @@
     "common": {
       "action_button_hint": "Performs {{label}} action",
       "back_hint": "Navigates back to the previous screen",
+      "collapse_section_hint": "[EN] Doppeltippen, um den Abschnitt zu reduzieren",
       "confirm_date_hint": "Confirms the selected date.",
+      "expand_section_hint": "[EN] Doppeltippen, um den Abschnitt zu erweitern",
       "go_back": "Go back",
       "loading_hint": "Content is loading, please wait",
       "loading_label": "Loading",
@@ -94,7 +96,7 @@
       "saves_changes": "Saves your changes",
       "select_open_hint": "Opens the {{label}} picker. Double-tap to choose.",
       "select_option_hint": "Selects the {{label}} option.",
-      "toggleHint": "Toggles the setting on or off."
+      "toggle_hint": "Toggles the setting on or off."
     },
     "community": {
       "anonymous_user": "Anonymous",
@@ -148,16 +150,16 @@
       "input_label": "{{label}} input"
     },
     "nutrient": {
-      "accessDenied": "Access Denied",
+      "access_denied": "[EN] Zugriff verweigert",
       "add_reading": "Add Reading",
       "add_reading_description": "Manually log pH and EC values",
       "atc_label": "ATC",
       "edit_reading": "Edit Reading",
-      "errorLoadingReading": "Error Loading Reading",
+      "error_loading_reading": "[EN] Fehler beim Laden der Messung",
       "load_error": "Failed to load readings",
-      "readingNotFound": "Reading Not Found",
       "reading_error": "Failed to save reading",
       "reading_history": "Reading History",
+      "reading_not_found": "[EN] Messung nicht gefunden",
       "reading_saved": "Reading saved successfully",
       "reading_update_error": "Failed to update reading",
       "reading_updated": "Reading updated successfully",
@@ -166,9 +168,9 @@
     },
     "plant_hero_image": "Plant hero image",
     "plants": {
-      "assessmentHistory": {
+      "assessment_history": {
         "empty": "No assessments yet",
-        "emptyDescription": "Use the AI assessment tool to analyze plant health"
+        "empty_description": "Use the AI assessment tool to analyze plant health"
       },
       "detail": {
         "title": "Plant Detail"
@@ -221,7 +223,7 @@
         "syncing_title": "Syncing your settings..."
       },
       "clear_logs_hint": "Clears the sync diagnostics log.",
-      "syncFailed": "Sync failed",
+      "sync_failed": "Sync failed",
       "sync_now_hint": "Starts a manual sync immediately.",
       "syncing": "Syncing..."
     },
@@ -239,7 +241,7 @@
       "submit": "Submit Appeal"
     },
     "counter": {
-      "characterCount": "{{current}} / {{max}} characters (minimum {{minimum}})"
+      "character_count": "{{current}} / {{max}} characters (minimum {{minimum}})"
     },
     "decision": {
       "partial": "Decision Partially Upheld",
@@ -247,37 +249,37 @@
       "upheld": "Decision Upheld"
     },
     "error": {
-      "counterArgumentsTooShort": "Counter arguments must be at least {{min}} characters",
-      "duplicateUrl": "This URL has already been added",
-      "invalidUrl": "Please enter a valid URL",
-      "maxEvidenceReached": "Maximum of 5 evidence URLs allowed",
-      "submitFailed": "Failed to submit appeal. Please try again."
+      "counter_arguments_too_short": "Counter arguments must be at least {{min}} characters",
+      "duplicate_url": "This URL has already been added",
+      "invalid_url": "Please enter a valid URL",
+      "max_evidence_reached": "Maximum of 5 evidence URLs allowed",
+      "submit_failed": "Failed to submit appeal. Please try again."
     },
     "hint": {
-      "counterArguments": "Provide specific reasons why you believe this content should not be moderated. Include any relevant context or evidence.",
+      "counter_arguments": "Provide specific reasons why you believe this content should not be moderated. Include any relevant context or evidence.",
       "evidence": "Add URLs to supporting evidence for your appeal"
     },
     "label": {
       "action": "Action",
-      "appealId": "Appeal ID",
-      "counterArguments": "Counter Arguments",
+      "appeal_id": "Appeal ID",
+      "counter_arguments": "Counter Arguments",
       "deadline": "Deadline",
       "evidence": "Supporting Evidence",
-      "noPolicyViolations": "No policy violations found",
-      "originalDecision": "Original Decision",
-      "policyViolations": "Policy Violations",
+      "no_policy_violations": "No policy violations found",
+      "original_decision": "Original Decision",
+      "policy_violations": "Policy Violations",
       "reasoning": "Reasoning",
-      "resolvedAt": "Resolved At",
+      "resolved_at": "Resolved At",
       "reviewer": "Reviewer",
-      "submittedAt": "Submitted At"
+      "submitted_at": "Submitted At"
     },
     "legal": {
-      "freeOfCharge": "Appeals are free of charge",
-      "humanReviewGuarantee": "All appeals receive human review"
+      "free_of_charge": "Appeals are free of charge",
+      "human_review_guarantee": "All appeals receive human review"
     },
     "notice": {
       "deadline": "You have {{days}} days remaining to submit your appeal",
-      "evidenceOptional": "Evidence is optional"
+      "evidence_optional": "Evidence is optional"
     },
     "ods": {
       "action": {
@@ -286,19 +288,19 @@
       "description": "If you're not satisfied with this appeal outcome, you can escalate to an independent out-of-court dispute settlement body.",
       "label": {
         "body": "Escalation Request",
-        "submittedAt": "Submitted At",
-        "targetResolution": "Target Resolution"
+        "submitted_at": "Submitted At",
+        "target_resolution": "Target Resolution"
       },
       "status": {
         "escalated": "Escalated to ODS"
       },
       "title": "Independent Dispute Resolution",
       "value": {
-        "withinDays": "Within {{days}} days"
+        "within_days": "Within {{days}} days"
       }
     },
     "placeholder": {
-      "counterArguments": "Explain your counter arguments here..."
+      "counter_arguments": "Explain your counter arguments here..."
     },
     "status": {
       "escalated_to_ods": "Escalated to ODS",
@@ -307,88 +309,88 @@
       "resolved": "Resolved"
     },
     "subtitle": {
-      "humanReview": "Your appeal will be reviewed by a human moderator within 7 days",
-      "trackProgress": "Track the progress of your appeal and view the final decision"
+      "human_review": "Your appeal will be reviewed by a human moderator within 7 days",
+      "track_progress": "Track the progress of your appeal and view the final decision"
     },
     "title": {
-      "appealStatus": "Appeal Status",
-      "submitAppeal": "Submit Appeal"
+      "appeal_status": "Appeal Status",
+      "submit_appeal": "Submit Appeal"
     },
     "value": {
-      "assignedToReviewer": "Assigned to reviewer"
+      "assigned_to_reviewer": "Assigned to reviewer"
     }
   },
   "assessment": {
     "camera": {
       "actions": {
         "capture": "Capture photo",
-        "captureHint": "Double-tap to take a diagnostic photo"
+        "capture_hint": "Double-tap to take a diagnostic photo"
       },
       "errors": {
-        "cameraFailed": "Camera failed to initialize. Please try again.",
-        "captureFailed": "Failed to capture photo. Please try again.",
-        "processingFailed": "Failed to process image. Please try again.",
-        "storageFull": "Storage is full. Please free up space and try again.",
+        "camera_failed": "Camera failed to initialize. Please try again.",
+        "capture_failed": "Failed to capture photo. Please try again.",
+        "processing_failed": "Failed to process image. Please try again.",
+        "storage_full": "Storage is full. Please free up space and try again.",
         "title": "Error"
       },
       "guidance": {
         "focus": "Keep the camera steady and wait for focus",
         "framing": "Fill the frame with the plant matter",
-        "leafBottom": "Position the camera below the leaf, showing the underside clearly",
-        "leafTop": "Position the camera above the leaf, showing the top surface clearly",
+        "leaf_bottom": "Position the camera below the leaf, showing the underside clearly",
+        "leaf_top": "Position the camera above the leaf, showing the top surface clearly",
         "lighting": "Ensure neutral lighting without strong shadows",
-        "wholePlant": "Capture the entire plant in frame with good lighting"
+        "whole_plant": "Capture the entire plant in frame with good lighting"
       },
-      "permissionDenied": {
+      "permission_denied": {
         "description": "GrowBro needs camera access to capture photos for plant health assessment. Please enable camera permissions in your device settings.",
-        "openSettings": "Open Settings",
-        "openSettingsFailed": "Unable to open settings. Please navigate to device settings manually.",
+        "open_settings": "Open Settings",
+        "open_settings_failed": "Unable to open settings. Please navigate to device settings manually.",
         "retry": "Try Again",
         "title": "Camera Access Required"
       },
       "progress": {
         "done": "Done",
         "next": "Next Photo",
-        "photoCount": "Photo {{current}} of {{total}}",
+        "photo_count": "Photo {{current}} of {{total}}",
         "retake": "Retake"
       },
       "quality": {
         "blur": "Image is too blurry. Hold the camera steady and wait for focus.",
         "composition": "Not enough plant matter in frame. Get closer or adjust framing.",
         "exposure": "Image is over or under-exposed. Adjust lighting conditions.",
-        "whiteBalance": "Color temperature is off. Use neutral lighting without strong color casts."
+        "white_balance": "Color temperature is off. Use neutral lighting without strong color casts."
       },
       "status": {
         "capturing": "Capturing photo…",
-        "capturingHint": "Photo is being captured, please wait"
+        "capturing_hint": "Photo is being captured, please wait"
       },
-      "useAlternative": "Use Alternative"
+      "use_alternative": "Use Alternative"
     },
     "close": "Close",
     "community": {
-      "askCommunity": "Ask the community",
-      "ctaHint": "Get a second opinion from experienced growers",
-      "getSecondOpinion": "Get a second opinion"
+      "ask_community": "Ask the community",
+      "cta_hint": "Get a second opinion from experienced growers",
+      "get_second_opinion": "Get a second opinion"
     },
     "diagnostics": {
-      "createTask": "Create task",
+      "create_task": "Create task",
       "description": "Run these basic checks to help identify the issue:",
-      "ecCheck": "Check EC/TDS",
-      "ecInstructions": "Measure nutrient strength (EC/TDS) to ensure proper feeding levels",
-      "estimatedTime": "~{{minutes}} min",
-      "lightCheck": "Measure light intensity",
-      "lightInstructions": "Check PPFD at canopy level to ensure adequate light without stress",
-      "pestCheck": "Inspect for pests",
-      "pestInstructions": "Check underside of leaves for spider mites, aphids, or other pests",
-      "phCheck": "Check pH",
-      "phInstructions": "Test pH level (soil: 6.0-7.0, hydro: 5.5-6.5) to rule out nutrient lockout",
+      "ec_check": "Check EC/TDS",
+      "ec_instructions": "Measure nutrient strength (EC/TDS) to ensure proper feeding levels",
+      "estimated_time": "~{{minutes}} min",
+      "light_check": "Measure light intensity",
+      "light_instructions": "Check PPFD at canopy level to ensure adequate light without stress",
+      "pest_check": "Inspect for pests",
+      "pest_instructions": "Check underside of leaves for spider mites, aphids, or other pests",
+      "ph_check": "Check pH",
+      "ph_instructions": "Test pH level (soil: 6.0-7.0, hydro: 5.5-6.5) to rule out nutrient lockout",
       "title": "Diagnostic Checklist",
-      "wateringCheck": "Check soil moisture",
-      "wateringInstructions": "Verify soil moisture level and watering schedule to rule out over/under-watering"
+      "watering_check": "Check soil moisture",
+      "watering_instructions": "Verify soil moisture level and watering schedule to rule out over/under-watering"
     },
     "errors": {
-      "analysisFailed": "We couldn't analyze your photos. Please check your connection and try again.",
-      "photoStorageFailed": "We couldn't save your photo. Please check your storage space and try again."
+      "analysis_failed": "We couldn't analyze your photos. Please check your connection and try again.",
+      "photo_storage_failed": "We couldn't save your photo. Please check your storage space and try again."
     },
     "feedback": {
       "helpful_question": "Was this assessment helpful?",
@@ -407,55 +409,55 @@
       "title": "Assessment Feedback",
       "yes": "Yes"
     },
-    "lastUpdated": "Last updated: {{time}}",
+    "last_updated": "Last updated: {{time}}",
     "loading": "Loading...",
     "playbook": {
       "affects": "Affects: {{phases}}",
-      "applyAdjustment": "Apply Adjustment",
+      "apply_adjustment": "Apply Adjustment",
       "impact": {
         "instructions": "📝 Instructions",
         "priority": "⚡ Priority",
         "resource": "🔧 Resource",
         "schedule": "📅 Schedule"
       },
-      "suggestedTimingAdjustment": "Suggested timing adjustment: {{sign}}{{count}} day",
-      "suggestedTimingAdjustment_plural": "Suggested timing adjustment: {{sign}}{{count}} days",
-      "suggestionCount": "{{count}} suggestion based on assessment",
-      "suggestionCount_plural": "{{count}} suggestions based on assessment",
+      "suggested_timing_adjustment": "Suggested timing adjustment: {{sign}}{{count}} day",
+      "suggested_timing_adjustment_plural": "Suggested timing adjustment: {{sign}}{{count}} days",
+      "suggestion_count": "{{count}} suggestion based on assessment",
+      "suggestion_count_plural": "{{count}} suggestions based on assessment",
       "title": "Playbook Adjustments Suggested"
     },
     "queue": {
-      "retryError": "Failed to retry failed assessments. Please try again.",
-      "syncError": "Failed to sync assessments. Please try again."
+      "retry_error": "Failed to retry failed assessments. Please try again.",
+      "sync_error": "Failed to sync assessments. Please try again."
     },
     "result": {
-      "askCommunity": "Ask Community",
-      "backToHome": "Back to home",
+      "ask_community": "Ask Community",
+      "back_to_home": "Back to home",
       "confidence": "Confidence: {{confidencePercent}}%",
-      "createTasks": "Create Tasks",
-      "dataUnavailable": "Assessment data is no longer available.",
+      "create_tasks": "Create Tasks",
+      "data_unavailable": "Assessment data is no longer available.",
       "details": "Assessment details",
-      "modelVersion": "Model version: {{modelVersion}}",
-      "noDescription": "No additional description available.",
-      "photoQualityTitle": "Photo quality could be improved",
-      "plantId": "Plant ID: {{plantId}}",
-      "processingTime": "Processing time: {{processingTimeMs}} ms",
+      "model_version": "Model version: {{modelVersion}}",
+      "no_description": "No additional description available.",
+      "photo_quality_title": "Photo quality could be improved",
+      "plant_id": "Plant ID: {{plantId}}",
+      "processing_time": "Processing time: {{processingTimeMs}} ms",
       "retake": "Retake",
-      "retakePhotos": "Retake photos",
-      "screenTitle": "Assessment Result",
+      "retake_photos": "Retake photos",
+      "screen_title": "Assessment Result",
       "unknown": "Unknown",
-      "viewHistory": "View History",
-      "viewPhotoTips": "View photo tips"
+      "view_history": "View History",
+      "view_photo_tips": "View photo tips"
     },
     "retake": {
       "cancel": "Cancel",
-      "primaryIssue": "Main Issue",
-      "retakeNow": "Retake photo now",
+      "primary_issue": "Main Issue",
+      "retake_now": "Retake photo now",
       "subtitle": "Here are some tips to improve your photo quality:",
-      "tipsTitle": "Tips for Better Photos",
+      "tips_title": "Tips for Better Photos",
       "title": "Improve Photo Quality"
     },
-    "retryFailed": "Retry Failed",
+    "retry_failed": "Retry Failed",
     "status": {
       "completed": "Completed",
       "failed": "Failed",
@@ -463,35 +465,36 @@
       "processing": "Processing",
       "stalled": "Stalled"
     },
-    "syncNow": "Sync Now",
-    "taskCreation": {
-      "createTasksButton": "Create Tasks",
-      "createTasks_one": "Create 1 task from this assessment?",
-      "createTasks_other": "Create {{count}} tasks from this assessment?",
+    "sync_now": "Sync Now",
+    "task_creation": {
+      "create_tasks_button": "Create Tasks",
+      "create_tasks_one": "Create 1 task from this assessment?",
+      "create_tasks_other": "Create {{count}} tasks from this assessment?",
       "creating": "Creating...",
       "failed": "Failed to create tasks. Please try again.",
-      "noTasks": "No tasks to create from this action plan.",
-      "tasksToCreate": "Tasks to create:",
+      "no_tasks": "No tasks to create from this action plan.",
+      "tasks_to_create": "Tasks to create:",
       "title": "Create Tasks"
     },
     "title": "Assessment Queue",
     "uncertainty": {
-      "confidenceLabel": "AI Confidence",
-      "confidenceThreshold": "We recommend at least 70% confidence for reliable results",
-      "educationalNote": "💡 When uncertain, it's always best to consult experienced growers or run basic diagnostic checks.",
-      "hideChecklist": "Hide checklist",
-      "lowConfidenceExplanation": "The AI is not confident enough in this classification. Consider retaking photos with better quality or asking the community for help.",
-      "notConfident": "Not confident enough",
-      "oodExplanation": "The AI couldn't classify this issue with confidence. This might be an uncommon problem or the photos need improvement.",
-      "retakePhoto": "Retake photo",
-      "showChecklist": "Show diagnostic checklist",
-      "unableToClassify": "Unable to classify"
+      "confidence_label": "AI Confidence",
+      "confidence_threshold": "We recommend at least 70% confidence for reliable results",
+      "educational_note": "💡 When uncertain, it's always best to consult experienced growers or run basic diagnostic checks.",
+      "hide_checklist": "Hide checklist",
+      "low_confidence_explanation": "The AI is not confident enough in this classification. Consider retaking photos with better quality or asking the community for help.",
+      "not_confident": "Not confident enough",
+      "ood_explanation": "The AI couldn't classify this issue with confidence. This might be an uncommon problem or the photos need improvement.",
+      "retake_photo": "Retake photo",
+      "show_checklist": "Show diagnostic checklist",
+      "unable_to_classify": "Unable to classify"
     }
   },
   "auth": {
     "account_deleted_success": "Your account has been deleted successfully.",
     "already_have_account": "Already have an account?",
     "back_to_login": "Back to Sign In",
+    "code_already_used": "[EN] Der Autorisierungscode wurde bereits verwendet oder ist abgelaufen. Bitte versuche dich erneut anzumelden.",
     "confirm_password_label": "Confirm Password",
     "confirm_password_placeholder": "Re-enter password",
     "delete_account_error": "Failed to delete account. Please try again or contact support.",
@@ -542,8 +545,13 @@
     "error_verification_failed": "Email verification failed. Please try again or request a new link.",
     "forgot_password": "Forgot Password?",
     "forgot_password_link": "Forgot your password?",
+    "invalid_authorization_code": "[EN] Ungültiger Autorisierungscode.",
+    "network_connection_issue": "[EN] Netzwerkverbindungsproblem. Bitte überprüfe deine Internetverbindung und versuche es erneut.",
+    "network_issue": "[EN] Netzwerkproblem",
     "new_password_label": "New Password",
     "new_password_placeholder": "Enter new password",
+    "oauth_error": "[EN] OAuth-Fehler",
+    "oauth_failed": "[EN] OAuth-Authentifizierung fehlgeschlagen. Der Autorisierungscode ist möglicherweise ungültig oder abgelaufen.",
     "offline_banner_blocked": "Session expired - please reconnect to continue",
     "offline_banner_readonly": "Offline - changes will sync later",
     "offline_blocked_message": "Your session has expired. Please reconnect to continue using the app.",
@@ -569,6 +577,7 @@
     "reset_password_success": "Check your email for a password reset link.",
     "reset_password_title": "Reset Password",
     "resetting_password": "Resetting password...",
+    "retrying_connection": "[EN] Verbindungsproblem erkannt. Wiederhole... ({{attempt}}/{{max}})",
     "security": {
       "active_sessions": "Active Sessions",
       "biometric_disable_error": "Failed to disable biometric login",
@@ -665,8 +674,10 @@
       "title": "Active Sessions"
     },
     "sign_in_button": "Sign In",
+    "sign_in_failed": "[EN] Anmeldung fehlgeschlagen",
     "sign_in_link": "Sign in",
     "sign_in_subtitle": "Welcome back! Sign in to access your grow data.",
+    "sign_in_successful": "[EN] Anmeldung erfolgreich",
     "sign_in_title": "Sign In",
     "sign_in_with_apple": "Sign in with Apple",
     "sign_in_with_google": "Sign in with Google",
@@ -677,8 +688,10 @@
     "sign_up_title": "Create Account",
     "sign_up_with_apple": "Sign up with Apple",
     "sign_up_with_google": "Sign up with Google",
+    "signed_in_successfully": "[EN] Du wurdest erfolgreich angemeldet.",
     "signing_in": "Signing in...",
     "signing_up": "Creating account...",
+    "unexpected_error": "[EN] Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es erneut.",
     "validation_confirm_password_required": "Please confirm your password.",
     "validation_email_invalid": "Please enter a valid email address.",
     "validation_email_required": "Email is required.",
@@ -706,13 +719,13 @@
       "title": "Start Your Grow Schedule"
     },
     "errors": {
-      "failedIsoConversion": "Failed to convert {{label}} DateTime to ISO string",
-      "invalidDateTime": "Invalid {{label}} DateTime: {{reason}} - {{explanation}}",
-      "invalidHour": "Hour must be between 0 and 23, got {{hour}}",
-      "invalidMinute": "Minute must be between 0 and 59, got {{minute}}",
-      "invalidTimeFormat": "Invalid time format: {{timeString}}. Expected HH:mm",
-      "invalidTimeValues": "Invalid time values: hour={{hour}}, minute={{minute}}",
-      "selectWeeklyDay": "Please select at least one day for weekly recurrence"
+      "failed_iso_conversion": "Failed to convert {{label}} DateTime to ISO string",
+      "invalid_date_time": "Invalid {{label}} DateTime: {{reason}} - {{explanation}}",
+      "invalid_hour": "Hour must be between 0 and 23, got {{hour}}",
+      "invalid_minute": "Minute must be between 0 and 59, got {{minute}}",
+      "invalid_time_format": "Invalid time format: {{timeString}}. Expected HH:mm",
+      "invalid_time_values": "Invalid time values: hour={{hour}}, minute={{minute}}",
+      "select_weekly_day": "Please select at least one day for weekly recurrence"
     },
     "header": {
       "jump_to_today": "Jump to today",
@@ -733,8 +746,8 @@
     "move": "Move",
     "move_to_date": "Move to date",
     "needs_review_label": "Needs review due to conflict",
-    "noTaskSelected": "No task selected",
-    "noTasksForDay": "No tasks for this day",
+    "no_task_selected": "No task selected",
+    "no_tasks_for_day": "No tasks for this day",
     "out_of_range": "out of range",
     "out_of_range_label": "Latest pH/EC out of target range",
     "ph_range": "pH target: {{min}}–{{max}}",
@@ -763,8 +776,8 @@
       "plan": "Plan"
     },
     "targets_title": "Targets",
-    "taskCount": "{{count}} task",
-    "taskCount_plural": "{{count}} tasks",
+    "task_count": "{{count}} task",
+    "task_count_plural": "{{count}} tasks",
     "task_detail": {
       "category": "Category",
       "complete": "Complete",
@@ -851,13 +864,13 @@
     "loading": "Loading...",
     "na": "N/A",
     "no": "No",
-    "notSelected": "not selected",
+    "not_selected": "not selected",
     "null": "null",
     "off": "OFF",
     "offline_mode": "Offline Mode",
     "ok": "OK",
     "on": "ON",
-    "openSettings": "Open Settings",
+    "open_settings": "Open Settings",
     "optional": "Optional",
     "reconnect": "Reconnect",
     "remove": "Remove",
@@ -867,7 +880,7 @@
     "saving": "Saving...",
     "select_date": "Select date",
     "selected": "selected",
-    "timeAgo": {
+    "time_ago": {
       "days": {
         "one": "{{count}} day ago",
         "other": "{{count}} days ago"
@@ -915,15 +928,15 @@
     "characters_over": "characters over limit",
     "classification": "Issue detected",
     "clear_filters": "Clear filters",
-    "commentList": {
-      "empty": "No comments yet. Be the first to comment!",
-      "loading": "Loading comments..."
-    },
     "comment_body_empty": "Comment body cannot be empty",
     "comment_delete_failed": "Failed to delete comment",
     "comment_deleted": "Comment deleted",
     "comment_input_hint": "Type your comment here. Maximum 500 characters.",
     "comment_input_label": "Write a comment",
+    "comment_list": {
+      "empty": "No comments yet. Be the first to comment!",
+      "loading": "Loading comments..."
+    },
     "comment_offline_failed": "Could not save comment offline",
     "comment_offline_failed_description": "Please try again.",
     "comment_placeholder": "Share your thoughts...",
@@ -979,7 +992,7 @@
     "like_count_other": "{{count}} likes",
     "like_failed": "Failed to like post",
     "likes": "Likes",
-    "likesDescription": "Get notified when someone likes your posts (max 1 per post per 5 min)",
+    "likes_description": "Get notified when someone likes your posts (max 1 per post per 5 min)",
     "list_empty_body": "We’ll show updates once they’re available.",
     "list_empty_title": "Nothing here yet",
     "list_error_body": "Please check your connection and try again.",
@@ -1006,23 +1019,23 @@
       "title": "Community Templates",
       "trichome": "Trichome helper"
     },
-    "postOptions": {
-      "delete": "Delete",
-      "deleteHint": "Deletes this post with a 15 second undo window",
-      "title": "Post Options"
-    },
     "post_comment": "Post comment",
     "post_deleted": "Post deleted",
     "post_image": "Image from @{{author}}",
     "post_image_hint": "Part of the post content.",
+    "post_options": {
+      "delete": "Delete",
+      "delete_hint": "Deletes this post with a 15 second undo window",
+      "title": "Post Options"
+    },
     "posting": "Posting…",
     "posts_count": "{{count}} posts",
     "posts_count_one": "{{count}} post",
     "posts_count_other": "{{count}} posts",
     "posts_count_zero": "No posts yet",
     "recommendations": "Suggested actions:",
-    "repliesAndComments": "Replies & Comments",
-    "repliesAndCommentsDescription": "Get notified when someone replies to your posts",
+    "replies_and_comments": "Replies & Comments",
+    "replies_and_comments_description": "Get notified when someone replies to your posts",
     "reply": "Reply",
     "retry_comment_hint": "Retries posting this comment.",
     "retry_sync": "Retry sync",
@@ -1049,35 +1062,35 @@
     "view_comments": "{{count}} comments",
     "view_comments_hint": "Double-tap to view comments for this post."
   },
-  "communityPost": {
-    "errorDescription": "Failed to create community post. Please try again.",
-    "errorTitle": "Error",
-    "postAddError": "Error adding post",
-    "postAdded": "Post added successfully"
+  "community_post": {
+    "error_description": "Failed to create community post. Please try again.",
+    "error_title": "Error",
+    "post_add_error": "Error adding post",
+    "post_added": "Post added successfully"
   },
   "consent": {
     "accept_all": "Accept all",
-    "aiTraining": {
+    "ai_training": {
       "impact": "Off: diagnosis still works; no images added to training pool. Basis: consent; Retention: 365d",
       "subtitle": "Allow using your images to improve models",
       "title": "AI training images"
     },
     "analytics": {
       "impact": "Off: playbook improvement analytics disabled. Basis: consent; Retention: 180d aggregated",
-      "infoBody": "Anonymous usage of guided grow playbooks helps us refine schedules and AI recommendations.",
-      "infoTitle": "Guided grow analytics",
+      "info_body": "Anonymous usage of guided grow playbooks helps us refine schedules and AI recommendations.",
+      "info_title": "Guided grow analytics",
       "subtitle": "Help improve playbooks & AI suggestions",
       "title": "Guided grow analytics"
     },
-    "crashDiagnostics": {
+    "crash_diagnostics": {
       "impact": "Off: no crash reports are sent. Basis: consent; Retention: 180d",
       "subtitle": "Send minimized crash reports",
       "title": "Crash diagnostics"
     },
-    "crashReporting": {
+    "crash_reporting": {
       "impact": "Off: no crash diagnostics sent. Basis: consent; Retention: 90d aggregated",
-      "infoBody": "Sending crash diagnostics helps us fix stability issues faster. We strip identifiers where possible.",
-      "infoTitle": "Crash reporting",
+      "info_body": "Sending crash diagnostics helps us fix stability issues faster. We strip identifiers where possible.",
+      "info_title": "Crash reporting",
       "subtitle": "Send minimized crash diagnostics",
       "title": "Crash reporting"
     },
@@ -1087,45 +1100,45 @@
       "title": "Experiments / feature flags"
     },
     "first_run_title": "Your privacy choices",
-    "getStarted": "Get started",
-    "lastUpdated": "Last updated: {{date}}",
-    "optOutAll": "Opt out all",
-    "optOutError": {
+    "get_started": "Get started",
+    "last_updated": "Last updated: {{date}}",
+    "opt_out_all": "Opt out all",
+    "opt_out_error": {
       "message": "Something went wrong withdrawing consent. Please try again.",
       "title": "Opt-out failed"
     },
-    "optOutSubtitle": "You can withdraw previously granted consent choices here.",
-    "optOutSuccess": {
+    "opt_out_subtitle": "You can withdraw previously granted consent choices here.",
+    "opt_out_success": {
       "message": "We've disabled analytics and telemetry going forward.",
       "title": "All consents withdrawn"
     },
-    "optOutTitle": "Opt out of tracking",
+    "opt_out_title": "Opt out of tracking",
     "personalized": {
       "impact": "Off: reports stay fully anonymous. Basis: consent; Retention: 30d",
-      "infoBody": "Allows attaching pseudonymous IDs to improve error traceability. No direct personal data is stored.",
-      "infoTitle": "Personalized diagnostics",
+      "info_body": "Allows attaching pseudonymous IDs to improve error traceability. No direct personal data is stored.",
+      "info_title": "Personalized diagnostics",
       "subtitle": "Include hashed identifiers in reports",
       "title": "Personalized diagnostics"
     },
-    "quickOptOut": {
+    "quick_opt_out": {
       "description": "Withdraw all optional data collection consents instantly. Mandatory technical data is not collected.",
       "title": "Quick opt-out"
     },
     "reject_all": "Reject all",
     "save": "Save",
-    "sessionReplay": {
+    "session_replay": {
       "impact": "Off: no interaction replays. Basis: consent; Retention: 30d",
-      "infoBody": "Replay helps diagnose complex UI issues. Sensitive fields are masked where possible.",
-      "infoTitle": "Session replay",
+      "info_body": "Replay helps diagnose complex UI issues. Sensitive fields are masked where possible.",
+      "info_title": "Session replay",
       "subtitle": "Allow anonymized interaction capture",
       "title": "Session replay"
     },
-    "settingsSubtitle": "Manage your data collection preferences.",
-    "settingsTitle": "Privacy settings",
+    "settings_subtitle": "Manage your data collection preferences.",
+    "settings_title": "Privacy settings",
     "telemetry": {
       "impact": "Off: no usage analytics; performance metrics remain local. Basis: consent; Retention: 90d aggregated",
-      "infoBody": "Telemetry helps us understand feature usage and performance so we can improve reliability. We minimize and aggregate data.",
-      "infoTitle": "Telemetry / analytics",
+      "info_body": "Telemetry helps us understand feature usage and performance so we can improve reliability. We minimize and aggregate data.",
+      "info_title": "Telemetry / analytics",
       "subtitle": "Allow usage analytics after consent",
       "title": "Telemetry / analytics"
     },
@@ -1165,7 +1178,7 @@
       "already_applied": "This playbook is already applied to this plant",
       "generation_failed": "Failed to generate tasks from playbook",
       "invalid_schema": "Invalid playbook format",
-      "noTasks": "No tasks found",
+      "no_tasks": "No tasks found",
       "not_found": "Playbook not found",
       "status": {
         "completed": "✓ Completed",
@@ -1174,7 +1187,7 @@
       },
       "title": "Playbook Error"
     },
-    "postLoad": "Error loading post",
+    "post_load": "Error loading post",
     "recovery": {
       "check_connection": "Check your internet connection",
       "disable_battery_optimization": "Disable battery optimization for this app in Settings",
@@ -1222,38 +1235,38 @@
     "unknown_title": "Error"
   },
   "feed": {
-    "addPost": {
-      "addPhoto": "Add Photo",
-      "capturePhoto": "Take Photo",
-      "contentLabel": "Content",
-      "contentPlaceholder": "Share your thoughts...",
-      "publishButton": "Publish Post",
-      "removePhoto": "Remove Photo",
-      "removePhotoHint": "Remove this photo from your post",
-      "selectPhoto": "Choose from Library",
-      "selectStrain": "Select Strain",
-      "strainHint": "Tag your post with a strain",
-      "strainLabel": "Strain (optional)",
+    "add_post": {
+      "add_photo": "[EN] Foto hinzufügen",
+      "capture_photo": "[EN] Foto aufnehmen",
+      "content_label": "[EN] Inhalt",
+      "content_placeholder": "[EN] Teile deine Gedanken...",
+      "publish_button": "[EN] Beitrag veröffentlichen",
+      "remove_photo": "[EN] Foto entfernen",
+      "remove_photo_hint": "[EN] Dieses Foto aus deinem Beitrag entfernen",
+      "select_photo": "[EN] Aus Mediathek wählen",
+      "select_strain": "[EN] Sorte auswählen",
+      "strain_hint": "[EN] Tagge deinen Beitrag mit einer Sorte",
+      "strain_label": "[EN] Sorte (optional)",
       "title": "Create Post",
-      "titleLabel": "Title",
-      "titlePlaceholder": "Give your post a title..."
+      "title_label": "[EN] Titel",
+      "title_placeholder": "[EN] Gib deinem Beitrag einen Titel..."
     },
-    "attachmentImageHint": "Photo attached to the post",
-    "prefilledImages": "Prefilled images",
+    "attachment_image_hint": "Photo attached to the post",
+    "prefilled_images": "Prefilled images",
     "title": "Feed"
   },
   "harvest": {
     "accessibility": {
-      "cancelButton": "Cancel and close modal",
-      "cancelHint": "Discard changes and close the harvest modal",
-      "dryWeightInput": "Dry weight input",
-      "notesHint": "Optional notes field for additional harvest details",
-      "notesInput": "Notes input",
-      "submitButton": "Save harvest data",
-      "submitHint": "Save the harvest data to your plant record",
-      "trimmingsWeightInput": "Trimmings weight input",
-      "unitToggle": "Toggle between grams and ounces",
-      "wetWeightInput": "Wet weight input"
+      "cancel_button": "Cancel and close modal",
+      "cancel_hint": "Discard changes and close the harvest modal",
+      "dry_weight_input": "Dry weight input",
+      "notes_hint": "Optional notes field for additional harvest details",
+      "notes_input": "Notes input",
+      "submit_button": "Save harvest data",
+      "submit_hint": "Save the harvest data to your plant record",
+      "trimmings_weight_input": "Trimmings weight input",
+      "unit_toggle": "Toggle between grams and ounces",
+      "wet_weight_input": "Wet weight input"
     },
     "actions": {
       "advance": "Advance to {{stage}}",
@@ -1268,26 +1281,26 @@
     },
     "chart": {
       "empty": {
-        "createButton": "Create First Harvest",
+        "create_button": "Create First Harvest",
         "filtered": "No Data Found",
-        "filteredGuidance": "Try adjusting your filters to see harvest data.",
-        "noData": "No Harvest Data Yet",
-        "noDataGuidance": "Start your first harvest to see weight progression over time."
+        "filtered_guidance": "Try adjusting your filters to see harvest data.",
+        "no_data": "No Harvest Data Yet",
+        "no_data_guidance": "Start your first harvest to see weight progression over time."
       },
       "error": {
-        "renderFailed": "Chart rendering failed",
-        "showTable": "Show table view"
+        "render_failed": "Chart rendering failed",
+        "show_table": "Show table view"
       },
       "filters": {
-        "batchView": "Batch View",
-        "individualView": "Individual View"
+        "batch_view": "Batch View",
+        "individual_view": "Individual View"
       },
       "table": {
         "date": "Date",
         "stage": "Stage",
         "weight": "Weight"
       },
-      "timeRange": {
+      "time_range": {
         "30d": "Last 30 days",
         "365d": "Last year",
         "7d": "Last 7 days",
@@ -1310,67 +1323,67 @@
       "hour": "1 hour",
       "hours": "{{count}} hours"
     },
-    "edgeCase": {
-      "clockSkew": {
+    "edge_case": {
+      "clock_skew": {
         "description": "Your device clock differs significantly from the server. This may affect sync reliability.",
         "ignore": "Ignore for Now",
-        "syncTime": "Sync Device Time",
+        "sync_time": "Sync Device Time",
         "title": "Device Time Mismatch"
       },
       "duration": {
-        "adjustDate": "Adjust Date",
+        "adjust_date": "Adjust Date",
         "continue": "Continue Anyway",
         "dismiss": "Dismiss"
       },
-      "durationTooLong": {
+      "duration_too_long": {
         "description": "This stage has exceeded the recommended duration. You may want to review the conditions.",
         "title": "Stage Duration Extended"
       },
-      "durationTooShort": {
+      "duration_too_short": {
         "description": "This stage is shorter than recommended. Continuing may affect quality.",
         "title": "Stage Duration Too Short"
       },
-      "invalidTimestamps": {
+      "invalid_timestamps": {
         "description": "The stage completion date cannot be before the start date. Please correct the dates.",
         "dismiss": "Cancel",
-        "fixDates": "Fix Dates",
+        "fix_dates": "Fix Dates",
         "title": "Invalid Dates"
       },
-      "invalidWeightRatio": {
+      "invalid_weight_ratio": {
         "description": "Dry weight cannot exceed wet weight. Please check your measurements.",
         "dismiss": "Cancel",
-        "fixWeights": "Fix Weights",
+        "fix_weights": "Fix Weights",
         "title": "Invalid Weight Ratio"
       },
-      "missingDryWeight": {
-        "addWeight": "Add Dry Weight",
+      "missing_dry_weight": {
+        "add_weight": "Add Dry Weight",
         "description": "You must enter a dry weight before completing the curing stage and recording the final yield.",
         "dismiss": "Go Back",
         "title": "Dry Weight Required"
       },
-      "overlappingHarvests": {
-        "closeOther": "Close Other Harvest",
+      "overlapping_harvests": {
+        "close_other": "Close Other Harvest",
         "description": "This plant already has an open harvest. Close the existing harvest or provide a reason to override.",
         "override": "Override & Continue",
         "title": "Overlapping Harvests Detected",
-        "viewExisting": "View Existing Harvests"
+        "view_existing": "View Existing Harvests"
       },
-      "storageFull": {
-        "continueWithout": "Continue Without Photos",
+      "storage_full": {
+        "continue_without": "Continue Without Photos",
         "description": "Photo storage is running low. You can free up space or continue without photos.",
         "dismiss": "Cancel",
-        "freeSpace": "Free Up Space",
+        "free_space": "Free Up Space",
         "title": "Storage Nearly Full"
       },
-      "syncConflict": {
+      "sync_conflict": {
         "description": "This harvest was updated on another device. The latest version has been applied.",
         "dismiss": "Dismiss",
         "title": "Updated Elsewhere",
-        "viewChanges": "View Details"
+        "view_changes": "View Details"
       }
     },
     "error": {
-      "createFailed": "Failed to create harvest. Please try again."
+      "create_failed": "Failed to create harvest. Please try again."
     },
     "errors": {
       "actions": {
@@ -1403,22 +1416,22 @@
       "undo_expired": "Undo window expired. Use Revert Stage instead.",
       "validation": {
         "description": "Please correct the errors below and try again.",
-        "strainNameRequired": "Strain name is required",
+        "strain_name_required": "Strain name is required",
         "title": "Validation Error"
       }
     },
     "history": {
       "accessibility": {
-        "emptyCreate": "Create a new harvest",
-        "emptyCreateHint": "Double-tap to create a new harvest",
+        "empty_create": "Create a new harvest",
+        "empty_create_hint": "Double-tap to create a new harvest",
         "list": "Harvest history list",
-        "listHint": "Scrollable list of harvest records",
-        "rowHint": "Double-tap to open harvest details",
+        "list_hint": "Scrollable list of harvest records",
+        "row_hint": "Double-tap to open harvest details",
         "summary": "Harvest history empty state",
-        "summaryHint": "No harvests found"
+        "summary_hint": "No harvests found"
       },
       "actions": {
-        "clearFilters": "Clear filters",
+        "clear_filters": "Clear filters",
         "create": "Create harvest"
       },
       "empty": {
@@ -1437,9 +1450,9 @@
       },
       "list": {
         "conflict_badge": "Needs review",
-        "rowLabel": "Harvest in {{stage}} stage, updated {{time}}",
-        "rowLabelConflict": ", needs review",
-        "rowLabelWeight": ", dry weight {{weight}} grams",
+        "row_label": "Harvest in {{stage}} stage, updated {{time}}",
+        "row_label_conflict": ", needs review",
+        "row_label_weight": ", dry weight {{weight}} grams",
         "updated": "Updated {{relativeTime}}",
         "weight": "Dry weight: {{weight}} g"
       },
@@ -1462,13 +1475,13 @@
       "batches_title": "Batches",
       "category": "Category",
       "charts": {
-        "consumptionNote": "Based on recorded outbound movements",
-        "consumptionTrend": "Consumption Trend",
-        "costTrend": "Cost Trend",
-        "costTrendNote": "Total cost across all categories",
+        "consumption_note": "Based on recorded outbound movements",
+        "consumption_trend": "Consumption Trend",
+        "cost_trend": "Cost Trend",
+        "cost_trend_note": "Total cost across all categories",
         "monthly": "Monthly",
-        "noConsumptionData": "No consumption data available yet",
-        "noCostData": "No cost data available yet",
+        "no_consumption_data": "No consumption data available yet",
+        "no_cost_data": "No cost data available yet",
         "total": "Total",
         "weekly": "Weekly ({{unit}})"
       },
@@ -1498,16 +1511,16 @@
       "finalize_curing": "Complete Curing & Record Final Yield",
       "finalize_success_toast": "Curing completed and final yield recorded successfully",
       "forecast": {
-        "basedOnUsagePattern": "Based on your usage pattern",
-        "highConfidence": "High",
-        "inDays": "In {{days}} days",
-        "lowConfidence": "Low",
-        "lowConfidenceNote": "Limited data available. Forecast accuracy will improve with more usage history.",
-        "mediumConfidence": "Medium",
-        "recommendedQuantity": "Recommended quantity",
-        "reorderNow": "Reorder now",
-        "reorderRecommendation": "Reorder Recommendation",
-        "timeToReorder": "Time to reorder"
+        "based_on_usage_pattern": "Based on your usage pattern",
+        "high_confidence": "High",
+        "in_days": "In {{days}} days",
+        "low_confidence": "Low",
+        "low_confidence_note": "Limited data available. Forecast accuracy will improve with more usage history.",
+        "medium_confidence": "Medium",
+        "recommended_quantity": "Recommended quantity",
+        "reorder_now": "Reorder now",
+        "reorder_recommendation": "Reorder Recommendation",
+        "time_to_reorder": "Time to reorder"
       },
       "form": {
         "barcode": "Barcode",
@@ -1527,17 +1540,17 @@
         "unit": "Unit of Measure",
         "unit_placeholder": "e.g., L, ml, g, kg",
         "validation": {
-          "categoryRequired": "Category is required",
-          "leadTimePositive": "Lead time must be positive",
-          "minStockPositive": "Minimum stock must be positive",
-          "minStockRequired": "Minimum stock is required",
-          "nameMaxLength": "Name must be less than 100 characters",
-          "nameRequired": "Name is required",
-          "reorderMultipleMin": "Reorder multiple must be at least 1",
-          "reorderMultipleRequired": "Reorder multiple is required",
-          "trackingModeRequired": "Tracking mode is required",
-          "unitMaxLength": "Unit must be less than 20 characters",
-          "unitRequired": "Unit is required"
+          "category_required": "Category is required",
+          "lead_time_positive": "Lead time must be positive",
+          "min_stock_positive": "Minimum stock must be positive",
+          "min_stock_required": "Minimum stock is required",
+          "name_max_length": "Name must be less than 100 characters",
+          "name_required": "Name is required",
+          "reorder_multiple_min": "Reorder multiple must be at least 1",
+          "reorder_multiple_required": "Reorder multiple is required",
+          "tracking_mode_required": "Tracking mode is required",
+          "unit_max_length": "Unit must be less than 20 characters",
+          "unit_required": "Unit is required"
         }
       },
       "item_detail": "Item Details",
@@ -1550,6 +1563,12 @@
       "no_batches": "No batches available",
       "offline_description": "Viewing cached data. Changes will sync when you're back online.",
       "permissions": {
+        "exact_alarm": {
+          "fallback_body": "[EN] Exakte Alarm-Berechtigung wurde verweigert. Lagerbestandswarnungen können verzögert sein.",
+          "fallback_title": "[EN] Benachrichtigungs-Timing geändert",
+          "open_settings": "[EN] Einstellungen öffnen",
+          "open_settings_hint": "[EN] Gehe zu App-Einstellungen, um exakte Alarme zu aktivieren"
+        },
         "exact_alarm_benefits": "Enable precise low-stock alerts to reorder supplies on time and avoid running out.",
         "exact_alarm_description": "GrowBro needs permission to schedule exact alarms for timely low-stock notifications. This ensures you're alerted when supplies are running low.",
         "exact_alarm_title": "Enable Precise Notifications",
@@ -1567,17 +1586,17 @@
     },
     "modal": {
       "cancel": "Cancel",
-      "dryWeight": "Dry Weight",
+      "dry_weight": "Dry Weight",
       "notes": "Notes",
-      "notesPlaceholder": "Add notes about this harvest...",
+      "notes_placeholder": "Add notes about this harvest...",
       "photos": "Photos",
       "submit": "Save Harvest",
       "submitting": "Saving...",
       "subtitle": "Enter harvest details and weights",
       "title": "Record Harvest",
-      "trimmingsWeight": "Trimmings Weight",
-      "unitToggle": "Unit",
-      "wetWeight": "Wet Weight"
+      "trimmings_weight": "Trimmings Weight",
+      "unit_toggle": "Unit",
+      "wet_weight": "Wet Weight"
     },
     "modals": {
       "override": {
@@ -1612,18 +1631,18 @@
       }
     },
     "permissions": {
-      "exactAlarm": {
-        "errorMessage": "Unable to request permission. Please try again.",
-        "errorTitle": "Permission Error",
-        "fallbackBody": "Enable exact alarms in Settings for immediate low-stock alerts.",
-        "fallbackTitle": "Notifications may be delayed",
-        "grantButton": "Enable Notifications",
-        "ifDeniedBody": "Notifications may be delayed by up to 15 minutes. You'll still receive alerts, just not immediately.",
-        "ifDeniedTitle": "If you skip this",
-        "openSettings": "Open Settings",
+      "exact_alarm": {
+        "error_message": "Unable to request permission. Please try again.",
+        "error_title": "Permission Error",
+        "fallback_body": "Enable exact alarms in Settings for immediate low-stock alerts.",
+        "fallback_title": "Notifications may be delayed",
+        "grant_button": "Enable Notifications",
+        "if_denied_body": "Notifications may be delayed by up to 15 minutes. You'll still receive alerts, just not immediately.",
+        "if_denied_title": "If you skip this",
+        "open_settings": "Open Settings",
         "title": "Enable Timely Notifications",
-        "whyNeededBody": "Exact alarms ensure you're notified the moment supplies run low, so you can reorder before running out.",
-        "whyNeededTitle": "Why this matters"
+        "why_needed_body": "Exact alarms ensure you're notified the moment supplies run low, so you can reorder before running out.",
+        "why_needed_title": "Why this matters"
       }
     },
     "photo": {
@@ -1727,9 +1746,9 @@
     },
     "units": {
       "grams": "g",
-      "gramsLong": "Grams",
+      "grams_long": "Grams",
       "ounces": "oz",
-      "ouncesLong": "Ounces"
+      "ounces_long": "Ounces"
     }
   },
   "home": {
@@ -1821,12 +1840,12 @@
       "unit": "Unit of Measure",
       "unit_placeholder": "e.g., ml, g, pcs",
       "validation": {
-        "minStockPositive": "Minimum stock must be 0 or greater",
-        "nameMaxLength": "Name must be 100 characters or less",
-        "nameRequired": "Name is required",
-        "reorderMultipleMin": "Reorder multiple must be at least 1",
-        "unitMaxLength": "Unit must be 20 characters or less",
-        "unitRequired": "Unit is required"
+        "min_stock_positive": "Minimum stock must be 0 or greater",
+        "name_max_length": "Name must be 100 characters or less",
+        "name_required": "Name is required",
+        "reorder_multiple_min": "Reorder multiple must be at least 1",
+        "unit_max_length": "Unit must be 20 characters or less",
+        "unit_required": "Unit is required"
       }
     }
   },
@@ -1849,13 +1868,13 @@
       "title": "Audit Trail"
     },
     "authentication_required": "Authentication required to perform this action",
-    "avgAccuracy": "Avg Accuracy",
-    "avgResponse": "Avg Response",
+    "avg_accuracy": "Avg Accuracy",
+    "avg_response": "Avg Response",
     "block": "Block",
     "block_failed": "Failed to block user. Please try again.",
     "delete": "Delete",
     "delete_failed": "Failed to delete content. Please try again.",
-    "filterPriority": "Filter by Priority",
+    "filter_priority": "Filter by Priority",
     "filters": {
       "priority": {
         "all": "All",
@@ -1867,20 +1886,20 @@
     },
     "flagger": {
       "accuracy": "Accuracy",
-      "avgResponse": "Avg Response",
-      "falsePositive": "False Positive",
-      "idLabel": "ID:",
-      "lastReviewed": "Last reviewed: {{date}}",
+      "avg_response": "Avg Response",
+      "false_positive": "False Positive",
+      "id_label": "ID:",
+      "last_reviewed": "Last reviewed: {{date}}",
       "status": {
         "active": "ACTIVE",
         "suspended": "SUSPENDED",
         "warning": "WARNING"
       },
-      "thisMonth": "This Month",
-      "thisWeek": "This Week",
-      "totalReports": "Total Reports",
+      "this_month": "This Month",
+      "this_week": "This Week",
+      "total_reports": "Total Reports",
       "trend": "Trend",
-      "viewDetails": "View Details →"
+      "view_details": "View Details →"
     },
     "geo_restriction_notice": "{{count}} posts are not available in {{country}} due to regional restrictions.",
     "hide": "Hide",
@@ -1900,7 +1919,7 @@
       },
       "escalate": "Escalate",
       "loading": "Loading queue...",
-      "processAll": "Process All",
+      "process_all": "Process All",
       "title": "Moderation Queue"
     },
     "report": "Report",
@@ -1966,7 +1985,7 @@
       "success": "Report submitted successfully. Thank you for helping keep our community safe.",
       "title": "Report Content"
     },
-    "reportsPerMonth": "Reports/Month",
+    "reports_per_month": "Reports/Month",
     "sla": {
       "status": {
         "critical": "OVERDUE",
@@ -1977,40 +1996,40 @@
         "yellow": "Approaching"
       }
     },
-    "sorPreview": {
+    "sor_preview": {
       "fields": {
-        "aggregatedReportCount": "Aggregated Report Count",
-        "aggregatedReportCountSuppressed": "Suppressed (k-anonymity)",
-        "automatedDecision": "Automated Decision",
-        "automatedDetection": "Automated Detection",
-        "contentAge": "Content Age",
-        "contentType": "Content Type",
-        "createdAt": "Created At",
-        "decisionGround": "Decision Ground",
-        "evidenceType": "Evidence Type",
-        "factsAndCircumstances": "Facts & Circumstances",
-        "legalReference": "Legal Reference",
-        "legalReferenceNA": "N/A",
+        "aggregated_report_count": "Aggregated Report Count",
+        "aggregated_report_count_suppressed": "Suppressed (k-anonymity)",
+        "automated_decision": "Automated Decision",
+        "automated_detection": "Automated Detection",
+        "content_age": "Content Age",
+        "content_type": "Content Type",
+        "created_at": "Created At",
+        "decision_ground": "Decision Ground",
+        "evidence_type": "Evidence Type",
+        "facts_and_circumstances": "Facts & Circumstances",
+        "legal_reference": "Legal Reference",
+        "legal_reference_n_a": "N/A",
         "no": "No",
-        "pseudonymizedModerator": "Pseudonymized Moderator",
-        "pseudonymizedReporter": "Pseudonymized Reporter",
-        "redressOptions": "Redress Options",
-        "scrubbedAt": "Scrubbed At",
-        "scrubbingVersion": "Scrubbing Version",
-        "territorialScope": "Territorial Scope",
-        "territorialScopeGlobal": "Global",
+        "pseudonymized_moderator": "Pseudonymized Moderator",
+        "pseudonymized_reporter": "Pseudonymized Reporter",
+        "redress_options": "Redress Options",
+        "scrubbed_at": "Scrubbed At",
+        "scrubbing_version": "Scrubbing Version",
+        "territorial_scope": "Territorial Scope",
+        "territorial_scope_global": "Global",
         "yes": "Yes"
       },
-      "redactedSubtitle": "PII-scrubbed for Transparency DB (DSA Art. 24(5))",
-      "redactedTitle": "Redacted SoR (EC Submission)",
-      "userFacingSubtitle": "Delivered to user (DSA Art. 17)",
-      "userFacingTitle": "User-Facing SoR",
+      "redacted_subtitle": "PII-scrubbed for Transparency DB (DSA Art. 24(5))",
+      "redacted_title": "Redacted SoR (EC Submission)",
+      "user_facing_subtitle": "Delivered to user (DSA Art. 17)",
+      "user_facing_title": "User-Facing SoR",
       "validation": {
-        "noPiiDetected": "✓ No PII Detected",
-        "piiValidationFailed": "✗ PII Validation Failed"
+        "no_pii_detected": "✓ No PII Detected",
+        "pii_validation_failed": "✗ PII Validation Failed"
       }
     },
-    "totalFlaggers": "Total Flaggers",
+    "total_flaggers": "Total Flaggers",
     "transformed": "(transformed)",
     "unhide": "Unhide"
   },
@@ -2020,54 +2039,54 @@
     "post": "Post",
     "profile": "Profile"
   },
-  "notFound": {
+  "not_found": {
     "body": "This screen doesn't exist.",
-    "goHomeCta": "Go to home screen!",
+    "go_home_cta": "Go to home screen!",
     "title": "Oops!"
   },
   "notifications": {
     "actions": {
       "dismiss": "Dismiss",
-      "markDone": "Mark as done",
+      "mark_done": "Mark as done",
       "reply": "Reply",
-      "replyPlaceholder": "Type your reply…",
-      "replySubmit": "Send",
+      "reply_placeholder": "Type your reply…",
+      "reply_submit": "Send",
       "snooze": "Snooze",
-      "viewDetails": "View details",
-      "viewPost": "View post",
-      "viewProfile": "View profile"
+      "view_details": "View details",
+      "view_post": "View post",
+      "view_profile": "View profile"
     },
     "channels": {
-      "calibrationReminders": {
+      "calibration_reminders": {
         "description": "Reminders to recalibrate pH and EC meters for accurate measurements.",
         "name": "Calibration reminders"
       },
-      "communityInteractions": {
+      "community_interactions": {
         "description": "Replies, mentions, and moderation requests from the community.",
         "name": "Community interactions"
       },
-      "communityLikes": {
+      "community_likes": {
         "description": "Likes and reactions to your shared updates.",
         "name": "Community likes"
       },
-      "cultivationAlerts": {
+      "cultivation_alerts": {
         "description": "Immediate alerts when pH or EC readings are out of target range.",
         "name": "pH/EC Alerts"
       },
-      "cultivationReminders": {
+      "cultivation_reminders": {
         "description": "Task reminders and drying or curing alerts for your grow.",
         "name": "Grow reminders"
       },
-      "inventoryAlerts": {
+      "inventory_alerts": {
         "description": "Timely alerts when cultivation supplies are running low.",
         "name": "Inventory alerts"
       },
-      "systemUpdates": {
+      "system_updates": {
         "description": "Critical account notices, policy reminders, or security alerts.",
         "name": "System updates"
       }
     },
-    "exactAlarm": {
+    "exact_alarm": {
       "body": "Allow exact alarms so watering and feeding reminders fire exactly when scheduled.",
       "cta": "Open settings",
       "title": "Keep reminders on time"
@@ -2076,7 +2095,7 @@
       "archived": {
         "hide": "Hide archived",
         "show": "Show archived",
-        "toggleHint": "Toggles whether archived notifications are shown."
+        "toggle_hint": "Toggles whether archived notifications are shown."
       },
       "empty": {
         "all": {
@@ -2132,25 +2151,25 @@
     "atc_label": "Temperature Compensated (ATC)",
     "cal_stale_warning": "Calibration may be stale",
     "chart": {
-      "eventMarkersNote": "{{count}} event markers shown",
-      "noData": "No readings yet",
-      "startLogging": "Start logging pH/EC measurements to see trends"
+      "event_markers_note": "{{count}} event markers shown",
+      "no_data": "No readings yet",
+      "start_logging": "Start logging pH/EC measurements to see trends"
     },
-    "createTemplate": "Create Template",
+    "create_template": "Create Template",
     "diagnostics": {
       "actions": {
-        "N_DEFICIENCY_FEED": "Increase nitrogen feed",
-        "N_DEFICIENCY_MONITOR": "Retest in 48 hours",
-        "PH_DRIFT_BUFFER": "Buffer source water",
-        "PH_DRIFT_MONITOR": "Increase monitoring",
-        "TOXICITY_DILUTE": "Dilute reservoir",
-        "TOXICITY_MONITOR": "Retest in 12 hours"
+        "_n__d_e_f_i_c_i_e_n_c_y__f_e_e_d": "Increase nitrogen feed",
+        "_n__d_e_f_i_c_i_e_n_c_y__m_o_n_i_t_o_r": "Retest in 48 hours",
+        "_p_h__d_r_i_f_t__b_u_f_f_e_r": "Buffer source water",
+        "_p_h__d_r_i_f_t__m_o_n_i_t_o_r": "Increase monitoring",
+        "_t_o_x_i_c_i_t_y__d_i_l_u_t_e": "Dilute reservoir",
+        "_t_o_x_i_c_i_t_y__m_o_n_i_t_o_r": "Retest in 12 hours"
       },
-      "aiConfidence": "AI-based",
+      "ai_confidence": "AI-based",
       "causes": {
-        "highAlkalinity": "High source water alkalinity driving pH drift",
-        "insufficientNitrogen": "Recent feedings lacked available nitrogen",
-        "solutionTooStrong": "Nutrient solution too concentrated"
+        "high_alkalinity": "High source water alkalinity driving pH drift",
+        "insufficient_nitrogen": "Recent feedings lacked available nitrogen",
+        "solution_too_strong": "Nutrient solution too concentrated"
       },
       "community": {
         "classification": "Issue detected",
@@ -2160,42 +2179,42 @@
         "recommendations": "Suggested actions:",
         "symptoms": "Symptoms:"
       },
-      "confidenceBreakdown": "Confidence Breakdown",
+      "confidence_breakdown": "Confidence Breakdown",
       "disclaimers": {
-        "aiOnlyPrimary": "Advice is AI-generated. Cross-check with manual readings or community feedback.",
-        "considerSecondOpinion": "Confidence is limited. Consider getting a second opinion from the community.",
-        "lowConfidence": "Confidence is below the safety threshold.",
+        "ai_only_primary": "Advice is AI-generated. Cross-check with manual readings or community feedback.",
+        "consider_second_opinion": "Confidence is limited. Consider getting a second opinion from the community.",
+        "low_confidence": "Confidence is below the safety threshold.",
         "title": "⚠️ Disclaimers"
       },
-      "feedbackQuestion": "Was this diagnostic helpful?",
-      "feedbackThanks": "Thanks for your feedback!",
-      "getSecondOpinion": "Get Second Opinion from Community",
+      "feedback_question": "Was this diagnostic helpful?",
+      "feedback_thanks": "Thanks for your feedback!",
+      "get_second_opinion": "Get Second Opinion from Community",
       "helpful": "Helpful",
-      "issueTypes": {
+      "issue_types": {
         "deficiency": "Nutrient Deficiency",
         "lockout": "Nutrient Lockout",
         "ph_drift": "pH Drift",
         "toxicity": "Nutrient Toxicity"
       },
-      "notHelpful": "Not Helpful",
+      "not_helpful": "Not Helpful",
       "nutrient": "Nutrient",
-      "priorityHigh": "High Priority",
+      "priority_high": "High Priority",
       "rationale": {
-        "aiBelowThreshold": "AI hypothesis below override threshold; retaining rule-based guidance.",
-        "ecAboveTarget": "EC trend is above the reservoir target range.",
-        "ecBelowTarget": "EC trend is below the reservoir target range.",
-        "highAlkalinity": "Source water alkalinity is high.",
-        "phPersistentlyHigh": "pH has remained above the reservoir target band.",
-        "tipBurnObserved": "Tip burn symptoms detected.",
+        "ai_below_threshold": "AI hypothesis below override threshold; retaining rule-based guidance.",
+        "ec_above_target": "EC trend is above the reservoir target range.",
+        "ec_below_target": "EC trend is below the reservoir target range.",
+        "high_alkalinity": "Source water alkalinity is high.",
+        "ph_persistently_high": "pH has remained above the reservoir target band.",
+        "tip_burn_observed": "Tip burn symptoms detected.",
         "title": "💡 Rationale",
-        "yellowingLowerLeaves": "Yellowing observed on lower leaves."
+        "yellowing_lower_leaves": "Yellowing observed on lower leaves."
       },
       "recommendations": {
-        "bufferAlkalinity": "Add a buffer to neutralize source water alkalinity.",
-        "diluteReservoir": "Dilute the reservoir with balanced water to lower EC.",
-        "increaseMonitoring": "Increase pH/EC monitoring until readings stabilize.",
+        "buffer_alkalinity": "Add a buffer to neutralize source water alkalinity.",
+        "dilute_reservoir": "Dilute the reservoir with balanced water to lower EC.",
+        "increase_monitoring": "Increase pH/EC monitoring until readings stabilize.",
         "monitor48h": "Retest after 48 hours to confirm recovery.",
-        "nitrogenFeed": "Increase nitrogen inputs according to the deficiency playbook.",
+        "nitrogen_feed": "Increase nitrogen inputs according to the deficiency playbook.",
         "retest12h": "Retest in 12 hours to verify corrections.",
         "title": "Recommendations"
       },
@@ -2203,12 +2222,12 @@
         "cancel": "Cancel",
         "description": "Record how you addressed this diagnostic issue. This helps improve future recommendations.",
         "error": "Failed to mark as resolved. Please try again.",
-        "notesLabel": "Resolution Notes (optional)",
-        "notesPlaceholder": "What did you do to fix this? What worked?",
+        "notes_label": "Resolution Notes (optional)",
+        "notes_placeholder": "What did you do to fix this? What worked?",
         "resolve": "Mark Resolved",
         "title": "Mark as Resolved"
       },
-      "rulesConfidence": "Rules-based",
+      "rules_confidence": "Rules-based",
       "severity": {
         "mild": "Mild",
         "moderate": "Moderate",
@@ -2217,28 +2236,28 @@
       "threshold": "Override threshold"
     },
     "ec": "EC",
-    "ecTrend": "EC Trend",
     "ec_at_temp": "EC@{{temp}}°C",
     "ec_label": "EC",
+    "ec_trend": "EC Trend",
     "event": {
-      "ecDelta": "EC Change",
-      "ecDeltaHint": "Expected EC change after this event",
-      "logEvent": "Log Event",
+      "ec_delta": "EC Change",
+      "ec_delta_hint": "Expected EC change after this event",
+      "log_event": "Log Event",
       "note": "Notes",
-      "notePlaceholder": "Add notes about this event...",
-      "phDelta": "pH Change",
-      "phDeltaHint": "Expected pH change after this event",
+      "note_placeholder": "Add notes about this event...",
+      "ph_delta": "pH Change",
+      "ph_delta_hint": "Expected pH change after this event",
       "type": "Event Type"
     },
-    "eventTypes": {
-      "addNutrient": "Add Nutrient",
+    "event_types": {
+      "add_nutrient": "Add Nutrient",
       "change": "Reservoir Change",
       "dilute": "Dilute",
       "fill": "Fill",
-      "phDown": "pH Down",
-      "phUp": "pH Up"
+      "ph_down": "pH Down",
+      "ph_up": "pH Up"
     },
-    "feedingTemplates": "Feeding Templates",
+    "feeding_templates": "Feeding Templates",
     "loading_readings": "Loading readings...",
     "medium": {
       "coco": "Coco",
@@ -2246,96 +2265,90 @@
       "soil": "Soil",
       "soilless": "Soilless"
     },
-    "mediumOptions": {
+    "medium_options": {
       "coco": "Coco",
       "hydro": "Hydro",
       "peat": "Peat",
       "soil": "Soil",
       "soilless": "Soilless"
     },
-    "noTemplatesFound": "No templates found",
     "no_atc_warning": "No ATC (Automatic Temperature Compensation)",
     "no_events_description": "Start logging reservoir events to track your changes",
     "no_events_title": "No Events Recorded",
     "no_readings": "No readings available",
+    "no_templates_found": "No templates found",
     "notes": "Notes",
     "performance_report": "Performance Report",
     "ph": "pH",
-    "phTrend": "pH Trend",
+    "ph_trend": "pH Trend",
     "ppm": "PPM",
     "ppm_scale_label": "PPM Scale",
-    "publishPrivately": "Publish privately",
+    "publish_privately": "Publish privately",
     "reservoir": {
       "max": "Max",
       "medium": "Growing Medium",
       "min": "Min",
       "name": "Reservoir Name",
-      "namePlaceholder": "e.g., Main Tank",
-      "noReservoirs": "No reservoirs configured",
-      "selectReservoir": "Select Reservoir",
-      "targetEc": "Target EC Range",
-      "targetPh": "Target pH Range",
+      "name_placeholder": "e.g., Main Tank",
+      "no_reservoirs": "No reservoirs configured",
+      "select_reservoir": "Select Reservoir",
+      "target_ec": "Target EC Range",
+      "target_ph": "Target pH Range",
       "validation": {
-        "ecMaxGreaterThanMin": "Maximum EC must be greater than minimum EC",
-        "ecMinLessThanMax": "Minimum EC must be less than maximum EC",
-        "nameRequired": "Reservoir name is required",
-        "phMaxGreaterThanMin": "Maximum pH must be greater than minimum pH",
-        "phMinLessThanMax": "Minimum pH must be less than maximum pH"
+        "ec_max_greater_than_min": "Maximum EC must be greater than minimum EC",
+        "ec_min_less_than_max": "Minimum EC must be less than maximum EC",
+        "name_required": "Reservoir name is required",
+        "ph_max_greater_than_min": "Maximum pH must be greater than minimum pH",
+        "ph_min_less_than_max": "Minimum pH must be less than maximum pH"
       },
       "volume": "Volume (L)"
     },
-    "saveStrainProfile": "Save Strain Profile",
     "save_reading": "Save Reading",
+    "save_strain_profile": "Save Strain Profile",
     "start_logging_ph_ec": "Start logging pH/EC measurements",
-    "strainName": "Strain Name",
-    "strainNamePlaceholder": "Enter a name for your strain profile",
-    "strainNotesPlaceholder": "Add notes about your strain profile...",
-    "strainProfileDescription": "Save your custom nutrient settings as a strain profile for future use.",
-    "targetMax": "Max",
-    "targetMin": "Min",
-    "targetRange": "Target",
-    "targetRanges": "Target Ranges",
+    "strain_name": "Strain Name",
+    "strain_name_placeholder": "Enter a name for your strain profile",
+    "strain_notes_placeholder": "Add notes about your strain profile...",
+    "strain_profile_description": "Save your custom nutrient settings as a strain profile for future use.",
+    "target_max": "Max",
+    "target_min": "Min",
+    "target_range": "Target",
+    "target_ranges": "Target Ranges",
     "temp_high_warning": "Temperature too high",
-    "templatesDescription": "Manage and create feeding templates for your nutrient schedules",
-    "timeRange": {
-      "30days": "30 Days",
-      "7days": "7 Days",
-      "90days": "90 Days",
-      "all": "All Time"
-    },
+    "templates_description": "Manage and create feeding templates for your nutrient schedules",
     "time_range": "Time Range",
     "validation": {
-      "ecInvalidType": "EC must be a number",
-      "ecMax": "EC must be {{max}} or less",
-      "ecMin": "EC must be at least {{min}}",
-      "ecRequired": "EC is required",
-      "noteMaxLength": "Note must be {{max}} characters or less",
-      "phInvalidType": "pH must be a number",
-      "phMax": "pH must be {{max}} or less",
-      "phMin": "pH must be at least {{min}}",
-      "phRequired": "pH is required",
-      "ppmScaleInvalid": "Invalid PPM scale",
-      "ppmScaleRequired": "PPM scale is required",
-      "tempInvalidType": "Temperature must be a number",
-      "tempMax": "Temperature must be {{max}} or less",
-      "tempMin": "Temperature must be at least {{min}}",
-      "tempRequired": "Temperature is required"
+      "ec_invalid_type": "EC must be a number",
+      "ec_max": "EC must be {{max}} or less",
+      "ec_min": "EC must be at least {{min}}",
+      "ec_required": "EC is required",
+      "note_max_length": "Note must be {{max}} characters or less",
+      "ph_invalid_type": "pH must be a number",
+      "ph_max": "pH must be {{max}} or less",
+      "ph_min": "pH must be at least {{min}}",
+      "ph_required": "pH is required",
+      "ppm_scale_invalid": "Invalid PPM scale",
+      "ppm_scale_required": "PPM scale is required",
+      "temp_invalid_type": "Temperature must be a number",
+      "temp_max": "Temperature must be {{max}} or less",
+      "temp_min": "Temperature must be at least {{min}}",
+      "temp_required": "Temperature is required"
     },
-    "viewChart": "Chart",
-    "viewList": "List",
-    "waterProfile": {
+    "view_chart": "Chart",
+    "view_list": "List",
+    "water_profile": {
       "form": {
         "alkalinity": "Alkalinity (ppm CaCO3)",
-        "alkalinityHelper": "Measures carbonate buffering capacity",
-        "baselineEc": "Baseline EC (mS/cm)",
-        "baselineEcHelper": "EC of your source water before adding nutrients",
-        "educationalNote": "ℹ️ These values help optimize nutrient recommendations for your water source",
+        "alkalinity_helper": "Measures carbonate buffering capacity",
+        "baseline_ec": "Baseline EC (mS/cm)",
+        "baseline_ec_helper": "EC of your source water before adding nutrients",
+        "educational_note": "ℹ️ These values help optimize nutrient recommendations for your water source",
         "hardness": "Total Hardness (ppm)",
-        "hardnessHelper": "Calcium and magnesium content",
+        "hardness_helper": "Calcium and magnesium content",
         "name": "Profile Name",
-        "namePlaceholder": "e.g., City Water",
+        "name_placeholder": "e.g., City Water",
         "validation": {
-          "nameRequired": "Profile name is required"
+          "name_required": "Profile name is required"
         }
       },
       "title": "Water Profile"
@@ -2371,28 +2384,28 @@
     "pager_accessibility_label": "Onboarding slides. Swipe left to continue, or use Skip button to finish.",
     "permissions": {
       "allow": "Allow",
-      "allowHint": "Grants permission for this feature",
+      "allow_hint": "Grants permission for this feature",
       "camera": {
         "benefit1": "Use AI photo assessment to diagnose plant health issues",
         "benefit2": "Track harvest progress with photos during drying and curing",
         "benefit3": "Share photos with the community for advice and support",
-        "deniedMessage": "To use photo features, please enable camera and photo library access in Settings.",
-        "deniedTitle": "Permission Required",
+        "denied_message": "To use photo features, please enable camera and photo library access in Settings.",
+        "denied_title": "Permission Required",
         "description": "GrowBro uses your camera to help you track plant health and document your grow journey.",
         "title": "Photos & Camera"
       },
-      "notNow": "Not now",
-      "notNowHint": "Skips this permission. You can enable it later in settings.",
+      "not_now": "Not now",
+      "not_now_hint": "Skips this permission. You can enable it later in settings.",
       "notifications": {
         "benefit1": "Get timely reminders for watering, feeding, and other tasks",
         "benefit2": "Never miss critical harvest timing windows",
         "benefit3": "Receive alerts for nutrient deficiencies and monitoring needs",
-        "deniedMessage": "To receive task reminders, please enable notifications in Settings.",
-        "deniedTitle": "Notifications Disabled",
+        "denied_message": "To receive task reminders, please enable notifications in Settings.",
+        "denied_title": "Notifications Disabled",
         "description": "Stay on track with your grow schedule. The app remains fully functional without notifications.",
         "title": "Stay on Schedule"
       },
-      "privacyNote": "You can change these permissions anytime in Settings. The app works without them."
+      "privacy_note": "You can change these permissions anytime in Settings. The app works without them."
     },
     "skip": "Skip",
     "welcome": {
@@ -2414,12 +2427,12 @@
   },
   "plants": {
     "add_plant": "Add plant",
-    "assessmentHistory": {
+    "assessment_history": {
       "count_one": "{{count}} assessment",
       "count_other": "{{count}} assessments",
       "count_zero": "No assessments yet",
       "empty": "No assessments yet",
-      "emptyDescription": "Use the AI assessment tool to analyze plant health",
+      "empty_description": "Use the AI assessment tool to analyze plant health",
       "title": "Assessment History"
     },
     "card": {
@@ -2439,8 +2452,8 @@
       "progress_label": "complete",
       "water_action": "Water"
     },
-    "completionProgress": {
-      "percentComplete": "{{percent}}% Complete"
+    "completion_progress": {
+      "percent_complete": "{{percent}}% Complete"
     },
     "detail": {
       "action_hub_title": "Today's Tasks",
@@ -2581,50 +2594,50 @@
   },
   "playbooks": {
     "accessibility": {
-      "adoptTemplate": "Adopt community template",
-      "applyPlaybook": "Apply {{name}} growbook to plant",
-      "logTrichomeCheck": "Log trichome check",
-      "phaseProgress": "{{phase}} phase, {{status}}, {{completed}} of {{{total}}} tasks completed",
-      "playbookCard": "{{name}} growbook, {{setup}} setup, {{weeks}} weeks, {{tasks}} tasks",
-      "selectPlantHint": "Double tap to select this plant",
-      "shareTemplate": "Share template with community",
-      "shiftSchedule": "Shift schedule",
-      "shiftScheduleHint": "Shifts all tasks {{direction}} by {{days}} {{daysUnit}}",
-      "taskItem": "{{title}}, due {{date}}, {{status}}{{reminder}}",
-      "taskItemWithReminder": ", has reminder",
-      "trichomeAssessment": "Trichome assessment: {{clear}}% clear, {{milky}}% milky, {{amber}}% amber. Recommendation: {{recommendation}}",
-      "undoShift": "Undo schedule shift"
+      "adopt_template": "Adopt community template",
+      "apply_playbook": "Apply {{name}} growbook to plant",
+      "log_trichome_check": "Log trichome check",
+      "phase_progress": "{{phase}} phase, {{status}}, {{completed}} of {{{total}}} tasks completed",
+      "playbook_card": "{{name}} growbook, {{setup}} setup, {{weeks}} weeks, {{tasks}} tasks",
+      "select_plant_hint": "Double tap to select this plant",
+      "share_template": "Share template with community",
+      "shift_schedule": "Shift schedule",
+      "shift_schedule_hint": "Shifts all tasks {{direction}} by {{days}} {{daysUnit}}",
+      "task_item": "{{title}}, due {{date}}, {{status}}{{reminder}}",
+      "task_item_with_reminder": ", has reminder",
+      "trichome_assessment": "Trichome assessment: {{clear}}% clear, {{milky}}% milky, {{amber}}% amber. Recommendation: {{recommendation}}",
+      "undo_shift": "Undo schedule shift"
     },
     "activities": "Activities",
     "adjustments": {
       "confidence": "{{percent}}% confidence",
       "disclaimer": "AI suggestion • Educational, not professional advice",
-      "scheduleAdjustment": "💡 Schedule Adjustment",
-      "tasksAffected_one": "{{count}} task affected",
-      "tasksAffected_other": "{{count}} tasks affected",
-      "viewDetails": "View Details"
+      "schedule_adjustment": "💡 Schedule Adjustment",
+      "tasks_affected_one": "{{count}} task affected",
+      "tasks_affected_other": "{{count}} tasks affected",
+      "view_details": "View Details"
     },
     "apply": {
-      "alreadyApplied": "This growbook is already applied to this plant",
+      "already_applied": "This growbook is already applied to this plant",
       "applying": "Applying growbook...",
-      "createPlant": "Create New Plant",
+      "create_plant": "Create New Plant",
       "error": "Failed to apply growbook",
-      "selectPlant": "Select a plant to apply this growbook",
+      "select_plant": "Select a plant to apply this growbook",
       "success_one": "Successfully created {{count}} task",
       "success_other": "Successfully created {{count}} tasks"
     },
-    "applyError": "Failed to Apply",
-    "applyErrorDescription": "Something went wrong. Please try again.",
-    "applyPlaybook": "Apply Growbook",
-    "applySuccess": "Growbook Applied",
-    "applySuccessDescription": "Successfully created {{count}} tasks for your plant",
-    "applyToPlant": "Apply to Plant",
+    "apply_error": "Failed to Apply",
+    "apply_error_description": "Something went wrong. Please try again.",
+    "apply_playbook": "Apply Growbook",
+    "apply_success": "Growbook Applied",
+    "apply_success_description": "Successfully created {{count}} tasks for your plant",
+    "apply_to_plant": "Apply to Plant",
     "applying": "Applying...",
     "community": {
       "adopt": {
         "adoptions_one": "{{count}} adoption",
         "adoptions_other": "{{count}} adoptions",
-        "applyDirectly": "Apply Directly",
+        "apply_directly": "Apply Directly",
         "author": "By {{author}}",
         "customize": "Customize Before Applying",
         "preview": "Preview",
@@ -2635,38 +2648,38 @@
       "share": {
         "cancel": "Cancel",
         "conditions": "Growing Conditions",
-        "conditionsPlaceholder": "Indoor tent, LED lights, soil medium...",
+        "conditions_placeholder": "Indoor tent, LED lights, soil medium...",
         "description": "Description",
-        "descriptionPlaceholder": "Describe your growing approach and results...",
-        "durationDays": "{{count}} days",
-        "durationDays_one": "{{count}} day",
-        "durationDays_other": "{{count}} days",
-        "licenseDescription": "By sharing, you agree to license this template under CC-BY-SA 4.0",
+        "description_placeholder": "Describe your growing approach and results...",
+        "duration_days": "{{count}} days",
+        "duration_days_one": "{{count}} day",
+        "duration_days_other": "{{count}} days",
+        "license_description": "By sharing, you agree to license this template under CC-BY-SA 4.0",
         "name": "Template Name",
-        "namePlaceholder": "My Custom Auto Indoor Schedule",
+        "name_placeholder": "My Custom Auto Indoor Schedule",
         "submit": "Share Template",
         "success": "Template shared successfully",
-        "taskCount": "{{count}} tasks",
-        "taskCount_one": "{{count}} task",
-        "taskCount_other": "{{count}} tasks",
+        "task_count": "{{count}} tasks",
+        "task_count_one": "{{count}} task",
+        "task_count_other": "{{count}} tasks",
         "title": "Share Template"
       },
-      "shareTemplate": {
-        "authorHandle": "Author Handle *",
+      "share_template": {
+        "author_handle": "Author Handle *",
         "description": "Description (Optional)",
         "errors": {
-          "descriptionMaxLength": "Description must be at most 500 characters",
-          "handleMaxLength": "Handle must be at most 30 characters",
-          "handleMinLength": "Handle must be at least 3 characters",
-          "handlePattern": "Handle can only contain letters, numbers, - and _",
-          "handleRequired": "Author handle is required"
+          "description_max_length": "Description must be at most 500 characters",
+          "handle_max_length": "Handle must be at most 30 characters",
+          "handle_min_length": "Handle must be at least 3 characters",
+          "handle_pattern": "Handle can only contain letters, numbers, - and _",
+          "handle_required": "Author handle is required"
         },
         "license": "License",
-        "licenseDescription": "Others can use and modify your growbook with attribution",
-        "licenseText": "{{license}} - Creative Commons Attribution-ShareAlike",
-        "placeholderDescription": "Describe your growbook...",
-        "placeholderHandle": "your_handle",
-        "privacyNotice": "ℹ️ All personal information, plant names, and custom notes will be automatically removed before sharing.",
+        "license_description": "Others can use and modify your growbook with attribution",
+        "license_text": "{{license}} - Creative Commons Attribution-ShareAlike",
+        "placeholder_description": "Describe your growbook...",
+        "placeholder_handle": "your_handle",
+        "privacy_notice": "ℹ️ All personal information, plant names, and custom notes will be automatically removed before sharing.",
         "share": "Share",
         "sharing": "Sharing...",
         "subtitle": "Share your customized growbook with the community. All personal information will be automatically removed.",
@@ -2675,33 +2688,33 @@
       "subtitle": "Discover and share successful grow schedules",
       "title": "Community Templates"
     },
-    "communityDescription": "Browse and adopt growbooks shared by other growers",
-    "communityTemplates": "Community Templates",
-    "createPlant": "Create Plant",
-    "customNotes": "Custom Notes",
-    "customNotesHint": "Notes won't affect bulk operations",
-    "customNotesPlaceholder": "Add your own notes...",
-    "customizationLevel": "Customization Level",
-    "customizedTasks": "Customized Tasks",
-    "detailDescription": "This growbook will generate a complete schedule of tasks tailored to your plant's growth stages, with automatic reminders and progress tracking.",
-    "durationDays_one": "{{count}} day",
-    "durationDays_other": "{{count}} days",
-    "editTask": "Edit Task",
+    "community_description": "Browse and adopt growbooks shared by other growers",
+    "community_templates": "Community Templates",
+    "create_plant": "Create Plant",
+    "custom_notes": "Custom Notes",
+    "custom_notes_hint": "Notes won't affect bulk operations",
+    "custom_notes_placeholder": "Add your own notes...",
+    "customization_level": "Customization Level",
+    "customized_tasks": "Customized Tasks",
+    "detail_description": "This growbook will generate a complete schedule of tasks tailored to your plant's growth stages, with automatic reminders and progress tracking.",
+    "duration_days_one": "{{count}} day",
+    "duration_days_other": "{{count}} days",
+    "edit_task": "Edit Task",
     "edited": "Edited",
     "empty": {
       "subtitle": "Check back later for Growbooks",
       "title": "No Growbooks Available"
     },
-    "excludedFromBulkOperations": "Excluded from bulk schedule shifts",
-    "excludedFromBulkShift": "This task has been customized and will be excluded from bulk schedule shifts",
-    "loadError": "Failed to load Growbooks. Please try again.",
-    "manuallyEdited": "Manually Edited",
-    "noPlants": "You don't have any plants yet. Create one to apply this growbook.",
-    "noTasks": "No tasks in this growbook",
-    "noTemplates": "No community templates available yet",
-    "notFound": "Growbook not found",
+    "excluded_from_bulk_operations": "Excluded from bulk schedule shifts",
+    "excluded_from_bulk_shift": "This task has been customized and will be excluded from bulk schedule shifts",
+    "load_error": "Failed to load Growbooks. Please try again.",
+    "manually_edited": "Manually Edited",
+    "no_plants": "You don't have any plants yet. Create one to apply this growbook.",
+    "no_tasks": "No tasks in this growbook",
+    "no_templates": "No community templates available yet",
+    "not_found": "Growbook not found",
     "onboarding": {
-      "getStarted": "Get Started",
+      "get_started": "Get Started",
       "next": "Next",
       "skip": "Skip",
       "step1": {
@@ -2731,87 +2744,87 @@
     },
     "preview": "Growbook Preview",
     "progress": {
-      "careChanges": "Care requirements will change",
-      "completedTasks_one": "{{count}} of {{{total}}} task completed",
-      "completedTasks_other": "{{count}} of {{{total}}} tasks completed",
-      "currentPhase": "Current Phase",
-      "phaseTransition": "Phase Transition",
+      "care_changes": "Care requirements will change",
+      "completed_tasks_one": "{{count}} of {{{total}}} task completed",
+      "completed_tasks_other": "{{count}} of {{{total}}} tasks completed",
+      "current_phase": "Current Phase",
+      "phase_transition": "Phase Transition",
       "title": "Phase Progress",
-      "transitionNotice": "Your plant is transitioning to {{phase}} phase",
-      "upcomingTasks": "Upcoming Tasks"
+      "transition_notice": "Your plant is transitioning to {{phase}} phase",
+      "upcoming_tasks": "Upcoming Tasks"
     },
-    "saveAsTemplate": "Save as Template",
-    "saveAsTemplateDescription": "You've customized {{percentage}}% of tasks ({{customized}}/{{{total}}}). Save this as a template to reuse or share with the community.",
+    "save_as_template": "Save as Template",
+    "save_as_template_description": "You've customized {{percentage}}% of tasks ({{customized}}/{{{total}}}). Save this as a template to reuse or share with the community.",
     "schedule": {
       "shift": {
-        "affectedTasks_one": "{{count}} task will be affected",
-        "affectedTasks_other": "{{count}} tasks will be affected",
+        "affected_tasks_one": "{{count}} task will be affected",
+        "affected_tasks_other": "{{count}} tasks will be affected",
         "apply": "Apply Shift",
         "backward": "Backward",
         "cancel": "Cancel",
-        "conflictWarning": "Some manually edited tasks will be affected",
+        "conflict_warning": "Some manually edited tasks will be affected",
         "conflicts_one": "{{count}} conflict detected",
         "conflicts_other": "{{count}} conflicts detected",
-        "daysLabel": "Days to shift",
-        "daysPlaceholder": "Enter number of days",
+        "days_label": "Days to shift",
+        "days_placeholder": "Enter number of days",
         "error": "Failed to shift schedule",
-        "firstNewDate": "First task: {{date}}",
+        "first_new_date": "First task: {{date}}",
         "forward": "Forward",
-        "includeCompleted": "Include completed tasks",
-        "includeManuallyEdited": "Include manually edited tasks",
-        "lastNewDate": "Last task: {{date}}",
+        "include_completed": "Include completed tasks",
+        "include_manually_edited": "Include manually edited tasks",
+        "last_new_date": "Last task: {{date}}",
         "preview": "Preview Changes",
-        "previewTitle": "Schedule Shift Preview",
+        "preview_title": "Schedule Shift Preview",
         "subtitle": "Adjust all task dates by a specific number of days",
         "success": "Schedule shifted successfully",
         "title": "Shift Schedule",
         "undo": "Undo",
-        "undoAvailable": "Undo available for {{seconds}}s"
+        "undo_available": "Undo available for {{seconds}}s"
       }
     },
-    "selectPlant": "Select a Plant",
-    "selectPlantDescription": "Choose which plant you want to apply this playbook to.",
+    "select_plant": "Select a Plant",
+    "select_plant_description": "Choose which plant you want to apply this playbook to.",
     "selection": {
-      "autoIndoor": "Auto Indoor",
-      "autoOutdoor": "Auto Outdoor",
-      "estimatedRange": "Estimated: {{start}} → {{end}}",
-      "phaseBreakdownTitle": "Phase Breakdown",
-      "photoIndoor": "Photo Indoor",
-      "photoOutdoor": "Photo Outdoor",
+      "auto_indoor": "Auto Indoor",
+      "auto_outdoor": "Auto Outdoor",
+      "estimated_range": "Estimated: {{start}} → {{end}}",
+      "phase_breakdown_title": "Phase Breakdown",
+      "photo_indoor": "Photo Indoor",
+      "photo_outdoor": "Photo Outdoor",
       "preview": {
         "apply": "Apply to Plant",
         "cancel": "Cancel",
         "phases": "Phases",
-        "taskCount_one": "{{count}} task",
-        "taskCount_other": "{{count}} tasks",
+        "task_count_one": "{{count}} task",
+        "task_count_other": "{{count}} tasks",
         "title": "Growbook Preview",
-        "totalWeeks_one": "{{count}} week total",
-        "totalWeeks_other": "{{count}} weeks total"
+        "total_weeks_one": "{{count}} week total",
+        "total_weeks_other": "{{count}} weeks total"
       },
       "subtitle": "Select a cultivation schedule that matches your setup",
       "title": "Choose Your Growbook"
     },
-    "shareWithCommunity": "Share with Community",
-    "shareWithCommunityHint": "Make this template available to other growers",
-    "shiftPreview": {
-      "accessibilityLabel": "Schedule shift preview dialog",
-      "affectedTasks": "Affected Tasks",
-      "applyShift": "Apply Shift",
+    "share_with_community": "Share with Community",
+    "share_with_community_hint": "Make this template available to other growers",
+    "shift_preview": {
+      "accessibility_label": "Schedule shift preview dialog",
+      "affected_tasks": "Affected Tasks",
+      "apply_shift": "Apply Shift",
       "cancel": "Cancel",
-      "changesByPhase": "Changes by Phase",
-      "daysDelta": "{{delta}} days",
-      "manuallyEditedTasks": "Manually Edited Tasks",
-      "newDateRange": "New Date Range",
-      "phaseLabel": "Phase {{number}}",
-      "potentialConflicts": "Potential Conflicts",
+      "changes_by_phase": "Changes by Phase",
+      "days_delta": "{{delta}} days",
+      "manually_edited_tasks": "Manually Edited Tasks",
+      "new_date_range": "New Date Range",
+      "phase_label": "Phase {{number}}",
+      "potential_conflicts": "Potential Conflicts",
       "subtitle": "Moving {{count}} day{{plural}} {{direction}}",
-      "taskCount": "{{count}} tasks",
+      "task_count": "{{count}} tasks",
       "task_one": "{{count}} task",
       "task_other": "{{count}} tasks",
       "title": "Schedule Shift Preview",
-      "undoInfo": "ℹ️ You'll have 30 seconds to undo this change after applying",
-      "willBeExcluded": "will be excluded from this shift",
-      "willBeShifted": "will be shifted (you opted in)"
+      "undo_info": "ℹ️ You'll have 30 seconds to undo this change after applying",
+      "will_be_excluded": "will be excluded from this shift",
+      "will_be_shifted": "will be shifted (you opted in)"
     },
     "status": {
       "completed": "Completed",
@@ -2820,16 +2833,16 @@
     },
     "subtitle": "Guided grow schedules for your plants",
     "tags": "Tags",
-    "tagsHint": "Separate tags with commas",
-    "tagsPlaceholder": "indoor, beginner, auto...",
-    "taskCount": "{{count}} tasks",
-    "taskCount_one": "{{count}} task",
-    "taskCount_other": "{{count}} tasks",
-    "taskDescription": "Description",
-    "taskDescriptionPlaceholder": "Task description...",
-    "taskTitle": "Title",
-    "taskTitlePlaceholder": "Task title...",
-    "taskTypes": {
+    "tags_hint": "Separate tags with commas",
+    "tags_placeholder": "indoor, beginner, auto...",
+    "task_count": "{{count}} tasks",
+    "task_count_one": "{{count}} task",
+    "task_count_other": "{{count}} tasks",
+    "task_description": "Description",
+    "task_description_placeholder": "Task description...",
+    "task_title": "Title",
+    "task_title_placeholder": "Task title...",
+    "task_types": {
       "custom": "Custom",
       "feed": "Feed",
       "monitor": "Monitor",
@@ -2838,37 +2851,37 @@
       "train": "Train",
       "water": "Water"
     },
-    "templateName": "Template Name",
-    "templateNamePlaceholder": "My Custom Growbook",
+    "template_name": "Template Name",
+    "template_name_placeholder": "My Custom Growbook",
     "templates": {
       "detail": {
-        "adoptButton": "Adopt This Growbook",
-        "adoptDescription": "You can customize the growbook after adopting it",
+        "adopt_button": "Adopt This Growbook",
+        "adopt_description": "You can customize the growbook after adopting it",
         "adopted": "Adopted",
-        "authorPrefix": "by",
-        "communityRating": "Community Rating",
+        "author_prefix": "by",
+        "community_rating": "Community Rating",
         "duration": "Duration",
-        "growthPhases": "Growth Phases",
-        "licenseDescription": "You can use and modify this growbook with attribution to the author",
-        "licensePrefix": "License:",
-        "moreTasks": "+ {{count}} more tasks",
-        "rateButton": "Rate",
+        "growth_phases": "Growth Phases",
+        "license_description": "You can use and modify this growbook with attribution to the author",
+        "license_prefix": "License:",
+        "more_tasks": "+ {{count}} more tasks",
+        "rate_button": "Rate",
         "ratings": "ratings",
         "tasks": "Tasks",
-        "tasksPreview": "Tasks Preview ({{total}} total)"
+        "tasks_preview": "Tasks Preview ({{total}} total)"
       }
     },
     "title": "Growbooks",
-    "totalWeeks": "{{count}} weeks",
+    "total_weeks": "{{count}} weeks",
     "trichome": {
       "assessment": {
-        "addPhoto": "Add Photo",
-        "amberPercent": "Amber %",
-        "clearPercent": "Clear %",
-        "harvestWindow": "Harvest Window",
-        "milkyPercent": "Milky %",
+        "add_photo": "Add Photo",
+        "amber_percent": "Amber %",
+        "clear_percent": "Clear %",
+        "harvest_window": "Harvest Window",
+        "milky_percent": "Milky %",
         "notes": "Notes",
-        "notesPlaceholder": "Observations about trichome development...",
+        "notes_placeholder": "Observations about trichome development...",
         "recommendation": "Recommendation",
         "save": "Save Assessment",
         "title": "Log Assessment"
@@ -2876,11 +2889,11 @@
       "disclaimer": "This guidance is educational, not professional advice. Always consider your specific growing conditions and preferences.",
       "guide": {
         "amber": "Amber (Mature)",
-        "amberDescription": "Trichomes are amber/brown. More sedating, relaxing effects.",
+        "amber_description": "Trichomes are amber/brown. More sedating, relaxing effects.",
         "clear": "Clear (Immature)",
-        "clearDescription": "Trichomes are transparent. Plant is not ready for harvest.",
+        "clear_description": "Trichomes are transparent. Plant is not ready for harvest.",
         "milky": "Milky/Cloudy (Peak)",
-        "milkyDescription": "Trichomes are cloudy white. Peak potency and balanced effects.",
+        "milky_description": "Trichomes are cloudy white. Peak potency and balanced effects.",
         "title": "Trichome Development Guide"
       },
       "nudge": {
@@ -2901,19 +2914,19 @@
         "energetic": "Harvest now for energetic effects (mostly milky)",
         "overripe": "Harvest soon - high amber percentage",
         "sedating": "Harvest now for sedating effects (significant amber)",
-        "tooEarly": "Wait longer - trichomes are mostly clear"
+        "too_early": "Wait longer - trichomes are mostly clear"
       },
       "subtitle": "Determine optimal harvest timing",
       "title": "Trichome Check Helper"
     },
-    "voteHelpful": "👍 Helpful",
-    "voteNotHelpful": "👎 Not Helpful",
-    "votingQuestion": "Was this suggestion helpful?",
-    "votingThanks": "Thanks for your feedback! {{emoji}}",
-    "whatYouGet": "What You'll Get"
+    "vote_helpful": "👍 Helpful",
+    "vote_not_helpful": "👎 Not Helpful",
+    "voting_question": "Was this suggestion helpful?",
+    "voting_thanks": "Thanks for your feedback! {{emoji}}",
+    "what_you_get": "What You'll Get"
   },
   "privacy": {
-    "aiModelImprovement": {
+    "ai_model_improvement": {
       "body": "Allow anonymous photos and assessment results to improve AI accuracy. Images are stored for up to 90 days and automatically deleted. You can withdraw consent at any time.",
       "subtitle": "Help improve AI plant health detection",
       "title": "Improve the model with my images"
@@ -2923,109 +2936,109 @@
       "subtitle": "Help us improve the app with usage analytics",
       "title": "Analytics"
     },
-    "cannotOpenUrlBody": "Unable to open the web deletion page. Please check your internet connection or contact support.",
-    "cannotOpenUrlTitle": "Cannot open URL",
-    "crashReporting": {
+    "cannot_open_url_body": "Unable to open the web deletion page. Please check your internet connection or contact support.",
+    "cannot_open_url_title": "Cannot open URL",
+    "crash_reporting": {
       "body": "Help us fix bugs by sending crash reports.",
       "subtitle": "Help us fix bugs by sending crash reports",
       "title": "Crash Reporting"
     },
-    "deleteAccount": "Delete my account",
-    "deleteAccountConfirmAction": "Delete account",
-    "deleteAccountConfirmBody": "This schedules permanent deletion of your account and associated GrowBro data. You can export your data first if needed.",
-    "deleteAccountConfirmCancel": "Keep account",
-    "deleteAccountConfirmTitle": "Delete account?",
-    "deleteAccountErrorBody": "We could not queue the deletion. Details: {{message}}",
-    "deleteAccountErrorTitle": "Deletion request failed",
-    "deleteAccountQueuedBody": "We queued your deletion request. Estimated completion: {{eta}}.",
-    "deleteAccountQueuedBodyNoEta": "We queued your deletion request. You will receive a confirmation once completed.",
-    "deleteAccountQueuedTitle": "Deletion scheduled",
-    "exportData": "Export my data",
-    "exportError": {
+    "delete_account": "Delete my account",
+    "delete_account_confirm_action": "Delete account",
+    "delete_account_confirm_body": "This schedules permanent deletion of your account and associated GrowBro data. You can export your data first if needed.",
+    "delete_account_confirm_cancel": "Keep account",
+    "delete_account_confirm_title": "Delete account?",
+    "delete_account_error_body": "We could not queue the deletion. Details: {{message}}",
+    "delete_account_error_title": "Deletion request failed",
+    "delete_account_queued_body": "We queued your deletion request. Estimated completion: {{eta}}.",
+    "delete_account_queued_body_no_eta": "We queued your deletion request. You will receive a confirmation once completed.",
+    "delete_account_queued_title": "Deletion scheduled",
+    "export_data": "Export my data",
+    "export_error": {
       "message": "We could not generate your data export. Please try again later.",
       "title": "Export failed"
     },
-    "exportErrorBody": "We could not queue the export. Details: {{message}}",
-    "exportErrorTitle": "Export request failed",
-    "exportQueuedBody": "We queued your data export. Estimated completion: {{eta}}.",
-    "exportQueuedBodyNoEta": "We queued your data export. You will receive a link when it is ready.",
-    "exportQueuedTitle": "Export requested",
-    "exportReadyBody": "Your data export has been completed and shared successfully.",
-    "exportReadyTitle": "Export Complete",
-    "invalidUrlBody": "The web deletion URL is not secure. Please contact support.",
-    "invalidUrlTitle": "Invalid URL",
-    "lastUpdated": "Last updated: {{date}}",
-    "manageDataDescription": "Manage your GrowBro data export, account deletion, and policy disclosures.",
-    "openWebDeletion": "Open web deletion page",
+    "export_error_body": "We could not queue the export. Details: {{message}}",
+    "export_error_title": "Export request failed",
+    "export_queued_body": "We queued your data export. Estimated completion: {{eta}}.",
+    "export_queued_body_no_eta": "We queued your data export. You will receive a link when it is ready.",
+    "export_queued_title": "Export requested",
+    "export_ready_body": "Your data export has been completed and shared successfully.",
+    "export_ready_title": "Export Complete",
+    "invalid_url_body": "The web deletion URL is not secure. Please contact support.",
+    "invalid_url_title": "Invalid URL",
+    "last_updated": "Last updated: {{date}}",
+    "manage_data_description": "Manage your GrowBro data export, account deletion, and policy disclosures.",
+    "open_web_deletion": "Open web deletion page",
     "personalized": {
       "body": "This includes IP addresses, user IDs, and other identifying information that helps us provide better error reports and analytics. This data is handled according to our privacy policy.",
       "subtitle": "Include identifying information in reports",
       "title": "Personalized Data"
     },
-    "sessionReplay": {
+    "session_replay": {
       "body": "Session replay records your app interactions to help us debug issues. Sensitive data is filtered or redacted where possible; see Privacy Policy for details.",
       "subtitle": "Record app interactions for debugging",
       "title": "Session Replay"
     },
     "title": "Privacy Settings",
-    "urlErrorBody": "An error occurred while opening the web deletion page. Details: {{message}}",
-    "urlErrorTitle": "URL Error",
-    "webDeletionHeading": "Need to delete outside the app?",
-    "webDeletionPrompt": "Use our web form ({{url}}) if you cannot access the mobile app.",
-    "webPortalAuthNote": "Sign in so we can verify your identity before queuing deletion. You can sign out after submitting your request.",
-    "webPortalDeletionCopy": "We will queue the deletion and send a confirmation when processing is complete. Deletion typically finishes within 30 days.",
-    "webPortalDeletionCta": "Request deletion",
-    "webPortalDeletionHeading": "Delete your GrowBro account",
-    "webPortalExportCopy": "We prepare your data export and inform you once it’s ready.",
-    "webPortalExportCta": "Request export",
-    "webPortalExportHeading": "Export your GrowBro data",
-    "webPortalIntro": "Use this page to request account deletion or a data export if you cannot open the mobile app.",
-    "webPortalLogin": "Open sign-in",
-    "webPortalTitle": "GrowBro account deletion portal"
+    "url_error_body": "An error occurred while opening the web deletion page. Details: {{message}}",
+    "url_error_title": "URL Error",
+    "web_deletion_heading": "Need to delete outside the app?",
+    "web_deletion_prompt": "Use our web form ({{url}}) if you cannot access the mobile app.",
+    "web_portal_auth_note": "Sign in so we can verify your identity before queuing deletion. You can sign out after submitting your request.",
+    "web_portal_deletion_copy": "We will queue the deletion and send a confirmation when processing is complete. Deletion typically finishes within 30 days.",
+    "web_portal_deletion_cta": "Request deletion",
+    "web_portal_deletion_heading": "Delete your GrowBro account",
+    "web_portal_export_copy": "We prepare your data export and inform you once it’s ready.",
+    "web_portal_export_cta": "Request export",
+    "web_portal_export_heading": "Export your GrowBro data",
+    "web_portal_intro": "Use this page to request account deletion or a data export if you cannot open the mobile app.",
+    "web_portal_login": "Open sign-in",
+    "web_portal_title": "GrowBro account deletion portal"
   },
-  "privacyNotices": {
-    "PRIVACY-AGE-001": {
+  "privacy_notices": {
+    "_p_r_i_v_a_c_y-_a_g_e-001": {
       "audience": "All users undergoing age verification",
-      "deliveryContext": "Displayed before age verification process begins",
+      "delivery_context": "Displayed before age verification process begins",
       "title": "Age Verification Privacy Notice"
     },
-    "PRIVACY-GEO-001": {
+    "_p_r_i_v_a_c_y-_g_e_o-001": {
       "audience": "All users accessing content",
-      "deliveryContext": "Displayed in app privacy policy and when geo-blocking applied",
+      "delivery_context": "Displayed in app privacy policy and when geo-blocking applied",
       "title": "Geo-Location and Regional Restrictions Privacy Notice"
     },
-    "PRIVACY-MOD-001": {
+    "_p_r_i_v_a_c_y-_m_o_d-001": {
       "audience": "Content reporters and reported users",
-      "deliveryContext": "Displayed when user submits content report or receives moderation decision",
+      "delivery_context": "Displayed when user submits content report or receives moderation decision",
       "title": "Content Moderation and Reporting Privacy Notice"
     },
-    "PRIVACY-MOD-STAFF-001": {
+    "_p_r_i_v_a_c_y-_m_o_d-_s_t_a_f_f-001": {
       "audience": "Content moderators and compliance personnel",
-      "deliveryContext": "Displayed during moderator onboarding and in moderator console",
+      "delivery_context": "Displayed during moderator onboarding and in moderator console",
       "title": "Moderator Privacy Notice"
     }
   },
   "profile": {
     "avatar": {
-      "chooseLibrary": "Choose from Library",
+      "choose_library": "Choose from Library",
       "label": "Profile Avatar",
-      "permissionDenied": "Permission Denied",
-      "permissionMessage": "Camera permission is required to take photos.",
+      "permission_denied": "Permission Denied",
+      "permission_message": "Camera permission is required to take photos.",
       "placeholder": "👤",
       "remove": "Remove Picture",
       "subtitle": "Select a new profile picture",
-      "takePhoto": "Take Photo",
-      "tapToChange": "Tap to change",
+      "take_photo": "Take Photo",
+      "tap_to_change": "Tap to change",
       "title": "Change Avatar",
-      "uploadFailed": "Upload Failed",
-      "uploadFailedMessage": "Failed to upload avatar. Please try again."
+      "upload_failed": "Upload Failed",
+      "upload_failed_message": "Failed to upload avatar. Please try again."
     },
     "bio": {
       "label": "Bio",
       "placeholder": "Tell us about yourself (optional)"
     },
     "chevron": "›",
-    "displayName": {
+    "display_name": {
       "label": "Display Name",
       "placeholder": "Enter your display name"
     },
@@ -3037,9 +3050,9 @@
     },
     "no_posts": "No posts yet",
     "privacy": {
-      "allowDMs": "Allow direct messages",
-      "complianceNotice": "This option is restricted based on your region or age verification.",
-      "showProfile": "Show profile to community",
+      "allow_d_ms": "Allow direct messages",
+      "compliance_notice": "This option is restricted based on your region or age verification.",
+      "show_profile": "Show profile to community",
       "title": "Privacy Settings"
     },
     "restricted": {
@@ -3050,25 +3063,25 @@
       "title": "Restricted Profile"
     },
     "save": "Save Profile",
-    "saveFailed": "Save Failed",
-    "saveFailedMessage": "Failed to save profile. Please try again.",
-    "saveSuccess": "Profile Saved",
-    "saveSuccessMessage": "Your profile has been updated successfully.",
-    "setProfilePrompt": "Set your profile",
+    "save_failed": "Save Failed",
+    "save_failed_message": "Failed to save profile. Please try again.",
+    "save_success": "Profile Saved",
+    "save_success_message": "Your profile has been updated successfully.",
+    "set_profile_prompt": "Set your profile",
     "statistics": {
       "harvests": "Harvests",
-      "harvestsCount_one": "{{count}} harvest",
-      "harvestsCount_other": "{{count}} harvests",
-      "harvestsCount_zero": "{{count}} harvests",
+      "harvests_count_one": "{{count}} harvest",
+      "harvests_count_other": "{{count}} harvests",
+      "harvests_count_zero": "{{count}} harvests",
       "likes": "Likes",
       "plants": "Plants",
-      "plantsCount_one": "{{count}} plant",
-      "plantsCount_other": "{{count}} plants",
-      "plantsCount_zero": "{{count}} plants",
+      "plants_count_one": "{{count}} plant",
+      "plants_count_other": "{{count}} plants",
+      "plants_count_zero": "{{count}} plants",
       "posts": "Posts",
-      "postsCount_one": "{{count}} post",
-      "postsCount_other": "{{count}} posts",
-      "postsCount_zero": "{{count}} posts",
+      "posts_count_one": "{{count}} post",
+      "posts_count_other": "{{count}} posts",
+      "posts_count_zero": "{{count}} posts",
       "syncing": "Syncing statistics...",
       "title": "Account Statistics"
     }
@@ -3104,9 +3117,9 @@
       "github": "GitHub Repository",
       "links": "Links",
       "onboarding": "Onboarding",
-      "openLinkError": "Failed to open link. Please try again or check your device settings.",
-      "openStoreErrorMessage": "Failed to open app store. Please try again or check your device settings.",
-      "openStoreErrorTitle": "Error",
+      "open_link_error": "Failed to open link. Please try again or check your device settings.",
+      "open_store_error_message": "Failed to open app store. Please try again or check your device settings.",
+      "open_store_error_title": "Error",
       "ota_disabled": "Updates managed through app store",
       "restart_to_apply": "Restart to Apply",
       "retry": "Retry",
@@ -3154,16 +3167,16 @@
       "grace_period_title": "30-Day Grace Period",
       "reauth_description": "For security, please re-enter your password to continue with account deletion.",
       "reauth_title": "Confirm Your Identity",
-      "restoreBanner": {
-        "cancelButton": "Cancel Deletion",
-        "cancelError": "Failed to cancel deletion. Please try again or contact support.",
-        "confirmButton": "Yes, Keep My Account",
-        "confirmMessage": "This will cancel the deletion request and keep your account active.",
-        "confirmTitle": "Cancel Account Deletion?",
-        "daysRemaining": "{{days}} days remaining",
+      "restore_banner": {
+        "cancel_button": "Cancel Deletion",
+        "cancel_error": "Failed to cancel deletion. Please try again or contact support.",
+        "confirm_button": "Yes, Keep My Account",
+        "confirm_message": "This will cancel the deletion request and keep your account active.",
+        "confirm_title": "Cancel Account Deletion?",
+        "days_remaining": "{{days}} days remaining",
         "message": "Your account is scheduled for permanent deletion in {{days}} days. Cancel now to keep your account and data.",
-        "successMessage": "Your account deletion has been cancelled. Your account and data are safe.",
-        "successTitle": "Account Restored",
+        "success_message": "Your account deletion has been cancelled. Your account and data are safe.",
+        "success_title": "Account Restored",
         "title": "Account Deletion Scheduled"
       },
       "scheduled_success": "Account deletion scheduled. You have {{days}} days to cancel by logging in.",
@@ -3219,62 +3232,62 @@
     "more": "More",
     "notifications": {
       "categories": {
-        "communityActivity": "Community Activity",
-        "communityActivityDescription": "Get notified about community interactions, replies, and likes",
-        "communityInteractions": "• Community Interactions (replies to your posts)",
-        "communityLikes": "• Community Likes (likes on your posts)",
-        "cultivationReminders": "• Cultivation Reminders (task and grow reminders)",
-        "harvestAlerts": "Harvest Alerts",
-        "harvestAlertsDescription": "Get notified about harvest timing and important harvest-related updates",
+        "community_activity": "Community Activity",
+        "community_activity_description": "Get notified about community interactions, replies, and likes",
+        "community_interactions": "• Community Interactions (replies to your posts)",
+        "community_likes": "• Community Likes (likes on your posts)",
+        "cultivation_reminders": "• Cultivation Reminders (task and grow reminders)",
+        "harvest_alerts": "Harvest Alerts",
+        "harvest_alerts_description": "Get notified about harvest timing and important harvest-related updates",
         "marketing": "Marketing & Tips",
-        "marketingDescription": "Optional growing tips and feature announcements (opt-in only)",
-        "sectionTitle": "Notification Categories",
-        "systemUpdates": "• System Updates (important app updates)",
-        "systemUpdatesCategory": "System Updates",
-        "systemUpdatesDescription": "Important app updates and announcements",
-        "taskReminders": "Task Reminders",
-        "taskRemindersDescription": "Get reminders for upcoming cultivation tasks",
+        "marketing_description": "Optional growing tips and feature announcements (opt-in only)",
+        "section_title": "Notification Categories",
+        "system_updates": "• System Updates (important app updates)",
+        "system_updates_category": "System Updates",
+        "system_updates_description": "Important app updates and announcements",
+        "task_reminders": "Task Reminders",
+        "task_reminders_description": "Get reminders for upcoming cultivation tasks",
         "title": "Available Categories:"
       },
-      "channelDisabled": "This notification category is disabled in system settings",
+      "channel_disabled": "This notification category is disabled in system settings",
       "community": {
         "likes": "Likes",
-        "likesDescription": "Get notified when someone likes your posts (max 1 per post per 5 min)",
-        "repliesAndComments": "Replies & Comments",
-        "repliesAndCommentsDescription": "Get notified when someone replies to your posts",
+        "likes_description": "Get notified when someone likes your posts (max 1 per post per 5 min)",
+        "replies_and_comments": "Replies & Comments",
+        "replies_and_comments_description": "Get notified when someone replies to your posts",
         "title": "Community Notifications"
       },
       "label": "Notifications",
-      "manageInSettings": "Manage in System Settings",
-      "platformHelp": {
+      "manage_in_settings": "Manage in System Settings",
+      "platform_help": {
         "android": "On Android, you can manage individual notification channels in system settings. Each category can be customized with different sounds, importance levels, and behaviors.",
         "ios": "On iOS, you can customize notification settings including sounds, badges, and banners in system settings."
       },
-      "quietHours": {
+      "quiet_hours": {
         "description": "Suppress non-critical notifications during quiet hours",
         "enabled": "Enabled",
         "end": "End Time",
-        "endLabel": "End:",
-        "invalidTime": "Invalid time format. Use HH:mm (24-hour format)",
-        "requireTimes": "Quiet hours start and end times are required when enabled",
+        "end_label": "End:",
+        "invalid_time": "Invalid time format. Use HH:mm (24-hour format)",
+        "require_times": "Quiet hours start and end times are required when enabled",
         "start": "Start Time",
-        "startLabel": "Start:",
+        "start_label": "Start:",
         "title": "Quiet Hours",
-        "toggleHint": "Enable or disable quiet hours for notifications",
-        "toggleLabel": "Toggle quiet hours"
+        "toggle_hint": "Enable or disable quiet hours for notifications",
+        "toggle_label": "Toggle quiet hours"
       },
-      "systemPermissions": {
+      "system_permissions": {
         "description": "Control which notifications you receive from GrowBro. You can enable or disable notifications for community interactions, task reminders, and system updates.",
-        "openSettings": "Open System Settings",
+        "open_settings": "Open System Settings",
         "title": "System Notification Permissions"
       },
-      "taskReminderTiming": {
+      "task_reminder_timing": {
         "custom": "Custom",
-        "customMinutes": "Minutes before task",
-        "customMinutesHelp": "1-1440 minutes (up to 24 hours)",
-        "dayBefore": "Day before",
-        "hourBefore": "Hour before",
-        "invalidCustom": "Custom reminder minutes must be between 1 and 1440 (24 hours)",
+        "custom_minutes": "Minutes before task",
+        "custom_minutes_help": "1-1440 minutes (up to 24 hours)",
+        "day_before": "Day before",
+        "hour_before": "Hour before",
+        "invalid_custom": "Custom reminder minutes must be between 1 and 1440 (24 hours)",
         "title": "Reminder Timing"
       },
       "title": "Notification Settings"
@@ -3286,22 +3299,22 @@
     "privacy_section": "Privacy & data",
     "profile": {
       "avatar": {
-        "chooseLibrary": "Choose from Library",
-        "permissionDenied": "Permission Denied",
-        "permissionMessage": "Camera access is required to take photos. Please enable it in your device settings.",
+        "choose_library": "Choose from Library",
+        "permission_denied": "Permission Denied",
+        "permission_message": "Camera access is required to take photos. Please enable it in your device settings.",
         "remove": "Remove Photo",
         "subtitle": "Choose a photo source",
-        "takePhoto": "Take Photo",
+        "take_photo": "Take Photo",
         "title": "Change Avatar",
-        "uploadFailed": "Upload Failed",
-        "uploadFailedMessage": "We couldn't upload your avatar. Please try again."
+        "upload_failed": "Upload Failed",
+        "upload_failed_message": "We couldn't upload your avatar. Please try again."
       },
       "bio": {
         "label": "Bio",
         "placeholder": "Tell the community about yourself..."
       },
       "chevron": "›",
-      "displayName": {
+      "display_name": {
         "label": "Display Name",
         "placeholder": "Enter your display name"
       },
@@ -3312,30 +3325,30 @@
       },
       "open_profile_hint": "Double-tap to edit your profile",
       "privacy": {
-        "allowDMs": "Allow Direct Messages",
-        "showProfile": "Show Profile to Community",
+        "allow_d_ms": "Allow Direct Messages",
+        "show_profile": "Show Profile to Community",
         "title": "Privacy Settings"
       },
       "save": "Save Changes",
-      "saveFailed": "Save Failed",
-      "saveFailedMessage": "We couldn't save your profile changes. Please try again.",
-      "saveSuccess": "Profile Updated",
-      "saveSuccessMessage": "Your profile has been updated successfully.",
-      "setProfilePrompt": "Set up your profile",
+      "save_failed": "Save Failed",
+      "save_failed_message": "We couldn't save your profile changes. Please try again.",
+      "save_success": "Profile Updated",
+      "save_success_message": "Your profile has been updated successfully.",
+      "set_profile_prompt": "Set up your profile",
       "statistics": {
         "harvests": "Harvests",
-        "harvestsCount_one": "{{count}} harvest",
-        "harvestsCount_other": "{{count}} harvests",
-        "harvestsCount_zero": "No harvests",
+        "harvests_count_one": "{{count}} harvest",
+        "harvests_count_other": "{{count}} harvests",
+        "harvests_count_zero": "No harvests",
         "likes": "Likes Received",
         "plants": "Plants",
-        "plantsCount_one": "{{count}} plant",
-        "plantsCount_other": "{{count}} plants",
-        "plantsCount_zero": "No plants",
+        "plants_count_one": "{{count}} plant",
+        "plants_count_other": "{{count}} plants",
+        "plants_count_zero": "No plants",
         "posts": "Posts",
-        "postsCount_one": "{{count}} post",
-        "postsCount_other": "{{count}} posts",
-        "postsCount_zero": "No posts",
+        "posts_count_one": "{{count}} post",
+        "posts_count_other": "{{count}} posts",
+        "posts_count_zero": "No posts",
         "syncing": "Refreshing statistics...",
         "title": "Your Statistics"
       },
@@ -3359,7 +3372,7 @@
       "on": "ON",
       "partial": "Partial"
     },
-    "successHint": "Operation completed successfully",
+    "success_hint": "Operation completed successfully",
     "support": {
       "community_guidelines": "Community Guidelines",
       "community_guidelines_hint": "View community guidelines and rules",
@@ -3446,12 +3459,12 @@
       "auto_sync": "Auto-sync (foreground/connectivity)",
       "background": "Background sync",
       "charging_only": "Charging only",
-      "lastAttempt": "Last attempt: {{attempt}}",
+      "last_attempt": "Last attempt: {{attempt}}",
       "reset_local": "Reset local cache",
       "reset_local_body": "This permanently clears local database. Your cloud data remains intact.",
       "reset_local_title": "Reset local cache?",
       "staleness_hours": "Staleness threshold (hours)",
-      "syncFailed": "Sync Failed",
+      "sync_failed": "Sync Failed",
       "title": "Sync",
       "wifi_only": "Wi‑Fi only"
     },
@@ -3464,15 +3477,15 @@
     },
     "title": "Settings",
     "validation": {
-      "errorMessage": "⚠ {{message}}",
-      "fieldError": "{{fieldLabel}} error: {{message}}",
-      "fieldErrorItem": "{{field}}: {{message}}",
-      "formErrors": "Form has {{count}} error",
-      "formErrors_plural": "Form has {{count}} errors",
+      "error_message": "⚠ {{message}}",
+      "field_error": "{{fieldLabel}} error: {{message}}",
+      "field_error_item": "{{field}}: {{message}}",
+      "form_errors": "Form has {{count}} error",
+      "form_errors_plural": "Form has {{count}} errors",
       "hint": "This field has a validation error that needs to be fixed",
-      "pleaseFixErrors": "Please fix the following errors:",
-      "reviewAndFixErrors": "Review and fix all form errors before submitting",
-      "successLabel": "Success: {{message}}"
+      "please_fix_errors": "Please fix the following errors:",
+      "review_and_fix_errors": "Review and fix all form errors before submitting",
+      "success_label": "Success: {{message}}"
     },
     "version": "Version",
     "web_deletion": "Web deletion portal",
@@ -3501,8 +3514,8 @@
       "title": "Browse strains"
     }
   },
-  "strainTip": {
-    "accessibilityHint": "Informational tip about this strain",
+  "strain_tip": {
+    "accessibility_hint": "Informational tip about this strain",
     "label": "Strain Tip"
   },
   "strains": {
@@ -3603,7 +3616,7 @@
       },
       "title": "My Favorites"
     },
-    "favoritesAccessibilityHint": "Opens your saved favorite strains.",
+    "favorites_accessibility_hint": "Opens your saved favorite strains.",
     "filters": {
       "apply": "Apply Filters",
       "button_label": "Filter strains",
@@ -3612,17 +3625,17 @@
       "cbd_label": "CBD Content",
       "cbd_low": "Low",
       "cbd_medium": "Medium",
-      "clearAllHint": "Removes all active filters",
-      "clearAllLabel": "Clear all filters",
       "clear_all": "Clear All",
+      "clear_all_hint": "Removes all active filters",
+      "clear_all_label": "Clear all filters",
       "difficulty_label": "Grow Difficulty",
       "effects_count": "{{count}} effects",
       "effects_label": "Effects",
       "flavors_count": "{{count}} flavors",
       "flavors_label": "Flavors",
       "race_label": "Type",
-      "removeHint": "Removes this filter",
-      "removeLabel": "Remove filter: {{label}}",
+      "remove_hint": "Removes this filter",
+      "remove_label": "Remove filter: {{label}}",
       "thc_any": "Any",
       "thc_high": "High",
       "thc_label": "THC Content",
@@ -3642,9 +3655,9 @@
       "sweet": "Sweet",
       "woody": "Woody"
     },
-    "hardFacts": {
+    "hard_facts": {
       "cultivation": "Cultivation",
-      "floweringTime": "Flowering",
+      "flowering_time": "Flowering",
       "yield": "Yield"
     },
     "no_results": "No strains found",
@@ -3688,14 +3701,14 @@
   },
   "support": {
     "article": {
-      "contactCta": "Need more help? Contact Support",
+      "contact_cta": "Need more help? Contact Support",
       "item": "Item",
       "last_updated": "Last updated {{time}}",
       "movement": {
-        "feedbackPlaceholder": "Optional feedback...",
-        "feedbackPrompt": "What was missing or unclear?",
+        "feedback_placeholder": "Optional feedback...",
+        "feedback_prompt": "What was missing or unclear?",
         "helpful": "Yes, helpful",
-        "notHelpful": "Not helpful",
+        "not_helpful": "Not helpful",
         "thanks": "Thanks for your feedback!",
         "title": "Was this helpful?"
       }
@@ -3703,10 +3716,10 @@
     "contact": {
       "attachments": {
         "add": "Add Screenshot",
-        "exifWarning": "Location data may be present in photos",
+        "exif_warning": "Location data may be present in photos",
         "limit": "Maximum {{max}} attachments ({{maxSize}}MB total)",
         "remove": "Remove",
-        "stripExif": {
+        "strip_exif": {
           "cancel": "No, keep",
           "confirm": "Yes, remove",
           "message": "Your photos may contain location information. Remove it before uploading?",
@@ -3733,7 +3746,7 @@
       },
       "metadata": {
         "description": "This helps us debug your issue faster",
-        "optOut": "Don't include {{field}}",
+        "opt_out": "Don't include {{field}}",
         "title": "Diagnostic Information"
       },
       "queued": {
@@ -3764,10 +3777,10 @@
         "plants-harvest": "Plants & Harvest",
         "troubleshooting": "Troubleshooting"
       },
-      "offlineBanner": "Offline Mode - Showing cached content",
+      "offline_banner": "Offline Mode - Showing cached content",
       "search": {
-        "noResults": "No articles found",
-        "offlineResults": "Offline results",
+        "no_results": "No articles found",
+        "offline_results": "Offline results",
         "placeholder": "Search help articles..."
       },
       "title": "Help Center"
@@ -3784,7 +3797,7 @@
     "rating": {
       "later": "Maybe Later",
       "message": "Rate us on the {{store}}!",
-      "optOut": {
+      "opt_out": {
         "confirm": "Are you sure you don't want to see rating prompts?",
         "label": "Don't ask again"
       },
@@ -3799,18 +3812,18 @@
         "informational": "Notice"
       },
       "dismissed": "Service Restored",
-      "viewDetails": "View Details"
+      "view_details": "View Details"
     }
   },
   "sync": {
     "conflict": {
-      "acceptButton": "Accept Server",
-      "acceptServer": "Accept Server",
-      "acceptServerHint": "Keep the version from the other device",
-      "conflictingFields": "Conflicting Fields ({{count}})",
-      "decideLater": "Decide Later",
+      "accept_button": "Accept Server",
+      "accept_server": "Accept Server",
+      "accept_server_hint": "Keep the version from the other device",
+      "conflicting_fields": "Conflicting Fields ({{count}})",
+      "decide_later": "Decide Later",
       "description": "This {{tableName}} was modified on another device. Choose which version to keep.",
-      "dismissButton": "Decide Later",
+      "dismiss_button": "Decide Later",
       "explanation": "ℹ️ The same item was changed on multiple devices. Choose which version to keep.",
       "field": {
         "app_version": "App Version",
@@ -3852,7 +3865,7 @@
         "notes": "Notes",
         "notifications_enabled": "Notifications",
         "os_version": "OS Version",
-        "pH": "pH Level",
+        "p_h": "pH Level",
         "parent_task_id": "Parent Task",
         "phase": "Growth Phase",
         "plant_id": "Plant",
@@ -3879,21 +3892,21 @@
         "watering_schedule": "Watering Schedule",
         "yield_estimate": "Yield Estimate"
       },
-      "fieldsHeading": "Conflicting Fields",
-      "keepLocal": "Keep Local",
-      "keepLocalButton": "Keep My Version",
-      "keepLocalHint": "Keep your local changes and overwrite the server version",
-      "localLabel": "(This Device)",
+      "fields_heading": "Conflicting Fields",
+      "keep_local": "Keep Local",
+      "keep_local_button": "Keep My Version",
+      "keep_local_hint": "Keep your local changes and overwrite the server version",
+      "local_label": "(This Device)",
       "note": "Note: By default, the server version will be used (Last-Write-Wins). You can restore your local version if needed.",
-      "otherDeviceLabel": "Other Device",
-      "remoteLabel": "(Other Device)",
-      "restoreButton": "Restore My Version",
-      "serverVersion": "Server Version (Remote)",
-      "thisDeviceLabel": "This Device",
+      "other_device_label": "Other Device",
+      "remote_label": "(Other Device)",
+      "restore_button": "Restore My Version",
+      "server_version": "Server Version (Remote)",
+      "this_device_label": "This Device",
       "title": "Sync Conflict Detected",
-      "useServerButton": "Use Server Version",
+      "use_server_button": "Use Server Version",
       "warning": "⚠️ Choosing a version will overwrite the other. This action cannot be undone.",
-      "yourVersion": "Your Version (Local)"
+      "your_version": "Your Version (Local)"
     },
     "last_sync_and_pending": "Last sync: {{time}}, {{count}} pending",
     "offline_banner": "You're offline. Changes will sync when back online.",
@@ -4015,52 +4028,52 @@
   },
   "trichome": {
     "amber": "Amber",
-    "amberLabel": "Amber Trichomes (%)",
-    "assessmentDisclaimer": "ⓘ This assessment is for your personal tracking. Results are educational and not professional advice.",
+    "amber_label": "Amber Trichomes (%)",
+    "assessment_disclaimer": "ⓘ This assessment is for your personal tracking. Results are educational and not professional advice.",
     "clear": "Clear",
-    "clearLabel": "Clear Trichomes (%)",
-    "formTitle": "Log Trichome Assessment",
-    "guideTitle": "Trichome Assessment Guide",
+    "clear_label": "Clear Trichomes (%)",
+    "form_title": "Log Trichome Assessment",
+    "guide_title": "Trichome Assessment Guide",
     "helper": {
-      "accessibilityForm": "Show trichome assessment form",
-      "accessibilityGuide": "Show trichome assessment guide",
-      "amberLabelShort": "Amber:",
-      "assessTab": "Assess",
-      "clearLabelShort": "Clear:",
-      "closeButton": "Close",
-      "failedToAcceptSuggestion": "Failed to accept suggestion",
-      "footerDisclaimer": "ⓘ All information provided is educational only and not professional cultivation or horticultural advice. Always research your specific strain and comply with local regulations.",
-      "guideTab": "Guide",
-      "harvestSuggestionsTitle": "Harvest Suggestions",
+      "accessibility_form": "Show trichome assessment form",
+      "accessibility_guide": "Show trichome assessment guide",
+      "amber_label_short": "Amber:",
+      "assess_tab": "Assess",
+      "clear_label_short": "Clear:",
+      "close_button": "Close",
+      "failed_to_accept_suggestion": "Failed to accept suggestion",
+      "footer_disclaimer": "ⓘ All information provided is educational only and not professional cultivation or horticultural advice. Always research your specific strain and comply with local regulations.",
+      "guide_tab": "Guide",
+      "harvest_suggestions_title": "Harvest Suggestions",
       "header": "Trichome Helper",
-      "latestAssessmentTitle": "Latest Assessment",
-      "loadingGuide": "Loading guide...",
-      "milkyLabelShort": "Milky:",
-      "pleaseTryAgain": "Please try again",
-      "quickReference": "Quick Reference",
+      "latest_assessment_title": "Latest Assessment",
+      "loading_guide": "Loading guide...",
+      "milky_label_short": "Milky:",
+      "please_try_again": "Please try again",
+      "quick_reference": "Quick Reference",
       "subtitle": "Assess trichome development for harvest timing",
-      "windowsTab": "Windows"
+      "windows_tab": "Windows"
     },
-    "lightingCautions": "Lighting Cautions",
+    "lighting_cautions": "Lighting Cautions",
     "milky": "Milky",
-    "milkyLabel": "Milky/Cloudy Trichomes (%)",
-    "notesLabel": "Notes (optional)",
-    "notesPlaceholder": "Add any observations...",
-    "percentPlaceholder": "{{min}}-{{max}}",
-    "photographyTips": "Photography Tips",
-    "submitButton": "Log Assessment",
-    "totalPercent": "Total: {{total}}%",
-    "totalPercentWarning": "Total: {{total}}% (percentages should add up to 100%)",
-    "trichomeRatio": "Trichome Ratio",
-    "validationMax": "Must be {{max}} or less",
-    "validationMin": "Must be {{min}} or greater"
+    "milky_label": "Milky/Cloudy Trichomes (%)",
+    "notes_label": "Notes (optional)",
+    "notes_placeholder": "Add any observations...",
+    "percent_placeholder": "{{min}}-{{max}}",
+    "photography_tips": "Photography Tips",
+    "submit_button": "Log Assessment",
+    "total_percent": "Total: {{total}}%",
+    "total_percent_warning": "Total: {{total}}% (percentages should add up to 100%)",
+    "trichome_ratio": "Trichome Ratio",
+    "validation_max": "Must be {{max}} or less",
+    "validation_min": "Must be {{min}} or greater"
   },
   "units": {
     "celsius": "°C",
     "ms_per_cm": "mS/cm"
   },
   "validation": {
-    "strainNameRequired": "Strain name is required"
+    "strain_name_required": "Strain name is required"
   },
   "welcome": "Welcome to GrowBro app site"
 }

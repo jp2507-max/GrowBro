@@ -148,6 +148,7 @@ export interface CommunityAPI {
 
   // Profiles
   getUserProfile(userId: string): Promise<UserProfile>;
+  getUserProfiles(userIds: string[]): Promise<UserProfile[]>;
   getUserPosts(
     userId: string,
     cursor?: string,

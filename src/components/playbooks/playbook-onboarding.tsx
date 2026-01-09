@@ -126,7 +126,7 @@ function NavigationButtons({
         testID="onboarding-next-button"
         label={
           currentStep === totalSteps - 1
-            ? t('playbooks.onboarding.getStarted')
+            ? t('playbooks.onboarding.get_started')
             : t('playbooks.onboarding.next')
         }
         onPress={onNext}

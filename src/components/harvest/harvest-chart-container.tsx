@@ -115,8 +115,8 @@ export function HarvestChartContainer({
           <Button
             label={
               showBatchView
-                ? t('harvest.chart.filters.individualView')
-                : t('harvest.chart.filters.batchView')
+                ? t('harvest.chart.filters.individual_view')
+                : t('harvest.chart.filters.batch_view')
             }
             onPress={() => setShowBatchView(!showBatchView)}
             variant="outline"
@@ -130,7 +130,7 @@ export function HarvestChartContainer({
       {hasError ? (
         <View className="p-4">
           <Text className="mb-4 text-center text-sm text-danger-600 dark:text-danger-400">
-            {t('harvest.chart.error.renderFailed')}
+            {t('harvest.chart.error.render_failed')}
           </Text>
           <WeightChartTable data={filteredData} testID={`${testID}-table`} />
         </View>
@@ -165,7 +165,7 @@ function TimeRangeSelector({
       {ranges.map((range) => (
         <Button
           key={range}
-          label={t(`harvest.chart.timeRange.${range}`)}
+          label={t(`harvest.chart.time_range.${range}`)}
           onPress={() => onChange(range)}
           variant={value === range ? 'default' : 'outline'}
           size="sm"

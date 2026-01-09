@@ -1,15 +1,12 @@
 import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable } from 'react-native';
-import Animated, {
-  FadeIn,
-  FadeOut,
-  ReduceMotion,
-} from 'react-native-reanimated';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 
 import { Text, View } from '@/components/ui';
 import colors from '@/components/ui/colors';
 import { Settings } from '@/components/ui/icons/settings';
+import { withRM } from '@/lib/animations/motion';
 import { ExactAlarmCoordinator } from '@/lib/inventory/notifications/exact-alarm-coordinator';
 
 type ExactAlarmFallbackBannerProps = {
@@ -40,8 +37,8 @@ export function ExactAlarmFallbackBanner({
   return (
     <Animated.View
       className="mx-4 mb-4 overflow-hidden rounded-xl bg-warning-50 dark:bg-warning-900/20"
-      entering={FadeIn.duration(300).reduceMotion(ReduceMotion.System)}
-      exiting={FadeOut.duration(200).reduceMotion(ReduceMotion.System)}
+      entering={withRM(FadeIn.duration(300))}
+      exiting={withRM(FadeOut.duration(200))}
       testID={testID}
     >
       <View className="flex-row items-start gap-3 p-4">

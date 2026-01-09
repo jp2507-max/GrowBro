@@ -1,4 +1,3 @@
-import { BlurView } from 'expo-blur';
 import { Link } from 'expo-router';
 import * as React from 'react';
 import {
@@ -14,6 +13,7 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 
+import { OptionalBlurView } from '@/components/shared/optional-blur-view';
 import { DifficultyBadge } from '@/components/strains/difficulty-badge';
 import { FavoriteButtonConnected } from '@/components/strains/favorite-button-connected';
 import { RaceBadge } from '@/components/strains/race-badge';
@@ -41,6 +41,8 @@ const glassStyles = StyleSheet.create({
 type Props = {
   strain: Strain;
   testID?: string;
+  enableSharedTransition?: boolean;
+  onStartNavigation?: (strainId: string) => void;
 };
 
 // Extracted component for badges
@@ -52,6 +54,40 @@ const StrainBadges = React.memo<{ strain: Strain }>(({ strain }) => (
   </View>
 ));
 StrainBadges.displayName = 'StrainBadges';
+
+type StrainCardOverlayProps = {
+  isDark: boolean;
+  style: ViewStyle;
+  children: React.ReactNode;
+};
+
+const StrainCardOverlay = React.memo<StrainCardOverlayProps>(
+  ({ isDark, style, children }) => {
+    if (Platform.OS !== 'ios') {
+      return (
+        <View
+          style={[
+            style,
+            isDark ? styles.blurFallbackDark : styles.blurFallbackLight,
+          ]}
+        >
+          {children}
+        </View>
+      );
+    }
+
+    return (
+      <OptionalBlurView
+        intensity={60}
+        tint={isDark ? 'dark' : 'light'}
+        style={style}
+      >
+        {children}
+      </OptionalBlurView>
+    );
+  }
+);
+StrainCardOverlay.displayName = 'StrainCardOverlay';
 
 // Extracted component for card content
 const StrainCardContent = React.memo<{
@@ -87,119 +123,136 @@ StrainCardContent.displayName = 'StrainCardContent';
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const AnimatedImage = Animated.createAnimatedComponent(Image);
 
-export const StrainCard = React.memo<Props>(({ strain, testID }) => {
-  const { scaledSizes, isLargeTextMode } = useDynamicType();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+export const StrainCard = React.memo<Props>(
+  ({ strain, testID, enableSharedTransition = true, onStartNavigation }) => {
+    const { scaledSizes, isLargeTextMode } = useDynamicType();
+    const colorScheme = useColorScheme();
+    const isDark = colorScheme === 'dark';
 
-  const scale = useSharedValue(1);
+    const scale = useSharedValue(1);
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
+    const animatedStyle = useAnimatedStyle(() => ({
+      transform: [{ scale: scale.value }],
+    }));
 
-  const onPressIn = React.useCallback(() => {
-    haptics.selection();
-    scale.value = withSpring(0.97, {
-      damping: 10,
-      stiffness: 300,
-      reduceMotion: ReduceMotion.System,
-    });
-  }, [scale]);
+    React.useEffect(() => {
+      scale.value = 1;
+    }, [strain.id, scale]);
 
-  const onPressOut = React.useCallback(() => {
-    scale.value = withSpring(1, {
-      damping: 10,
-      stiffness: 300,
-      reduceMotion: ReduceMotion.System,
-    });
-  }, [scale]);
+    const onPressIn = React.useCallback(() => {
+      haptics.selection();
+      onStartNavigation?.(strain.id);
+      scale.value = withSpring(0.97, {
+        damping: 10,
+        stiffness: 300,
+        reduceMotion: ReduceMotion.System,
+      });
+    }, [onStartNavigation, scale, strain.id]);
 
-  const accessibilityLabel = React.useMemo(
-    () =>
-      formatStrainCardLabel({
-        name: strain.name,
-        race: strain.race,
-        thc_display: strain.thc_display,
-        difficulty: strain.grow.difficulty,
-      }),
-    [strain.name, strain.race, strain.thc_display, strain.grow.difficulty]
-  );
+    const onPressOut = React.useCallback(() => {
+      scale.value = withSpring(1, {
+        damping: 10,
+        stiffness: 300,
+        reduceMotion: ReduceMotion.System,
+      });
+    }, [scale]);
 
-  const imageProps = React.useMemo(
-    () => getListImageProps(strain.id, strain.imageUrl),
-    [strain.id, strain.imageUrl]
-  );
+    const accessibilityLabel = React.useMemo(
+      () =>
+        formatStrainCardLabel({
+          name: strain.name,
+          race: strain.race,
+          thc_display: strain.thc_display,
+          difficulty: strain.grow.difficulty,
+        }),
+      [strain.name, strain.race, strain.thc_display, strain.grow.difficulty]
+    );
 
-  return (
-    <Link href={`/strains/${strain.slug}`} asChild>
-      <AnimatedPressable
-        accessibilityHint={translate('accessibility.strains.open_detail_hint')}
-        accessibilityLabel={accessibilityLabel}
-        accessibilityRole="link"
-        testID={testID}
-        className="mb-5 px-4"
-        onPressIn={onPressIn}
-        onPressOut={onPressOut}
-        style={animatedStyle}
-      >
-        <View
-          className="overflow-hidden rounded-3xl bg-white shadow-sm dark:bg-charcoal-900"
-          style={styles.card}
+    const imageProps = React.useMemo(
+      () => getListImageProps(strain.id, strain.imageUrl),
+      [strain.id, strain.imageUrl]
+    );
+
+    return (
+      <Link href={`/strains/${strain.slug}`} asChild>
+        <AnimatedPressable
+          accessibilityHint={translate(
+            'accessibility.strains.open_detail_hint'
+          )}
+          accessibilityLabel={accessibilityLabel}
+          accessibilityRole="link"
+          testID={testID}
+          className="mb-5 px-4"
+          onPressIn={onPressIn}
+          onPressOut={onPressOut}
+          style={animatedStyle}
         >
-          <View className="relative h-52 w-full bg-white">
-            <AnimatedImage
-              className="size-full"
-              contentFit="cover"
-              sharedTransitionTag={strainImageTag(strain.slug)}
-              {...imageProps}
+          <View
+            className="overflow-hidden rounded-3xl bg-white shadow-sm dark:bg-charcoal-900"
+            style={styles.card}
+          >
+            <View className="relative h-52 w-full bg-white">
+              <AnimatedImage
+                className="size-full"
+                contentFit="cover"
+                sharedTransitionTag={
+                  enableSharedTransition
+                    ? strainImageTag(strain.slug)
+                    : undefined
+                }
+                {...imageProps}
+              />
+
+              {/* Favorite Button */}
+              <View className="absolute right-3 top-3">
+                <StrainCardOverlay
+                  isDark={isDark}
+                  style={glassStyles.favoriteButton}
+                >
+                  <View className="p-1.5">
+                    <FavoriteButtonConnected
+                      strainId={strain.id}
+                      strain={strain}
+                      testID={`favorite-btn-${strain.id}`}
+                    />
+                  </View>
+                </StrainCardOverlay>
+              </View>
+
+              {/* Overlay Badges */}
+              <View className="absolute bottom-3 left-3">
+                <StrainCardOverlay
+                  isDark={isDark}
+                  style={glassStyles.overlayBadges}
+                >
+                  <View className="px-2 py-1.5">
+                    <StrainBadges strain={strain} />
+                  </View>
+                </StrainCardOverlay>
+              </View>
+            </View>
+
+            <StrainCardContent
+              strain={strain}
+              scaledSizes={scaledSizes}
+              isLargeTextMode={isLargeTextMode}
             />
-
-            {/* Favorite Button */}
-            <View className="absolute right-3 top-3">
-              <BlurView
-                intensity={60}
-                tint={isDark ? 'dark' : 'light'}
-                style={glassStyles.favoriteButton}
-              >
-                <View className="p-1.5">
-                  <FavoriteButtonConnected
-                    strainId={strain.id}
-                    strain={strain}
-                    testID={`favorite-btn-${strain.id}`}
-                  />
-                </View>
-              </BlurView>
-            </View>
-
-            {/* Overlay Badges */}
-            <View className="absolute bottom-3 left-3">
-              <BlurView
-                intensity={60}
-                tint={isDark ? 'dark' : 'light'}
-                style={glassStyles.overlayBadges}
-              >
-                <View className="px-2 py-1.5">
-                  <StrainBadges strain={strain} />
-                </View>
-              </BlurView>
-            </View>
           </View>
-
-          <StrainCardContent
-            strain={strain}
-            scaledSizes={scaledSizes}
-            isLargeTextMode={isLargeTextMode}
-          />
-        </View>
-      </AnimatedPressable>
-    </Link>
-  );
-});
+        </AnimatedPressable>
+      </Link>
+    );
+  }
+);
 
 StrainCard.displayName = 'StrainCard';
 
 const styles = StyleSheet.create({
+  blurFallbackDark: {
+    backgroundColor: 'rgba(17, 24, 39, 0.45)',
+  },
+  blurFallbackLight: {
+    backgroundColor: 'rgba(255, 255, 255, 0.75)',
+  },
   card: {
     ...Platform.select({
       ios: {
