@@ -291,7 +291,8 @@ export const ensureRemoteAttachmentMetadata = async (
   const bytes = Number(metadata?.bytes ?? attachment.size ?? 0);
   const hasCompleteMetadata = width > 0 && height > 0 && bytes > 0;
 
-  const aspectRatio = metadata?.aspectRatio ?? width / height;
+  const aspectRatio =
+    metadata?.aspectRatio ?? (height > 0 ? width / height : 1);
 
   // Extract and validate storage paths
   const resizedPath = metadata?.resizedPath
