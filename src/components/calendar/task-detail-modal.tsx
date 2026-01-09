@@ -2,10 +2,10 @@ import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { DateTime } from 'luxon';
 import { useColorScheme } from 'nativewind';
 import React from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { twMerge } from 'tailwind-merge';
 
-import { Modal, Text, useModal, View } from '@/components/ui';
+import { Modal, Pressable, Text, useModal, View } from '@/components/ui';
 import colors from '@/components/ui/colors';
 import { ArrowRight, Check, Trash } from '@/components/ui/icons';
 import { BottomSheetView } from '@/components/ui/modal';

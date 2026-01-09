@@ -52,6 +52,8 @@ type OnboardingPagerProps = {
   testID?: string;
 };
 
+const CTA_OUTPUT_RANGE = [0, 1] as const;
+
 // Tracking state for onboarding telemetry
 type TrackingState = {
   startTime: number;
@@ -84,6 +86,9 @@ export function OnboardingPager({
   const scrollRef = React.useRef<ScrollView | null>(null);
   const activeIndex = useSharedValue(0);
   const lastIndex = slides.length - 1;
+  const ctaRange = React.useMemo((): [number, number] => {
+    return [Math.max(lastIndex - 1, 0), lastIndex];
+  }, [lastIndex]);
   const trackingRef = React.useRef<TrackingState>({
     startTime: Date.now(),
     slideTimes: { 0: Date.now() },
@@ -106,11 +111,7 @@ export function OnboardingPager({
     'worklet';
     if (lastIndex === 0) return { opacity: 1 };
     return {
-      opacity: interpolate(
-        activeIndex.value,
-        [Math.max(lastIndex - 1, 0), lastIndex],
-        [0, 1]
-      ),
+      opacity: interpolate(activeIndex.value, ctaRange, CTA_OUTPUT_RANGE),
     };
   });
 

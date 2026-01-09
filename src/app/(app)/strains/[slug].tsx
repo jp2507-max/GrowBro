@@ -353,7 +353,9 @@ const StrainContentSheet = ({
       <View className="h-1.5 w-12 rounded-full bg-neutral-200 dark:bg-white/20" />
     </View>
     <PremiumTagsRow strain={strain} />
-    <Animated.View entering={FadeIn.delay(200).springify()}>
+    <Animated.View
+      entering={FadeIn.delay(200).springify().reduceMotion(ReduceMotion.System)}
+    >
       <HardFactsGrid strain={strain} />
     </Animated.View>
     <View className="px-6 pb-6">

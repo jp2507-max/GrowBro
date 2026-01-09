@@ -23,6 +23,7 @@ import {
 } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
+import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useComments, useCreateComment, usePost } from '@/api/community';
@@ -34,12 +35,14 @@ import {
   ActivityIndicator,
   FocusAwareStatusBar,
   GlassButton,
-  OptimizedImage,
+  Image,
   Text,
   View,
 } from '@/components/ui';
 import colors from '@/components/ui/colors';
 import { ArrowLeft } from '@/components/ui/icons';
+import { communityPostHeroTag } from '@/lib/animations/shared';
+import { getCommunityImageProps } from '@/lib/community/image-optimization';
 import { normalizePostUserId } from '@/lib/community/post-utils';
 import { isCommunityCommentsKey } from '@/lib/community/query-keys';
 import {
@@ -52,6 +55,8 @@ import { translate, type TxKeyPath } from '@/lib/i18n';
 import { showErrorToast } from '@/lib/settings/toast-utils';
 import { getHeaderColors } from '@/lib/theme-utils';
 import { database } from '@/lib/watermelon';
+
+const AnimatedImage = Animated.createAnimatedComponent(Image);
 
 const styles = StyleSheet.create({
   flex1: {
@@ -104,6 +109,24 @@ export default function PostDetailScreen(): React.ReactElement {
   } = usePost({
     variables: { postId: local.id },
   });
+
+  const heroImageProps = React.useMemo(() => {
+    if (!post?.media_uri) return undefined;
+    return getCommunityImageProps({
+      uri: post.media_uri,
+      thumbnailUri: post.media_thumbnail_uri,
+      resizedUri: post.media_resized_uri,
+      blurhash: post.media_blurhash,
+      thumbhash: post.media_thumbhash,
+      recyclingKey: post.media_thumbnail_uri || post.media_uri,
+    });
+  }, [
+    post?.media_uri,
+    post?.media_thumbnail_uri,
+    post?.media_resized_uri,
+    post?.media_blurhash,
+    post?.media_thumbhash,
+  ]);
 
   const { data: commentsData, isLoading: isLoadingComments } = useComments({
     postId: local.id,
@@ -336,15 +359,10 @@ export default function PostDetailScreen(): React.ReactElement {
               {/* 2. Hero Image */}
               {hasImage && (
                 <View className="mb-4 overflow-hidden rounded-2xl shadow-sm">
-                  <OptimizedImage
+                  <AnimatedImage
                     className="w-full"
                     style={styles.heroImage}
-                    uri={post.media_uri!}
-                    thumbnailUri={post.media_thumbnail_uri}
-                    resizedUri={post.media_resized_uri}
-                    blurhash={post.media_blurhash}
-                    thumbhash={post.media_thumbhash}
-                    recyclingKey={post.media_thumbnail_uri || post.media_uri}
+                    sharedTransitionTag={communityPostHeroTag(local.id)}
                     accessibilityIgnoresInvertColors
                     accessibilityLabel={translate(
                       'accessibility.community.post_image' as TxKeyPath,
@@ -353,6 +371,7 @@ export default function PostDetailScreen(): React.ReactElement {
                     accessibilityHint={translate(
                       'accessibility.community.post_image_hint' as TxKeyPath
                     )}
+                    {...(heroImageProps ?? {})}
                   />
                 </View>
               )}

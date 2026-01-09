@@ -105,6 +105,7 @@ export function PostCardView({
               />
               {hasImage && (
                 <PostCardHeroImage
+                  postId={String(postId)}
                   mediaUri={post.media_uri!}
                   thumbnailUri={post.media_thumbnail_uri}
                   resizedUri={post.media_resized_uri}

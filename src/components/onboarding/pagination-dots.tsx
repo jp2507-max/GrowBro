@@ -17,6 +17,9 @@ import { View } from '@/components/ui';
 import colors from '@/components/ui/colors';
 
 const Animated = Reanimated;
+const DOT_INACTIVE = colors.neutral[400];
+const DOT_ACTIVE = colors.primary[600];
+const DOT_OUTPUT_RANGE = [DOT_INACTIVE, DOT_ACTIVE, DOT_INACTIVE] as const;
 
 type PaginationDotsProps = {
   count: number;
@@ -30,12 +33,17 @@ type DotProps = {
 };
 
 function Dot({ index, activeIndex }: DotProps): React.ReactElement {
+  const inputRange = React.useMemo(
+    (): [number, number, number] => [index - 1, index, index + 1],
+    [index]
+  );
+
   const rStyle = useAnimatedStyle(() => {
     'worklet';
     const backgroundColor = interpolateColor(
       activeIndex.value,
-      [index - 1, index, index + 1],
-      [colors.neutral[400], colors.primary[600], colors.neutral[400]]
+      inputRange,
+      DOT_OUTPUT_RANGE
     );
     return { backgroundColor };
   });

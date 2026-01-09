@@ -7,6 +7,7 @@ import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, TextInput, View } from 'react-native';
 import Animated, {
+  ReduceMotion,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
@@ -23,15 +24,27 @@ import { haptics } from '@/lib/haptics';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 import { translate } from '@/lib/i18n';
 
-// Helper to convert hex to rgba
-function hexToRgba(hex: string, alpha: number): string {
+type RgbColor = {
+  r: number;
+  g: number;
+  b: number;
+};
+
+function hexToRgb(hex: string): RgbColor {
   const r = parseInt(hex.slice(1, 3), 16);
   const g = parseInt(hex.slice(3, 5), 16);
   const b = parseInt(hex.slice(5, 7), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  return { r, g, b };
+}
+
+function rgbaFromRgb(rgb: RgbColor, alpha: number): string {
+  'worklet';
+  return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`;
 }
 
 const listContentStyle = { gap: 8, paddingBottom: 20 };
+const PRIMARY_500 = colors.primary[500];
+const PRIMARY_500_RGB = hexToRgb(PRIMARY_500);
 
 type StrainPickerProps = {
   value?: string;
@@ -85,17 +98,29 @@ function StrainOption({
   }));
 
   const animatedBgStyle = useAnimatedStyle(() => ({
-    backgroundColor: hexToRgba(colors.primary[500], bgOpacity.value),
+    backgroundColor: rgbaFromRgb(PRIMARY_500_RGB, bgOpacity.value),
   }));
 
-  const handlePressIn = React.useCallback(() => {
-    scale.value = withTiming(0.97, { duration: 100 });
-    bgOpacity.value = withTiming(0.08, { duration: 100 });
+  const handlePressIn = React.useCallback((): void => {
+    scale.value = withTiming(0.97, {
+      duration: 100,
+      reduceMotion: ReduceMotion.System,
+    });
+    bgOpacity.value = withTiming(0.08, {
+      duration: 100,
+      reduceMotion: ReduceMotion.System,
+    });
   }, [scale, bgOpacity]);
 
-  const handlePressOut = React.useCallback(() => {
-    scale.value = withTiming(1, { duration: 150 });
-    bgOpacity.value = withTiming(0, { duration: 150 });
+  const handlePressOut = React.useCallback((): void => {
+    scale.value = withTiming(1, {
+      duration: 150,
+      reduceMotion: ReduceMotion.System,
+    });
+    bgOpacity.value = withTiming(0, {
+      duration: 150,
+      reduceMotion: ReduceMotion.System,
+    });
   }, [scale, bgOpacity]);
 
   const handlePress = React.useCallback(() => {

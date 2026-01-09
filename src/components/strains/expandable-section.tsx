@@ -1,5 +1,6 @@
 import * as React from 'react';
 import Animated, {
+  ReduceMotion,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
@@ -19,10 +20,13 @@ export const ExpandableSection = React.memo<Props>(
     const [isExpanded, setIsExpanded] = React.useState(defaultExpanded);
     const rotation = useSharedValue(defaultExpanded ? 180 : 0);
 
-    const toggleExpanded = React.useCallback(() => {
+    const toggleExpanded = React.useCallback((): void => {
       setIsExpanded((prev) => {
         const next = !prev;
-        rotation.value = withTiming(next ? 180 : 0, { duration: 200 });
+        rotation.value = withTiming(next ? 180 : 0, {
+          duration: 200,
+          reduceMotion: ReduceMotion.System,
+        });
         return next;
       });
     }, [rotation]);

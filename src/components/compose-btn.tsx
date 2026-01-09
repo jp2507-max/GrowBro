@@ -1,5 +1,6 @@
 import React from 'react';
 import Animated, {
+  ReduceMotion,
   useAnimatedStyle,
   useDerivedValue,
   withTiming,
@@ -15,6 +16,8 @@ const AnimatedText = Animated.createAnimatedComponent(Text);
 const BTN_WIDTH = 125;
 const BTN_HEIGHT = 50;
 const DURATION = 200;
+const COLLAPSED_SCALE_X = BTN_HEIGHT / BTN_WIDTH;
+const COLLAPSED_TRANSLATE_X = (BTN_WIDTH - BTN_HEIGHT) / 2;
 
 export function ComposeBtn({
   onPress,
@@ -32,15 +35,25 @@ export function ComposeBtn({
   );
 
   const rContainerStyle = useAnimatedStyle(() => {
+    const isCollapsed = isHiddenOrCollapsed.value;
+    const scaleX = withTiming(isCollapsed ? COLLAPSED_SCALE_X : 1, {
+      duration: DURATION,
+      reduceMotion: ReduceMotion.System,
+    });
+    const translateX = withTiming(isCollapsed ? COLLAPSED_TRANSLATE_X : 0, {
+      duration: DURATION,
+      reduceMotion: ReduceMotion.System,
+    });
     return {
-      width: withTiming(isHiddenOrCollapsed.value ? BTN_HEIGHT : BTN_WIDTH, {
-        duration: DURATION,
-      }),
-      height: withTiming(BTN_HEIGHT, { duration: DURATION }),
+      width: BTN_WIDTH,
+      height: BTN_HEIGHT,
       transform: [
+        { scaleX },
+        { translateX },
         {
-          translateY: withTiming(isHiddenOrCollapsed.value ? netHeight : 0, {
+          translateY: withTiming(isCollapsed ? netHeight : 0, {
             duration: DURATION,
+            reduceMotion: ReduceMotion.System,
           }),
         },
       ],
@@ -51,6 +64,7 @@ export function ComposeBtn({
     return {
       opacity: withTiming(isHiddenOrCollapsed.value ? 0 : 1, {
         duration: isHiddenOrCollapsed.value ? DURATION / 2 : DURATION,
+        reduceMotion: ReduceMotion.System,
       }),
     };
   }, []);

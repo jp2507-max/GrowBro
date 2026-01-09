@@ -4,6 +4,7 @@ import type { SharedValue } from 'react-native-reanimated';
 import Animated, {
   FadeIn,
   FadeOut,
+  ReduceMotion,
   useAnimatedStyle,
   useDerivedValue,
   useSharedValue,
@@ -143,6 +144,7 @@ function useSharedHeaderAnimation({
       damping: 22,
       stiffness: 240,
       mass: 0.9,
+      reduceMotion: ReduceMotion.System,
     });
   }, [height, insetsTop, routeKey]);
 
@@ -255,8 +257,8 @@ function AnimatedPerTabContent({
     <View className="py-1">
       <Animated.View
         key={routeKey}
-        entering={FadeIn.duration(180)}
-        exiting={FadeOut.duration(140)}
+        entering={FadeIn.duration(180).reduceMotion(ReduceMotion.System)}
+        exiting={FadeOut.duration(140).reduceMotion(ReduceMotion.System)}
       >
         <Text
           className="text-base font-semibold text-neutral-900 dark:text-neutral-100"

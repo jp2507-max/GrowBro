@@ -6,8 +6,6 @@ import Animated, {
   useSharedValue,
   type SharedValue,
 } from 'react-native-reanimated';
-// @ts-expect-error - Reanimated 4.x type exports issue
-import { interpolate } from 'react-native-reanimated';
 
 import type { Plant } from '@/api';
 import { OptimizedImage, Pressable, Text, View } from '@/components/ui';
@@ -346,16 +344,13 @@ export function PlantCard({
     const start = effItemY.value - 1;
     const mid = effItemY.value;
     const end = effItemY.value + h;
-    const scale = interpolate(
-      listOffsetY.value,
-      [start, mid, end],
-      [1, 1, 0.98]
+    const offset = listOffsetY.value;
+    const scaleProgress = Math.min(
+      Math.max((offset - mid) / (end - mid), 0),
+      1
     );
-    const translateY = interpolate(
-      listOffsetY.value,
-      [start - 1, start, start + 1],
-      [0, 0, 1]
-    );
+    const scale = 1 - 0.02 * scaleProgress;
+    const translateY = Math.min(Math.max(offset - start, 0), 1);
     return { transform: [{ translateY }, { scale }] };
   });
 

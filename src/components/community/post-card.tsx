@@ -20,6 +20,7 @@ import { normalizePostUserId } from '@/lib/community/post-utils';
 import { translate } from '@/lib/i18n';
 
 import { PostCardView } from './post-card-view';
+import type { PressEvent } from './types';
 
 type PostCardProps = {
   post: ApiPost;
@@ -70,7 +71,7 @@ function PostCardComponent({
     userProfile?.username ||
     (postUserId.startsWith('unknown-')
       ? translate('accessibility.community.unknown_user')
-      : postUserId.slice(0, 8));
+      : translate('accessibility.community.anonymous_user'));
 
   const isOwnPost =
     currentUserId !== undefined &&
@@ -78,18 +79,16 @@ function PostCardComponent({
     postUserId === currentUserId;
 
   const handleCommentPress = React.useCallback(
-    (e: { stopPropagation: () => void; preventDefault: () => void }) => {
+    (e: PressEvent) => {
       e.stopPropagation();
-      e.preventDefault();
       router.push(`/feed/${postId}`);
     },
     [router, postId]
   );
 
   const handleAuthorPress = React.useCallback(
-    (e: { stopPropagation: () => void; preventDefault: () => void }) => {
+    (e: PressEvent) => {
       e.stopPropagation();
-      e.preventDefault();
       router.push(`/community/${postUserId}`);
     },
     [router, postUserId]

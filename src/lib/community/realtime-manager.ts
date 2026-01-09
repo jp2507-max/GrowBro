@@ -36,6 +36,7 @@ type RealtimeCallbacks = {
 export class RealtimeConnectionManager {
   private channel: RealtimeChannel | null = null;
   private connectionState: ConnectionState = 'disconnected';
+  private isConnecting = false;
   private callbacks: RealtimeCallbacks = {};
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 3;
@@ -106,6 +107,12 @@ export class RealtimeConnectionManager {
    * @param postId Optional post ID to filter comments subscription
    */
   subscribe(callbacks: RealtimeCallbacks, postId?: string): void {
+    // Guard against concurrent subscription attempts
+    if (this.isConnecting) {
+      console.warn('Subscription already in progress, ignoring duplicate call');
+      return;
+    }
+
     // If already connected or connecting, perform clean re-subscribe
     if (
       this.connectionState === 'connected' ||
@@ -205,11 +212,13 @@ export class RealtimeConnectionManager {
   ): void {
     if (!this.isActive) return;
     if (status === 'SUBSCRIBED') {
+      this.isConnecting = false;
       this.setConnectionState('connected');
       this.reconnectAttempts = 0;
       this.stopPolling();
       console.log('Connected to community feed realtime');
     } else if (status === 'CHANNEL_ERROR') {
+      this.isConnecting = false;
       this.setConnectionState('error');
       console.error('Realtime subscription error:', {
         status,
@@ -221,6 +230,7 @@ export class RealtimeConnectionManager {
       communityMetrics.recordReconnect();
       this.handleConnectionError();
     } else if (status === 'TIMED_OUT') {
+      this.isConnecting = false;
       this.setConnectionState('error');
       console.error('Realtime subscription timed out:', {
         status,
@@ -230,6 +240,7 @@ export class RealtimeConnectionManager {
       communityMetrics.recordReconnect();
       this.handleConnectionError();
     } else if (status === 'CLOSED') {
+      this.isConnecting = false;
       this.setConnectionState('disconnected');
       console.log('Realtime connection closed:', {
         status,
@@ -251,6 +262,7 @@ export class RealtimeConnectionManager {
       return;
     }
 
+    this.isConnecting = true;
     this.setConnectionState('connecting');
 
     // Create channel with unique name based on filter
@@ -335,13 +347,18 @@ export class RealtimeConnectionManager {
 
   /**
    * Poll for updates when real-time is unavailable
-   * This is a simplified implementation - actual polling should trigger
-   * refetch in React Query
+   * Triggers refetch by toggling connection state to notify listeners
    */
   private async pollUpdates(): Promise<void> {
-    // Notify listeners to trigger refetch
-    // In practice, this would trigger React Query refetch
     console.log('Polling for updates...');
+    // Notify listeners by temporarily changing state
+    // This triggers React Query refetch in components listening to connection state
+    const previousState = this.connectionState;
+    this.callbacks.onConnectionStateChange?.('disconnected');
+    // Restore state after a brief delay to trigger update detection
+    setTimeout(() => {
+      this.callbacks.onConnectionStateChange?.(previousState);
+    }, 100);
   }
 
   /**
@@ -450,6 +467,7 @@ export class RealtimeConnectionManager {
    */
   unsubscribe(): void {
     this.isActive = false;
+    this.isConnecting = false;
     // Clear timers
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);

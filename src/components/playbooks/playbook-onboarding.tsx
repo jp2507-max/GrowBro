@@ -7,7 +7,7 @@
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView } from 'react-native';
-import Animated, { FadeIn } from 'react-native-reanimated';
+import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
 
 import { Button, Text, View } from '@/components/ui';
 import { storage } from '@/lib/storage';
@@ -94,7 +94,7 @@ function StepContent({
   return (
     <Animated.View
       testID={testID}
-      entering={FadeIn.duration(400)}
+      entering={FadeIn.duration(400).reduceMotion(ReduceMotion.System)}
       className="items-center"
     >
       <Text className="mb-6 text-6xl">{step.icon}</Text>

@@ -252,11 +252,119 @@ export async function handlePasswordReset(tokenHash: string): Promise<void> {
 }
 
 /**
- * Handle OAuth callback deep links
+ * Check if an error is a network error
+ */
+function isNetworkError(error: unknown): boolean {
+  if (!error) return false;
+
+  const errorMessage =
+    error instanceof Error ? error.message.toLowerCase() : '';
+  const errorName = error instanceof Error ? error.name.toLowerCase() : '';
+
+  return (
+    errorMessage.includes('network') ||
+    errorMessage.includes('fetch') ||
+    errorMessage.includes('timeout') ||
+    errorMessage.includes('connection') ||
+    errorName === 'networkerror' ||
+    errorName === 'fetcherror'
+  );
+}
+
+/**
+ * OAuth retry configuration
+ */
+const OAUTH_MAX_RETRIES = 2;
+const OAUTH_RETRY_DELAY_MS = 1500; // 1.5 seconds
+
+/**
+ * Show retry message and retry OAuth callback after delay
+ */
+async function retryOAuthWithDelay(
+  code: string,
+  retryCount: number
+): Promise<void> {
+  console.log(
+    `[OAuth] Network error detected, retrying... (${retryCount + 1}/${OAUTH_MAX_RETRIES})`
+  );
+
+  showMessage({
+    message: 'Network Issue',
+    description: `Connection problem detected. Retrying... (${retryCount + 1}/${OAUTH_MAX_RETRIES})`,
+    type: 'warning',
+    duration: OAUTH_RETRY_DELAY_MS,
+  });
+
+  await new Promise((resolve) => setTimeout(resolve, OAUTH_RETRY_DELAY_MS));
+  return handleOAuthCallback(code, retryCount + 1);
+}
+
+/**
+ * Handle OAuth exchange error
+ */
+function handleOAuthExchangeError(error: unknown, retryCount: number): void {
+  if (privacyConsent.hasConsent('crashReporting')) {
+    Sentry.captureException(error, {
+      tags: { feature: 'oauth-callback' },
+      extra: {
+        code: '[REDACTED]',
+        isNetworkError: isNetworkError(error),
+        retryCount,
+      },
+    });
+  }
+
+  const description = isNetworkError(error)
+    ? 'Network connection issue. Please check your internet and try again.'
+    : 'OAuth authentication failed. The authorization code may be invalid or expired.';
+
+  showMessage({
+    message: 'Sign In Failed',
+    description,
+    type: 'danger',
+  });
+
+  router.replace('/login');
+}
+
+/**
+ * Handle unexpected OAuth error
+ */
+function handleOAuthUnexpectedError(error: unknown, retryCount: number): void {
+  if (privacyConsent.hasConsent('crashReporting')) {
+    Sentry.captureException(error, {
+      tags: { feature: 'oauth-callback' },
+      extra: {
+        code: '[REDACTED]',
+        isNetworkError: isNetworkError(error),
+        retryCount,
+      },
+    });
+  }
+
+  const description = isNetworkError(error)
+    ? 'Network connection issue. Please check your internet and try again.'
+    : 'An unexpected error occurred. Please try again.';
+
+  showMessage({
+    message: 'OAuth Error',
+    description,
+    type: 'danger',
+  });
+
+  router.replace('/login');
+}
+
+/**
+ * Handle OAuth callback deep links with retry logic for network errors
  *
  * @param code - Authorization code from OAuth provider
+ * @param retryCount - Current retry attempt (internal use)
  */
-export async function handleOAuthCallback(code: string): Promise<void> {
+export async function handleOAuthCallback(
+  code: string,
+  retryCount = 0
+): Promise<void> {
   if (!code) {
     showMessage({
       message: 'OAuth Error',
@@ -271,37 +379,24 @@ export async function handleOAuthCallback(code: string): Promise<void> {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (error) {
-      if (privacyConsent.hasConsent('crashReporting')) {
-        Sentry.captureException(error, {
-          tags: { feature: 'oauth-callback' },
-          extra: { code: '[REDACTED]' },
-        });
+      // Retry on network errors
+      if (isNetworkError(error) && retryCount < OAUTH_MAX_RETRIES) {
+        return retryOAuthWithDelay(code, retryCount);
       }
 
-      showMessage({
-        message: 'Sign In Failed',
-        description: 'OAuth authentication failed. Please try again.',
-        type: 'danger',
-      });
-
-      router.replace('/login');
+      handleOAuthExchangeError(error, retryCount);
       return;
     }
 
+    // Success - navigate to app
     router.replace('/(app)');
   } catch (error) {
-    if (privacyConsent.hasConsent('crashReporting')) {
-      Sentry.captureException(error, {
-        tags: { feature: 'oauth-callback' },
-        extra: { code: '[REDACTED]' },
-      });
+    // Retry on network errors
+    if (isNetworkError(error) && retryCount < OAUTH_MAX_RETRIES) {
+      return retryOAuthWithDelay(code, retryCount);
     }
 
-    showMessage({
-      message: 'OAuth Error',
-      description: 'An unexpected error occurred. Please try again.',
-      type: 'danger',
-    });
+    handleOAuthUnexpectedError(error, retryCount);
   }
 }
 

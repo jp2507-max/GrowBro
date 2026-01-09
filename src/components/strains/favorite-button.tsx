@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 import Animated, {
+  ReduceMotion,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
@@ -91,12 +92,20 @@ export const FavoriteButton = React.memo<Props>(
       []
     );
 
-    const handlePress = React.useCallback(() => {
+    const handlePress = React.useCallback((): void => {
       // Animation
-      scale.value = withSpring(0.8, { damping: 10, stiffness: 400 }, () => {
-        'worklet';
-        scale.value = withSpring(1, { damping: 10, stiffness: 400 });
-      });
+      scale.value = withSpring(
+        0.8,
+        { damping: 10, stiffness: 400, reduceMotion: ReduceMotion.System },
+        () => {
+          'worklet';
+          scale.value = withSpring(1, {
+            damping: 10,
+            stiffness: 400,
+            reduceMotion: ReduceMotion.System,
+          });
+        }
+      );
 
       // Trigger parent callback
       onToggle();

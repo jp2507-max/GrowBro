@@ -12,7 +12,10 @@ export type PostCardContentProps = {
   testID: string;
 };
 
-export function PostCardContent({ body, testID }: PostCardContentProps) {
+export function PostCardContent({
+  body,
+  testID,
+}: PostCardContentProps): React.ReactElement | null {
   if (!body) return null;
   return (
     <View className="px-4 pb-5">

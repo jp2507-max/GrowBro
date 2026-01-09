@@ -2,7 +2,6 @@
  * Shared types for community components
  */
 
-export type PressEvent = {
-  stopPropagation: () => void;
-  preventDefault: () => void;
-};
+import type { GestureResponderEvent } from 'react-native';
+
+export type { GestureResponderEvent as PressEvent };

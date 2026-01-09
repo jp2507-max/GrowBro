@@ -193,7 +193,23 @@ function useCalendarData(selectedDate: DateTime): {
   }, [rangeStartMillis, rangeEndMillis, selectedDayMillis]);
 
   useEffect(() => {
-    loadData();
+    let cancelled = false;
+    const requestIdAtMount = requestIdRef.current;
+
+    const run = async () => {
+      await loadData();
+      if (cancelled) {
+        // prevent any follow-up state if you add more later
+        return;
+      }
+    };
+
+    run();
+    return () => {
+      cancelled = true;
+      // increment the stored request ID to invalidate in-flight calls
+      requestIdRef.current = requestIdAtMount + 1;
+    };
   }, [loadData]);
 
   // Derive day-specific tasks and overall counts

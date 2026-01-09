@@ -13,7 +13,13 @@ import {
 
 import { haptics } from '@/lib/haptics';
 
-export function useCardAnimation() {
+type UseCardAnimationReturn = {
+  animatedStyle: ReturnType<typeof useAnimatedStyle>;
+  onPressIn: () => void;
+  onPressOut: () => void;
+};
+
+export function useCardAnimation(): UseCardAnimationReturn {
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -27,7 +33,7 @@ export function useCardAnimation() {
       reduceMotion: ReduceMotion.System,
     });
     haptics.selection();
-  }, [scale]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const onPressOut = useCallback(() => {
     scale.value = withSpring(1, {
@@ -35,7 +41,7 @@ export function useCardAnimation() {
       stiffness: 350,
       reduceMotion: ReduceMotion.System,
     });
-  }, [scale]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return { animatedStyle, onPressIn, onPressOut };
 }

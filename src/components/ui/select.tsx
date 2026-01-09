@@ -10,6 +10,7 @@ import { useController } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Platform, Pressable, type PressableProps, View } from 'react-native';
 import Animated, {
+  ReduceMotion,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
@@ -188,12 +189,18 @@ const Option = React.memo(
       transform: [{ scale: scale.value }],
     }));
 
-    const handlePressIn = React.useCallback(() => {
-      scale.value = withTiming(0.97, { duration: 100 });
+    const handlePressIn = React.useCallback((): void => {
+      scale.value = withTiming(0.97, {
+        duration: 100,
+        reduceMotion: ReduceMotion.System,
+      });
     }, [scale]);
 
-    const handlePressOut = React.useCallback(() => {
-      scale.value = withTiming(1, { duration: 150 });
+    const handlePressOut = React.useCallback((): void => {
+      scale.value = withTiming(1, {
+        duration: 150,
+        reduceMotion: ReduceMotion.System,
+      });
     }, [scale]);
 
     return (

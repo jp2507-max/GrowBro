@@ -5,9 +5,14 @@
 
 import React from 'react';
 import { StyleSheet } from 'react-native';
+import Animated from 'react-native-reanimated';
 
-import { OptimizedImage } from '@/components/ui';
+import { Image } from '@/components/ui';
+import { communityPostHeroTag } from '@/lib/animations/shared';
+import { getCommunityImageProps } from '@/lib/community/image-optimization';
 import { translate } from '@/lib/i18n';
+
+const AnimatedImage = Animated.createAnimatedComponent(Image);
 
 const styles = StyleSheet.create({
   image: {
@@ -18,6 +23,7 @@ const styles = StyleSheet.create({
 });
 
 export type PostCardHeroImageProps = {
+  postId: string;
   mediaUri: string;
   thumbnailUri?: string | null;
   resizedUri?: string | null;
@@ -28,6 +34,7 @@ export type PostCardHeroImageProps = {
 };
 
 export function PostCardHeroImage({
+  postId,
   mediaUri,
   thumbnailUri,
   resizedUri,
@@ -36,22 +43,31 @@ export function PostCardHeroImage({
   displayUsername,
   testID,
 }: PostCardHeroImageProps) {
+  const imageProps = React.useMemo(
+    () =>
+      getCommunityImageProps({
+        uri: mediaUri,
+        thumbnailUri,
+        resizedUri,
+        blurhash,
+        thumbhash,
+        recyclingKey: thumbnailUri || mediaUri,
+      }),
+    [mediaUri, thumbnailUri, resizedUri, blurhash, thumbhash]
+  );
+
   return (
-    <OptimizedImage
+    <AnimatedImage
       className="w-full"
       style={styles.image}
-      uri={mediaUri}
-      thumbnailUri={thumbnailUri}
-      resizedUri={resizedUri}
-      blurhash={blurhash}
-      thumbhash={thumbhash}
-      recyclingKey={thumbnailUri || mediaUri}
+      sharedTransitionTag={communityPostHeroTag(postId)}
       accessibilityIgnoresInvertColors
       accessibilityLabel={translate('accessibility.community.post_image', {
         author: displayUsername,
       })}
       accessibilityHint={translate('accessibility.community.post_image_hint')}
       testID={`${testID}-image`}
+      {...imageProps}
     />
   );
 }

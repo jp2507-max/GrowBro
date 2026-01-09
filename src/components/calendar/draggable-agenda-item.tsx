@@ -124,7 +124,7 @@ function useCreatePanGesture(options: {
   tx: SharedValue<number>;
   ty: SharedValue<number>;
   originTime: SharedValue<number>;
-  originDate: React.RefObject<Date>;
+  originTimeAtDragStart: SharedValue<number>;
   task: Task;
   startDrag: (task: Task) => void;
   cancelDrag: () => void;
@@ -137,7 +137,7 @@ function useCreatePanGesture(options: {
     tx,
     ty,
     originTime,
-    originDate,
+    originTimeAtDragStart,
     task,
     startDrag,
     cancelDrag,
@@ -146,6 +146,9 @@ function useCreatePanGesture(options: {
     computeTargetDate,
     updateCurrentOffset,
   } = options;
+
+  const lastAutoScrollMs = useSharedValue(0);
+  const autoScrollThrottleMs = 32;
 
   // JS-thread handlers for runOnJS
   const onDragUpdateJS = React.useCallback(
@@ -173,21 +176,26 @@ function useCreatePanGesture(options: {
         .activateAfterLongPress(180)
         .minDistance(1)
         .onStart(() => {
-          // eslint-disable-next-line react-compiler/react-compiler
           tx.value = 0;
 
           ty.value = 0;
-          originTime.value = originDate.current!.getTime();
+          originTimeAtDragStart.value = originTime.value;
+          lastAutoScrollMs.value = 0;
           runOnJS(startDrag)(task);
         })
         .onUpdate((e) => {
           tx.value = e.translationX;
 
           ty.value = e.translationY;
-          runOnJS(onDragUpdateJS)(e.absoluteY);
+
+          const now = performance.now();
+          if (now - lastAutoScrollMs.value >= autoScrollThrottleMs) {
+            lastAutoScrollMs.value = now;
+            runOnJS(onDragUpdateJS)(e.absoluteY);
+          }
         })
         .onEnd(() => {
-          runOnJS(onDropJS)(originTime.value, ty.value);
+          runOnJS(onDropJS)(originTimeAtDragStart.value, ty.value);
           tx.value = withSpring(0);
           ty.value = withSpring(0);
         })
@@ -195,7 +203,9 @@ function useCreatePanGesture(options: {
           runOnJS(cancelDrag)();
         }),
     [
+      autoScrollThrottleMs,
       cancelDrag,
+      lastAutoScrollMs,
       onDragUpdateJS,
       onDropJS,
       startDrag,
@@ -203,7 +213,7 @@ function useCreatePanGesture(options: {
       tx,
       ty,
       originTime,
-      originDate,
+      originTimeAtDragStart,
     ]
   );
 }
@@ -230,13 +240,12 @@ function useDragGesture(options: {
 
   const tx = useSharedValue(0);
   const ty = useSharedValue(0);
-  const originTime = useSharedValue(0);
-  const originDate = React.useRef<Date>(new Date(task.dueAtLocal));
+  const originTime = useSharedValue(new Date(task.dueAtLocal).getTime());
+  const originTimeAtDragStart = useSharedValue(originTime.value);
 
-  // Keep originDate in sync with task prop changes
   React.useEffect(() => {
-    originDate.current = new Date(task.dueAtLocal);
-  }, [task.dueAtLocal]);
+    originTime.value = new Date(task.dueAtLocal).getTime();
+  }, [originTime, task.dueAtLocal]);
 
   const animatedStyle = useAnimatedStyle(
     () => ({
@@ -249,7 +258,7 @@ function useDragGesture(options: {
     tx,
     ty,
     originTime,
-    originDate,
+    originTimeAtDragStart,
     task,
     startDrag,
     cancelDrag,

@@ -8,7 +8,7 @@ import { useNavigation, useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import React, { useLayoutEffect } from 'react';
 import { type ListRenderItemInfo, StyleSheet } from 'react-native';
-import Animated, { FadeIn } from 'react-native-reanimated';
+import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
@@ -260,7 +260,8 @@ export default function FavoritesScreen(): React.ReactElement {
       <Animated.View
         entering={FadeIn.delay(index * 50)
           .springify()
-          .damping(12)}
+          .damping(12)
+          .reduceMotion(ReduceMotion.System)}
       >
         <FavoriteItem item={item} />
       </Animated.View>

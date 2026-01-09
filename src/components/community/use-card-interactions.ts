@@ -7,7 +7,7 @@ import { useCallback, useRef } from 'react';
 import type { useDeletePost } from '@/api/community';
 import { showErrorMessage } from '@/lib/flash-message';
 import { haptics } from '@/lib/haptics';
-import { translate, type TxKeyPath } from '@/lib/i18n';
+import { translate } from '@/lib/i18n';
 
 import type { PostOptionsSheetRef } from './post-options-sheet';
 import type { PressEvent } from './types';
@@ -27,7 +27,6 @@ export function useCardInteractions({
 
   const handleOptionsPress = useCallback((e: PressEvent) => {
     e.stopPropagation();
-    e.preventDefault();
     haptics.selection();
     optionsSheetRef.current?.present();
   }, []);
@@ -42,7 +41,7 @@ export function useCardInteractions({
       onDelete?.(postId, result.undo_expires_at);
     } catch (error) {
       console.error('Delete post failed:', error);
-      showErrorMessage(translate('community.delete_post_failed' as TxKeyPath));
+      showErrorMessage(translate('accessibility.community.delete_post_failed'));
       haptics.error();
     }
   }, [deleteMutation, postId, onDelete]);

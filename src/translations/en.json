@@ -97,6 +97,7 @@
       "toggleHint": "Toggles the setting on or off."
     },
     "community": {
+      "anonymous_user": "Anonymous",
       "cancel_comment_hint": "Cancels posting this comment.",
       "comment_input_hint": "Type your comment here. Maximum 500 characters.",
       "comments": "Comments",
@@ -1737,8 +1738,8 @@
       "action_create_task_desc": "Stay organized with task reminders",
       "action_explore_strains": "Explore strains",
       "action_explore_strains_desc": "Find the perfect strain for your setup",
-      "action_open_playbook": "Open a playbook",
-      "action_open_playbook_desc": "Get step-by-step grow guidance",
+      "action_open_playbook": "Open a Growbook",
+      "action_open_playbook_desc": "Get a step-by-step Growbook",
       "action_try_ai_diagnosis": "Try AI diagnosis",
       "action_try_ai_diagnosis_desc": "Identify plant health issues",
       "dismiss": "Dismiss",
@@ -1777,7 +1778,7 @@
     "quick_actions": {
       "add_task": "Add task",
       "explore_strains": "Explore strains",
-      "open_playbook": "Open a playbook",
+      "open_playbook": "Open a Growbook",
       "share_update": "Share update",
       "try_ai": "Try AI diagnosis"
     },
@@ -2355,13 +2356,13 @@
     "continue_button": "Continue",
     "done": "Get Started",
     "guidance": {
-      "body": "Whether you're a beginner or expert, we've got you covered with step-by-step guides and helpful resources.",
-      "feature_playbooks_body": "Complete cultivation guides tailored to your setup and strain",
+      "body": "Whether you're a beginner or expert, we've got you covered with step-by-step Growbooks and helpful resources.",
+      "feature_playbooks_body": "Complete Growbooks tailored to your setup and strain",
       "feature_playbooks_title": "Guided Growbooks",
       "feature_tasks_body": "Automated schedules that keep your grow on track",
       "feature_tasks_title": "Smart Task Management",
       "feature_tips_body": "Contextual advice and educational content when you need it",
-      "feature_tips_title": "Expert Tips & Guidance",
+      "feature_tips_title": "Expert Tips & Growbooks",
       "title": "Learn & Grow"
     },
     "message": "Welcome to GrowBro app site",
@@ -2688,12 +2689,12 @@
     "editTask": "Edit Task",
     "edited": "Edited",
     "empty": {
-      "subtitle": "Check back later for cultivation guides",
+      "subtitle": "Check back later for Growbooks",
       "title": "No Growbooks Available"
     },
     "excludedFromBulkOperations": "Excluded from bulk schedule shifts",
     "excludedFromBulkShift": "This task has been customized and will be excluded from bulk schedule shifts",
-    "loadError": "Failed to load playbooks. Please try again.",
+    "loadError": "Failed to load Growbooks. Please try again.",
     "manuallyEdited": "Manually Edited",
     "noPlants": "You don't have any plants yet. Create one to apply this growbook.",
     "noTasks": "No tasks in this growbook",
@@ -3534,8 +3535,8 @@
       "no_description": "No description available",
       "not_reported": "Not reported",
       "outdoor": "Outdoor",
-      "playbook_cta_hint": "Create a growbook with this strain",
-      "playbook_description": "Create a personalized growing schedule",
+      "playbook_cta_hint": "Create a Growbook with this strain",
+      "playbook_description": "Create a personalized Growbook",
       "quick_facts": "Quick Facts",
       "retry": "Retry",
       "share": "Share strain",

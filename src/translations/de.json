@@ -97,6 +97,7 @@
       "toggleHint": "Schaltet die Einstellung ein oder aus."
     },
     "community": {
+      "anonymous_user": "Anonym",
       "cancel_comment_hint": "Bricht das Posten dieses Kommentars ab.",
       "comment_input_hint": "Gib hier deinen Kommentar ein. Maximal 500 Zeichen.",
       "comments": "Kommentare",
@@ -421,7 +422,7 @@
       "suggestedTimingAdjustment_plural": "Vorgeschlagene Zeitplananpassung: {{sign}}{{count}} Tage",
       "suggestionCount": "{{count}} Vorschlag basierend auf Bewertung",
       "suggestionCount_plural": "{{count}} Vorschläge basierend auf Bewertung",
-      "title": "Anleitungs-Anpassungen vorgeschlagen"
+      "title": "Growbook-Anpassungen vorgeschlagen"
     },
     "queue": {
       "retryError": "Fehler beim erneuten Versuch fehlgeschlagener Bewertungen. Bitte versuchen Sie es erneut.",
@@ -995,7 +996,7 @@
     "outbox_sending": "Wird gesendet...",
     "phases": "Phasen",
     "playbooks": {
-      "accessibility": "Öffnet die Community-Anleitungs-Vorlagen.",
+      "accessibility": "Öffnet die Community-Growbook-Vorlagen.",
       "community": "Community-Vorlagen",
       "schedule": {
         "shift": "Zeitplan anpassen"
@@ -1062,11 +1063,11 @@
       "title": "KI-Trainingsbilder"
     },
     "analytics": {
-      "impact": "Aus: Anleitungs-Verbesserungsanalytik deaktiviert. Rechtsgrundlage: Einwilligung; Aufbewahrung: 180T aggregiert",
-      "infoBody": "Anonyme Nutzung der Anleitungen hilft uns Zeitpläne und KI-Empfehlungen zu verfeinern.",
-      "infoTitle": "Anleitungs-Analytik",
-      "subtitle": "Hilf Anleitungen & KI-Vorschläge zu verbessern",
-      "title": "Anleitungs-Analytik"
+      "impact": "Aus: Growbook-Verbesserungsanalytik deaktiviert. Rechtsgrundlage: Einwilligung; Aufbewahrung: 180T aggregiert",
+      "infoBody": "Anonyme Nutzung der Growbooks hilft uns Zeitpläne und KI-Empfehlungen zu verfeinern.",
+      "infoTitle": "Growbook-Analytik",
+      "subtitle": "Hilf Growbooks & KI-Vorschläge zu verbessern",
+      "title": "Growbook-Analytik"
     },
     "crashDiagnostics": {
       "impact": "Aus: keine Absturzberichte werden gesendet. Rechtsgrundlage: Einwilligung; Aufbewahrung: 180T",
@@ -1161,17 +1162,17 @@
       "title": "Erinnerungsfehler"
     },
     "playbook": {
-      "already_applied": "Diese Anleitung ist bereits auf diese Pflanze angewendet",
-      "generation_failed": "Aufgaben konnten nicht aus Anleitung generiert werden",
-      "invalid_schema": "Ungültiges Anleitungs-Format",
+      "already_applied": "Dieses Growbook ist bereits auf diese Pflanze angewendet",
+      "generation_failed": "Aufgaben konnten nicht aus Growbook generiert werden",
+      "invalid_schema": "Ungültiges Growbook-Format",
       "noTasks": "Keine Aufgaben gefunden",
-      "not_found": "Anleitung nicht gefunden",
+      "not_found": "Growbook nicht gefunden",
       "status": {
         "completed": "✓ Abgeschlossen",
         "current": "Aktuell",
         "upcoming": "Bevorstehend"
       },
-      "title": "Anleitungs-Fehler"
+      "title": "Growbook-Fehler"
     },
     "postLoad": "Fehler beim Laden des Beitrags",
     "recovery": {
@@ -1737,8 +1738,8 @@
       "action_create_task_desc": "Bleib organisiert mit Aufgabenerinnerungen",
       "action_explore_strains": "Sorten erkunden",
       "action_explore_strains_desc": "Finde die perfekte Sorte für dein Setup",
-      "action_open_playbook": "Öffne eine Anleitung",
-      "action_open_playbook_desc": "Erhalte Schritt-für-Schritt-Anleitung",
+      "action_open_playbook": "Öffne ein Growbook",
+      "action_open_playbook_desc": "Erhalte ein Schritt-für-Schritt-Growbook",
       "action_try_ai_diagnosis": "KI-Diagnose testen",
       "action_try_ai_diagnosis_desc": "Erkenne Pflanzengesundheitsprobleme",
       "dismiss": "Ausblenden",
@@ -1777,7 +1778,7 @@
     "quick_actions": {
       "add_task": "Aufgabe erstellen",
       "explore_strains": "Sorten erkunden",
-      "open_playbook": "Anleitung öffnen",
+      "open_playbook": "Growbook öffnen",
       "share_update": "Update teilen",
       "try_ai": "KI-Diagnose starten"
     },
@@ -2194,7 +2195,7 @@
         "diluteReservoir": "Verdünne das Reservoir mit ausgewogenem Wasser, um EC zu senken.",
         "increaseMonitoring": "Überwache pH/EC engmaschiger, bis sich die Werte stabilisieren.",
         "monitor48h": "Prüfe nach 48 Stunden erneut, um die Entwicklung zu bewerten.",
-        "nitrogenFeed": "Erhöhe die Stickstoffzufuhr gemäß der Defizit-Anleitung.",
+        "nitrogenFeed": "Erhöhe die Stickstoffzufuhr wie empfohlen.",
         "retest12h": "Prüfe nach 12 Stunden erneut, um die Korrektur zu bestätigen.",
         "title": "Empfehlungen"
       },
@@ -2355,13 +2356,13 @@
     "continue_button": "Weiter",
     "done": "Los geht's",
     "guidance": {
-      "body": "Egal ob Anfänger oder Experte, wir haben für dich Schritt-für-Schritt-Anleitungen und hilfreiche Ressourcen.",
-      "feature_playbooks_body": "Vollständige Anbauanleitungen, angepasst an dein Setup und deine Sorte",
-      "feature_playbooks_title": "Geführte Anbau-Anleitungen",
+      "body": "Egal ob Anfänger oder Experte, wir haben für dich Schritt-für-Schritt-Growbooks und hilfreiche Ressourcen.",
+      "feature_playbooks_body": "Vollständige Growbooks, angepasst an dein Setup und deine Sorte",
+      "feature_playbooks_title": "Geführte Growbooks",
       "feature_tasks_body": "Automatisierte Zeitpläne, die deinen Anbau auf Kurs halten",
       "feature_tasks_title": "Intelligentes Aufgabenmanagement",
       "feature_tips_body": "Kontextbezogene Ratschläge und Bildungsinhalte, wenn du sie brauchst",
-      "feature_tips_title": "Experten-Tipps & Anleitungen",
+      "feature_tips_title": "Experten-Tipps & Growbooks",
       "title": "Lernen & Wachsen"
     },
     "message": "Willkommen bei der GrowBro App",
@@ -2581,10 +2582,10 @@
   "playbooks": {
     "accessibility": {
       "adoptTemplate": "Community-Vorlage übernehmen",
-      "applyPlaybook": "{{name}} Anleitung auf Pflanze anwenden",
+      "applyPlaybook": "{{name}} Growbook auf Pflanze anwenden",
       "logTrichomeCheck": "Trichom-Check protokollieren",
       "phaseProgress": "{{phase}}-Phase, {{status}}, {{completed}} von {{{total}}} Aufgaben abgeschlossen",
-      "playbookCard": "{{name}} Anleitung, {{setup}} Setup, {{weeks}} Wochen, {{tasks}} Aufgaben",
+      "playbookCard": "{{name}} Growbook, {{setup}} Setup, {{weeks}} Wochen, {{tasks}} Aufgaben",
       "selectPlantHint": "Doppelt tippen, um diese Pflanze auszuwählen",
       "shareTemplate": "Vorlage mit Community teilen",
       "shiftSchedule": "Zeitplan verschieben",
@@ -2604,18 +2605,18 @@
       "viewDetails": "Details anzeigen"
     },
     "apply": {
-      "alreadyApplied": "Diese Anleitung ist bereits auf diese Pflanze angewendet",
-      "applying": "Anleitung wird angewendet...",
+      "alreadyApplied": "Dieses Growbook ist bereits auf diese Pflanze angewendet",
+      "applying": "Growbook wird angewendet...",
       "createPlant": "Neue Pflanze erstellen",
-      "error": "Anleitung konnte nicht angewendet werden",
-      "selectPlant": "Wähle eine Pflanze für diese Anleitung",
+      "error": "Growbook konnte nicht angewendet werden",
+      "selectPlant": "Wähle eine Pflanze für dieses Growbook",
       "success_one": "{{count}} Aufgabe erfolgreich erstellt",
       "success_other": "{{count}} Aufgaben erfolgreich erstellt"
     },
     "applyError": "Anwendung fehlgeschlagen",
     "applyErrorDescription": "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
-    "applyPlaybook": "Anleitung anwenden",
-    "applySuccess": "Anleitung angewendet",
+    "applyPlaybook": "Growbook anwenden",
+    "applySuccess": "Growbook angewendet",
     "applySuccessDescription": "{{count}} Aufgaben für deine Pflanze erfolgreich erstellt",
     "applyToPlant": "Auf Pflanze anwenden",
     "applying": "Wird angewendet...",
@@ -2661,20 +2662,20 @@
           "handleRequired": "Autoren-Handle ist erforderlich"
         },
         "license": "Lizenz",
-        "licenseDescription": "Andere können deine Anleitung verwenden und modifizieren mit Namensnennung",
+        "licenseDescription": "Andere können dein Growbook verwenden und modifizieren mit Namensnennung",
         "licenseText": "{{license}} - Creative Commons Attribution-ShareAlike",
-        "placeholderDescription": "Beschreibe deine Anleitung...",
+        "placeholderDescription": "Beschreibe dein Growbook...",
         "placeholderHandle": "dein_handle",
         "privacyNotice": "ℹ️ Alle persönlichen Informationen, Pflanzennamen und benutzerdefinierten Notizen werden automatisch vor dem Teilen entfernt.",
         "share": "Teilen",
         "sharing": "Wird geteilt...",
-        "subtitle": "Teile deine angepasste Anleitung mit der Community. Alle persönlichen Informationen werden automatisch entfernt.",
-        "title": "Anleitung teilen"
+        "subtitle": "Teile dein angepasstes Growbook mit der Community. Alle persönlichen Informationen werden automatisch entfernt.",
+        "title": "Growbook teilen"
       },
       "subtitle": "Erfolgreiche Anbaupläne entdecken und teilen",
       "title": "Community-Vorlagen"
     },
-    "communityDescription": "Durchsuche und übernimm Anleitungen, die von anderen Growern geteilt wurden",
+    "communityDescription": "Durchsuche und übernimm Growbooks, die von anderen Growern geteilt wurden",
     "communityTemplates": "Community-Vorlagen",
     "createPlant": "Pflanze erstellen",
     "customNotes": "Eigene Notizen",
@@ -2682,23 +2683,23 @@
     "customNotesPlaceholder": "Füge deine eigenen Notizen hinzu...",
     "customizationLevel": "Anpassungsgrad",
     "customizedTasks": "Angepasste Aufgaben",
-    "detailDescription": "Diese Anleitung erstellt einen vollständigen Aufgabenplan, der auf die Wachstumsphasen deiner Pflanze zugeschnitten ist, mit automatischen Erinnerungen und Fortschrittsverfolgung.",
+    "detailDescription": "Dieses Growbook erstellt einen vollständigen Aufgabenplan, der auf die Wachstumsphasen deiner Pflanze zugeschnitten ist, mit automatischen Erinnerungen und Fortschrittsverfolgung.",
     "durationDays_one": "{{count}} Tag",
     "durationDays_other": "{{count}} Tage",
     "editTask": "Aufgabe bearbeiten",
     "edited": "Bearbeitet",
     "empty": {
-      "subtitle": "Schau später für Anbau-Anleitungen vorbei",
-      "title": "Keine Anleitungen verfügbar"
+      "subtitle": "Schau später für Growbooks vorbei",
+      "title": "Keine Growbooks verfügbar"
     },
     "excludedFromBulkOperations": "Von Massenverschiebungen ausgeschlossen",
     "excludedFromBulkShift": "Diese Aufgabe wurde angepasst und wird von Massenverschiebungen ausgeschlossen",
-    "loadError": "Anleitungen konnten nicht geladen werden. Bitte versuche es erneut.",
+    "loadError": "Growbooks konnten nicht geladen werden. Bitte versuche es erneut.",
     "manuallyEdited": "Manuell bearbeitet",
-    "noPlants": "Du hast noch keine Pflanzen. Erstelle eine, um diese Anleitung anzuwenden.",
-    "noTasks": "Keine Aufgaben in dieser Anleitung",
+    "noPlants": "Du hast noch keine Pflanzen. Erstelle eine, um dieses Growbook anzuwenden.",
+    "noTasks": "Keine Aufgaben in diesem Growbook",
     "noTemplates": "Noch keine Community-Vorlagen verfügbar",
-    "notFound": "Anleitung nicht gefunden",
+    "notFound": "Growbook nicht gefunden",
     "onboarding": {
       "getStarted": "Los geht's",
       "next": "Weiter",
@@ -2857,7 +2858,7 @@
         "tasksPreview": "Aufgabenvorschau ({{total}} insgesamt)"
       }
     },
-    "title": "Anleitungen",
+    "title": "Growbooks",
     "totalWeeks": "{{count}} Wochen",
     "trichome": {
       "assessment": {
@@ -2872,7 +2873,7 @@
         "save": "Bewertung speichern",
         "title": "Bewertung protokollieren"
       },
-      "disclaimer": "Diese Anleitung dient Bildungszwecken, nicht als professioneller Rat. Berücksichtige immer deine spezifischen Anbaubedingungen und Vorlieben.",
+      "disclaimer": "Dieses Growbook dient Bildungszwecken, nicht als professioneller Rat. Berücksichtige immer deine spezifischen Anbaubedingungen und Vorlieben.",
       "guide": {
         "amber": "Bernsteinfarben (Reif)",
         "amberDescription": "Trichome sind bernsteinfarben/braun. Mehr beruhigende, entspannende Effekte.",
@@ -3534,8 +3535,8 @@
       "no_description": "Keine Beschreibung verfügbar",
       "not_reported": "Nicht angegeben",
       "outdoor": "Outdoor",
-      "playbook_cta_hint": "Erstelle einen Anbauplan mit dieser Sorte",
-      "playbook_description": "Erstelle einen personalisierten Anbauplan",
+      "playbook_cta_hint": "Erstelle ein Growbook mit dieser Sorte",
+      "playbook_description": "Erstelle ein personalisiertes Growbook",
       "quick_facts": "Kurzinformationen",
       "retry": "Erneut versuchen",
       "share": "Sorte teilen",

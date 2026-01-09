@@ -244,9 +244,12 @@ export function useCreateComment(): UseMutationResult<
   >({
     mutationFn: async ({ postId, body }): Promise<PostComment> => {
       validateCommentBody(body);
+
       const idempotencyKey = randomUUID();
       const clientTxId = randomUUID();
+
       await queueCommentInOutbox({ postId, body, clientTxId, idempotencyKey });
+
       return apiClient.createComment(
         { postId, body },
         idempotencyKey,

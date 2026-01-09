@@ -5,6 +5,7 @@
 
 import * as React from 'react';
 import Animated, {
+  ReduceMotion,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
@@ -13,6 +14,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { Text, View } from '@/components/ui';
+import { useReduceMotionEnabled } from '@/lib/strains/accessibility';
 import type { SyncState } from '@/lib/sync/types';
 
 type Props = {
@@ -59,22 +61,37 @@ export function SyncStatusIndicator({
   compact = false,
 }: Props) {
   const opacity = useSharedValue(1);
+  const reduceMotion = useReduceMotionEnabled();
 
   React.useEffect(() => {
+    if (reduceMotion) {
+      opacity.value = 1;
+      return;
+    }
+
     if (state === 'syncing') {
       // Pulse animation when syncing
       opacity.value = withRepeat(
         withSequence(
-          withTiming(0.5, { duration: 600 }),
-          withTiming(1, { duration: 600 })
+          withTiming(0.5, {
+            duration: 600,
+            reduceMotion: ReduceMotion.System,
+          }),
+          withTiming(1, {
+            duration: 600,
+            reduceMotion: ReduceMotion.System,
+          })
         ),
         -1,
         true
       );
     } else {
-      opacity.value = withTiming(1, { duration: 300 });
+      opacity.value = withTiming(1, {
+        duration: 300,
+        reduceMotion: ReduceMotion.System,
+      });
     }
-  }, [state, opacity]);
+  }, [state, opacity, reduceMotion]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
