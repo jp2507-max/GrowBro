@@ -208,13 +208,16 @@ const client = z.object({
     .refine(
       (val) => {
         if (!val) return true; // Allow empty/undefined
-        // Full format: <numeric-id>-<alphanumeric-with-underscores-and-hyphens>.apps.googleusercontent.com
-        return /^\d+-[A-Za-z0-9_-]+\.apps\.googleusercontent\.com$/.test(val);
+        // Allow either full format or just the prefix (alphanumeric + dashes/underscores)
+        // Full format: <numeric-id>-<hash>.apps.googleusercontent.com
+        // Prefix format: <numeric-id>-<hash>
+        return /^\d+-[A-Za-z0-9_-]+(\.apps\.googleusercontent\.com)?$/.test(
+          val
+        );
       },
       {
         message:
-          'GOOGLE_IOS_CLIENT_ID must be in format "<numeric-id>-<hash>.apps.googleusercontent.com" ' +
-          '(e.g., "123456789012-abc123def456.apps.googleusercontent.com")',
+          'GOOGLE_IOS_CLIENT_ID must be in format "<numeric-id>-<hash>" or "<numeric-id>-<hash>.apps.googleusercontent.com"',
       }
     )
     .optional(),

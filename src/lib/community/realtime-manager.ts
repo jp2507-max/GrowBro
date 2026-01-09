@@ -296,6 +296,10 @@ export class RealtimeConnectionManager {
    */
   private handleConnectionError(): void {
     if (!this.isActive) return;
+
+    // Prevent reconnects if a new subscription is starting (race condition fix)
+    if (this.isSubscribing) return;
+
     // Clear existing reconnect timer
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);

@@ -187,6 +187,13 @@ const processRemoteAttachmentWithoutMetadata = async (
   attachment: AttachmentInput,
   uploadedPaths: string[]
 ): Promise<MediaPayload> => {
+  // SECURITY: Validate URI before downloading to prevent SSRF
+  if (!isSupabaseStorageUri(attachment.uri)) {
+    throw new Error(
+      'Only Supabase storage URIs are allowed for remote attachments. External URLs are not supported for security reasons.'
+    );
+  }
+
   // For true prefill attachments without ANY metadata, download the remote image
   // and process it like a local file to get proper Supabase Storage paths
   console.warn(

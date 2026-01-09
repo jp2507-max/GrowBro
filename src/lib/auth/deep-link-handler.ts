@@ -7,6 +7,7 @@
 
 import * as Sentry from '@sentry/react-native';
 import { router } from 'expo-router';
+import { AppState, type AppStateStatus } from 'react-native';
 import { showMessage } from 'react-native-flash-message';
 
 import { useAuth } from '@/lib/auth';
@@ -318,9 +319,44 @@ const exchangedCodeTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
 const MAX_TIMEOUT_TRACKING = 100;
 
 /**
+ * Clear all tracked timeouts and codes
+ */
+function clearAllTrackedCodes(): void {
+  for (const timeout of exchangedCodeTimeouts.values()) {
+    clearTimeout(timeout);
+  }
+  exchangedCodeTimeouts.clear();
+  exchangedCodes.clear();
+}
+
+/**
+ * Handle app state changes to clean up timers when backgrounded
+ */
+let appStateSubscription: ReturnType<typeof AppState.addEventListener> | null =
+  null;
+
+function setupAppStateCleanup(): void {
+  if (appStateSubscription) return;
+
+  appStateSubscription = AppState.addEventListener(
+    'change',
+    (nextAppState: AppStateStatus) => {
+      if (nextAppState === 'background') {
+        clearAllTrackedCodes();
+      }
+    }
+  );
+}
+
+/**
  * Track an exchanged code with proper timeout cleanup
  */
 function trackExchangedCode(code: string): void {
+  // Initialize app state listener on first use
+  if (!appStateSubscription) {
+    setupAppStateCleanup();
+  }
+
   const existing = exchangedCodeTimeouts.get(code);
   if (existing) {
     clearTimeout(existing);

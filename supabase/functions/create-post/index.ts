@@ -195,35 +195,6 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Validate strain exists in strain_cache if provided
-    if (requestBody.strain) {
-      const { data: strainExists, error: strainError } = await supabaseClient
-        .from('strain_cache')
-        .select('id')
-        .eq('name', requestBody.strain)
-        .single();
-
-      // Handle unexpected database errors separately
-      if (strainError && strainError.code !== 'PGRST116') {
-        console.error('[create-post] Strain lookup error:', strainError);
-        return new Response(
-          JSON.stringify({ error: 'Failed to validate strain' }),
-          {
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          }
-        );
-      }
-
-      // PGRST116 means no rows found.
-      // We accept the strain even if not in cache (could be new/custom), but log a warning.
-      if (!strainExists) {
-        console.warn(
-          `[create-post] Strain validation warning: "${requestBody.strain}" not found in cache`
-        );
-      }
-    }
-
     // Validate category against allowed values if provided
     if (requestBody.category) {
       if (!isValidCategory(requestBody.category)) {
@@ -392,25 +363,6 @@ Deno.serve(async (req: Request) => {
         );
       }
 
-      // Security Check 2: Verify all paths have same hash (content-addressable validation)
-      const hashes = pathsToValidate.map((p) => {
-        const relativePath = p.substring(userPrefix.length);
-        return relativePath.split('/')[0];
-      });
-
-      if (new Set(hashes).size !== 1 || !/^[a-fA-F0-9]{64}$/.test(hashes[0])) {
-        return new Response(
-          JSON.stringify({
-            error:
-              'Invalid media: inconsistent or malformed hash in variant paths',
-          }),
-          {
-            status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          }
-        );
-      }
-
       for (const path of pathsToValidate) {
         // Security Check 3: Path ownership
         if (!path.startsWith(userPrefix)) {
@@ -466,6 +418,25 @@ Deno.serve(async (req: Request) => {
             }
           );
         }
+      }
+
+      // Security Check 2: Verify all paths have same hash (content-addressable validation)
+      const hashes = pathsToValidate.map((p) => {
+        const relativePath = p.substring(userPrefix.length);
+        return relativePath.split('/')[0];
+      });
+
+      if (new Set(hashes).size !== 1 || !/^[a-fA-F0-9]{64}$/.test(hashes[0])) {
+        return new Response(
+          JSON.stringify({
+            error:
+              'Invalid media: inconsistent or malformed hash in variant paths',
+          }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
       }
 
       // Security Check 6: Verify variant size hierarchy (Original >= Resized >= Thumbnail)

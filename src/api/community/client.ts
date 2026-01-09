@@ -130,6 +130,11 @@ function parseTopSortCursor(
       ? remainder.substring(createdAt.length + 1) // +1 to skip the colon separator
       : undefined;
 
+  // Validate id format if present - should be UUID-safe (alphanumeric, hyphens only)
+  if (id && !/^[a-zA-Z0-9-]+$/.test(id)) {
+    return null;
+  }
+
   // Additional validation: ensure the date can be parsed
   if (!createdAt) {
     return null;
