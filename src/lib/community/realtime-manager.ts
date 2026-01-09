@@ -356,6 +356,12 @@ export class RealtimeConnectionManager {
    */
   private async pollUpdates(): Promise<void> {
     console.log('Polling for updates...');
+    if (!this.callbacks.onPollRefresh) {
+      console.warn(
+        '[Realtime] Polling active but onPollRefresh callback not implemented. ' +
+          'UI data will not update. Implement onPollRefresh to refetch React Query data.'
+      );
+    }
     this.callbacks.onPollRefresh?.();
   }
 

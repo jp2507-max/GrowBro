@@ -209,12 +209,12 @@ Deno.serve(async (req: Request) => {
         );
       }
 
-      // PGRST116 means no rows found, which is the expected validation case
+      // PGRST116 means no rows found.
+      // We accept the strain even if not in cache (could be new/custom), but log a warning.
       if (!strainExists) {
-        return new Response(JSON.stringify({ error: 'Invalid strain name' }), {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
+        console.warn(
+          `[create-post] Strain validation warning: "${requestBody.strain}" not found in cache`
+        );
       }
     }
 
@@ -372,7 +372,22 @@ Deno.serve(async (req: Request) => {
         mediaProcessingResult.thumbnailPath,
       ];
 
+      // Security Check 1: Ensure variants are unique files (no duplicates)
+      if (new Set(pathsToValidate).size !== pathsToValidate.length) {
+        return new Response(
+          JSON.stringify({
+            error:
+              'Invalid media: variants must be distinct files to prevent reference cycles',
+          }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+
       for (const path of pathsToValidate) {
+        // Security Check 2: Path ownership
         if (!path.startsWith(userPrefix)) {
           return new Response(
             JSON.stringify({
@@ -381,6 +396,46 @@ Deno.serve(async (req: Request) => {
             }),
             {
               status: 403,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            }
+          );
+        }
+
+        // Security Check 3: Path Traversal
+        if (path.includes('..') || path.includes('%2e%2e')) {
+          return new Response(
+            JSON.stringify({
+              error: 'Invalid media path: path traversal detected',
+            }),
+            {
+              status: 400,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            }
+          );
+        }
+
+        // Security Check 4: Strict Structure Validation
+        // Expected format: prefix/{hash}/{variant}.{ext}
+        // Remove the prefix to validate the remainder
+        const relativePath = path.substring(userPrefix.length);
+
+        // Regex Explanation:
+        // ^                 Start of string
+        // [a-zA-Z0-9._-]+   Hash segment (safe chars only)
+        // \/                Separator
+        // [a-zA-Z0-9._-]+   Variant filename (safe chars only)
+        // \.                Extension dot
+        // [a-zA-Z0-9]+      Extension (e.g., jpg)
+        // $                 End of string
+        if (
+          !/^[a-zA-Z0-9._-]+\/[a-zA-Z0-9._-]+\.[a-zA-Z0-9]+$/.test(relativePath)
+        ) {
+          return new Response(
+            JSON.stringify({
+              error: 'Invalid media path format. Expected {hash}/{variant}.ext',
+            }),
+            {
+              status: 400,
               headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             }
           );

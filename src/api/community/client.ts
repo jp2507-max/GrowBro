@@ -113,7 +113,7 @@ function parseTopSortCursor(
   // Validate createdAt is a proper ISO 8601 timestamp with microsecond precision
   // Support optional ID suffix for tie-breaking: likeCount:createdAt:id
   const iso8601Regex =
-    /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?(?:Z|[+-]\d{2}:\d{2}))(?::(.+))?$/;
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})(?::(.+))?$/;
 
   const match = remainder.match(iso8601Regex);
 
@@ -121,10 +121,17 @@ function parseTopSortCursor(
     return null;
   }
 
-  const createdAt = match[1];
-  const id = match[2];
+  const createdAt = remainder.match(
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})/
+  )?.[0];
+  const id = remainder.includes(':')
+    ? remainder.split(':').slice(1).join(':')
+    : undefined;
 
   // Additional validation: ensure the date can be parsed
+  if (!createdAt) {
+    return null;
+  }
   const parsedDate = Date.parse(createdAt);
   if (isNaN(parsedDate)) {
     return null;
@@ -210,9 +217,10 @@ function applyDiscoverFilters<
     b = b.ilike('body', `%${ctx.trimmedQuery}%`);
   }
   if (ctx.photosOnly) {
-    b = b.or(
-      'media_uri.not.is.null,media_resized_uri.not.is.null,media_thumbnail_uri.not.is.null'
-    );
+    b = b
+      .or('media_uri.not.is.null')
+      .or('media_resized_uri.not.is.null')
+      .or('media_thumbnail_uri.not.is.null');
   }
   if (ctx.mineOnly && ctx.userId) {
     b = b.eq('user_id', ctx.userId);

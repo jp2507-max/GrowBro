@@ -267,39 +267,32 @@ function createExpoConfig(config) {
         // Validate and derive the iOS URL scheme from the client ID
         // Expected format: "<numeric-id>-<hash>.apps.googleusercontent.com"
         // Example: "123456789012-abc123def456.apps.googleusercontent.com"
+        // Validate full client ID format first
         const expectedSuffix = '.apps.googleusercontent.com';
+        const fullPattern =
+          /^\d+-[A-Za-z0-9_-]+\.apps\.googleusercontent\.com$/;
         const prefixPattern = /^\d+-[A-Za-z0-9_-]+$/;
 
         let clientIdPrefix;
-        if (rawClientId.endsWith(expectedSuffix)) {
-          // Correct format: extract the prefix
+        if (fullPattern.test(rawClientId)) {
+          // Valid full format: extract the prefix
           clientIdPrefix = rawClientId.slice(0, -expectedSuffix.length);
-          // Validate extracted prefix matches expected pattern: <numeric-id>-<hash>
-          if (!prefixPattern.test(clientIdPrefix)) {
-            throw new Error(
-              `GOOGLE_IOS_CLIENT_ID has invalid prefix: "${clientIdPrefix}". ` +
-                `Expected format: "<numeric-id>-<hash>.apps.googleusercontent.com" ` +
-                `(e.g., "123456789012-abc123def456.apps.googleusercontent.com")`
-            );
-          }
         } else if (rawClientId.includes('.apps.googleusercontent.com')) {
-          // Suffix exists but not at end - malformed
+          // Has suffix but invalid format
           throw new Error(
-            `GOOGLE_IOS_CLIENT_ID is malformed: "${rawClientId}". ` +
-              `Expected format: "<client-id>.apps.googleusercontent.com"`
+            `GOOGLE_IOS_CLIENT_ID has invalid format: "${rawClientId}". ` +
+              `Expected: "<numeric-id>-<hash>.apps.googleusercontent.com" ` +
+              `(e.g., "123456789012-abc123def456.apps.googleusercontent.com")`
           );
         } else if (prefixPattern.test(rawClientId)) {
-          // Looks like just the prefix (e.g., "123456789012-abc123")
-          // Accept it but warn in dev
+          // Just the prefix - accept with warning
           clientIdPrefix = rawClientId;
-          if (process.env.APP_ENV !== 'production') {
-            console.warn(
-              `⚠️  GOOGLE_IOS_CLIENT_ID appears to be just the prefix. ` +
-                `Full format should be: "${rawClientId}.apps.googleusercontent.com"`
-            );
-          }
+          console.warn(
+            `⚠️  GOOGLE_IOS_CLIENT_ID appears to be just the prefix. ` +
+              `Full format should be: "${rawClientId}.apps.googleusercontent.com"`
+          );
         } else {
-          // Completely invalid format
+          // Completely invalid
           throw new Error(
             `GOOGLE_IOS_CLIENT_ID has invalid format: "${rawClientId}". ` +
               `Expected: "<numeric-id>-<hash>.apps.googleusercontent.com" ` +
@@ -307,9 +300,8 @@ function createExpoConfig(config) {
           );
         }
 
-        // Ensure safe scheme format by removing any invalid characters
-        const sanitizedPrefix = clientIdPrefix.replace(/[^a-zA-Z0-9_-]/g, '');
-        const iosUrlScheme = `com.googleusercontent.apps.${sanitizedPrefix}`;
+        // Prefix is already validated, no need for additional sanitization
+        const iosUrlScheme = `com.googleusercontent.apps.${clientIdPrefix}`;
 
         return [
           ['@react-native-google-signin/google-signin', { iosUrlScheme }],

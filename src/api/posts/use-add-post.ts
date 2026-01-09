@@ -266,37 +266,41 @@ export const ensureRemoteAttachmentMetadata = async (
   const bytes = Number(metadata?.bytes ?? attachment.size ?? 0);
   const hasCompleteMetadata = width > 0 && height > 0 && bytes > 0;
 
-  // Supabase Storage URIs usually arrive with metadata from the query.
-  // If metadata is incomplete (missing width, height, or bytes), it indicates
-  // a legacy post or a client-side state issue where metadata wasn't passed.
-  // Validation requires this metadata, so we must fall back to an expensive download/re-process.
-  if (!hasCompleteMetadata) {
+  const aspectRatio = metadata?.aspectRatio ?? width / height;
+
+  // Extract and validate storage paths
+  const originalPath = extractSupabaseStoragePath(uri);
+  const resizedPath = metadata?.resizedPath
+    ? extractSupabaseStoragePath(metadata.resizedPath)
+    : null;
+  const thumbnailPath = metadata?.thumbnailPath
+    ? extractSupabaseStoragePath(metadata.thumbnailPath)
+    : null;
+
+  // Validate that we have proper, distinct paths for all variants
+  const hasValidPaths =
+    originalPath &&
+    resizedPath &&
+    thumbnailPath &&
+    originalPath !== resizedPath &&
+    originalPath !== thumbnailPath;
+
+  if (!hasCompleteMetadata || !hasValidPaths) {
     console.warn(
-      '[ensureRemoteAttachmentMetadata] Incomplete metadata for remote attachment, triggering fallback download. usage_metric:processing_fallback',
-      { uri, metadata }
+      '[ensureRemoteAttachmentMetadata] Incomplete metadata or invalid variants, triggering fallback download. usage_metric:processing_fallback',
+      {
+        uri,
+        metadata,
+        paths: { originalPath, resizedPath, thumbnailPath },
+      }
     );
     return processRemoteAttachmentWithoutMetadata(attachment, uploadedPaths);
   }
 
-  const aspectRatio = metadata?.aspectRatio ?? width / height;
-
-  // Extract storage paths from signed URLs (if present) for edge function validation
-  // The edge function requires bucket-relative paths (e.g., "community-posts/user_id/hash/original.jpg")
-  // not full signed URLs
-  const originalPath = extractSupabaseStoragePath(uri) ?? uri;
-  const resizedPath = isSupabaseStorageUri(metadata?.resizedPath)
-    ? (extractSupabaseStoragePath(metadata!.resizedPath!) ??
-      metadata!.resizedPath!)
-    : originalPath;
-  const thumbnailPath = isSupabaseStorageUri(metadata?.thumbnailPath)
-    ? (extractSupabaseStoragePath(metadata!.thumbnailPath!) ??
-      metadata!.thumbnailPath!)
-    : originalPath;
-
   return {
-    originalPath,
-    resizedPath,
-    thumbnailPath,
+    originalPath: originalPath!,
+    resizedPath: resizedPath!,
+    thumbnailPath: thumbnailPath!,
     width,
     height,
     aspectRatio,
