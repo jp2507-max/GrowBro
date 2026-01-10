@@ -15,7 +15,7 @@ import {
   Text,
   View,
 } from '@/components/ui';
-import { Info } from '@/components/ui/icons';
+import { Info, Play } from '@/components/ui/icons';
 import { resetOnboardingState } from '@/lib/compliance/onboarding-state';
 import { trackOnboardingStart } from '@/lib/compliance/onboarding-telemetry';
 import { showErrorMessage } from '@/lib/flash-message';
@@ -369,6 +369,33 @@ export default function AboutScreen() {
               testID="about.onboarding.rewatch"
             />
           </ItemsContainer>
+
+          {/* Dev-only: Preview Onboarding Screens */}
+          {__DEV__ && (
+            <ItemsContainer
+              title="settings.about.dev_preview"
+              testID="about.section.dev_preview"
+            >
+              <Item
+                text="settings.about.preview_onboarding_slides"
+                icon={<Play />}
+                onPress={() => router.push('/onboarding')}
+                testID="about.dev.onboarding_slides"
+              />
+              <Item
+                text="settings.about.preview_notification_primer"
+                icon={<Play />}
+                onPress={() => router.push('/notification-primer')}
+                testID="about.dev.notification_primer"
+              />
+              <Item
+                text="settings.about.preview_camera_primer"
+                icon={<Play />}
+                onPress={() => router.push('/camera-primer')}
+                testID="about.dev.camera_primer"
+              />
+            </ItemsContainer>
+          )}
 
           {/* Copyright Section */}
           <View className="my-8">

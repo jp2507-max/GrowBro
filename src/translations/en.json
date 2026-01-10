@@ -2378,6 +2378,12 @@
       "feature_tips_title": "Expert Tips & Growbooks",
       "title": "Learn & Grow"
     },
+    "intro": {
+      "benefit_ai": "AI-powered health insights",
+      "benefit_plan": "Plan and schedule your grow",
+      "benefit_track": "Track plant progress daily",
+      "tagline": "Your personal cultivation companion"
+    },
     "message": "Welcome to GrowBro app site",
     "notifications_body": "Allow notifications to get timely task reminders.",
     "notifications_title": "Task reminders",
@@ -3107,6 +3113,7 @@
       "check_updates_offline": "Connect to internet to check for updates",
       "checking": "Checking...",
       "copyright": "© {{year}} GrowBro",
+      "dev_preview": "Developer Preview",
       "download_progress": "Downloading: {{progress}}%",
       "download_update": "Download Update",
       "downloading": "Downloading...",
@@ -3121,6 +3128,9 @@
       "open_store_error_message": "Failed to open app store. Please try again or check your device settings.",
       "open_store_error_title": "Error",
       "ota_disabled": "Updates managed through app store",
+      "preview_camera_primer": "Preview Camera Primer",
+      "preview_notification_primer": "Preview Notification Primer",
+      "preview_onboarding_slides": "Preview Onboarding Slides",
       "restart_to_apply": "Restart to Apply",
       "retry": "Retry",
       "rewatch_onboarding": "Rewatch Onboarding",
