@@ -25,6 +25,7 @@ export * from './lock';
 export * from './mail';
 export * from './message-circle';
 export * from './more-horizontal';
+export * from './play';
 export * from './plus';
 export * from './rate';
 export * from './scale';

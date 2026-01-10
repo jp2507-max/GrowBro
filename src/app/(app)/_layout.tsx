@@ -19,14 +19,19 @@ function useTabLayoutRedirects() {
   // eslint-disable-next-line react-compiler/react-compiler
   const ageGateStatus = useAgeGate.status();
 
+  // IMPORTANT: Age gate must be checked BEFORE onboarding to ensure compliance
+  // Users must verify age before seeing any app content, including onboarding
+  if (ageGateStatus !== 'verified') return '/age-gate';
+
+  // After age verification, show onboarding for first-time users
   if (isFirstTime) return '/onboarding';
+
   // Handle auth status:
   // - 'idle': Auth hydration in progress - redirect to login to prevent protected content flash
   //   The splash screen remains visible until hydration completes, then proper redirect occurs
   // - 'signOut': User explicitly signed out - redirect to login
   // - 'signIn': User authenticated - allow access
   if (status === 'idle' || status === 'signOut') return '/login';
-  if (ageGateStatus !== 'verified') return '/age-gate';
   return null;
 }
 

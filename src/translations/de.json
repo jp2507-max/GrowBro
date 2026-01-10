@@ -2378,6 +2378,12 @@
       "feature_tips_title": "Experten-Tipps & Growbooks",
       "title": "Lernen & Wachsen"
     },
+    "intro": {
+      "benefit_ai": "KI-gestützte Gesundheitsanalysen",
+      "benefit_plan": "Plane und organisiere deinen Grow",
+      "benefit_track": "Verfolge den Pflanzenfortschritt täglich",
+      "tagline": "Dein persönlicher Anbaubegleiter"
+    },
     "message": "Willkommen bei der GrowBro App",
     "notifications_body": "Erlaube Benachrichtigungen, um rechtzeitig an Aufgaben erinnert zu werden.",
     "notifications_title": "Aufgaben-Erinnerungen",
@@ -3107,6 +3113,7 @@
       "check_updates_offline": "Mit dem Internet verbinden, um nach Updates zu suchen",
       "checking": "Prüfe...",
       "copyright": "© {{year}} GrowBro",
+      "dev_preview": "Entwicklervorschau",
       "download_progress": "Lädt herunter: {{progress}}%",
       "download_update": "Update herunterladen",
       "downloading": "Lädt herunter...",
@@ -3121,6 +3128,9 @@
       "open_store_error_message": "Fehler beim Öffnen des App Stores. Bitte versuchen Sie es erneut oder überprüfen Sie Ihre Geräteeinstellungen.",
       "open_store_error_title": "Fehler",
       "ota_disabled": "Updates werden über den App Store verwaltet",
+      "preview_camera_primer": "Kamera-Primer anzeigen",
+      "preview_notification_primer": "Benachrichtigungs-Primer anzeigen",
+      "preview_onboarding_slides": "Onboarding-Folien anzeigen",
       "restart_to_apply": "Neu starten zum Anwenden",
       "retry": "Erneut versuchen",
       "rewatch_onboarding": "Onboarding erneut ansehen",
