@@ -13,13 +13,14 @@ import Animated, {
   type SharedValue,
   useAnimatedStyle,
   useSharedValue,
-  // @ts-ignore - Reanimated 4.x type exports issue
+  // @ts-expect-error - Reanimated 4.1.2: withDelay type export missing
   withDelay,
   withRepeat,
   withSequence,
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
+import cancelAnimation from 'react-native-reanimated';
 
 import { View } from '@/components/ui';
 import colors from '@/components/ui/colors';
@@ -87,6 +88,13 @@ function usePrimerIconAnimation(): AnimationValues {
         false
       )
     );
+
+    return () => {
+      cancelAnimation(translateY);
+      cancelAnimation(scale);
+      cancelAnimation(opacity);
+      cancelAnimation(glowOpacity);
+    };
   }, [translateY, scale, opacity, glowOpacity]);
 
   return { translateY, scale, opacity, glowOpacity };

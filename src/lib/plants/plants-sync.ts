@@ -66,7 +66,7 @@ function buildPlantPayload(plant: PlantData, userId: string): RemotePlant {
       : null;
   const isLocalFileUri = plant.imageUrl?.startsWith('file://');
   const cloudImageUrl = isLocalFileUri
-    ? (remoteImagePath ?? plant.imageUrl ?? null)
+    ? remoteImagePath
     : (plant.imageUrl ?? null);
 
   return {
@@ -105,34 +105,38 @@ async function syncDeletedPlantsToCloud(): Promise<number> {
     return 0;
   }
 
-  let pushed = 0;
-  for (const plant of deletedPlants) {
-    const { error } = await supabase
-      .from('plants')
-      .update({
-        deleted_at: plant.deletedAt.toISOString(),
-        updated_at: plant.updatedAt.toISOString(),
-      })
-      .eq('id', plant.id)
-      .eq('user_id', userId);
+  // Use UPDATE instead of UPSERT to avoid NOT NULL constraint violations
+  // Only mark existing cloud records as deleted (plants never synced are skipped)
+  const plantIds = deletedPlants.map((p) => p.id);
+  const now = new Date().toISOString();
 
-    if (error) {
-      console.error('[PlantsSync] failed to mark plant deleted', {
-        id: plant.id,
-        message: error.message,
-        code: error.code,
-        details: error.details,
-      });
-      throw error;
-    }
-    pushed += 1;
+  const { error } = await supabase
+    .from('plants')
+    .update({
+      deleted_at: now,
+      updated_at: now,
+    })
+    .in('id', plantIds)
+    .eq('user_id', userId)
+    .is('deleted_at', null);
+
+  if (error) {
+    console.error('[PlantsSync] failed to batch-mark plants deleted', {
+      count: deletedPlants.length,
+      message: error.message,
+      code: error.code,
+      details: error.details,
+    });
+    throw error;
   }
 
   if (__DEV__) {
-    console.info(`[PlantsSync] pushed ${pushed} deleted plant(s) to cloud`);
+    console.info(
+      `[PlantsSync] pushed ${deletedPlants.length} deleted plant(s) to cloud`
+    );
   }
 
-  return pushed;
+  return deletedPlants.length;
 }
 
 async function hardDeleteExpiredPlantsFromCloud(

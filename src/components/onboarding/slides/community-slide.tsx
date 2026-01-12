@@ -114,19 +114,34 @@ export function CommunitySlide({
           {/* Minimal feature pills */}
           <FeaturePillRow>
             <FeaturePill
-              icon={<MessageCircle size={18} color={colors.primary[700]} />}
+              icon={
+                <MessageCircle
+                  size={18}
+                  color={isDark ? colors.primary[300] : colors.primary[700]}
+                />
+              }
               labelKey="onboarding.community.benefit_share_title"
               index={0}
               testID="pill-share"
             />
             <FeaturePill
-              icon={<Users size={18} color={colors.primary[700]} />}
+              icon={
+                <Users
+                  size={18}
+                  color={isDark ? colors.primary[300] : colors.primary[700]}
+                />
+              }
               labelKey="onboarding.community.benefit_learn_title"
               index={1}
               testID="pill-learn"
             />
             <FeaturePill
-              icon={<Shield size={18} color={colors.primary[700]} />}
+              icon={
+                <Shield
+                  size={18}
+                  color={isDark ? colors.primary[300] : colors.primary[700]}
+                />
+              }
               labelKey="onboarding.community.benefit_privacy_title"
               index={2}
               testID="pill-privacy"

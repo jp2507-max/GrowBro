@@ -11,7 +11,7 @@ import Animated, {
   ReduceMotion,
   useAnimatedStyle,
   useSharedValue,
-  // @ts-ignore - Reanimated 4.x type exports issue
+  // @ts-expect-error - Reanimated 4.1.2: withDelay type export missing
   withDelay,
   withRepeat,
   withSequence,
@@ -94,7 +94,6 @@ export function AnimatedHero({
 
   const glowStyle = useAnimatedStyle(() => ({
     opacity: glowOpacity.value,
-    transform: [{ scale: 1.3 }],
   }));
 
   return (
@@ -122,6 +121,7 @@ const styles = StyleSheet.create({
     width: 112,
     height: 112,
     borderRadius: 24,
+    transform: [{ scale: 1.3 }],
     // The blur is simulated via larger size + opacity
   },
 });

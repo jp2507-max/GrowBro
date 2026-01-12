@@ -1,6 +1,10 @@
 import { Model } from '@nozbe/watermelondb';
 import { date, field, json, text } from '@nozbe/watermelondb/decorators';
 
+// NOTE: When adding new table models, update the VALID_TABLE_NAMES Set in:
+// src/lib/database/unsafe-sql-utils.ts
+// This ensures runSql() validation includes all available tables.
+
 export type PlantMetadataLocal = Record<string, unknown>;
 
 export class PlantModel extends Model {

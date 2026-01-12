@@ -9,6 +9,8 @@ import { useColorScheme } from 'nativewind';
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import Animated, {
+  // @ts-ignore - Reanimated 4.x type exports issue
+  cancelAnimation,
   Easing,
   ReduceMotion,
   useAnimatedStyle,
@@ -26,9 +28,9 @@ import colors from '@/components/ui/colors';
 
 // Lottie animation sources - plant-themed animations
 const LOTTIE_SOURCES = {
-  welcome: require('../../../assets/lottie/Bud Leaf 1 fix.json'),
-  community: require('../../../assets/lottie/Social network.json'),
-  guidance: require('../../../assets/lottie/Growing Plant.json'),
+  welcome: require('../../../assets/lottie/welcome.json'),
+  community: require('../../../assets/lottie/community.json'),
+  guidance: require('../../../assets/lottie/guidance.json'),
 } as const;
 
 export type LottieAnimationKey = keyof typeof LOTTIE_SOURCES;
@@ -107,6 +109,13 @@ export function AnimatedLottieHero({
         false
       )
     );
+
+    return () => {
+      cancelAnimation(translateY);
+      cancelAnimation(scale);
+      cancelAnimation(opacity);
+      cancelAnimation(glowOpacity);
+    };
   }, [translateY, scale, opacity, glowOpacity]);
 
   const animatedStyle = useAnimatedStyle(() => ({

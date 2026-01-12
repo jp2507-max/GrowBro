@@ -13,8 +13,7 @@
         "BGTaskSchedulerPermittedIdentifiers": [
           "com.expo.modules.backgroundtask.processing"
         ]
-      },
-      "bundleIdentifier": "com.growbro"
+      }
     }
   }
 }

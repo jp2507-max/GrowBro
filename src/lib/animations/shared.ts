@@ -1,6 +1,6 @@
 import {
   ReduceMotion,
-  // @ts-ignore SharedTransition is exported in runtime but types might be missing in this version
+  // @ts-ignore SharedTransition is exported in runtime but types are missing in this version
   SharedTransition,
   withSpring,
 } from 'react-native-reanimated';

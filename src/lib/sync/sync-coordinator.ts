@@ -9,6 +9,8 @@
  * - UI state management
  */
 
+import { Q } from '@nozbe/watermelondb';
+
 import { NoopAnalytics } from '@/lib/analytics';
 import { getItem } from '@/lib/storage';
 import {
@@ -29,6 +31,8 @@ import {
 } from '@/lib/sync-engine';
 
 let syncPipelinePromise: Promise<SyncResult> | null = null;
+let pendingSyncPromise: Promise<SyncResult> | null = null;
+let pendingSyncOptions: SyncCoordinatorOptions | null = null;
 
 /**
  * Process image upload queue after successful sync.
@@ -59,8 +63,12 @@ async function downloadMissingPlantPhotosAfterSync(): Promise<void> {
     );
     const { database } = await import('@/lib/watermelon');
 
-    // Get all plants - collection typing is handled by WatermelonDB schema
-    const plants = await database.collections.get('plants').query().fetch();
+    // Only fetch plants that have remoteImagePath in metadata
+    // This avoids fetching all plants as the user base grows
+    const plants = await database.collections
+      .get('plants')
+      .query(Q.where('metadata', Q.like('%remoteImagePath%')))
+      .fetch();
 
     // Convert WatermelonDB models to Plant type
     const plantData = plants.map((p) => ({
@@ -104,7 +112,7 @@ async function syncPlantsAfterSync(): Promise<void> {
 }
 
 export function isSyncPipelineInFlight(): boolean {
-  return Boolean(syncPipelinePromise);
+  return Boolean(syncPipelinePromise || pendingSyncPromise);
 }
 
 export type SyncCoordinatorOptions = {
@@ -220,20 +228,77 @@ async function performSyncInternal(
   return result;
 }
 
+function getTriggerPriority(trigger: SyncTrigger | undefined): number {
+  switch (trigger) {
+    case 'diagnostic':
+      return 4;
+    case 'manual':
+      return 3;
+    case 'background':
+      return 2;
+    case 'auto':
+    default:
+      return 1;
+  }
+}
+
+function mergeSyncOptions(
+  existing: SyncCoordinatorOptions | null,
+  incoming: SyncCoordinatorOptions
+): SyncCoordinatorOptions {
+  if (!existing) return incoming;
+  return {
+    withRetry: (existing.withRetry ?? true) || (incoming.withRetry ?? true),
+    maxRetries: Math.max(existing.maxRetries ?? 5, incoming.maxRetries ?? 5),
+    trackAnalytics:
+      (existing.trackAnalytics ?? true) || (incoming.trackAnalytics ?? true),
+    trigger:
+      getTriggerPriority(existing.trigger) >=
+      getTriggerPriority(incoming.trigger)
+        ? existing.trigger
+        : incoming.trigger,
+  };
+}
+
 /**
  * Single-flight wrapper for the sync pipeline.
+ * Queues recursive calls if a sync is already in progress, merging options to ensure strongest guarantees.
  */
 export async function performSync(
   options: SyncCoordinatorOptions = {}
 ): Promise<SyncResult> {
-  if (syncPipelinePromise) return syncPipelinePromise;
-  const run = performSyncInternal(options);
-  syncPipelinePromise = run;
-  try {
-    return await run;
-  } finally {
-    if (syncPipelinePromise === run) syncPipelinePromise = null;
+  // 1. If no sync is running, start immediately
+  if (!syncPipelinePromise) {
+    const run = performSyncInternal(options);
+    syncPipelinePromise = run;
+    try {
+      return await run;
+    } finally {
+      syncPipelinePromise = null;
+    }
   }
+
+  // 2. If sync is running, merge options for the next run
+  pendingSyncOptions = mergeSyncOptions(pendingSyncOptions, options);
+
+  // 3. Setup the pending promise if not already waiting
+  if (!pendingSyncPromise) {
+    pendingSyncPromise = (async () => {
+      try {
+        await syncPipelinePromise;
+      } catch {
+        // Ignore errors from the previous run; we still want to run the next one
+      }
+
+      const nextOptions = pendingSyncOptions || {};
+      pendingSyncOptions = null;
+      pendingSyncPromise = null;
+
+      return performSync(nextOptions);
+    })();
+  }
+
+  return pendingSyncPromise;
 }
 
 /**

@@ -19,7 +19,9 @@ import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { usePost } from '@/api/community';
+import { PostDetailContent } from '@/components/community/post-detail-content';
 import { PostDetailErrorState } from '@/components/community/post-detail-error-state';
+import { PostDetailHeader } from '@/components/community/post-detail-header';
 import { PostDetailLoadingState } from '@/components/community/post-detail-loading-state';
 import { usePostDetailState } from '@/components/community/use-post-detail-state';
 import { usePostSharing } from '@/components/community/use-post-sharing';
@@ -34,9 +36,6 @@ import { haptics } from '@/lib/haptics';
 import { getHeaderColors } from '@/lib/theme-utils';
 import { database } from '@/lib/watermelon';
 import type { Post } from '@/types/community';
-
-import { PostDetailContent } from './post-detail-content';
-import { PostDetailHeader } from './post-detail-header';
 
 const styles = StyleSheet.create({
   flex1: { flex: 1 },

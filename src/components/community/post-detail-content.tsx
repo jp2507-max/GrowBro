@@ -137,5 +137,3 @@ export function PostDetailContent({
     </View>
   );
 }
-
-export default PostDetailContent;

@@ -24,29 +24,6 @@ export function isLowMemoryDevice(): boolean {
 }
 
 /**
- * Get optimized FlashList v2 configuration for large lists (100+ items)
- *
- * Performance tuning for fast scrolling:
- * - Higher drawDistance (800-1200px) pre-renders items before they enter viewport
- * - scrollEventThrottle at 32ms balances performance vs responsiveness
- *
- * Use case: Strains list, Community feed, Search results
- */
-export function getOptimizedFlashListConfig(): FlashListConfig {
-  const lowMem = isLowMemoryDevice();
-
-  return {
-    // Pre-render items 800-1200px before they become visible
-    // Higher values reduce blank areas during fast scrolling
-    drawDistance: lowMem ? 800 : 1200,
-    removeClippedSubviews: true,
-    // 32ms throttle for scroll events (vs 16ms default)
-    // Reduces JS bridge traffic while maintaining smooth feel
-    scrollEventThrottle: 32,
-  };
-}
-
-/**
  * Get lighter FlashList configuration for medium-sized lists (20-100 items)
  *
  * Lower memory overhead than the full config, suitable for:

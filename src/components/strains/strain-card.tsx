@@ -16,6 +16,7 @@ import Animated, {
 import { OptionalBlurView } from '@/components/shared/optional-blur-view';
 import { DifficultyBadge } from '@/components/strains/difficulty-badge';
 import { FavoriteButtonConnected } from '@/components/strains/favorite-button-connected';
+import { FavoriteButtonDumb } from '@/components/strains/favorite-button-dumb';
 import { RaceBadge } from '@/components/strains/race-badge';
 import { THCBadge } from '@/components/strains/thc-badge';
 import { Image, Pressable, Text, View } from '@/components/ui';
@@ -43,6 +44,10 @@ type Props = {
   testID?: string;
   enableSharedTransition?: boolean;
   onStartNavigation?: (strainId: string) => void;
+  /** When provided, renders a "dumb" favorite button instead of the connected one */
+  isFavorite?: boolean;
+  /** Required when isFavorite is provided */
+  onToggleFavorite?: () => void;
 };
 
 // Extracted component for badges
@@ -123,8 +128,78 @@ StrainCardContent.displayName = 'StrainCardContent';
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const AnimatedImage = Animated.createAnimatedComponent(Image);
 
+// Extracted component for image section with overlays
+type StrainCardImageSectionProps = {
+  strain: Strain;
+  enableSharedTransition: boolean;
+  imageProps: ReturnType<typeof getListImageProps>;
+  isDark: boolean;
+  isFavorite?: boolean;
+  onToggleFavorite?: () => void;
+};
+
+const StrainCardImageSection = React.memo<StrainCardImageSectionProps>(
+  ({
+    strain,
+    enableSharedTransition,
+    imageProps,
+    isDark,
+    isFavorite,
+    onToggleFavorite,
+  }) => (
+    <View className="relative h-52 w-full bg-white">
+      <AnimatedImage
+        className="size-full"
+        contentFit="cover"
+        sharedTransitionTag={
+          enableSharedTransition ? strainImageTag(strain.slug) : undefined
+        }
+        {...imageProps}
+      />
+
+      {/* Favorite Button */}
+      <View className="absolute right-3 top-3">
+        <StrainCardOverlay isDark={isDark} style={glassStyles.favoriteButton}>
+          <View className="p-1.5">
+            {isFavorite !== undefined && onToggleFavorite ? (
+              <FavoriteButtonDumb
+                isFavorite={isFavorite}
+                onToggle={onToggleFavorite}
+                testID={`favorite-btn-${strain.id}`}
+              />
+            ) : (
+              <FavoriteButtonConnected
+                strainId={strain.id}
+                strain={strain}
+                testID={`favorite-btn-${strain.id}`}
+              />
+            )}
+          </View>
+        </StrainCardOverlay>
+      </View>
+
+      {/* Overlay Badges */}
+      <View className="absolute bottom-3 left-3">
+        <StrainCardOverlay isDark={isDark} style={glassStyles.overlayBadges}>
+          <View className="px-2 py-1.5">
+            <StrainBadges strain={strain} />
+          </View>
+        </StrainCardOverlay>
+      </View>
+    </View>
+  )
+);
+StrainCardImageSection.displayName = 'StrainCardImageSection';
+
 export const StrainCard = React.memo<Props>(
-  ({ strain, testID, enableSharedTransition = true, onStartNavigation }) => {
+  ({
+    strain,
+    testID,
+    enableSharedTransition = true,
+    onStartNavigation,
+    isFavorite,
+    onToggleFavorite,
+  }) => {
     const { scaledSizes, isLargeTextMode } = useDynamicType();
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
@@ -191,46 +266,14 @@ export const StrainCard = React.memo<Props>(
             className="overflow-hidden rounded-3xl bg-white shadow-sm dark:bg-charcoal-900"
             style={styles.card}
           >
-            <View className="relative h-52 w-full bg-white">
-              <AnimatedImage
-                className="size-full"
-                contentFit="cover"
-                sharedTransitionTag={
-                  enableSharedTransition
-                    ? strainImageTag(strain.slug)
-                    : undefined
-                }
-                {...imageProps}
-              />
-
-              {/* Favorite Button */}
-              <View className="absolute right-3 top-3">
-                <StrainCardOverlay
-                  isDark={isDark}
-                  style={glassStyles.favoriteButton}
-                >
-                  <View className="p-1.5">
-                    <FavoriteButtonConnected
-                      strainId={strain.id}
-                      strain={strain}
-                      testID={`favorite-btn-${strain.id}`}
-                    />
-                  </View>
-                </StrainCardOverlay>
-              </View>
-
-              {/* Overlay Badges */}
-              <View className="absolute bottom-3 left-3">
-                <StrainCardOverlay
-                  isDark={isDark}
-                  style={glassStyles.overlayBadges}
-                >
-                  <View className="px-2 py-1.5">
-                    <StrainBadges strain={strain} />
-                  </View>
-                </StrainCardOverlay>
-              </View>
-            </View>
+            <StrainCardImageSection
+              strain={strain}
+              enableSharedTransition={enableSharedTransition}
+              imageProps={imageProps}
+              isDark={isDark}
+              isFavorite={isFavorite}
+              onToggleFavorite={onToggleFavorite}
+            />
 
             <StrainCardContent
               strain={strain}

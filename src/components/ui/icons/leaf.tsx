@@ -1,12 +1,13 @@
 import * as React from 'react';
-import type { SvgProps } from 'react-native-svg';
 import Svg, { Path } from 'react-native-svg';
 
-type IconProps = SvgProps & {
-  size?: number;
-};
+import type { IconProps } from './types';
 
-export function Leaf({ color = '#000', size = 24, ...props }: IconProps) {
+export function Leaf({
+  color = '#000',
+  size = 24,
+  ...props
+}: IconProps): React.JSX.Element {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" {...props}>
       <Path

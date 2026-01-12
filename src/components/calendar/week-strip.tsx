@@ -2,12 +2,16 @@ import { DateTime } from 'luxon';
 import React from 'react';
 import {
   Platform,
-  ScrollView,
+  type ScrollView,
   StyleSheet,
   useWindowDimensions,
 } from 'react-native';
 import Animated, {
   ReduceMotion,
+  // @ts-ignore - Reanimated 4.x type exports issue
+  scrollTo,
+  // @ts-ignore - Reanimated 4.x type exports issue
+  useAnimatedRef,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
@@ -180,7 +184,7 @@ export function WeekStrip({
   taskCounts,
   testID = 'week-strip',
 }: WeekStripProps): React.ReactElement {
-  const scrollViewRef = React.useRef<ScrollView>(null);
+  const scrollViewRef = useAnimatedRef<ScrollView>();
   const { width: screenWidth } = useWindowDimensions();
   const hasScrolledRef = React.useRef(false);
   const [isLayoutReady, setIsLayoutReady] = React.useState(false);
@@ -198,19 +202,16 @@ export function WeekStrip({
 
   // Scroll to center week on first render and when selected date changes
   React.useEffect(() => {
-    if (isLayoutReady && scrollViewRef.current) {
+    if (isLayoutReady) {
       // Scroll to center week (index = WEEKS_BUFFER)
       const scrollX = WEEKS_BUFFER * screenWidth;
-      scrollViewRef.current.scrollTo({
-        x: scrollX,
-        animated: hasScrolledRef.current,
-      });
+      scrollTo(scrollViewRef, scrollX, 0, hasScrolledRef.current);
       hasScrolledRef.current = true;
     }
-  }, [selectedDate, screenWidth, isLayoutReady]);
+  }, [selectedDate, screenWidth, isLayoutReady, scrollViewRef]);
 
   return (
-    <ScrollView
+    <Animated.ScrollView
       ref={scrollViewRef}
       horizontal
       showsHorizontalScrollIndicator={false}
@@ -235,7 +236,7 @@ export function WeekStrip({
           ))}
         </View>
       ))}
-    </ScrollView>
+    </Animated.ScrollView>
   );
 }
 

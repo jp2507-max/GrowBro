@@ -256,6 +256,11 @@ function BirthDateInputs({
 function AgeGateCopy(): React.ReactElement {
   const [showDetails, setShowDetails] = React.useState(false);
 
+  // Shared animation for disclaimer blocks
+  const detailsFadeIn = FadeIn.duration(
+    onboardingMotion.durations.quick
+  ).reduceMotion(ReduceMotion.System);
+
   return (
     <View>
       <Animated.View
@@ -276,29 +281,17 @@ function AgeGateCopy(): React.ReactElement {
       {/* Collapsible legal details */}
       {showDetails ? (
         <>
-          <Animated.View
-            entering={FadeIn.duration(
-              onboardingMotion.durations.quick
-            ).reduceMotion(ReduceMotion.System)}
-          >
+          <Animated.View entering={detailsFadeIn}>
             <Text className="mt-3 text-sm text-neutral-500 dark:text-neutral-400">
               {translate('cannabis.age_gate_disclaimer')}
             </Text>
           </Animated.View>
-          <Animated.View
-            entering={FadeIn.duration(
-              onboardingMotion.durations.quick
-            ).reduceMotion(ReduceMotion.System)}
-          >
+          <Animated.View entering={detailsFadeIn}>
             <Text className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
               {translate('cannabis.age_gate_secondary_disclaimer')}
             </Text>
           </Animated.View>
-          <Animated.View
-            entering={FadeIn.duration(
-              onboardingMotion.durations.quick
-            ).reduceMotion(ReduceMotion.System)}
-          >
+          <Animated.View entering={detailsFadeIn}>
             <Text className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
               {translate('cannabis.age_gate_re_verification')}
             </Text>
@@ -316,7 +309,7 @@ function AgeGateCopy(): React.ReactElement {
             onPress={() => setShowDetails(true)}
             accessibilityRole="button"
             accessibilityLabel={translate('cannabis.age_gate_show_details')}
-            accessibilityHint="Show legal disclaimer details"
+            accessibilityHint={translate('cannabis.age_gate_show_details_hint')}
             testID="age-gate-show-details"
           >
             <Text className="text-sm font-medium text-primary-600 dark:text-primary-400">

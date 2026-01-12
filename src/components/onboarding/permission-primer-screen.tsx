@@ -11,6 +11,7 @@ import { translate } from '@/lib/i18n';
 
 import { Button, Text, View } from '../ui';
 import colors from '../ui/colors';
+import { Check } from '../ui/icons';
 import { FloatingParticles } from './floating-particles';
 
 type PermissionPrimerScreenProps = {
@@ -41,7 +42,7 @@ function BenefitItem({
       className="flex-row items-start gap-3"
     >
       <View className="mt-1 size-5 items-center justify-center rounded-full bg-primary-600">
-        <Text className="text-xs font-bold text-white">✓</Text>
+        <Check size={12} color={colors.white} />
       </View>
       <Text
         tx={benefitTx}

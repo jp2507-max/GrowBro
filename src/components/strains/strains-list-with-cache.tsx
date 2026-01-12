@@ -8,11 +8,7 @@ import {
   type FlashListRef,
 } from '@shopify/flash-list';
 import React, { useMemo } from 'react';
-import Animated, {
-  runOnJS,
-  useAnimatedScrollHandler,
-  useComposedEventHandler,
-} from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
 import type { ReanimatedScrollEvent } from 'react-native-reanimated/lib/typescript/hook/commonTypes';
 
 import type { Strain } from '@/api';
@@ -27,8 +23,9 @@ import {
 } from '@/lib/strains/list-helpers';
 import { getOptimizedFlashListConfig } from '@/lib/strains/measure-item-size';
 import { useListComponents } from '@/lib/strains/use-list-components';
+import { useListFavorites } from '@/lib/strains/use-list-favorites';
+import { useListScrolling } from '@/lib/strains/use-list-scrolling';
 import { useScrollRestoration } from '@/lib/strains/use-scroll-restoration';
-import { useStrainListPerformance } from '@/lib/strains/use-strain-list-performance';
 import { useStrainListState } from '@/lib/strains/use-strain-list-state';
 
 /**
@@ -67,6 +64,7 @@ export type StrainsListWithCacheProps = {
   }) => void;
 };
 
+// eslint-disable-next-line max-lines-per-function -- Complex list component with many hooks for data, scroll, favorites, components
 export function StrainsListWithCache({
   searchQuery = '',
   filters = {},
@@ -129,23 +127,10 @@ export function StrainsListWithCache({
 
   const flashListConfig = useMemo(() => getOptimizedFlashListConfig(), []);
 
-  // Note: onBlankArea is deprecated in FlashList v2, so we only use handleScroll
-  const { handleScroll: handlePerfScroll } = useStrainListPerformance({
+  const { composedScrollHandler } = useListScrolling({
+    onScroll,
     listSize: strains.length,
   });
-
-  const perfScrollHandler = useAnimatedScrollHandler({
-    onEnd: () => {
-      runOnJS(handlePerfScroll)();
-    },
-  });
-
-  // Filter out undefined handlers for TypeScript-safe composition
-  const scrollHandlers = [onScroll, perfScrollHandler].filter(
-    (handler): handler is AnimatedScrollHandler => handler !== undefined
-  );
-
-  const composedScrollHandler = useComposedEventHandler(scrollHandlers);
 
   const { listEmpty, listHeader, listFooter } = useListComponents({
     isLoading,
@@ -162,6 +147,9 @@ export function StrainsListWithCache({
     setActiveStrainId(strainId);
   }, []);
 
+  // Lift favorites subscription to list level - single subscription instead of N per row
+  const { isFavorite, createToggleHandler } = useListFavorites();
+
   const renderItem = React.useCallback(
     ({ item }: { item: Strain }) => (
       <StrainCard
@@ -169,9 +157,11 @@ export function StrainsListWithCache({
         testID={`strain-card-${item.id}`}
         enableSharedTransition={item.id === activeStrainId}
         onStartNavigation={handleStrainPressIn}
+        isFavorite={isFavorite(item)}
+        onToggleFavorite={createToggleHandler(item)}
       />
     ),
-    [activeStrainId, handleStrainPressIn]
+    [activeStrainId, handleStrainPressIn, isFavorite, createToggleHandler]
   );
 
   return (

@@ -8,11 +8,13 @@ import { useColorScheme } from 'nativewind';
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import Animated, {
+  // @ts-expect-error - Reanimated 4.1.2: cancelAnimation type export missing
+  cancelAnimation,
   Easing,
   ReduceMotion,
   useAnimatedStyle,
   useSharedValue,
-  // @ts-ignore - Reanimated 4.x type exports issue
+  // @ts-expect-error - Reanimated 4.1.2: withDelay type export missing
   withDelay,
   withRepeat,
   withTiming,
@@ -82,6 +84,11 @@ function FloatingParticle({ particle, particleColor }: FloatingParticleProps) {
         true
       )
     );
+
+    return () => {
+      cancelAnimation(translateY);
+      cancelAnimation(translateX);
+    };
   }, [translateY, translateX, particle]);
 
   const animatedStyle = useAnimatedStyle(() => ({

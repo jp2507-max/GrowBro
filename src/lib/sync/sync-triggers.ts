@@ -56,7 +56,6 @@ export function setupSyncTriggers(
     try {
       await performSync({
         withRetry: false,
-        maxRetries: 1,
         trackAnalytics: true,
         trigger: 'auto',
       });

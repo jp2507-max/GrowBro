@@ -823,6 +823,7 @@
     "age_gate_re_verification": "Aus Compliance-Gruenden wirst du alle 12 Monate gebeten, dein Alter erneut zu bestaetigen.",
     "age_gate_secondary_disclaimer": "Mit dem Fortfahren bestaetigst du, dass du mindestens 18 Jahre alt bist und verstanden hast, dass GrowBro keine Commerce-Funktionen anbietet.",
     "age_gate_show_details": "Mehr erfahren →",
+    "age_gate_show_details_hint": "Zeigt rechtliche Hinweise an",
     "age_gate_submit": "Weiter zu GrowBro",
     "age_gate_title": "Bestaetige dein Alter (18+)",
     "age_gate_year": "Jahr",
@@ -2378,12 +2379,6 @@
       "feature_tips_body": "Kontextbezogene Ratschläge und Bildungsinhalte, wenn du sie brauchst",
       "feature_tips_title": "Experten-Tipps & Growbooks",
       "title": "Lernen & Wachsen"
-    },
-    "intro": {
-      "benefit_ai": "KI-gestützte Gesundheitsanalysen",
-      "benefit_plan": "Plane und organisiere deinen Grow",
-      "benefit_track": "Verfolge den Pflanzenfortschritt täglich",
-      "tagline": "Dein persönlicher Anbaubegleiter"
     },
     "message": "Willkommen bei der GrowBro App",
     "notifications_body": "Erlaube Benachrichtigungen, um rechtzeitig an Aufgaben erinnert zu werden.",

@@ -38,20 +38,12 @@ export function SkipButton({ onPress }: SkipButtonProps) {
 }
 
 type NavButtonProps = {
-  ctaStyle: StyleProp<ViewStyle>;
-  ctaEnabled: boolean;
   isLastSlide: boolean;
   onDone: () => void;
   onNext: () => void;
 };
 
-export function NavButton({
-  ctaStyle: _ctaStyle,
-  ctaEnabled: _ctaEnabled,
-  isLastSlide,
-  onDone,
-  onNext,
-}: NavButtonProps) {
+export function NavButton({ isLastSlide, onDone, onNext }: NavButtonProps) {
   // Always visible, just change label and handler based on slide
   return (
     <SafeAreaView edges={['bottom', 'left', 'right']}>

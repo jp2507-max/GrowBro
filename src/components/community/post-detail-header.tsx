@@ -48,5 +48,3 @@ export function PostDetailHeader({
     </View>
   );
 }
-
-export default PostDetailHeader;

@@ -17,16 +17,14 @@ import type {
   NativeSyntheticEvent,
   ScrollView,
 } from 'react-native';
-import { StyleSheet, useWindowDimensions } from 'react-native';
+import { useWindowDimensions } from 'react-native';
 import {
   // @ts-ignore - Reanimated 4.x type exports issue
   useAnimatedScrollHandler,
-  useAnimatedStyle,
   useSharedValue,
 } from 'react-native-reanimated';
 
 import { FocusAwareStatusBar, View } from '@/components/ui';
-import { ctaGateToLastIndex } from '@/lib/animations';
 import { AnimatedIndexProvider } from '@/lib/animations/index-context';
 import {
   trackOnboardingComplete,
@@ -102,13 +100,6 @@ export function OnboardingPager({
     },
   });
 
-  const ctaStyle = useAnimatedStyle(() => {
-    'worklet';
-    // Always show full opacity for non-last slides (Next button visible)
-    if (lastIndex === 0) return { opacity: 1 };
-    return { opacity: ctaGateToLastIndex(activeIndex, lastIndex).opacity };
-  });
-
   const handleScrollEnd = React.useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
       const layoutWidth = event?.nativeEvent?.layoutMeasurement?.width ?? NaN;
@@ -168,8 +159,6 @@ export function OnboardingPager({
         />
         <PaginationDots count={slides.length} activeIndex={activeIndex} />
         <NavButton
-          ctaStyle={isLastSlide ? ctaStyle : styles.fullOpacity}
-          ctaEnabled={isLastSlide}
           isLastSlide={isLastSlide}
           onDone={handleDone}
           onNext={handleNext}
@@ -178,7 +167,3 @@ export function OnboardingPager({
     </AnimatedIndexProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  fullOpacity: { opacity: 1 },
-});

@@ -58,11 +58,18 @@ function toDate(dateLike: string | number | Date | null | undefined): Date {
   return new Date();
 }
 
-function toDateFromUnknown(value: unknown): Date {
-  if (value instanceof Date) return value;
-  if (typeof value === 'number') return new Date(value);
-  if (typeof value === 'string') return new Date(value);
-  return new Date();
+function toDateFromUnknown(value: unknown): Date | null {
+  if (value instanceof Date)
+    return Number.isNaN(value.getTime()) ? null : value;
+  if (typeof value === 'number') {
+    const d = new Date(value);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+  if (typeof value === 'string') {
+    const d = new Date(value);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+  return null;
 }
 
 function toMillisFromUnknown(value: unknown): number | null {
@@ -89,6 +96,7 @@ function toDeletedPlantRecord(row: DeletedPlantRow): DeletedPlantRecord | null {
   const userId = typeof row.user_id === 'string' ? row.user_id : null;
   const deletedAt = toDateFromUnknown(row.deleted_at ?? row.updated_at);
   const updatedAt = toDateFromUnknown(row.updated_at ?? row.deleted_at);
+  if (!deletedAt || !updatedAt) return null;
   return {
     id,
     userId,
@@ -308,18 +316,21 @@ export async function upsertRemotePlants(
 ): Promise<{ applied: number }> {
   if (plants.length === 0) return { applied: 0 };
   const uniquePlants = dedupeRemotePlants(plants);
+  // If remote sends tombstones, they must be applied via applyRemotePlantDeletions()
+  // to avoid resurrecting records here.
+  const activePlants = uniquePlants.filter((p) => !p.deleted_at);
   const collection = getCollection();
   const deletedIds = await getDeletedPlantIds(
-    uniquePlants.map((plant) => plant.id)
+    activePlants.map((plant) => plant.id)
   );
   const existing = await collection
-    .query(Q.where('id', Q.oneOf(uniquePlants.map((p) => p.id))))
+    .query(Q.where('id', Q.oneOf(activePlants.map((p) => p.id))))
     .fetch();
   const existingMap = new Map(existing.map((model) => [model.id, model]));
   let applied = 0;
 
   await database.write(async () => {
-    for (const remote of uniquePlants) {
+    for (const remote of activePlants) {
       if (deletedIds.has(remote.id)) continue;
       const remoteUpdatedMs = toMillis(remote.updated_at) ?? 0;
       const current = existingMap.get(remote.id);

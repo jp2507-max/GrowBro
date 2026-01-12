@@ -2,7 +2,7 @@
  * Hook to automatically sync favorites when network becomes available
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { useNetworkStatus } from '@/lib/hooks/use-network-status';
 import { isSyncPipelineInFlight } from '@/lib/sync/sync-coordinator';
@@ -28,11 +28,11 @@ export function useFavoritesAutoSync(): FavoritesAutoSyncState {
   const isSyncing = useFavorites.use.isSyncing();
   const syncError = useFavorites.use.syncError();
   const wasOfflineRef = useRef(!isInternetReachable);
-  const lastSyncAttemptRef = useRef(0);
+  const [lastSyncAttempt, setLastSyncAttempt] = useState(0);
 
   useEffect(() => {
     const now = Date.now();
-    const timeSinceLastSync = now - lastSyncAttemptRef.current;
+    const timeSinceLastSync = now - lastSyncAttempt;
     const justCameOnline = wasOfflineRef.current && isInternetReachable;
 
     const shouldSync =
@@ -43,7 +43,7 @@ export function useFavoritesAutoSync(): FavoritesAutoSyncState {
 
     if (shouldSync) {
       console.info('[useFavoritesAutoSync] Triggering auto-sync');
-      lastSyncAttemptRef.current = now;
+      setLastSyncAttempt(now);
 
       void fullSync().catch((error: Error) => {
         console.error('[useFavoritesAutoSync] Auto-sync failed:', error);
@@ -51,11 +51,11 @@ export function useFavoritesAutoSync(): FavoritesAutoSyncState {
     }
 
     wasOfflineRef.current = !isInternetReachable;
-  }, [isInternetReachable, isSyncing, fullSync]);
+  }, [isInternetReachable, isSyncing, fullSync, lastSyncAttempt]);
 
   return {
     isSyncing,
     syncError,
-    lastSyncAttempt: lastSyncAttemptRef.current,
+    lastSyncAttempt: lastSyncAttempt,
   };
 }

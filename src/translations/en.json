@@ -823,6 +823,7 @@
     "age_gate_re_verification": "For compliance, you'll be asked to re-verify your age every 12 months.",
     "age_gate_secondary_disclaimer": "By continuing you confirm you are at least 18 years old and understand GrowBro avoids commerce functionality.",
     "age_gate_show_details": "Learn more →",
+    "age_gate_show_details_hint": "Show legal disclaimer details",
     "age_gate_submit": "Enter GrowBro",
     "age_gate_title": "Confirm you are 18 or older",
     "age_gate_year": "Year",
@@ -2378,12 +2379,6 @@
       "feature_tips_body": "Contextual advice and educational content when you need it",
       "feature_tips_title": "Expert Tips & Growbooks",
       "title": "Learn & Grow"
-    },
-    "intro": {
-      "benefit_ai": "AI-powered health insights",
-      "benefit_plan": "Plan and schedule your grow",
-      "benefit_track": "Track plant progress daily",
-      "tagline": "Your personal cultivation companion"
     },
     "message": "Welcome to GrowBro app site",
     "notifications_body": "Allow notifications to get timely task reminders.",

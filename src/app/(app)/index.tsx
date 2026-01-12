@@ -1,7 +1,7 @@
 import { useFocusEffect } from '@react-navigation/native';
+import { FlashList, type ListRenderItemInfo } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import React, { useCallback } from 'react';
-import { ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { Plant } from '@/api';
@@ -10,8 +10,7 @@ import { ActivationChecklist } from '@/components/home/activation-checklist';
 import { AddPlantFab } from '@/components/home/add-plant-fab';
 import { HomeEmptyState } from '@/components/home/home-empty-state';
 import { HomeHeader } from '@/components/home/home-header';
-import { PlantsSection } from '@/components/home/plants-section';
-import { PlantsErrorCard } from '@/components/plants';
+import { PlantCard, PlantsErrorCard } from '@/components/plants';
 import { FocusAwareStatusBar, View } from '@/components/ui';
 import { useAnimatedScrollList } from '@/lib/animations/animated-scroll-list-provider';
 import { useBottomTabBarHeight } from '@/lib/animations/use-bottom-tab-bar-height';
@@ -20,6 +19,7 @@ import {
   completeActivationAction,
   hydrateActivationState,
 } from '@/lib/compliance/activation-state';
+import { getMediumFlashListConfig } from '@/lib/flashlist-config';
 import { usePlantsAttention } from '@/lib/hooks/use-plants-attention';
 
 const BOTTOM_PADDING_EXTRA = 24;
@@ -41,6 +41,43 @@ function usePlantsData() {
     refetch,
   } as const;
 }
+
+// Header component rendered inside FlashList
+type HomeListHeaderProps = {
+  onActivationActionComplete: (action: ActivationAction) => void;
+  hasPlantsError: boolean;
+  refetchPlants: () => void;
+  isLoading: boolean;
+};
+
+const HomeListHeader = React.memo(function HomeListHeader({
+  onActivationActionComplete,
+  hasPlantsError,
+  refetchPlants,
+  isLoading,
+}: HomeListHeaderProps) {
+  if (isLoading) {
+    return (
+      <View className="gap-3 pb-3" testID="plants-section-loading">
+        {[1, 2].map((i) => (
+          <View
+            key={i}
+            className="h-[88px] animate-pulse rounded-2xl bg-neutral-200/60 dark:bg-neutral-700/40"
+          />
+        ))}
+      </View>
+    );
+  }
+
+  return (
+    <View className="gap-4 pb-3">
+      <ActivationChecklist onActionComplete={onActivationActionComplete} />
+      {hasPlantsError ? (
+        <PlantsErrorCard onRetry={refetchPlants} className="mb-2" />
+      ) : null}
+    </View>
+  );
+});
 
 export default function Feed() {
   const router = useRouter();
@@ -80,8 +117,11 @@ export default function Feed() {
     [router]
   );
 
-  const contentPaddingBottom = React.useMemo(
-    () => ({ paddingBottom: grossHeight + BOTTOM_PADDING_EXTRA }),
+  const contentContainerStyle = React.useMemo(
+    () => ({
+      paddingBottom: grossHeight + BOTTOM_PADDING_EXTRA,
+      paddingHorizontal: 16,
+    }),
     [grossHeight]
   );
 
@@ -89,7 +129,7 @@ export default function Feed() {
   const hasPlantsError = isPlantsError && !isLoading && plants.length > 0;
   const isEmpty = !isLoading && plants.length === 0;
 
-  // Task count for header (derived from plants with pending tasks)
+  // Single attention query - passed to all plant cards
   const plantIds = React.useMemo(
     () => plants.map((plant) => plant.id),
     [plants]
@@ -103,6 +143,37 @@ export default function Feed() {
       0
     );
   }, [attentionMap]);
+
+  // Memoized render function for FlashList
+  const renderItem = useCallback(
+    ({ item }: ListRenderItemInfo<Plant>) => (
+      <PlantCard
+        plant={item}
+        onPress={onPlantPress}
+        needsAttention={attentionMap[item.id]?.needsAttention ?? false}
+      />
+    ),
+    [onPlantPress, attentionMap]
+  );
+
+  const keyExtractor = useCallback((item: Plant) => item.id, []);
+
+  const listHeader = React.useMemo(
+    () => (
+      <HomeListHeader
+        onActivationActionComplete={onActivationActionComplete}
+        hasPlantsError={hasPlantsError}
+        refetchPlants={refetchPlants}
+        isLoading={isLoading}
+      />
+    ),
+    [onActivationActionComplete, hasPlantsError, refetchPlants, isLoading]
+  );
+
+  const listEmpty = React.useMemo(
+    () => (isEmpty ? <HomeEmptyState /> : null),
+    [isEmpty]
+  );
 
   return (
     <View
@@ -125,30 +196,17 @@ export default function Feed() {
           <View className="h-1 w-10 rounded-full bg-neutral-300 dark:bg-charcoal-700" />
         </View>
 
-        <ScrollView
-          contentContainerStyle={contentPaddingBottom}
+        <FlashList
+          data={isLoading ? [] : plants}
+          renderItem={renderItem}
+          keyExtractor={keyExtractor}
+          contentContainerStyle={contentContainerStyle}
           showsVerticalScrollIndicator={false}
-        >
-          <View className="gap-4 px-4 pb-4">
-            <ActivationChecklist
-              onActionComplete={onActivationActionComplete}
-            />
-
-            {hasPlantsError ? (
-              <PlantsErrorCard onRetry={refetchPlants} className="mb-2" />
-            ) : null}
-
-            {isEmpty ? (
-              <HomeEmptyState />
-            ) : (
-              <PlantsSection
-                plants={plants}
-                isLoading={isLoading}
-                onPlantPress={onPlantPress}
-              />
-            )}
-          </View>
-        </ScrollView>
+          ListHeaderComponent={listHeader}
+          ListEmptyComponent={listEmpty}
+          testID="plants-section"
+          {...getMediumFlashListConfig()}
+        />
       </View>
       <AddPlantFab />
     </View>
