@@ -183,29 +183,31 @@ export function WeekStrip({
   const scrollViewRef = React.useRef<ScrollView>(null);
   const { width: screenWidth } = useWindowDimensions();
   const hasScrolledRef = React.useRef(false);
+  const [isLayoutReady, setIsLayoutReady] = React.useState(false);
 
   const weeks = React.useMemo(
     () => buildMultiWeekDays(selectedDate, taskCounts),
     [selectedDate, taskCounts]
   );
 
+  const handleLayout = React.useCallback(() => {
+    if (!isLayoutReady) {
+      setIsLayoutReady(true);
+    }
+  }, [isLayoutReady]);
+
   // Scroll to center week on first render and when selected date changes
   React.useEffect(() => {
-    // Delay to ensure layout is complete
-    const timer = setTimeout(() => {
-      if (scrollViewRef.current) {
-        // Scroll to center week (index = WEEKS_BUFFER)
-        const scrollX = WEEKS_BUFFER * screenWidth;
-        scrollViewRef.current.scrollTo({
-          x: scrollX,
-          animated: hasScrolledRef.current,
-        });
-        hasScrolledRef.current = true;
-      }
-    }, 50);
-
-    return () => clearTimeout(timer);
-  }, [selectedDate, screenWidth]);
+    if (isLayoutReady && scrollViewRef.current) {
+      // Scroll to center week (index = WEEKS_BUFFER)
+      const scrollX = WEEKS_BUFFER * screenWidth;
+      scrollViewRef.current.scrollTo({
+        x: scrollX,
+        animated: hasScrolledRef.current,
+      });
+      hasScrolledRef.current = true;
+    }
+  }, [selectedDate, screenWidth, isLayoutReady]);
 
   return (
     <ScrollView
@@ -216,6 +218,7 @@ export function WeekStrip({
       decelerationRate="fast"
       testID={testID}
       contentContainerStyle={styles.scrollContent}
+      onLayout={handleLayout}
     >
       {weeks.map((weekDays, weekIndex) => (
         <View

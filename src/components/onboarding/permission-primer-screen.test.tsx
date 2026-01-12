@@ -4,6 +4,10 @@ import { cleanup, screen, setup, waitFor } from '@/lib/test-utils';
 
 import { PermissionPrimerScreen } from './permission-primer-screen';
 
+jest.mock('./floating-particles', () => ({
+  FloatingParticles: () => 'FloatingParticles',
+}));
+
 afterEach(cleanup);
 
 const onAllowMock = jest.fn();

@@ -1,7 +1,8 @@
 import { LinearGradient } from 'expo-linear-gradient';
+import { useColorScheme } from 'nativewind';
 import React from 'react';
 import type { ColorValue } from 'react-native';
-import { useColorScheme } from 'react-native';
+import { StyleSheet } from 'react-native';
 import Animated from 'react-native-reanimated';
 
 import { createStaggeredFadeInUp, onboardingMotion } from '@/lib/animations';
@@ -10,6 +11,7 @@ import { translate } from '@/lib/i18n';
 
 import { Button, Text, View } from '../ui';
 import colors from '../ui/colors';
+import { FloatingParticles } from './floating-particles';
 
 type PermissionPrimerScreenProps = {
   icon: React.ReactNode;
@@ -21,6 +23,33 @@ type PermissionPrimerScreenProps = {
   isLoading?: boolean;
   testID?: string;
 };
+
+type BenefitItemProps = { benefitTx: TxKeyPath; index: number };
+
+function BenefitItem({
+  benefitTx,
+  index,
+}: BenefitItemProps): React.ReactElement {
+  return (
+    <Animated.View
+      key={benefitTx}
+      entering={createStaggeredFadeInUp(index, {
+        baseDelay: 300,
+        staggerDelay: 50,
+        duration: onboardingMotion.durations.standard,
+      })}
+      className="flex-row items-start gap-3"
+    >
+      <View className="mt-1 size-5 items-center justify-center rounded-full bg-primary-600">
+        <Text className="text-xs font-bold text-white">✓</Text>
+      </View>
+      <Text
+        tx={benefitTx}
+        className="flex-1 text-sm text-neutral-700 dark:text-neutral-300"
+      />
+    </Animated.View>
+  );
+}
 
 /**
  * Permission primer screen component
@@ -42,7 +71,7 @@ export function PermissionPrimerScreen({
   isLoading = false,
   testID = 'permission-primer',
 }: PermissionPrimerScreenProps): React.ReactElement {
-  const colorScheme = useColorScheme();
+  const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
 
   const gradientColors: readonly [ColorValue, ColorValue, ColorValue] = isDark
@@ -55,8 +84,11 @@ export function PermissionPrimerScreen({
         colors={gradientColors}
         start={{ x: 0.5, y: 0 }}
         end={{ x: 0.5, y: 1 }}
-        style={{ flex: 1 }}
+        style={styles.flex}
       >
+        {/* Subtle floating particles */}
+        <FloatingParticles />
+
         <View className="flex-1 px-6">
           {/* Icon Container */}
           <Animated.View
@@ -101,23 +133,11 @@ export function PermissionPrimerScreen({
           {/* Benefits List */}
           <View className="mt-8 gap-4">
             {benefitsTx.map((benefitTx, index) => (
-              <Animated.View
-                key={index}
-                entering={createStaggeredFadeInUp(index, {
-                  baseDelay: 300,
-                  staggerDelay: 50,
-                  duration: onboardingMotion.durations.standard,
-                })}
-                className="flex-row items-start gap-3"
-              >
-                <View className="mt-1 size-5 items-center justify-center rounded-full bg-primary-600">
-                  <Text className="text-xs font-bold text-white">✓</Text>
-                </View>
-                <Text
-                  tx={benefitTx}
-                  className="flex-1 text-sm text-neutral-700 dark:text-neutral-300"
-                />
-              </Animated.View>
+              <BenefitItem
+                key={benefitTx}
+                benefitTx={benefitTx}
+                index={index}
+              />
             ))}
           </View>
 
@@ -187,3 +207,7 @@ export function PermissionPrimerScreen({
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  flex: { flex: 1 },
+});

@@ -1,15 +1,14 @@
 import React, { useCallback, useState } from 'react';
 import { Alert, Linking, Platform } from 'react-native';
-import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
 
 import {
   trackPrimerAccepted,
   trackPrimerShown,
 } from '@/lib/compliance/onboarding-telemetry';
 import { translate } from '@/lib/i18n';
-import { PermissionManager } from '@/lib/permissions/permission-manager';
 
-import { Text, View } from '../ui';
+import { Bell } from '../ui/icons';
+import { AnimatedPrimerIcon } from './animated-primer-icon';
 import { PermissionPrimerScreen } from './permission-primer-screen';
 
 type NotificationPermissionPrimerProps = {
@@ -40,6 +39,9 @@ export function NotificationPermissionPrimer({
   const handleAllow = useCallback(async () => {
     setIsLoading(true);
     try {
+      const { PermissionManager } = await import(
+        '@/lib/permissions/permission-manager'
+      );
       const result = await PermissionManager.requestNotificationPermission();
       const granted = result === 'granted';
 
@@ -84,14 +86,10 @@ export function NotificationPermissionPrimer({
   }, [onComplete]);
 
   const icon = (
-    <Animated.View
-      entering={FadeIn.duration(400).reduceMotion(ReduceMotion.System)}
-      className="size-24 items-center justify-center rounded-full bg-primary-100 dark:bg-primary-900/30"
-    >
-      <View className="size-16 items-center justify-center rounded-full bg-primary-600">
-        <Text className="text-4xl">🔔</Text>
-      </View>
-    </Animated.View>
+    <AnimatedPrimerIcon
+      icon={<Bell size={32} color="white" />}
+      variant="primary"
+    />
   );
 
   return (

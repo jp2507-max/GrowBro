@@ -6,7 +6,7 @@
  * - Animated.ScrollView with pagingEnabled
  * - SharedValue activeIndex bridged to AnimatedIndexContext
  * - Pagination dots
- * - Skip/Done buttons integrated with onboarding-state
+ * - Skip/Next/Done buttons integrated with onboarding-state
  * - Reduced Motion support
  * - Full a11y with TalkBack/VoiceOver support
  */
@@ -17,7 +17,7 @@ import type {
   NativeSyntheticEvent,
   ScrollView,
 } from 'react-native';
-import { useWindowDimensions } from 'react-native';
+import { StyleSheet, useWindowDimensions } from 'react-native';
 import {
   // @ts-ignore - Reanimated 4.x type exports issue
   useAnimatedScrollHandler,
@@ -35,7 +35,7 @@ import {
 } from '@/lib/compliance/onboarding-telemetry';
 
 import {
-  DoneButton,
+  NavButton,
   OnboardingScrollView,
   SkipButton,
 } from './onboarding-buttons';
@@ -104,6 +104,7 @@ export function OnboardingPager({
 
   const ctaStyle = useAnimatedStyle(() => {
     'worklet';
+    // Always show full opacity for non-last slides (Next button visible)
     if (lastIndex === 0) return { opacity: 1 };
     return { opacity: ctaGateToLastIndex(activeIndex, lastIndex).opacity };
   });
@@ -131,6 +132,11 @@ export function OnboardingPager({
     onComplete();
   }, [onComplete, slides.length]);
 
+  const handleNext = React.useCallback(() => {
+    const nextIndex = Math.min(currentIndex + 1, lastIndex);
+    scrollRef.current?.scrollTo({ x: nextIndex * width, animated: true });
+  }, [currentIndex, lastIndex, width]);
+
   const handleSkip = React.useCallback(() => {
     const now = Date.now();
     const tracking = trackingRef.current;
@@ -143,9 +149,14 @@ export function OnboardingPager({
     onComplete();
   }, [onComplete, activeIndex]);
 
+  const isLastSlide = currentIndex >= lastIndex;
+
   return (
     <AnimatedIndexProvider activeIndex={activeIndex}>
-      <View className="flex-1 bg-white dark:bg-charcoal-950" testID={testID}>
+      <View
+        className="flex-1 bg-primary-50 dark:bg-charcoal-950"
+        testID={testID}
+      >
         <FocusAwareStatusBar />
         {showSkip && <SkipButton onPress={handleSkip} />}
         <OnboardingScrollView
@@ -156,12 +167,18 @@ export function OnboardingPager({
           onScrollEnd={handleScrollEnd}
         />
         <PaginationDots count={slides.length} activeIndex={activeIndex} />
-        <DoneButton
-          ctaStyle={ctaStyle}
-          ctaEnabled={currentIndex >= lastIndex - 0.001}
-          onPress={handleDone}
+        <NavButton
+          ctaStyle={isLastSlide ? ctaStyle : styles.fullOpacity}
+          ctaEnabled={isLastSlide}
+          isLastSlide={isLastSlide}
+          onDone={handleDone}
+          onNext={handleNext}
         />
       </View>
     </AnimatedIndexProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  fullOpacity: { opacity: 1 },
+});

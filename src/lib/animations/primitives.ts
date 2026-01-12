@@ -1,10 +1,16 @@
 import type { ColorValue } from 'react-native';
-import type { SharedValue } from 'react-native-reanimated';
-import Reanimated from 'react-native-reanimated';
+import {
+  // @ts-ignore - Reanimated 4.x type exports issue
+  interpolate,
+  // @ts-ignore - Reanimated 4.x type exports issue
+  interpolateColor,
+  type SharedValue,
+  withSpring,
+} from 'react-native-reanimated';
 
 import { SPRING } from './constants';
 
-type WithSpringConfig = Parameters<typeof Reanimated.withSpring>[1];
+type WithSpringConfig = Parameters<typeof withSpring>[1];
 
 export type InterpolateOptions = {
   clamp?: boolean;
@@ -41,19 +47,17 @@ function applySpring(value: number, opts?: SpringifyOptions): number {
   'worklet';
   const spring = opts?.spring ?? true;
   if (!spring || opts?.reduceMotion) return value;
-  return Reanimated.withSpring(value, opts?.springConfig ?? SPRING);
+  return withSpring(value, opts?.springConfig ?? SPRING);
 }
 
 export function indexInterpolate(params: InterpolateParams): number {
   'worklet';
   const { activeIndex, inputRange, outputRange, options } = params;
-  return Reanimated.interpolate(
+  return interpolate(
     activeIndex.value,
     inputRange,
     outputRange,
-    options?.clamp === false
-      ? Reanimated.Extrapolation.EXTEND
-      : Reanimated.Extrapolation.CLAMP
+    options?.clamp === false ? 'extend' : 'clamp'
   );
 }
 
@@ -112,12 +116,7 @@ export function hsvInterpolateColor(
   colors: readonly (ColorValue | number)[]
 ): number {
   'worklet';
-  return Reanimated.interpolateColor(
-    activeIndex.value,
-    inputRange,
-    colors,
-    'HSV'
-  );
+  return interpolateColor(activeIndex.value, inputRange, colors, 'HSV');
 }
 
 export function ctaGateToLastIndex(
@@ -126,11 +125,11 @@ export function ctaGateToLastIndex(
 ): { opacity: number; enabled: boolean } {
   'worklet';
   const before = Math.max(lastIndex - 1, 0);
-  const opacity = Reanimated.interpolate(
+  const opacity = interpolate(
     activeIndex.value,
     [before, lastIndex],
     [0, 1],
-    Reanimated.Extrapolation.CLAMP
+    'clamp'
   );
   // Enabled once the active index is at or beyond the last slide threshold
   const enabled = activeIndex.value >= lastIndex - 0.001;

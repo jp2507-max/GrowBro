@@ -3,7 +3,7 @@ import React from 'react';
 import { Button, ScrollView, Text, View } from '@/components/ui';
 import { translate } from '@/lib';
 import { clearLogs, getLogs, getMetrics, logEvent } from '@/lib/sync/monitor';
-import { runSyncWithRetry } from '@/lib/sync-engine';
+import { performSync } from '@/lib/sync/sync-coordinator';
 
 type Metrics = ReturnType<typeof getMetrics>;
 
@@ -136,7 +136,12 @@ export default function SyncDiagnostics(): React.ReactElement {
   const onSyncNow = React.useCallback(async (): Promise<void> => {
     try {
       logEvent({ stage: 'total', message: 'manual sync invoked' });
-      await runSyncWithRetry(1, { trigger: 'diagnostic' });
+      await performSync({
+        withRetry: false,
+        maxRetries: 1,
+        trackAnalytics: true,
+        trigger: 'diagnostic',
+      });
     } catch (e) {
       logEvent({
         level: 'error',

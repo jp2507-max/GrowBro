@@ -1,3 +1,5 @@
+import { Q } from '@nozbe/watermelondb';
+
 import { database } from '@/lib/watermelon';
 
 export type SQLiteArg = string | boolean | number | null;
@@ -20,28 +22,14 @@ export type DatabaseAdapterWithUnsafe = {
 };
 
 export async function runSql(
+  table: string,
   sql: string,
   params: SQLiteArg[] = []
 ): Promise<NonNullable<UnsafeExecuteResult['results']>> {
-  if (typeof database.adapter?.unsafeExecute !== 'function') {
-    throw new Error('Database adapter does not support unsafeExecute method');
-  }
+  const rows = await database.read(async () => {
+    const collection = database.get(table as never);
+    return collection.query(Q.unsafeSqlQuery(sql, params)).unsafeFetchRaw();
+  }, `runSql:${table}`);
 
-  const work = { sqls: [[sql, params]] as SQLiteQuery[] };
-
-  return new Promise((resolve, reject) => {
-    (database.adapter as DatabaseAdapterWithUnsafe).unsafeExecute!(
-      work,
-      (result) => {
-        if (result?.error) {
-          console.error('Database adapter error:', result.error);
-          reject(
-            new Error('Failed to execute SQL query', { cause: result.error })
-          );
-          return;
-        }
-        resolve(result?.results || []);
-      }
-    );
-  });
+  return [{ rows: { _array: rows } }];
 }

@@ -1,8 +1,14 @@
+import { queryClient } from '@/api/common/api-provider';
 import { getOptionalAuthenticatedUserId } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import {
+  applyRemotePlantDeletions,
+  claimLocalPlantsForUser,
+  getDeletedPlantsForPurge,
+  getDeletedPlantsForUser,
   getPlantsNeedingSync,
   markPlantsAsSynced,
+  purgeDeletedPlantsByIds,
   upsertRemotePlants,
 } from '@/lib/watermelon-models/plants-repository';
 
@@ -10,10 +16,34 @@ type RemotePlant = Parameters<typeof upsertRemotePlants>[0][number];
 
 type SyncResult = { pushed: number; pulled: number };
 
+const PLANT_DELETION_RETENTION_DAYS = 10;
+const PLANT_DELETION_RETENTION_MS =
+  PLANT_DELETION_RETENTION_DAYS * 24 * 60 * 60 * 1000;
+
+let plantsSyncPromise: Promise<SyncResult> | null = null;
+let plantsSyncQueued = false;
+
 function toIso(value: Date | string | null | undefined): string | null {
   if (!value) return null;
   if (typeof value === 'string') return value;
   return value.toISOString();
+}
+
+function getRetentionCutoffMs(): number {
+  return Date.now() - PLANT_DELETION_RETENTION_MS;
+}
+
+function getRetentionCutoffIso(): string {
+  return new Date(getRetentionCutoffMs()).toISOString();
+}
+
+async function invalidatePlantQueries(): Promise<void> {
+  await Promise.all([
+    queryClient
+      .invalidateQueries({ queryKey: ['plants-infinite'] })
+      .catch(() => {}),
+    queryClient.invalidateQueries({ queryKey: ['plant'] }).catch(() => {}),
+  ]);
 }
 
 function isUuid(value: string): boolean {
@@ -61,11 +91,99 @@ function buildPlantPayload(plant: PlantData, userId: string): RemotePlant {
   };
 }
 
+async function syncDeletedPlantsToCloud(): Promise<number> {
+  const userId = await getOptionalAuthenticatedUserId();
+  if (!userId) {
+    if (__DEV__)
+      console.info('[PlantsSync] skipped delete push: no user session');
+    return 0;
+  }
+
+  const deletedPlants = await getDeletedPlantsForUser(userId);
+  if (deletedPlants.length === 0) {
+    if (__DEV__) console.info('[PlantsSync] no deleted plants to push');
+    return 0;
+  }
+
+  let pushed = 0;
+  for (const plant of deletedPlants) {
+    const { error } = await supabase
+      .from('plants')
+      .update({
+        deleted_at: plant.deletedAt.toISOString(),
+        updated_at: plant.updatedAt.toISOString(),
+      })
+      .eq('id', plant.id)
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('[PlantsSync] failed to mark plant deleted', {
+        id: plant.id,
+        message: error.message,
+        code: error.code,
+        details: error.details,
+      });
+      throw error;
+    }
+    pushed += 1;
+  }
+
+  if (__DEV__) {
+    console.info(`[PlantsSync] pushed ${pushed} deleted plant(s) to cloud`);
+  }
+
+  return pushed;
+}
+
+async function hardDeleteExpiredPlantsFromCloud(
+  userId: string
+): Promise<string[]> {
+  const cutoffIso = getRetentionCutoffIso();
+  const { data, error } = await supabase
+    .from('plants')
+    .delete()
+    .eq('user_id', userId)
+    .lte('deleted_at', cutoffIso)
+    .select('id');
+
+  if (error) {
+    console.error('[PlantsSync] failed to hard delete expired plants', {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+    });
+    throw error;
+  }
+
+  return data?.map((row) => row.id) ?? [];
+}
+
+async function purgeExpiredDeletedPlantsLocally(
+  cloudDeletedIds: Set<string>
+): Promise<number> {
+  const candidates = await getDeletedPlantsForPurge(getRetentionCutoffMs());
+  if (candidates.length === 0) return 0;
+
+  const ids = candidates
+    .filter(
+      (candidate) => !candidate.userId || cloudDeletedIds.has(candidate.id)
+    )
+    .map((candidate) => candidate.id);
+
+  if (ids.length === 0) return 0;
+  return purgeDeletedPlantsByIds(ids);
+}
+
 export async function syncPlantsToCloud(): Promise<number> {
   const userId = await getOptionalAuthenticatedUserId();
   if (!userId) {
     if (__DEV__) console.info('[PlantsSync] skipped push: no user session');
     return 0;
+  }
+
+  const claimed = await claimLocalPlantsForUser(userId);
+  if (claimed > 0 && __DEV__) {
+    console.info(`[PlantsSync] claimed ${claimed} local plant(s) for user`);
   }
 
   const pending = await getPlantsNeedingSync(userId);
@@ -137,12 +255,55 @@ export async function pullPlantsFromCloud(): Promise<number> {
   const rows = data ?? [];
   if (rows.length === 0) return 0;
 
-  await upsertRemotePlants(rows);
-  return rows.length;
+  const deleted = rows.filter((row) => row.deleted_at);
+  const active = rows.filter((row) => !row.deleted_at);
+  const { applied: activeApplied } = await upsertRemotePlants(active);
+  const deletedApplied = await applyRemotePlantDeletions(deleted);
+  return activeApplied + deletedApplied;
 }
 
 export async function syncPlantsBidirectional(): Promise<SyncResult> {
-  const pushed = await syncPlantsToCloud();
-  const pulled = await pullPlantsFromCloud();
-  return { pushed, pulled };
+  if (plantsSyncPromise) {
+    plantsSyncQueued = true;
+    return plantsSyncPromise;
+  }
+
+  const run = (async () => {
+    let result: SyncResult;
+    do {
+      plantsSyncQueued = false;
+      const deletedPushed = await syncDeletedPlantsToCloud();
+      const pushed = await syncPlantsToCloud();
+      const pulled = await pullPlantsFromCloud();
+      const userId = await getOptionalAuthenticatedUserId();
+      const cloudDeletedIds = userId
+        ? await hardDeleteExpiredPlantsFromCloud(userId)
+        : [];
+      const purgedLocal = await purgeExpiredDeletedPlantsLocally(
+        new Set(cloudDeletedIds)
+      );
+      await invalidatePlantQueries();
+      if (__DEV__) {
+        if (cloudDeletedIds.length > 0) {
+          console.info(
+            `[PlantsSync] hard deleted ${cloudDeletedIds.length} plant(s) from cloud`
+          );
+        }
+        if (purgedLocal > 0) {
+          console.info(
+            `[PlantsSync] purged ${purgedLocal} local deleted plant(s)`
+          );
+        }
+      }
+      result = { pushed: pushed + deletedPushed, pulled };
+    } while (plantsSyncQueued);
+    return result;
+  })();
+
+  plantsSyncPromise = run;
+  try {
+    return await run;
+  } finally {
+    if (plantsSyncPromise === run) plantsSyncPromise = null;
+  }
 }

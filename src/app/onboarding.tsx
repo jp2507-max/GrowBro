@@ -21,7 +21,6 @@ import {
   OnboardingPager,
   WelcomeSlide,
 } from '@/components/onboarding';
-import { IntroSlide } from '@/components/onboarding/slides/intro-slide';
 import { useIsFirstTime } from '@/lib/hooks';
 
 export default function Onboarding() {
@@ -34,7 +33,7 @@ export default function Onboarding() {
     router.replace('/notification-primer');
   }, [setIsFirstTime, router]);
 
-  const slides = [IntroSlide, WelcomeSlide, CommunitySlide, GuidanceSlide];
+  const slides = [WelcomeSlide, CommunitySlide, GuidanceSlide];
 
   return (
     <OnboardingPager

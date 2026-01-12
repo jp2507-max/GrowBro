@@ -5,6 +5,7 @@
 import { useEffect, useRef } from 'react';
 
 import { useNetworkStatus } from '@/lib/hooks/use-network-status';
+import { isSyncPipelineInFlight } from '@/lib/sync/sync-coordinator';
 
 import { useFavorites } from './use-favorites';
 
@@ -15,7 +16,13 @@ import { useFavorites } from './use-favorites';
  */
 const MIN_SYNC_INTERVAL = 5 * 60 * 1000; // 5 minutes
 
-export function useFavoritesAutoSync() {
+type FavoritesAutoSyncState = {
+  isSyncing: boolean;
+  syncError: string | null;
+  lastSyncAttempt: number;
+};
+
+export function useFavoritesAutoSync(): FavoritesAutoSyncState {
   const { isInternetReachable } = useNetworkStatus();
   const fullSync = useFavorites.use.fullSync();
   const isSyncing = useFavorites.use.isSyncing();
@@ -31,6 +38,7 @@ export function useFavoritesAutoSync() {
     const shouldSync =
       isInternetReachable &&
       !isSyncing &&
+      !isSyncPipelineInFlight() &&
       (justCameOnline || timeSinceLastSync > MIN_SYNC_INTERVAL);
 
     if (shouldSync) {

@@ -1,5 +1,6 @@
 import { Q } from '@nozbe/watermelondb';
 
+import { runSql } from '@/lib/database/unsafe-sql-utils';
 import { database } from '@/lib/watermelon';
 import type { PlantModel } from '@/lib/watermelon-models/plant';
 
@@ -22,6 +23,22 @@ type RemotePlant = {
   metadata?: Record<string, unknown> | null;
   created_at?: string | null;
   updated_at?: string | null;
+  deleted_at?: string | null;
+};
+
+type DeletedPlantRow = Record<string, unknown>;
+
+export type DeletedPlantRecord = {
+  id: string;
+  userId: string | null;
+  deletedAt: Date;
+  updatedAt: Date;
+};
+
+export type DeletedPlantPurgeCandidate = {
+  id: string;
+  userId: string | null;
+  deletedAtMs: number;
 };
 
 function getCollection() {
@@ -41,6 +58,104 @@ function toDate(dateLike: string | number | Date | null | undefined): Date {
   return new Date();
 }
 
+function toDateFromUnknown(value: unknown): Date {
+  if (value instanceof Date) return value;
+  if (typeof value === 'number') return new Date(value);
+  if (typeof value === 'string') return new Date(value);
+  return new Date();
+}
+
+function toMillisFromUnknown(value: unknown): number | null {
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') {
+    const parsed = new Date(value).getTime();
+    return Number.isNaN(parsed) ? null : parsed;
+  }
+  if (value instanceof Date) return value.getTime();
+  return null;
+}
+
+function dedupeRemotePlants(plants: RemotePlant[]): RemotePlant[] {
+  const map = new Map<string, RemotePlant>();
+  for (const plant of plants) {
+    map.set(plant.id, plant);
+  }
+  return Array.from(map.values());
+}
+
+function toDeletedPlantRecord(row: DeletedPlantRow): DeletedPlantRecord | null {
+  const id = typeof row.id === 'string' ? row.id : null;
+  if (!id) return null;
+  const userId = typeof row.user_id === 'string' ? row.user_id : null;
+  const deletedAt = toDateFromUnknown(row.deleted_at ?? row.updated_at);
+  const updatedAt = toDateFromUnknown(row.updated_at ?? row.deleted_at);
+  return {
+    id,
+    userId,
+    deletedAt,
+    updatedAt,
+  };
+}
+
+export async function getDeletedPlantIds(ids: string[]): Promise<Set<string>> {
+  if (ids.length === 0) return new Set();
+  const placeholders = ids.map(() => '?').join(', ');
+  const sql = `SELECT id FROM plants WHERE id IN (${placeholders}) AND _status = 'deleted'`;
+  const results = await runSql('plants', sql, ids);
+  const rows = results[0]?.rows?._array ?? [];
+  const deletedIds = new Set<string>();
+  for (const row of rows) {
+    const id = typeof row.id === 'string' ? row.id : null;
+    if (id) deletedIds.add(id);
+  }
+  return deletedIds;
+}
+
+export async function getDeletedPlantsForUser(
+  userId: string
+): Promise<DeletedPlantRecord[]> {
+  if (!userId) return [];
+  const results = await runSql(
+    'plants',
+    "SELECT id, user_id, deleted_at, updated_at FROM plants WHERE _status = 'deleted' AND (user_id = ? OR user_id IS NULL)",
+    [userId]
+  );
+  const rows = results[0]?.rows?._array ?? [];
+  return rows
+    .map((row) => toDeletedPlantRecord(row))
+    .filter((row): row is DeletedPlantRecord => Boolean(row));
+}
+
+export async function getDeletedPlantsForPurge(
+  cutoffMs: number
+): Promise<DeletedPlantPurgeCandidate[]> {
+  const results = await runSql(
+    'plants',
+    "SELECT id, user_id, deleted_at FROM plants WHERE _status = 'deleted' AND deleted_at IS NOT NULL AND deleted_at <= ?",
+    [cutoffMs]
+  );
+  const rows = results[0]?.rows?._array ?? [];
+  return rows
+    .map((row) => {
+      const id = typeof row.id === 'string' ? row.id : null;
+      if (!id) return null;
+      const userId = typeof row.user_id === 'string' ? row.user_id : null;
+      const deletedAtMs = toMillisFromUnknown(row.deleted_at);
+      if (!deletedAtMs) return null;
+      return { id, userId, deletedAtMs };
+    })
+    .filter((row): row is DeletedPlantPurgeCandidate => Boolean(row && row.id));
+}
+
+export async function purgeDeletedPlantsByIds(ids: string[]): Promise<number> {
+  if (ids.length === 0) return 0;
+  await database.write(
+    () => database.adapter.destroyDeletedRecords('plants', ids),
+    'purgeDeletedPlantsByIds'
+  );
+  return ids.length;
+}
+
 export async function getPlantsNeedingSync(
   userId?: string
 ): Promise<PlantModel[]> {
@@ -55,6 +170,29 @@ export async function getPlantsNeedingSync(
     const serverMs = plant.serverUpdatedAtMs ?? 0;
     return serverMs < updatedAtMs;
   });
+}
+
+export async function claimLocalPlantsForUser(userId: string): Promise<number> {
+  if (!userId) return 0;
+
+  const collection = getCollection();
+  const rows = await collection
+    .query(Q.where('user_id', null), Q.where('deleted_at', null))
+    .fetch();
+
+  if (rows.length === 0) return 0;
+
+  const now = new Date();
+  await database.write(async () => {
+    for (const row of rows) {
+      await row.update((record) => {
+        record.userId = userId;
+        record.updatedAt = now;
+      });
+    }
+  });
+
+  return rows.length;
 }
 
 export async function markPlantsAsSynced(
@@ -118,18 +256,71 @@ async function updatePlantFromRemote(
   });
 }
 
+export async function applyRemotePlantDeletions(
+  plants: RemotePlant[]
+): Promise<number> {
+  if (plants.length === 0) return 0;
+  const deleted = plants.filter((plant) => plant.deleted_at);
+  if (deleted.length === 0) return 0;
+
+  const collection = getCollection();
+  const existing = await collection
+    .query(Q.where('id', Q.oneOf(deleted.map((plant) => plant.id))))
+    .fetch();
+  if (existing.length === 0) return 0;
+
+  const existingMap = new Map(existing.map((model) => [model.id, model]));
+  let applied = 0;
+
+  await database.write(async () => {
+    for (const remote of deleted) {
+      const current = existingMap.get(remote.id);
+      if (!current) continue;
+      if (current.syncStatus === 'deleted') continue;
+
+      const remoteDeletedAt = toDate(
+        remote.deleted_at ?? remote.updated_at ?? Date.now()
+      );
+      const remoteUpdatedAt = toDate(
+        remote.updated_at ?? remote.deleted_at ?? Date.now()
+      );
+      const remoteUpdatedMs =
+        toMillis(remote.updated_at ?? remote.deleted_at) ??
+        remoteUpdatedAt.getTime();
+
+      await current.update((record) => {
+        record.userId = remote.user_id ?? record.userId ?? null;
+        record.deletedAt = remoteDeletedAt;
+        record.updatedAt = remoteUpdatedAt;
+        record.serverUpdatedAtMs = remoteUpdatedMs;
+      });
+
+      await current.markAsDeleted();
+      applied += 1;
+    }
+  });
+
+  return applied;
+}
+
 export async function upsertRemotePlants(
   plants: RemotePlant[]
 ): Promise<{ applied: number }> {
   if (plants.length === 0) return { applied: 0 };
+  const uniquePlants = dedupeRemotePlants(plants);
   const collection = getCollection();
+  const deletedIds = await getDeletedPlantIds(
+    uniquePlants.map((plant) => plant.id)
+  );
   const existing = await collection
-    .query(Q.where('id', Q.oneOf(plants.map((p) => p.id))))
+    .query(Q.where('id', Q.oneOf(uniquePlants.map((p) => p.id))))
     .fetch();
   const existingMap = new Map(existing.map((model) => [model.id, model]));
+  let applied = 0;
 
   await database.write(async () => {
-    for (const remote of plants) {
+    for (const remote of uniquePlants) {
+      if (deletedIds.has(remote.id)) continue;
       const remoteUpdatedMs = toMillis(remote.updated_at) ?? 0;
       const current = existingMap.get(remote.id);
 
@@ -137,6 +328,7 @@ export async function upsertRemotePlants(
         const localUpdatedMs = current.updatedAt?.getTime() ?? 0;
         if (remoteUpdatedMs <= localUpdatedMs) continue;
         await updatePlantFromRemote(current, remote, remoteUpdatedMs);
+        applied += 1;
       } else {
         await collection.create((record) => {
           record._raw.id = remote.id;
@@ -163,11 +355,12 @@ export async function upsertRemotePlants(
           record.updatedAt = updated;
           record.serverUpdatedAtMs = remoteUpdatedMs || updated.getTime();
         });
+        applied += 1;
       }
     }
   });
 
-  return { applied: plants.length };
+  return { applied };
 }
 
 export async function getAllPlantsForUser(

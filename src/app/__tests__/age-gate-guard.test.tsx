@@ -108,7 +108,7 @@ describe('TabLayout age gate guard', () => {
 
   test('redirects first-time users to age gate BEFORE onboarding', () => {
     mockedAuthStatus.mockReturnValue('signIn');
-    mockedIsFirstTime.mockReturnValue([true]); // First time user
+    mockedIsFirstTime.mockReturnValue([true, jest.fn()]); // First time user
     mockedAgeGateStatus.mockReturnValue('pending'); // Not yet verified
 
     render(<TabLayout />);
@@ -120,7 +120,7 @@ describe('TabLayout age gate guard', () => {
 
   test('redirects to onboarding only after age gate is verified', () => {
     mockedAuthStatus.mockReturnValue('signIn');
-    mockedIsFirstTime.mockReturnValue([true]); // First time user
+    mockedIsFirstTime.mockReturnValue([true, jest.fn()]); // First time user
     mockedAgeGateStatus.mockReturnValue('verified'); // Age verified
 
     render(<TabLayout />);

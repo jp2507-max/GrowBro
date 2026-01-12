@@ -10,6 +10,7 @@ import type {
   PlantStage,
 } from '@/api/plants/types';
 import type { CreatePlantVariables } from '@/api/plants/use-create-plant';
+import { getOptionalAuthenticatedUserId } from '@/lib/auth';
 import { database } from '@/lib/watermelon';
 import type { OccurrenceOverrideModel } from '@/lib/watermelon-models/occurrence-override';
 import type {
@@ -285,6 +286,17 @@ async function cancelUploadQueueForPlant(plantId: string): Promise<void> {
   }
 }
 
+async function triggerPlantDeletionSync(): Promise<void> {
+  try {
+    const { syncPlantsBidirectional } = await import(
+      '@/lib/plants/plants-sync'
+    );
+    await syncPlantsBidirectional();
+  } catch (error) {
+    console.warn('[PlantService] Failed to sync deleted plant:', error);
+  }
+}
+
 async function getLinkedRecords(plantId: string) {
   const { SeriesModel } = await import('@/lib/watermelon-models/series');
   const { TaskModel } = await import('@/lib/watermelon-models/task');
@@ -332,17 +344,19 @@ async function getLinkedRecords(plantId: string) {
   return { linkedSeries, linkedTasks, linkedOverrides };
 }
 
-interface SoftDeleteOptions {
+type SoftDeleteOptions = {
   linkedTasks: TaskModel[];
   linkedOverrides: OccurrenceOverrideModel[];
   linkedSeries: SeriesModel[];
   plantRecord: PlantModel;
-}
+  userId?: string | null;
+};
 
 async function softDeleteRelatedRecords(
   options: SoftDeleteOptions
 ): Promise<void> {
-  const { linkedTasks, linkedOverrides, linkedSeries, plantRecord } = options;
+  const { linkedTasks, linkedOverrides, linkedSeries, plantRecord, userId } =
+    options;
   const now = new Date();
 
   await database.write(async () => {
@@ -367,6 +381,11 @@ async function softDeleteRelatedRecords(
       });
     }
 
+    await plantRecord.update((rec: PlantModel) => {
+      if (userId) rec.userId = userId;
+      rec.deletedAt = now;
+      rec.updatedAt = now;
+    });
     await plantRecord.markAsDeleted();
   });
 }
@@ -377,6 +396,7 @@ export async function deletePlant(id: string): Promise<void> {
     throw new Error(`Plant ${id} not found`);
   }
 
+  const userId = await getOptionalAuthenticatedUserId();
   await cancelUploadQueueForPlant(id);
 
   try {
@@ -395,6 +415,7 @@ export async function deletePlant(id: string): Promise<void> {
       linkedOverrides,
       linkedSeries,
       plantRecord: record,
+      userId: userId ?? undefined,
     });
 
     console.log(
@@ -403,9 +424,17 @@ export async function deletePlant(id: string): Promise<void> {
   } catch (error) {
     console.warn('[PlantService] Failed to cleanup tasks/series:', error);
     await database.write(async () => {
+      const now = new Date();
+      await record.update((rec: PlantModel) => {
+        if (userId) rec.userId = userId;
+        rec.deletedAt = now;
+        rec.updatedAt = now;
+      });
       await record.markAsDeleted();
     });
   }
+
+  void triggerPlantDeletionSync();
 }
 
 export async function listPlantsForUser(

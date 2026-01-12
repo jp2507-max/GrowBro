@@ -19,7 +19,7 @@ type SharedTransitionValues = {
   targetOriginY: number;
 };
 
-export const sharedTransitionStyle = SharedTransition.custom(
+export const sharedTransitionStyle = SharedTransition?.custom?.(
   (values: SharedTransitionValues) => {
     'worklet';
     return {
@@ -29,4 +29,4 @@ export const sharedTransitionStyle = SharedTransition.custom(
       originY: withSpring(values.targetOriginY),
     };
   }
-).reduceMotion(ReduceMotion.System);
+)?.reduceMotion(ReduceMotion.System);

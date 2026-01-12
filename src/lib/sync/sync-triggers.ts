@@ -2,7 +2,8 @@ import { AppState } from 'react-native';
 
 import { onConnectivityChange } from '@/lib/sync/network-manager';
 import { getSyncPrefs } from '@/lib/sync/preferences';
-import { isSyncInFlight, runSyncWithRetry } from '@/lib/sync-engine';
+import { performSync } from '@/lib/sync/sync-coordinator';
+import { isSyncInFlight } from '@/lib/sync-engine';
 
 type SetupSyncTriggersOptions = {
   onSuccess?: () => void;
@@ -53,12 +54,15 @@ export function setupSyncTriggers(
     const prefs = getSyncPrefs();
     if (!prefs.autoSyncEnabled) return;
     try {
-      await runSyncWithRetry(1, { trigger: 'auto' });
+      await performSync({
+        withRetry: false,
+        maxRetries: 1,
+        trackAnalytics: true,
+        trigger: 'auto',
+      });
       opts.onSuccess?.();
-      // Process image queue after successful sync
-      void maybeProcessImageQueue();
     } catch {
-      // noop; retry/backoff is handled inside runSyncWithRetry
+      // noop; retry/backoff is handled inside performSync
     }
   }
 

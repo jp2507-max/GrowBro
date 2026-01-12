@@ -28,6 +28,8 @@ import {
   type SyncResult,
 } from '@/lib/sync-engine';
 
+let syncPipelinePromise: Promise<SyncResult> | null = null;
+
 /**
  * Process image upload queue after successful sync.
  * Uses dynamic import to avoid circular dependencies.
@@ -86,6 +88,25 @@ async function downloadMissingPlantPhotosAfterSync(): Promise<void> {
   }
 }
 
+/**
+ * Sync plants via Supabase after a core sync attempt.
+ * Uses dynamic import to avoid circular dependencies.
+ */
+async function syncPlantsAfterSync(): Promise<void> {
+  try {
+    const { syncPlantsBidirectional } = await import(
+      '@/lib/plants/plants-sync'
+    );
+    await syncPlantsBidirectional();
+  } catch (error) {
+    console.warn('[SyncCoordinator] Plant sync error:', error);
+  }
+}
+
+export function isSyncPipelineInFlight(): boolean {
+  return Boolean(syncPipelinePromise);
+}
+
 export type SyncCoordinatorOptions = {
   /**
    * Whether to use retry logic with exponential backoff
@@ -115,7 +136,7 @@ export type SyncCoordinatorOptions = {
 /**
  * Performs a complete sync operation with all bells and whistles
  */
-export async function performSync(
+async function performSyncInternal(
   options: SyncCoordinatorOptions = {}
 ): Promise<SyncResult> {
   const {
@@ -126,6 +147,8 @@ export async function performSync(
   } = options;
 
   const startTime = Date.now();
+  let result: SyncResult | null = null;
+  let coreError: unknown = null;
 
   try {
     // Track pending changes before sync
@@ -142,7 +165,7 @@ export async function performSync(
     }
 
     // Perform sync
-    const result = await runSyncWithRetry(withRetry ? maxRetries : 1, {
+    result = await runSyncWithRetry(withRetry ? maxRetries : 1, {
       trigger,
     });
 
@@ -166,9 +189,8 @@ export async function performSync(
     downloadMissingPlantPhotosAfterSync().catch((err) => {
       console.warn('[SyncCoordinator] Plant photo download failed:', err);
     });
-
-    return result;
   } catch (error) {
+    coreError = error;
     // Track failure
     if (trackAnalytics) {
       const errorCategory = categorizeSyncError(error);
@@ -186,8 +208,31 @@ export async function performSync(
           : 'unknown';
       await trackSyncFailure('total', syncErrorCode, errorCategory.message);
     }
+  }
 
-    throw error;
+  await syncPlantsAfterSync();
+
+  if (coreError) throw coreError;
+  if (!result) {
+    throw new Error('Sync failed without an error');
+  }
+
+  return result;
+}
+
+/**
+ * Single-flight wrapper for the sync pipeline.
+ */
+export async function performSync(
+  options: SyncCoordinatorOptions = {}
+): Promise<SyncResult> {
+  if (syncPipelinePromise) return syncPipelinePromise;
+  const run = performSyncInternal(options);
+  syncPipelinePromise = run;
+  try {
+    return await run;
+  } finally {
+    if (syncPipelinePromise === run) syncPipelinePromise = null;
   }
 }
 

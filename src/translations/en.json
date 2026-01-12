@@ -822,6 +822,7 @@
     "age_gate_month": "Month",
     "age_gate_re_verification": "For compliance, you'll be asked to re-verify your age every 12 months.",
     "age_gate_secondary_disclaimer": "By continuing you confirm you are at least 18 years old and understand GrowBro avoids commerce functionality.",
+    "age_gate_show_details": "Learn more →",
     "age_gate_submit": "Enter GrowBro",
     "age_gate_title": "Confirm you are 18 or older",
     "age_gate_year": "Year",
@@ -2367,7 +2368,7 @@
       "title": "Join the Community"
     },
     "continue_button": "Continue",
-    "done": "Get Started",
+    "done": "Start Your Journey",
     "guidance": {
       "body": "Whether you're a beginner or expert, we've got you covered with step-by-step Growbooks and helpful resources.",
       "feature_playbooks_body": "Complete Growbooks tailored to your setup and strain",
