@@ -54,6 +54,11 @@ export function CommunitySlide({
         reduceMotion: ReduceMotion.System,
       })
     );
+
+    return () => {
+      cancelAnimation(titleOpacity);
+      cancelAnimation(titleScale);
+    };
   }, [titleOpacity, titleScale]);
 
   const titleStyle = useAnimatedStyle(() => ({

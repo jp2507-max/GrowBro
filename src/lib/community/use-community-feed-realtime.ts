@@ -608,7 +608,13 @@ export function useCommunityFeedRealtime(options: RealtimeOptions) {
 
   const { startReconciliation, stopReconciliation } =
     useReconciliationTimer(queryClient);
-  usePollingEffect(isPolling, queryClient);
+  usePollingEffect(enabled && isPolling, queryClient);
+
+  React.useEffect(() => {
+    if (enabled) return;
+    setConnectionState('disconnected');
+    setIsPolling(false);
+  }, [enabled]);
 
   React.useEffect(() => {
     if (!enabled) return;

@@ -9,7 +9,11 @@
  * - Terracotta FAB for creating posts
  */
 
-import { useFocusEffect, useScrollToTop } from '@react-navigation/native';
+import {
+  useFocusEffect,
+  useIsFocused,
+  useScrollToTop,
+} from '@react-navigation/native';
 import type { FlashListProps, FlashListRef } from '@shopify/flash-list';
 import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
@@ -182,6 +186,7 @@ export default function CommunityScreen(): React.ReactElement {
   const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const isFocused = useIsFocused();
   const {
     listRef: sharedListRef,
     scrollHandler,
@@ -210,7 +215,7 @@ export default function CommunityScreen(): React.ReactElement {
   const analytics = useAnalytics();
   const undoMutation = useUndoDeletePost();
   const outboxAdapter = React.useMemo(() => createOutboxAdapter(database), []);
-  useCommunityFeedRealtime({ outboxAdapter });
+  useCommunityFeedRealtime({ outboxAdapter, enabled: isFocused });
   const filterSheetRef = React.useRef<ModalRef>(null);
 
   // Segment state: 0 = Showcase, 1 = Help Station

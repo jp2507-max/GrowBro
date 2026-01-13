@@ -322,13 +322,14 @@ export class ContentAgeGatingEngine {
     contentId: string,
     contentType: string
   ): Promise<ContentAgeRestriction | null> {
-    const { data: restriction, error } = await this.supabase
+    const { data, error } = await this.supabase
       .from('content_age_restrictions')
       .select('*')
       .eq('content_id', contentId)
       .eq('content_type', contentType)
-      .single();
+      .limit(1);
 
+    const restriction = data?.[0];
     if (error || !restriction) {
       return null;
     }
@@ -342,12 +343,13 @@ export class ContentAgeGatingEngine {
   private async getUserAgeStatus(
     userId: string
   ): Promise<UserAgeStatus | null> {
-    const { data: status, error } = await this.supabase
+    const { data, error } = await this.supabase
       .from('user_age_status')
       .select('*')
       .eq('user_id', userId)
-      .single();
+      .limit(1);
 
+    const status = data?.[0];
     if (error || !status) {
       return null;
     }

@@ -40,7 +40,6 @@ import { registerKeyRotationTask } from '@/lib/auth/key-rotation-task';
 import {
   useOfflineModeMonitor,
   useRealtimeSessionRevocation,
-  useSessionAutoRefresh,
 } from '@/lib/auth/session-manager';
 import { updateActivity } from '@/lib/auth/session-timeout';
 import { useDeepLinking } from '@/lib/auth/use-deep-linking';
@@ -388,16 +387,7 @@ function RootLayout(): React.ReactElement {
   const router = useRouter();
   const pathname = usePathname();
 
-  if (__DEV__) {
-    console.log('[RootLayout] render', {
-      isI18nReady,
-      isAuthReady,
-      pathname,
-    });
-  }
-
   useRootStartup(setIsI18nReady, isFirstTime);
-  useSessionAutoRefresh();
   useOfflineModeMonitor();
   useDeepLinking();
   useRealtimeSessionRevocation();
@@ -572,6 +562,7 @@ function AppStack(): React.ReactElement {
     <Stack>
       <Stack.Screen name="(app)" options={{ headerShown: false }} />
       <Stack.Screen name="(modals)" options={{ headerShown: false }} />
+      <Stack.Screen name="sync-diagnostics" options={{ headerShown: false }} />
       <Stack.Screen name="plants" options={{ headerShown: false }} />
       <Stack.Screen name="age-gate" options={{ headerShown: false }} />
       <Stack.Screen name="onboarding" options={{ headerShown: false }} />

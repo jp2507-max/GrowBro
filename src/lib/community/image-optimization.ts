@@ -32,9 +32,11 @@ export function getCommunityImageProps(props: {
   blurhash?: string | null;
   thumbhash?: string | null;
   recyclingKey?: string | null;
+  transitionMs?: number | null;
 }): CommunityImageProps {
   const { uri, thumbnailUri, resizedUri, blurhash, thumbhash, recyclingKey } =
     props;
+  const transitionMs = props.transitionMs ?? 200;
 
   // Generate placeholder
   const placeholder: PlaceholderConfig | string = (() => {
@@ -63,7 +65,7 @@ export function getCommunityImageProps(props: {
     placeholder,
     cachePolicy: 'memory-disk',
     recyclingKey: effectiveRecyclingKey,
-    transition: 200,
+    transition: transitionMs,
     priority: 'normal',
   };
 }

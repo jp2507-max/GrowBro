@@ -124,6 +124,10 @@ function useAgeGateForm() {
   };
 }
 
+const detailsFadeIn = FadeIn.duration(
+  onboardingMotion.durations.quick
+).reduceMotion(ReduceMotion.System);
+
 export default function AgeGateScreen(): React.ReactElement {
   const {
     birthDay,
@@ -170,11 +174,7 @@ export default function AgeGateScreen(): React.ReactElement {
             onYearChange={setBirthYear}
           />
           {error && (
-            <Animated.View
-              entering={FadeIn.duration(
-                onboardingMotion.durations.quick
-              ).reduceMotion(ReduceMotion.System)}
-            >
+            <Animated.View entering={detailsFadeIn}>
               <Text
                 className="mt-2 text-sm text-danger-500"
                 testID="age-gate-error"
@@ -255,11 +255,6 @@ function BirthDateInputs({
 
 function AgeGateCopy(): React.ReactElement {
   const [showDetails, setShowDetails] = React.useState(false);
-
-  // Shared animation for disclaimer blocks
-  const detailsFadeIn = FadeIn.duration(
-    onboardingMotion.durations.quick
-  ).reduceMotion(ReduceMotion.System);
 
   return (
     <View>

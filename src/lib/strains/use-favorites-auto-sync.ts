@@ -3,6 +3,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
+import { InteractionManager } from 'react-native';
 
 import { useNetworkStatus } from '@/lib/hooks/use-network-status';
 import { isSyncPipelineInFlight } from '@/lib/sync/sync-coordinator';
@@ -28,9 +29,11 @@ export function useFavoritesAutoSync(): FavoritesAutoSyncState {
   const isSyncing = useFavorites.use.isSyncing();
   const syncError = useFavorites.use.syncError();
   const wasOfflineRef = useRef(!isInternetReachable);
+  const isSyncScheduledRef = useRef(false);
   const [lastSyncAttempt, setLastSyncAttempt] = useState(0);
 
   useEffect(() => {
+    let cancelled = false;
     const now = Date.now();
     const timeSinceLastSync = now - lastSyncAttempt;
     const justCameOnline = wasOfflineRef.current && isInternetReachable;
@@ -41,21 +44,33 @@ export function useFavoritesAutoSync(): FavoritesAutoSyncState {
       !isSyncPipelineInFlight() &&
       (justCameOnline || timeSinceLastSync > MIN_SYNC_INTERVAL);
 
-    if (shouldSync) {
+    if (shouldSync && !isSyncScheduledRef.current) {
       console.info('[useFavoritesAutoSync] Triggering auto-sync');
       setLastSyncAttempt(now);
+      isSyncScheduledRef.current = true;
 
-      void fullSync().catch((error: Error) => {
-        console.error('[useFavoritesAutoSync] Auto-sync failed:', error);
+      InteractionManager.runAfterInteractions(() => {
+        if (cancelled) return;
+        void fullSync()
+          .catch((error: Error) => {
+            console.error('[useFavoritesAutoSync] Auto-sync failed:', error);
+          })
+          .finally(() => {
+            isSyncScheduledRef.current = false;
+          });
       });
     }
 
     wasOfflineRef.current = !isInternetReachable;
+
+    return () => {
+      cancelled = true;
+    };
   }, [isInternetReachable, isSyncing, fullSync, lastSyncAttempt]);
 
   return {
     isSyncing,
     syncError,
-    lastSyncAttempt: lastSyncAttempt,
+    lastSyncAttempt,
   };
 }

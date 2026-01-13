@@ -44,6 +44,7 @@ export type OnboardingSlideProps = {
 };
 
 type OnboardingPagerProps = {
+  /** Array of onboarding slide components - must contain at least one slide */
   slides: React.ComponentType<OnboardingSlideProps>[];
   onComplete: () => void;
   showSkip?: boolean;
@@ -78,10 +79,10 @@ export function OnboardingPager({
   showSkip = true,
   testID = 'onboarding-pager',
 }: OnboardingPagerProps): React.ReactElement {
+  // All hooks must be called before any conditional returns
   const { width } = useWindowDimensions();
   const scrollRef = React.useRef<ScrollView | null>(null);
   const activeIndex = useSharedValue(0);
-  const lastIndex = Math.max(slides.length - 1, 0);
   const trackingRef = React.useRef<TrackingState>({
     startTime: Date.now(),
     slideTimes: { 0: Date.now() },
@@ -124,9 +125,9 @@ export function OnboardingPager({
   }, [onComplete, slides.length]);
 
   const handleNext = React.useCallback(() => {
-    const nextIndex = Math.min(currentIndex + 1, lastIndex);
+    const nextIndex = Math.min(currentIndex + 1, slides.length - 1);
     scrollRef.current?.scrollTo({ x: nextIndex * width, animated: true });
-  }, [currentIndex, lastIndex, width]);
+  }, [currentIndex, slides.length, width]);
 
   const handleSkip = React.useCallback(() => {
     const now = Date.now();
@@ -140,6 +141,17 @@ export function OnboardingPager({
     onComplete();
   }, [onComplete, activeIndex]);
 
+  // Runtime guard: slides array must be non-empty
+  if (slides.length === 0) {
+    if (__DEV__) {
+      throw new Error(
+        'OnboardingPager: slides array must contain at least one slide'
+      );
+    }
+    return <></>;
+  }
+
+  const lastIndex = slides.length - 1;
   const isLastSlide = currentIndex >= lastIndex;
 
   return (

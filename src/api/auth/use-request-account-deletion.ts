@@ -235,20 +235,21 @@ export async function checkPendingDeletion(
     .select('*')
     .eq('user_id', userId)
     .eq('status', 'pending')
-    .single();
+    .limit(1);
 
-  if (error || !data) {
+  const row = data?.[0];
+  if (error || !row) {
     return null;
   }
 
   return {
-    requestId: data.request_id,
-    userId: data.user_id,
-    requestedAt: data.requested_at,
-    scheduledFor: data.scheduled_for,
-    status: data.status,
-    reason: data.reason ?? undefined,
-    policyVersion: data.policy_version,
+    requestId: row.request_id,
+    userId: row.user_id,
+    requestedAt: row.requested_at,
+    scheduledFor: row.scheduled_for,
+    status: row.status,
+    reason: row.reason ?? undefined,
+    policyVersion: row.policy_version,
   };
 }
 

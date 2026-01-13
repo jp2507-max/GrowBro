@@ -2,7 +2,7 @@
  * Hook to compose scroll handlers for FlashList with performance monitoring.
  */
 
-import React from 'react';
+import { useMemo } from 'react';
 import {
   runOnJS,
   useAnimatedScrollHandler,
@@ -44,7 +44,7 @@ export function useListScrolling({
   });
 
   // Filter out undefined handlers for TypeScript-safe composition
-  const scrollHandlers = React.useMemo(
+  const scrollHandlers = useMemo(
     () =>
       [onScroll, perfScrollHandler].filter(
         (handler): handler is AnimatedScrollHandler => handler !== undefined

@@ -421,70 +421,75 @@ export function useOfflineModeMonitor(checkInterval: number = 60 * 1000): void {
  */
 export function useRealtimeSessionRevocation(): void {
   const session = useAuth.use.session();
+  const userId = session?.user?.id ?? null;
+  const refreshToken = session?.refresh_token ?? null;
+  const sessionKeyRef = React.useRef<string | null>(null);
 
   useEffect(() => {
-    if (!session) return undefined;
+    let isActive = true;
+    sessionKeyRef.current = null;
 
-    const getSessionKey = async () => {
-      try {
-        return await deriveSessionKey(session.refresh_token);
-      } catch {
-        return null;
-      }
-    };
+    if (!refreshToken) return () => {};
 
-    const setupSubscription = async () => {
-      const sessionKey = await getSessionKey();
-      if (!sessionKey) return;
-
-      const channel = supabase
-        .channel(`session-revocation-${session.user.id}`)
-        .on(
-          'postgres_changes',
-          {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'user_sessions',
-            filter: `user_id=eq.${session.user.id}`,
-          },
-          (payload: SupabaseRealtimePayload) => {
-            const newRecord = payload.new as {
-              session_key?: string;
-              revoked_at?: string | null;
-            } | null;
-            const oldRecord = payload.old as {
-              revoked_at?: string | null;
-            } | null;
-
-            if (
-              newRecord?.session_key === sessionKey &&
-              newRecord.revoked_at &&
-              !oldRecord?.revoked_at
-            ) {
-              console.log(
-                '[RealtimeSessionRevocation] Session revoked, signing out'
-              );
-              const { signOut } = useAuth.getState();
-              signOut().catch((err) =>
-                console.error(
-                  '[RealtimeSessionRevocation] Sign out error:',
-                  err
-                )
-              );
-            }
-          }
-        )
-        .subscribe();
-
-      return () => {
-        supabase.removeChannel(channel);
-      };
-    };
-
-    const cleanup = setupSubscription();
+    deriveSessionKey(refreshToken)
+      .then((key) => {
+        if (!isActive) return;
+        sessionKeyRef.current = key || null;
+      })
+      .catch(() => {
+        if (!isActive) return;
+        sessionKeyRef.current = null;
+      });
 
     return () => {
-      cleanup?.then((fn) => fn?.());
+      isActive = false;
     };
-  }, [session]);
+  }, [refreshToken]);
+
+  useEffect(() => {
+    if (!userId) return undefined;
+
+    const channel = supabase
+      .channel(`session-revocation-${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'user_sessions',
+          filter: `user_id=eq.${userId}`,
+        },
+        (payload: SupabaseRealtimePayload) => {
+          const sessionKey = sessionKeyRef.current;
+          if (!sessionKey) return;
+
+          const newRecord = payload.new as {
+            session_key?: string;
+            revoked_at?: string | null;
+          } | null;
+          const oldRecord = payload.old as {
+            revoked_at?: string | null;
+          } | null;
+
+          if (
+            newRecord?.session_key === sessionKey &&
+            newRecord.revoked_at &&
+            !oldRecord?.revoked_at
+          ) {
+            console.log(
+              '[RealtimeSessionRevocation] Session revoked, signing out'
+            );
+            const { signOut } = useAuth.getState();
+            signOut().catch((err) =>
+              console.error('[RealtimeSessionRevocation] Sign out error:', err)
+            );
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId]);
 }

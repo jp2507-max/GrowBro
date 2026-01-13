@@ -15,11 +15,11 @@ import type { Strain } from '@/api';
 import type { StrainFilters } from '@/api/strains/types';
 import { useOfflineAwareStrains } from '@/api/strains/use-strains-infinite-with-cache';
 import { StrainCard } from '@/components/strains/strain-card';
+import { createStaggeredFadeIn } from '@/lib/animations/stagger';
 import {
   DEFAULT_ITEM_HEIGHT,
   extractStrainKey,
   getStrainItemType,
-  overrideStrainItemLayout,
 } from '@/lib/strains/list-helpers';
 import { getOptimizedFlashListConfig } from '@/lib/strains/measure-item-size';
 import { useListComponents } from '@/lib/strains/use-list-components';
@@ -36,6 +36,8 @@ type AnimatedScrollHandler = (event: ReanimatedScrollEvent) => void;
 type AnimatedFlashListProps = Omit<FlashListProps<Strain>, 'onScroll'> & {
   onScroll?: AnimatedScrollHandler;
 };
+
+const MAX_ENTERING_ANIMATIONS = 8;
 
 const AnimatedFlashList = Animated.createAnimatedComponent(
   FlashList
@@ -150,18 +152,52 @@ export function StrainsListWithCache({
   // Lift favorites subscription to list level - single subscription instead of N per row
   const { isFavorite, createToggleHandler } = useListFavorites();
 
+  // Keep a ref to the latest factory so stable handlers always use fresh state/logic
+  const latestFactoryRef = React.useRef(createToggleHandler);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: ensure ref is always current
+  React.useLayoutEffect(() => {
+    latestFactoryRef.current = createToggleHandler;
+  });
+
+  // Map to store stable handlers keyed by strain ID
+  const toggleHandlersRef = React.useRef(new Map<string, () => void>());
+
+  const getStableToggleHandler = React.useCallback((item: Strain) => {
+    const map = toggleHandlersRef.current;
+    if (!map.has(item.id)) {
+      // Create a stable wrapper that delegates to the latest factory logic
+      map.set(item.id, () => {
+        const handler = latestFactoryRef.current(item);
+        handler();
+      });
+    }
+    return map.get(item.id)!;
+  }, []);
+
   const renderItem = React.useCallback(
-    ({ item }: { item: Strain }) => (
-      <StrainCard
-        strain={item}
-        testID={`strain-card-${item.id}`}
-        enableSharedTransition={item.id === activeStrainId}
-        onStartNavigation={handleStrainPressIn}
-        isFavorite={isFavorite(item)}
-        onToggleFavorite={createToggleHandler(item)}
-      />
+    ({ item, index }: { item: Strain; index: number }) => (
+      <Animated.View
+        entering={
+          index < MAX_ENTERING_ANIMATIONS
+            ? createStaggeredFadeIn(index, {
+                baseDelay: 0,
+                staggerDelay: 60,
+                duration: 300,
+              })
+            : undefined
+        }
+      >
+        <StrainCard
+          strain={item}
+          testID={`strain-card-${item.id}`}
+          enableSharedTransition={item.id === activeStrainId}
+          onStartNavigation={handleStrainPressIn}
+          isFavorite={isFavorite(item)}
+          onToggleFavorite={getStableToggleHandler(item)}
+        />
+      </Animated.View>
     ),
-    [activeStrainId, handleStrainPressIn, isFavorite, createToggleHandler]
+    [activeStrainId, handleStrainPressIn, isFavorite, getStableToggleHandler]
   );
 
   return (
@@ -172,7 +208,6 @@ export function StrainsListWithCache({
       renderItem={renderItem}
       keyExtractor={extractStrainKey}
       getItemType={getStrainItemType}
-      overrideItemLayout={overrideStrainItemLayout}
       onEndReached={onEndReached}
       onEndReachedThreshold={0.7}
       onScroll={composedScrollHandler}

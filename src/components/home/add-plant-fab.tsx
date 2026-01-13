@@ -16,10 +16,17 @@ import type { TxKeyPath } from '@/lib/i18n/utils';
 
 const FAB_MARGIN = 16;
 
-const SPRING_CONFIG = {
-  damping: 15,
-  stiffness: 150,
-  mass: 0.8,
+const SPRING_CONFIG_PRESS = {
+  damping: 12,
+  stiffness: 400,
+  mass: 0.6,
+  reduceMotion: ReduceMotion.System,
+};
+
+const SPRING_CONFIG_RELEASE = {
+  damping: 8,
+  stiffness: 300,
+  mass: 0.5,
   reduceMotion: ReduceMotion.System,
 };
 
@@ -30,11 +37,14 @@ export function AddPlantFab(): React.ReactElement {
 
   const handlePressIn = React.useCallback((): void => {
     haptics.selection();
-    scale.value = withSpring(0.9, SPRING_CONFIG);
+    scale.value = withSpring(0.85, SPRING_CONFIG_PRESS);
   }, [scale]);
 
   const handlePressOut = React.useCallback((): void => {
-    scale.value = withSpring(1, SPRING_CONFIG);
+    scale.value = withSpring(1.05, SPRING_CONFIG_RELEASE);
+    setTimeout(() => {
+      scale.value = withSpring(1, SPRING_CONFIG_RELEASE);
+    }, 80);
   }, [scale]);
 
   const handlePress = React.useCallback((): void => {
@@ -56,7 +66,7 @@ export function AddPlantFab(): React.ReactElement {
   return (
     <Animated.View style={[styles.container, positionStyle, animatedStyle]}>
       <Pressable
-        className="size-14 items-center justify-center rounded-full bg-primary-600 shadow-lg active:bg-primary-700"
+        className="size-14 items-center justify-center rounded-full bg-primary-600 shadow-xl active:bg-primary-700"
         onPress={handlePress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
@@ -65,12 +75,7 @@ export function AddPlantFab(): React.ReactElement {
         accessibilityHint={translate('home.fab.hint' as TxKeyPath)}
         testID="add-plant-fab"
       >
-        <Text
-          className="text-3xl font-light text-white"
-          style={{ lineHeight: 32, marginTop: -2 }}
-        >
-          +
-        </Text>
+        <Text className="text-3xl font-light leading-8 text-white">+</Text>
       </Pressable>
     </Animated.View>
   );

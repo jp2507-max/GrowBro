@@ -39,6 +39,7 @@ export type DeletedPlantPurgeCandidate = {
   id: string;
   userId: string | null;
   deletedAtMs: number;
+  serverUpdatedAtMs: number | null;
 };
 
 function getCollection() {
@@ -139,7 +140,7 @@ export async function getDeletedPlantsForPurge(
 ): Promise<DeletedPlantPurgeCandidate[]> {
   const results = await runSql(
     'plants',
-    "SELECT id, user_id, deleted_at FROM plants WHERE _status = 'deleted' AND deleted_at IS NOT NULL AND deleted_at <= ?",
+    "SELECT id, user_id, deleted_at, server_updated_at_ms FROM plants WHERE _status = 'deleted' AND deleted_at IS NOT NULL AND deleted_at <= ?",
     [cutoffMs]
   );
   const rows = results[0]?.rows?._array ?? [];
@@ -149,8 +150,9 @@ export async function getDeletedPlantsForPurge(
       if (!id) return null;
       const userId = typeof row.user_id === 'string' ? row.user_id : null;
       const deletedAtMs = toMillisFromUnknown(row.deleted_at);
+      const serverUpdatedAtMs = toMillisFromUnknown(row.server_updated_at_ms);
       if (!deletedAtMs) return null;
-      return { id, userId, deletedAtMs };
+      return { id, userId, deletedAtMs, serverUpdatedAtMs };
     })
     .filter((row): row is DeletedPlantPurgeCandidate => Boolean(row && row.id));
 }
@@ -192,12 +194,14 @@ export async function claimLocalPlantsForUser(userId: string): Promise<number> {
 
   const now = new Date();
   await database.write(async () => {
-    for (const row of rows) {
-      await row.update((record) => {
-        record.userId = userId;
-        record.updatedAt = now;
-      });
-    }
+    await database.batch(
+      ...rows.map((row) =>
+        row.prepareUpdate((record) => {
+          record.userId = userId;
+          record.updatedAt = now;
+        })
+      )
+    );
   });
 
   return rows.length;

@@ -3,12 +3,15 @@ import React from 'react';
 import { ActivityIndicator, Text, View } from '@/components/ui';
 import { translate } from '@/lib';
 import { getItem } from '@/lib/storage';
-import { getPendingChangesCount, isSyncInFlight } from '@/lib/sync-engine';
+import { useSyncState } from '@/lib/sync/sync-state';
+import { getPendingChangesCount } from '@/lib/sync-engine';
 
 type Props = {
   className?: string;
   testID?: string;
 };
+
+const SYNC_STATUS_POLL_INTERVAL_MS = 5000;
 
 function formatTime(ts: number | null): string {
   if (!ts) return '-';
@@ -22,23 +25,46 @@ export function SyncStatus({
   className,
   testID,
 }: Props): React.ReactElement | null {
+  const syncInFlight = useSyncState.use.syncInFlight();
   const [pendingCount, setPendingCount] = React.useState<number>(0);
-  const [inFlight, setInFlight] = React.useState<boolean>(false);
   const [lastSyncMs, setLastSyncMs] = React.useState<number | null>(
     getItem<number>('sync.lastPulledAt')
   );
 
-  async function refresh(): Promise<void> {
-    const [count] = await Promise.all([getPendingChangesCount()]);
-    setPendingCount(count);
-    setInFlight(isSyncInFlight());
-    setLastSyncMs(getItem<number>('sync.lastPulledAt'));
-  }
-
   React.useEffect(() => {
-    void refresh();
-    const id = setInterval(refresh, 1000);
-    return () => clearInterval(id);
+    let isMounted = true;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+    const refresh = async (): Promise<void> => {
+      try {
+        const count = await getPendingChangesCount();
+        if (!isMounted) return;
+        setPendingCount(count);
+        setLastSyncMs(getItem<number>('sync.lastPulledAt'));
+      } catch (error) {
+        if (__DEV__) {
+          console.warn('[SyncStatus] Failed to refresh', error);
+        }
+      }
+    };
+
+    const loop = async (): Promise<void> => {
+      await refresh();
+      if (!isMounted) return;
+      timeoutId = setTimeout(() => {
+        void loop();
+      }, SYNC_STATUS_POLL_INTERVAL_MS);
+    };
+
+    void loop();
+
+    return () => {
+      isMounted = false;
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+    };
   }, []);
 
   const label = translate('sync.last_sync_and_pending', {
@@ -51,7 +77,7 @@ export function SyncStatus({
       className={`flex-row items-center gap-2 px-3 py-2 ${className ?? ''}`}
       testID={testID}
     >
-      {inFlight ? <ActivityIndicator /> : null}
+      {syncInFlight ? <ActivityIndicator /> : null}
       <Text className="text-xs text-neutral-600">{label}</Text>
     </View>
   );

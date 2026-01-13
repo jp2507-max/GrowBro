@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import * as React from 'react';
 import { Alert } from 'react-native';
 
@@ -9,6 +10,7 @@ import { useSyncPrefs } from '@/lib/sync/preferences';
 import { database } from '@/lib/watermelon';
 
 export function SyncPreferences(): React.ReactElement {
+  const router = useRouter();
   const { hydrate, stalenessHours, setStalenessHours } = useSyncPrefs();
 
   // Hydrate persisted preferences from MMKV storage on mount
@@ -46,6 +48,18 @@ export function SyncPreferences(): React.ReactElement {
             onPress={onResetLocal}
           />
         </View>
+        {__DEV__ ? (
+          <View className="pt-2">
+            <Button
+              label={translate('diagnostics.title')}
+              variant="outline"
+              onPress={() => router.push('/sync-diagnostics')}
+              accessibilityLabel={translate('diagnostics.title')}
+              accessibilityHint={translate('sync.offline_banner_action_hint')}
+              testID="sync-open-diagnostics"
+            />
+          </View>
+        ) : null}
       </View>
     </ItemsContainer>
   );

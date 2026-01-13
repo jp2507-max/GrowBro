@@ -66,7 +66,7 @@ function buildPlantPayload(plant: PlantData, userId: string): RemotePlant {
       : null;
   const isLocalFileUri = plant.imageUrl?.startsWith('file://');
   const cloudImageUrl = isLocalFileUri
-    ? remoteImagePath
+    ? (remoteImagePath ?? plant.imageUrl)
     : (plant.imageUrl ?? null);
 
   return {
@@ -168,9 +168,13 @@ async function purgeExpiredDeletedPlantsLocally(
   const candidates = await getDeletedPlantsForPurge(getRetentionCutoffMs());
   if (candidates.length === 0) return 0;
 
+  // Only purge plants that have been hard-deleted from the cloud OR lack server timestamps.
+  // Unassigned plants (userId: null) are retained until cloud confirms deletion to prevent
+  // accidental data loss during offline periods or before user authentication.
   const ids = candidates
     .filter(
-      (candidate) => !candidate.userId || cloudDeletedIds.has(candidate.id)
+      (candidate) =>
+        cloudDeletedIds.has(candidate.id) || !candidate.serverUpdatedAtMs
     )
     .map((candidate) => candidate.id);
 
@@ -272,6 +276,7 @@ export async function syncPlantsBidirectional(): Promise<SyncResult> {
     return plantsSyncPromise;
   }
 
+  plantsSyncQueued = false;
   const run = (async () => {
     let result: SyncResult;
     do {
@@ -308,6 +313,13 @@ export async function syncPlantsBidirectional(): Promise<SyncResult> {
   try {
     return await run;
   } finally {
-    if (plantsSyncPromise === run) plantsSyncPromise = null;
+    if (plantsSyncPromise === run) {
+      if (plantsSyncQueued) {
+        // Re-arm a new run to preserve queued requests
+        plantsSyncPromise = syncPlantsBidirectional();
+      } else {
+        plantsSyncPromise = null;
+      }
+    }
   }
 }

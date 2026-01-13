@@ -54,6 +54,7 @@ export function PostCardHeroImage({
         blurhash,
         thumbhash,
         recyclingKey: thumbnailUri || mediaUri,
+        transitionMs: 0,
       }),
     [mediaUri, thumbnailUri, resizedUri, blurhash, thumbhash]
   );

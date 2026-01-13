@@ -1,6 +1,9 @@
+create extension if not exists pg_cron;
+
 alter table public.plants add column if not exists deleted_at timestamptz;
 
-create index if not exists plants_deleted_at_idx on public.plants (deleted_at);
+create index if not exists plants_deleted_at_idx on public.plants (deleted_at)
+  where deleted_at is not null;
 
 do $$
 begin

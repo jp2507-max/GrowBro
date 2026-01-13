@@ -2,6 +2,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { FlashList, type ListRenderItemInfo } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import React, { useCallback } from 'react';
+import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { Plant } from '@/api';
@@ -22,7 +23,10 @@ import {
 import { getMediumFlashListConfig } from '@/lib/flashlist-config';
 import { usePlantsAttention } from '@/lib/hooks/use-plants-attention';
 
+const AnimatedFlashList = Animated.createAnimatedComponent(FlashList);
+
 const BOTTOM_PADDING_EXTRA = 24;
+const MAX_ENTERING_ANIMATIONS = 6;
 
 function usePlantsData() {
   const { data, isLoading, isError, refetch } = usePlantsInfinite({
@@ -83,7 +87,7 @@ export default function Feed() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { grossHeight } = useBottomTabBarHeight();
-  const { resetScrollState } = useAnimatedScrollList();
+  const { resetScrollState, scrollHandler } = useAnimatedScrollList();
   const {
     plants,
     isLoading: isPlantsLoading,
@@ -146,10 +150,12 @@ export default function Feed() {
 
   // Memoized render function for FlashList
   const renderItem = useCallback(
-    ({ item }: ListRenderItemInfo<Plant>) => (
+    ({ item, index }: ListRenderItemInfo<Plant>) => (
       <PlantCard
         plant={item}
         onPress={onPlantPress}
+        index={index}
+        enableEnteringAnimation={index < MAX_ENTERING_ANIMATIONS}
         needsAttention={attentionMap[item.id]?.needsAttention ?? false}
       />
     ),
@@ -196,7 +202,7 @@ export default function Feed() {
           <View className="h-1 w-10 rounded-full bg-neutral-300 dark:bg-charcoal-700" />
         </View>
 
-        <FlashList
+        <AnimatedFlashList
           data={isLoading ? [] : plants}
           renderItem={renderItem}
           keyExtractor={keyExtractor}
@@ -205,6 +211,7 @@ export default function Feed() {
           ListHeaderComponent={listHeader}
           ListEmptyComponent={listEmpty}
           testID="plants-section"
+          onScroll={scrollHandler}
           {...getMediumFlashListConfig()}
         />
       </View>

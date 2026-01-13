@@ -8,6 +8,7 @@ import { useColorScheme } from 'nativewind';
 import React from 'react';
 import { StyleSheet, type ViewStyle } from 'react-native';
 import Animated, {
+  cancelAnimation,
   Easing,
   ReduceMotion,
   type SharedValue,
@@ -20,7 +21,6 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import cancelAnimation from 'react-native-reanimated';
 
 import { View } from '@/components/ui';
 import colors from '@/components/ui/colors';

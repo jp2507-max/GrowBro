@@ -74,19 +74,26 @@ export function CommunityFab({
   }));
 
   const handlePressIn = React.useCallback(() => {
-    scale.value = withSpring(0.92, {
-      damping: 15,
-      stiffness: 400,
+    scale.value = withSpring(0.85, {
+      damping: 12,
+      stiffness: 450,
       reduceMotion: ReduceMotion.System,
     });
   }, [scale]);
 
   const handlePressOut = React.useCallback(() => {
-    scale.value = withSpring(1, {
-      damping: 15,
-      stiffness: 400,
+    scale.value = withSpring(1.08, {
+      damping: 8,
+      stiffness: 350,
       reduceMotion: ReduceMotion.System,
     });
+    setTimeout(() => {
+      scale.value = withSpring(1, {
+        damping: 10,
+        stiffness: 300,
+        reduceMotion: ReduceMotion.System,
+      });
+    }, 80);
   }, [scale]);
 
   const handlePress = React.useCallback(() => {

@@ -109,13 +109,17 @@ async function checkAgeStatus(
   setRequiresVerification: (value: boolean) => void
 ): Promise<void> {
   try {
-    const { data: status } = await supabase
+    const { data, error } = await supabase
       .from('user_age_status')
       .select('is_age_verified')
       .eq('user_id', userId)
-      .single();
+      .limit(1);
 
-    const isVerified = status?.is_age_verified ?? false;
+    if (error) {
+      throw error;
+    }
+
+    const isVerified = data?.[0]?.is_age_verified ?? false;
     setIsAgeVerified(isVerified);
     setRequiresVerification(!isVerified);
   } catch (error) {

@@ -1,11 +1,6 @@
 import { DateTime } from 'luxon';
 import React from 'react';
-import {
-  Platform,
-  type ScrollView,
-  StyleSheet,
-  useWindowDimensions,
-} from 'react-native';
+import { Platform, StyleSheet, useWindowDimensions } from 'react-native';
 import Animated, {
   ReduceMotion,
   // @ts-ignore - Reanimated 4.x type exports issue
@@ -42,25 +37,42 @@ type WeekStripProps = {
   testID?: string;
 };
 
-// Number of weeks to render on each side of current week
+// Number of weeks to render on each side of anchor week
 const WEEKS_BUFFER = 2;
 
 /**
- * Build days for multiple weeks centered on the selected date's week
+ * Get the ISO week key for stable identification
+ */
+function getWeekKey(date: DateTime): string {
+  return date.startOf('week').toFormat('yyyy-MM-dd');
+}
+
+/**
+ * Calculate week offset between two dates
+ */
+function getWeekOffset(from: DateTime, to: DateTime): number {
+  const fromWeekStart = from.startOf('week');
+  const toWeekStart = to.startOf('week');
+  return Math.round(toWeekStart.diff(fromWeekStart, 'weeks').weeks);
+}
+
+/**
+ * Build days for multiple weeks centered on an anchor week.
+ * The anchor week is stable (today's week) to prevent content shifting.
  */
 function buildMultiWeekDays(
+  anchorWeekStart: DateTime,
   selectedDate: DateTime,
   taskCounts?: Map<string, number>
 ): DayItem[][] {
   const weeks: DayItem[][] = [];
-  const selectedWeekStart = selectedDate.startOf('week');
 
   for (
     let weekOffset = -WEEKS_BUFFER;
     weekOffset <= WEEKS_BUFFER;
     weekOffset++
   ) {
-    const weekStart = selectedWeekStart.plus({ weeks: weekOffset });
+    const weekStart = anchorWeekStart.plus({ weeks: weekOffset });
     const weekDays = Array.from({ length: 7 }).map((_, dayIndex) => {
       const date = weekStart.plus({ days: dayIndex });
       const dateKey = date.toFormat('yyyy-MM-dd');
@@ -88,9 +100,18 @@ function DayPill({
 }): React.ReactElement {
   const todayLabel = translate('calendar.week_strip.today');
   const scale = useSharedValue(1);
+  const selectedScale = useSharedValue(item.isSelected ? 1.08 : 1);
+
+  React.useEffect(() => {
+    selectedScale.value = withSpring(item.isSelected ? 1.08 : 1, {
+      damping: 12,
+      stiffness: 180,
+      reduceMotion: ReduceMotion.System,
+    });
+  }, [item.isSelected, selectedScale]);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
+    transform: [{ scale: scale.value * selectedScale.value }],
   }));
 
   const handlePressIn = React.useCallback(() => {
@@ -184,14 +205,33 @@ export function WeekStrip({
   taskCounts,
   testID = 'week-strip',
 }: WeekStripProps): React.ReactElement {
-  const scrollViewRef = useAnimatedRef<ScrollView>();
+  const scrollViewRef = useAnimatedRef<typeof Animated.ScrollView>();
   const { width: screenWidth } = useWindowDimensions();
   const hasScrolledRef = React.useRef(false);
   const [isLayoutReady, setIsLayoutReady] = React.useState(false);
 
+  // Anchor week is stable - only shifts when selected date goes outside buffer range
+  const [anchorWeekStart, setAnchorWeekStart] = React.useState(() =>
+    DateTime.now().startOf('week')
+  );
+
+  // Calculate offset from anchor to selected date's week
+  const selectedWeekOffset = React.useMemo(
+    () => getWeekOffset(anchorWeekStart, selectedDate),
+    [anchorWeekStart, selectedDate]
+  );
+
+  // Shift anchor if selected date is outside the visible buffer
+  React.useEffect(() => {
+    if (Math.abs(selectedWeekOffset) > WEEKS_BUFFER) {
+      setAnchorWeekStart(selectedDate.startOf('week'));
+    }
+  }, [selectedWeekOffset, selectedDate]);
+
+  // Build weeks centered on anchor (stable unless anchor shifts)
   const weeks = React.useMemo(
-    () => buildMultiWeekDays(selectedDate, taskCounts),
-    [selectedDate, taskCounts]
+    () => buildMultiWeekDays(anchorWeekStart, selectedDate, taskCounts),
+    [anchorWeekStart, selectedDate, taskCounts]
   );
 
   const handleLayout = React.useCallback(() => {
@@ -200,15 +240,21 @@ export function WeekStrip({
     }
   }, [isLayoutReady]);
 
-  // Scroll to center week on first render and when selected date changes
+  // Scroll to the correct week position based on offset from anchor
   React.useEffect(() => {
     if (isLayoutReady) {
-      // Scroll to center week (index = WEEKS_BUFFER)
-      const scrollX = WEEKS_BUFFER * screenWidth;
+      // Center index (WEEKS_BUFFER) + offset from anchor = target week index
+      const targetWeekIndex = WEEKS_BUFFER + selectedWeekOffset;
+      // Clamp to valid range
+      const clampedIndex = Math.max(
+        0,
+        Math.min(targetWeekIndex, WEEKS_BUFFER * 2)
+      );
+      const scrollX = clampedIndex * screenWidth;
       scrollTo(scrollViewRef, scrollX, 0, hasScrolledRef.current);
       hasScrolledRef.current = true;
     }
-  }, [selectedDate, screenWidth, isLayoutReady, scrollViewRef]);
+  }, [selectedWeekOffset, screenWidth, isLayoutReady, scrollViewRef]);
 
   return (
     <Animated.ScrollView
@@ -221,9 +267,9 @@ export function WeekStrip({
       contentContainerStyle={styles.scrollContent}
       onLayout={handleLayout}
     >
-      {weeks.map((weekDays, weekIndex) => (
+      {weeks.map((weekDays) => (
         <View
-          key={`week-${weekIndex}`}
+          key={getWeekKey(weekDays[0].date)}
           style={{ width: screenWidth }}
           className="flex-row justify-evenly px-2"
         >
@@ -273,13 +319,13 @@ const styles = StyleSheet.create({
   selectedPill: {
     ...Platform.select({
       ios: {
-        shadowColor: colors.primary[600],
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.35,
-        shadowRadius: 10,
+        shadowColor: colors.primary[500],
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.45,
+        shadowRadius: 14,
       },
       android: {
-        elevation: 6,
+        elevation: 8,
       },
     }),
   },

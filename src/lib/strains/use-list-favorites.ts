@@ -4,6 +4,7 @@
  */
 
 import React from 'react';
+import { useShallow } from 'zustand/react/shallow';
 
 import { useFavorites } from '@/lib/strains/use-favorites';
 import type { Strain } from '@/types/strains';
@@ -22,10 +23,14 @@ type UseListFavoritesResult = {
  * Returns a Set for O(1) lookup and a factory for toggle handlers.
  */
 export function useListFavorites(): UseListFavoritesResult {
-  const isHydrated = useFavorites((state) => state.isHydrated);
-  const addFavorite = useFavorites.use.addFavorite();
-  const removeFavorite = useFavorites.use.removeFavorite();
-  const favorites = useFavorites((state) => state.favorites);
+  const { isHydrated, favorites, addFavorite, removeFavorite } = useFavorites(
+    useShallow((state) => ({
+      isHydrated: state.isHydrated,
+      favorites: state.favorites,
+      addFavorite: state.addFavorite,
+      removeFavorite: state.removeFavorite,
+    }))
+  );
 
   // Compute favorite IDs set for O(1) lookup
   const favoriteIds = React.useMemo(() => {

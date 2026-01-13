@@ -35,9 +35,27 @@ export function getMediumFlashListConfig(): FlashListConfig {
   const lowMem = isLowMemoryDevice();
 
   return {
-    drawDistance: lowMem ? 500 : 800,
+    drawDistance: lowMem ? 500 : 700,
     removeClippedSubviews: true,
     scrollEventThrottle: 32,
+  };
+}
+
+/**
+ * Get optimized FlashList configuration for large lists (100+ items)
+ *
+ * Higher drawDistance for smoother scrolling, suitable for:
+ * - Community feed
+ * - Strains list
+ * - Any infinite scroll list
+ */
+export function getOptimizedFlashListConfig(): FlashListConfig {
+  const lowMem = isLowMemoryDevice();
+
+  return {
+    drawDistance: lowMem ? 800 : 1000,
+    removeClippedSubviews: true,
+    scrollEventThrottle: 16,
   };
 }
 

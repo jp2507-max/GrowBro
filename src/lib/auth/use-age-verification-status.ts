@@ -41,20 +41,21 @@ async function fetchAgeVerificationStatusForUser(
     .from('user_age_status')
     .select('is_verified, verified_at, token_expiry')
     .eq('user_id', userId)
-    .single();
+    .limit(1);
 
-  if (error && error.code !== 'PGRST116') {
+  if (error) {
     throw error;
   }
 
-  if (!data) {
+  const row = data?.[0] ?? null;
+  if (!row) {
     return {
       isVerified: false,
       isLoading: false,
     };
   }
 
-  return mapStatusRowToState(data);
+  return mapStatusRowToState(row);
 }
 
 async function resolveAgeVerificationStatus(): Promise<AgeVerificationStatus> {

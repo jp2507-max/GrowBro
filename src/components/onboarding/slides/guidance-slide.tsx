@@ -54,7 +54,7 @@ export function GuidanceSlide({
         reduceMotion: ReduceMotion.System,
       })
     );
-  }, []); // Run once on mount
+  }, [titleOpacity, titleScale]);
 
   const titleStyle = useAnimatedStyle(() => ({
     opacity: titleOpacity.value,

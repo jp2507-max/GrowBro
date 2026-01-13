@@ -34,6 +34,7 @@ export class ReconnectionHandler {
   private onOutboxDrainedCallback?: () => void;
   private unsubscribe?: () => void;
   private isReconnecting = false;
+  private lastOnline: boolean | null = null;
 
   constructor(options: ReconnectionHandlerOptions) {
     this.database = options.database;
@@ -87,13 +88,23 @@ export class ReconnectionHandler {
    * Handle network state change
    */
   private handleNetworkChange = async (state: NetInfoState): Promise<void> => {
-    if (!state) {
-      console.log('[ReconnectionHandler] Network offline');
+    const isOnline =
+      Boolean(state?.isConnected) && (state.isInternetReachable ?? true);
+
+    // NetInfo can emit repeated updates while already online (detail changes).
+    // Only run reconnection work on an offline → online transition (or first known state).
+    if (!isOnline) {
+      if (this.lastOnline !== false) {
+        console.log('[ReconnectionHandler] Network offline');
+      }
+      this.lastOnline = false;
       return;
     }
 
-    if (state.isConnected === false || state.isInternetReachable === false) {
-      console.log('[ReconnectionHandler] Network offline');
+    const shouldHandle = this.lastOnline === null || this.lastOnline === false;
+    this.lastOnline = true;
+
+    if (!shouldHandle) {
       return;
     }
 

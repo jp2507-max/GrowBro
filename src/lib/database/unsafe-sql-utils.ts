@@ -1,57 +1,15 @@
 import { Q } from '@nozbe/watermelondb';
 
 import { database } from '@/lib/watermelon';
+import { appSchema } from '@/lib/watermelon-schema';
 
 export type SQLiteArg = string | boolean | number | null;
 export type SQLiteQuery = [string, SQLiteArg[]];
 
-// Valid table names extracted from watermelon models
-const VALID_TABLE_NAMES = new Set([
-  'ai_second_opinions_queue',
-  'ai_suggestions',
-  'assessment_feedback',
-  'assessment_requests',
-  'assessment_telemetry',
-  'assessments',
-  'assessment_classes',
-  'cached_strains',
-  'calibrations',
-  'deviation_alerts_v2',
-  'device_tokens',
-  'diagnostic_results_v2',
-  'favorites',
-  'feeding_templates',
-  'harvest_audits',
-  'harvests',
-  'help_articles_cache',
-  'image_upload_queue',
-  'inventory_batches',
-  'inventory_items',
-  'inventory_movements',
-  'inventory',
-  'notification_preferences',
-  'notification_queue',
-  'notifications',
-  'occurrence_overrides',
-  'outbox_notification_actions',
-  'outbox',
-  'ph_ec_readings_v2',
-  'plants',
-  'playbook_applications',
-  'playbooks',
-  'post_comments',
-  'post_likes',
-  'posts',
-  'profiles',
-  'reservoir_events',
-  'reservoirs_v2',
-  'series',
-  'source_water_profiles_v2',
-  'support_tickets_queue',
-  'tasks',
-  'trichome_assessments',
-  'undo_descriptors',
-]);
+// Valid table names derived from the schema source of truth
+const VALID_TABLE_NAMES = new Set(
+  Object.values(appSchema.tables).map((t) => t.name)
+);
 
 export type UnsafeExecuteResult = {
   error?: unknown;
@@ -81,6 +39,9 @@ export async function runSql(
   }
 
   const rows = await database.read(async () => {
+    // We cast to never because `database.get(table)` expects strict TableName types,
+    // but this utility is designed for dynamic table access.
+    // Safety is guaranteed by the runtime check `VALID_TABLE_NAMES.has(table)` above.
     const collection = database.get(table as never);
     return collection.query(Q.unsafeSqlQuery(sql, params)).unsafeFetchRaw();
   }, `runSql:${table}`);

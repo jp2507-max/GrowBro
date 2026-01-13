@@ -103,43 +103,42 @@ export function PostCardView({
             onPressIn={handlePressIn}
             onPressOut={handlePressOut}
           >
-            <View
-              className="mx-5 mb-6 overflow-hidden rounded-3xl border border-neutral-200 bg-white dark:border-white/10 dark:bg-charcoal-900"
-              style={cardStyles.shadow}
-            >
-              <PostCardHeader
-                displayUsername={displayUsername}
-                relativeTime={relativeTime}
-                onAuthorPress={handleAuthorPress}
-                isOwnPost={isOwnPost}
-                onOptionsPress={handleOptionsPress}
-                deletePending={deleteMutation.isPending}
-                moreIconColor={moreIconColor}
-                testID={testID}
-              />
-              {hasImage && (
-                <PostCardHeroImage
-                  postId={String(postId)}
-                  mediaUri={post.media_uri!}
-                  thumbnailUri={post.media_thumbnail_uri}
-                  resizedUri={post.media_resized_uri}
-                  blurhash={post.media_blurhash}
-                  thumbhash={post.media_thumbhash}
+            <View className="mx-5 mb-6 rounded-3xl" style={cardStyles.shadow}>
+              <View className="overflow-hidden rounded-3xl border border-neutral-200 bg-white dark:border-white/10 dark:bg-charcoal-900">
+                <PostCardHeader
                   displayUsername={displayUsername}
-                  enableSharedTransition={allowSharedTransition}
+                  relativeTime={relativeTime}
+                  onAuthorPress={handleAuthorPress}
+                  isOwnPost={isOwnPost}
+                  onOptionsPress={handleOptionsPress}
+                  deletePending={deleteMutation.isPending}
+                  moreIconColor={moreIconColor}
                   testID={testID}
                 />
-              )}
-              <PostCardActionBar
-                postId={String(postId)}
-                likeCount={post.like_count ?? 0}
-                userHasLiked={post.user_has_liked ?? false}
-                commentCount={post.comment_count ?? 0}
-                onCommentPress={handleCommentPress}
-                iconColor={iconColor}
-                testID={testID}
-              />
-              <PostCardContent body={post.body} testID={testID} />
+                {hasImage && (
+                  <PostCardHeroImage
+                    postId={String(postId)}
+                    mediaUri={post.media_uri!}
+                    thumbnailUri={post.media_thumbnail_uri}
+                    resizedUri={post.media_resized_uri}
+                    blurhash={post.media_blurhash}
+                    thumbhash={post.media_thumbhash}
+                    displayUsername={displayUsername}
+                    enableSharedTransition={allowSharedTransition}
+                    testID={testID}
+                  />
+                )}
+                <PostCardActionBar
+                  postId={String(postId)}
+                  likeCount={post.like_count ?? 0}
+                  userHasLiked={post.user_has_liked ?? false}
+                  commentCount={post.comment_count ?? 0}
+                  onCommentPress={handleCommentPress}
+                  iconColor={iconColor}
+                  testID={testID}
+                />
+                <PostCardContent body={post.body} testID={testID} />
+              </View>
             </View>
           </Pressable>
         </Link>
