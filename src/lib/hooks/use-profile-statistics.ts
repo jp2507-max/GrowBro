@@ -8,14 +8,60 @@
  * eslint-disable-next-line max-lines-per-function -- Complex data aggregation hook
  */
 
+import type { Database } from '@nozbe/watermelondb';
 import { Q } from '@nozbe/watermelondb';
 import { useDatabase } from '@nozbe/watermelondb/react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { PostModel } from '@/lib/watermelon-models/post';
 import type { ProfileStatistics } from '@/types/settings';
 
 const THROTTLE_MS = 250;
+
+async function queryUserCounts(
+  database: Database,
+  userId: string
+): Promise<Pick<ProfileStatistics, 'plantsCount' | 'harvestsCount'>> {
+  const plantsCollection = database.collections.get('plants');
+  const plants = await plantsCollection
+    .query(Q.where('user_id', userId))
+    .fetchCount();
+
+  const harvestsCollection = database.collections.get('harvests');
+  const harvests = await harvestsCollection
+    .query(Q.where('user_id', userId))
+    .fetchCount();
+
+  return { plantsCount: plants, harvestsCount: harvests };
+}
+
+async function queryPostsAndLikes(
+  database: Database,
+  userId: string
+): Promise<Pick<ProfileStatistics, 'postsCount' | 'likesReceived'>> {
+  let postsCount = 0;
+  let likesReceived = 0;
+
+  try {
+    const postsCollection = database.collections.get('posts');
+    postsCount = await postsCollection
+      .query(Q.where('user_id', userId))
+      .fetchCount();
+
+    const userPosts = await postsCollection
+      .query(Q.where('user_id', userId))
+      .fetch();
+
+    for (const post of userPosts) {
+      const postLikesCount = await (post as PostModel).likes.fetchCount();
+      likesReceived += postLikesCount;
+    }
+  } catch {
+    // Table doesn't exist yet, keep defaults at 0
+  }
+
+  return { postsCount, likesReceived };
+}
 
 export interface UseProfileStatisticsResult extends ProfileStatistics {
   isLoading: boolean;
@@ -36,7 +82,29 @@ export function useProfileStatistics(
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [lastUpdate, setLastUpdate] = useState<number>(0);
+  const lastUpdateRef = useRef<number>(0);
+  const inFlightRef = useRef<Promise<void> | null>(null);
+  const pendingRef = useRef(false);
+  const rerunTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const runStatisticsQuery = useCallback(async () => {
+    // Throttle updates to avoid jank (max once per 250ms) - Requirement 10.7
+    const now = Date.now();
+    if (now - lastUpdateRef.current < THROTTLE_MS) {
+      return;
+    }
+    lastUpdateRef.current = now;
+
+    const [userCounts, postsAndLikes] = await Promise.all([
+      queryUserCounts(database, userId),
+      queryPostsAndLikes(database, userId),
+    ]);
+
+    setStatistics({
+      ...userCounts,
+      ...postsAndLikes,
+    });
+  }, [database, userId]);
 
   const fetchStatistics = useCallback(async () => {
     if (!database) {
@@ -44,67 +112,44 @@ export function useProfileStatistics(
       return;
     }
 
+    // Coalesce callers while an update is already in flight.
+    // This avoids piling up concurrent WatermelonDB queries during large sync bursts.
+    if (inFlightRef.current) {
+      pendingRef.current = true;
+      await inFlightRef.current;
+      return;
+    }
+
+    const run = runStatisticsQuery();
+    inFlightRef.current = run;
+
     try {
-      // Throttle updates to avoid jank (max once per 250ms) - Requirement 10.7
-      const now = Date.now();
-      if (now - lastUpdate < THROTTLE_MS) {
-        return;
-      }
-      setLastUpdate(now);
-
-      // Query plants count (filter by user_id if available)
-      const plantsCollection = database.collections.get('plants');
-      const plants = await plantsCollection
-        .query(Q.where('user_id', userId))
-        .fetchCount();
-
-      // Query harvests count
-      const harvestsCollection = database.collections.get('harvests');
-      const harvests = await harvestsCollection
-        .query(Q.where('user_id', userId))
-        .fetchCount();
-
-      // Query posts count (if table exists)
-      let posts = 0;
-      try {
-        const postsCollection = database.collections.get('posts');
-        posts = await postsCollection
-          .query(Q.where('user_id', userId))
-          .fetchCount();
-      } catch {
-        // Table doesn't exist yet, keep posts at 0
-      }
-
-      // Query likes received (count likes on user's posts)
-      let likesReceived = 0;
-      try {
-        const postsCollection = database.collections.get('posts');
-        const userPosts = await postsCollection
-          .query(Q.where('user_id', userId))
-          .fetch();
-
-        // Count likes for each post
-        for (const post of userPosts) {
-          const postLikesCount = await (post as PostModel).likes.fetchCount();
-          likesReceived += postLikesCount;
-        }
-      } catch {
-        // Table doesn't exist yet or query failed, keep likes at 0
-      }
-
-      setStatistics({
-        plantsCount: plants,
-        harvestsCount: harvests,
-        postsCount: posts,
-        likesReceived,
-      });
+      await run;
     } catch (error) {
       console.error('Failed to fetch profile statistics:', error);
     } finally {
+      inFlightRef.current = null;
       setIsLoading(false);
       setIsSyncing(false);
+
+      if (pendingRef.current) {
+        pendingRef.current = false;
+        if (rerunTimeoutRef.current) {
+          clearTimeout(rerunTimeoutRef.current);
+          rerunTimeoutRef.current = null;
+        }
+
+        const delayMs = Math.max(
+          0,
+          THROTTLE_MS - (Date.now() - lastUpdateRef.current)
+        );
+        rerunTimeoutRef.current = setTimeout(() => {
+          rerunTimeoutRef.current = null;
+          void fetchStatistics();
+        }, delayMs);
+      }
     }
-  }, [database, userId, lastUpdate]);
+  }, [database, runStatisticsQuery]);
 
   const refresh = useCallback(async () => {
     setIsSyncing(true);
@@ -177,6 +222,11 @@ export function useProfileStatistics(
 
     return () => {
       subscriptions.forEach((unsubscribe) => unsubscribe());
+      if (rerunTimeoutRef.current) {
+        clearTimeout(rerunTimeoutRef.current);
+        rerunTimeoutRef.current = null;
+      }
+      pendingRef.current = false;
     };
   }, [database, fetchStatistics, userId]);
 

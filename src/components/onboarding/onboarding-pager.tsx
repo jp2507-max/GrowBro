@@ -91,10 +91,13 @@ export function OnboardingPager({
   const [currentIndex, setCurrentIndex] = React.useState(0);
 
   const onScroll = useAnimatedScrollHandler({
-    onScroll: (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    onScroll: (event: {
+      layoutMeasurement: { width: number };
+      contentOffset: { x: number };
+    }) => {
       'worklet';
-      const layoutWidth = event?.nativeEvent?.layoutMeasurement?.width ?? NaN;
-      const offsetX = event?.nativeEvent?.contentOffset?.x ?? 0;
+      const layoutWidth = event?.layoutMeasurement?.width ?? NaN;
+      const offsetX = event?.contentOffset?.x ?? 0;
       if (!isFinite(layoutWidth) || isNaN(layoutWidth) || layoutWidth <= 0)
         return;
       activeIndex.value = offsetX / layoutWidth;
@@ -134,12 +137,9 @@ export function OnboardingPager({
     const tracking = trackingRef.current;
     // Track completion of the current slide before marking as skipped
     trackStepIfChanged(tracking.previousIndex, tracking, now);
-    trackOnboardingSkipped(
-      `slide_${Math.round(activeIndex.value)}`,
-      'user_skip'
-    );
+    trackOnboardingSkipped(`slide_${currentIndex}`, 'user_skip');
     onComplete();
-  }, [onComplete, activeIndex]);
+  }, [onComplete, currentIndex]);
 
   // Runtime guard: slides array must be non-empty
   if (slides.length === 0) {
@@ -157,7 +157,7 @@ export function OnboardingPager({
   return (
     <AnimatedIndexProvider activeIndex={activeIndex}>
       <View
-        className="flex-1 bg-primary-50 dark:bg-charcoal-950"
+        className="flex-1 bg-neutral-50 dark:bg-charcoal-950"
         testID={testID}
       >
         <FocusAwareStatusBar />

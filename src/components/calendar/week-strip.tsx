@@ -3,9 +3,9 @@ import React from 'react';
 import { Platform, StyleSheet, useWindowDimensions } from 'react-native';
 import Animated, {
   ReduceMotion,
-  // @ts-ignore - Reanimated 4.x type exports issue
+  // @ts-ignore - Reanimated 4.x type exports issue - TODO: Track upstream fix for scrollTo types
   scrollTo,
-  // @ts-ignore - Reanimated 4.x type exports issue
+  // @ts-ignore - Reanimated 4.x type exports issue - TODO: Track upstream fix for useAnimatedRef types
   useAnimatedRef,
   useAnimatedStyle,
   useSharedValue,
@@ -205,7 +205,7 @@ export function WeekStrip({
   taskCounts,
   testID = 'week-strip',
 }: WeekStripProps): React.ReactElement {
-  const scrollViewRef = useAnimatedRef<typeof Animated.ScrollView>();
+  const scrollViewRef = useAnimatedRef<Animated.ScrollView>();
   const { width: screenWidth } = useWindowDimensions();
   const hasScrolledRef = React.useRef(false);
   const [isLayoutReady, setIsLayoutReady] = React.useState(false);
@@ -225,6 +225,7 @@ export function WeekStrip({
   React.useEffect(() => {
     if (Math.abs(selectedWeekOffset) > WEEKS_BUFFER) {
       setAnchorWeekStart(selectedDate.startOf('week'));
+      hasScrolledRef.current = false; // Reset for instant scroll after anchor shift
     }
   }, [selectedWeekOffset, selectedDate]);
 

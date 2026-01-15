@@ -43,8 +43,8 @@ export const DifficultyBadge = React.memo<Props>(
       ? 'bg-primary-50 dark:bg-primary-900/30'
       : getDifficultyStyles(difficulty);
     const textStyles = isPremium
-      ? 'text-primary-800 dark:text-primary-200 font-bold'
-      : `${getDifficultyTextStyles(difficulty)} font-semibold`;
+      ? 'text-primary-800 dark:text-primary-200'
+      : getDifficultyTextStyles(difficulty);
 
     return (
       <View

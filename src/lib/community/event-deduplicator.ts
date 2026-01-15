@@ -10,7 +10,9 @@ type KeyExtractor<T> = (row: T) => string;
 
 // Timestamp store for tracking last-applied commit_timestamp per composite key
 // Used for post_likes to ensure proper ordering of events
+// Bounded to avoid unbounded growth over long sessions
 const lastAppliedTimestamps = new Map<string, string>();
+const MAX_LAST_APPLIED_TIMESTAMPS = 1000;
 
 export type ShouldApplyParams<T> = {
   incoming: T;
@@ -74,7 +76,20 @@ export function shouldApply<T>(params: ShouldApplyParams<T>): boolean {
  * Used for post_likes to track ordering
  */
 export function recordAppliedTimestamp(key: string, timestamp: string): void {
+  // Keep insertion order as "most recently updated" by re-inserting.
+  // This makes FIFO eviction behave like a rough LRU.
+  if (lastAppliedTimestamps.has(key)) {
+    lastAppliedTimestamps.delete(key);
+  }
   lastAppliedTimestamps.set(key, timestamp);
+
+  while (lastAppliedTimestamps.size > MAX_LAST_APPLIED_TIMESTAMPS) {
+    const oldestKey = lastAppliedTimestamps.keys().next().value as
+      | string
+      | undefined;
+    if (!oldestKey) break;
+    lastAppliedTimestamps.delete(oldestKey);
+  }
 }
 
 /**

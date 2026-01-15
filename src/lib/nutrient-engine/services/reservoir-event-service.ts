@@ -262,6 +262,7 @@ export function observeReservoirEvents(
   limit: number = 100
 ): Observable<ReservoirEventModel[]> {
   return new Observable((subscriber) => {
+    let isDisposed = false;
     let subscription: { unsubscribe: () => void } | undefined;
 
     const setup = async () => {
@@ -275,18 +276,24 @@ export function observeReservoirEvents(
           Q.take(limit)
         );
 
-        subscription = query.observe().subscribe({
+        const nextSub = query.observe().subscribe({
           next: (events: ReservoirEventModel[]) => subscriber.next(events),
           error: (error: unknown) => subscriber.error(error),
         });
+        if (isDisposed) {
+          nextSub.unsubscribe();
+          return;
+        }
+        subscription = nextSub;
       } catch (error) {
-        subscriber.error(error);
+        if (!isDisposed) subscriber.error(error);
       }
     };
 
     void setup();
 
     return () => {
+      isDisposed = true;
       if (subscription) {
         subscription.unsubscribe();
       }
@@ -304,6 +311,7 @@ export function observeRecentEvents(
   reservoirId: string
 ): Observable<ReservoirEventModel[]> {
   return new Observable((subscriber) => {
+    let isDisposed = false;
     let subscription: { unsubscribe: () => void } | undefined;
 
     const setup = async () => {
@@ -316,7 +324,7 @@ export function observeRecentEvents(
           Q.sortBy('created_at', Q.desc)
         );
 
-        subscription = query.observe().subscribe({
+        const nextSub = query.observe().subscribe({
           next: (events: ReservoirEventModel[]) => {
             const cutoff = Date.now() - UNDO_WINDOW_MS;
             const recentEvents = events.filter(
@@ -327,14 +335,20 @@ export function observeRecentEvents(
           },
           error: (error: unknown) => subscriber.error(error),
         });
+        if (isDisposed) {
+          nextSub.unsubscribe();
+          return;
+        }
+        subscription = nextSub;
       } catch (error) {
-        subscriber.error(error);
+        if (!isDisposed) subscriber.error(error);
       }
     };
 
     void setup();
 
     return () => {
+      isDisposed = true;
       if (subscription) {
         subscription.unsubscribe();
       }

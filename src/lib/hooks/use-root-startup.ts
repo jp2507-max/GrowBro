@@ -15,7 +15,10 @@ import {
   unregisterBackgroundTask,
 } from '@/lib/sync/background-sync';
 import { setupSyncTriggers } from '@/lib/sync/sync-triggers';
-import { TaskNotificationService } from '@/lib/task-notifications';
+import {
+  getTaskNotificationService,
+  type TaskNotificationService,
+} from '@/lib/task-notifications';
 
 type LocalizationWithTimeZone = typeof Localization & { timezone?: string };
 
@@ -214,7 +217,7 @@ function startRootInitialization(
     // NOTE: There's a race between i18n initialization and showing the
     // permission prompt. Only call requestPermissions when i18n init
     // succeeded so the prompt can show localized strings.
-    svc = new TaskNotificationService();
+    svc = getTaskNotificationService();
     if (i18nInitSucceeded && !isFirstTime) void svc.requestPermissions();
     void svc.rehydrateNotifications();
 

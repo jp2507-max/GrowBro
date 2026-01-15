@@ -72,7 +72,7 @@ export function usePendingDeletion() {
       } catch (error) {
         console.error('Failed to check pending deletion:', error);
         // Don't set pending deletion on error to avoid false positives
-        setPendingDeletion(null);
+        if (isActive) setPendingDeletion(null);
       } finally {
         if (isActive) setIsLoading(false);
       }

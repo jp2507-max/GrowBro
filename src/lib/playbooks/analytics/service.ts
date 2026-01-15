@@ -21,6 +21,7 @@ class AnalyticsService {
     batchSize: 10,
     flushIntervalMs: 30000, // 30 seconds
     persistEvents: true,
+    maxQueueSize: 1000,
   };
 
   private storage: MMKV;
@@ -62,6 +63,10 @@ class AnalyticsService {
     } as unknown as AnalyticsEvent;
 
     this.eventQueue.push(event);
+    const maxQueueSize = this.config.maxQueueSize ?? 1000;
+    if (this.eventQueue.length > maxQueueSize) {
+      this.eventQueue.splice(0, this.eventQueue.length - maxQueueSize);
+    }
 
     if (this.config.debug) {
       console.log('[Analytics] Event tracked:', event);

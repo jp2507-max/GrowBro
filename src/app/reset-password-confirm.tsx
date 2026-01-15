@@ -42,6 +42,9 @@ export default function ResetPasswordConfirm() {
   const { t } = useTranslation();
   const router = useRouter();
   useLocalSearchParams<{ token_hash?: string }>();
+  const navTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
   const { handleSubmit, control } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
@@ -50,7 +53,8 @@ export default function ResetPasswordConfirm() {
     onSuccess: () => {
       showSuccessMessage(t('auth.reset_password_confirm_success'));
       // Navigate to login after short delay
-      setTimeout(() => {
+      if (navTimeoutRef.current) clearTimeout(navTimeoutRef.current);
+      navTimeoutRef.current = setTimeout(() => {
         router.replace('/login');
       }, 2000);
     },
@@ -58,6 +62,15 @@ export default function ResetPasswordConfirm() {
       showErrorMessage(t(error.message));
     },
   });
+
+  React.useEffect(() => {
+    return () => {
+      if (navTimeoutRef.current) {
+        clearTimeout(navTimeoutRef.current);
+        navTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   const onSubmit: SubmitHandler<FormData> = (data) => {
     confirmMutation.mutate({

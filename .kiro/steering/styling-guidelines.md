@@ -38,15 +38,6 @@ const makeStyle = isOn
 
 ---
 
-## Reanimated 4 essentials (for agents)
-
-- Prefer **layout/shared transitions** over manual width/height animations. Always chain `.reduceMotion(ReduceMotion.System)`.
-- Use RNGH v2 **`Gesture.*()`** with **`GestureDetector`** (legacy handler components/`useAnimatedGestureHandler` are deprecated in 4.x).
-- **Cross‑thread boundaries**: keep UI‑critical logic in worklets. Use **`runOnJS`** **sparingly** (never per‑frame) for state/side‑effects **after** animations.
-- Measure with `measure`, scroll with `scrollTo`, avoid layout hacks.
-
----
-
 ## 🧭 Styling with NativeWind
 
 - Keep `className` **stable**. Static styles in `className`, animated/gesture styles via Reanimated `style`.
@@ -141,28 +132,56 @@ return (
 
 ---
 
-## 🎛️ Animation Choice (Cheat)
+## 🎛️ Animation Strategy & Syntax (Cheat)
 
-- **CSS Animations (keyframes)** — fire‑and‑forget loops/ambient effects; no React state.
-- **CSS Transitions** — state‑triggered one‑offs (toggles, open/close, hover/focus).
-- **Shared Values + `useAnimatedStyle`** — continuous/gesture/sensor‑driven UI; pair with `withTiming`/`withSpring`/`withDecay`.
-- **Layout Animations** — entering/exiting or re‑layout of lists/sections; prefer presets before custom.
+**1. CSS Transitions (State-driven)**
+_Use for simple toggles (hover, focus, active). No Shared Values needed._
 
-**Preset naming rule**: `<Effect><In|Out><Direction>` → `BounceIn`, `ZoomInLeft`, `SlideOutRight`, `FadeOutDown`.
+- **Props:** `transitionProperty`, `transitionDuration`, `transitionTimingFunction`, `transitionDelay`.
 
-**Micro‑API reminders**: compose with `withSequence`, `withRepeat`, `withDelay`, `withClamp`; use `LinearTransition` for simple size/position changes.
+````tsx
+<Animated.View
+  style={{
+    width: isActive ? 200 : 100, // Reactive state
+    backgroundColor: isActive ? '#ff0000' : '#0000ff',
+    transitionProperty: ['width', 'backgroundColor'],
+    transitionDuration: 300,
+  }}
+/>
 
----
+**2. CSS Animations (Keyframes) Fire-and-forget loops (spinners, skeletons). No state dependency.**
 
-## 🧩 Reanimated 4 — CSS API & Presets
+- **Props:** animationName, animationDuration, animationIterationCount
+<Animated.View
+  style={{
+    animationName: {
+      from: { opacity: 0, transform: [{ scale: 0.5 }] },
+      to: { opacity: 1, transform: [{ scale: 1 }] },
+    }, // OR use 0%, 50%, 100% object syntax
+    animationDuration: '1s',
+    animationIterationCount: 'infinite',
+  }}
+/>
 
-- **CSS Animations (keyframes)**: ambient/looping effects (skeleton, shimmer, pulse). No React state.
-- **CSS Transitions**: state‑driven one‑offs (width/color/opacity on toggle/press/show‑hide).
-- **Entering/Exiting presets**: attach on mount/unmount; tweak via `.springify()/.duration()/.easing()/.reduceMotion()`.
-- **Layout transitions**: animate re‑layout; start with `LinearTransition`, use `CurvedTransition` for organic motion.
-- **Composition helpers**: prefer `withSequence`, `withRepeat`, `withDelay`, `withClamp` over loops.
-- **Preset naming**: `<Effect><In|Out><Direction>` → `BounceIn`, `SlideOutRight`, etc.
-- Example components live under `src/lib/animations/examples/`.
+** 3.Layout Animations (Mount/Unmount) List items, conditional rendering. Always wrap with withRM.**
+
+Entering/Exiting: FadeIn, ZoomOutLeft, SlideInUp.
+
+Layout: LinearTransition (simple) or CurvedTransition.
+<Animated.View
+  entering={withRM(FadeInUp.springify())}
+  exiting={withRM(ZoomOut.duration(200))}
+  layout={LinearTransition}
+/>
+
+** 4.Shared Values (Interactive) Gestures, Scroll, Sensors. The "Heavy Lifting".**
+
+Logic: useSharedValue + useAnimatedStyle. Keep math in worklets.
+
+Syntax: transform: [{ translateX: offset.value }].
+
+Legacy Warning: Never use useAnimatedGestureHandler (v1). Use Gesture.Pan().onUpdate(...) (v2).
+
 
 ---
 
@@ -241,7 +260,7 @@ export const motion = {
 };
 export const withRM = (anim: any) =>
   anim.reduceMotion?.(ReduceMotion.System) ?? anim;
-```
+````
 
 **Use**
 

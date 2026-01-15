@@ -9,6 +9,8 @@ import React from 'react';
 import type { ColorValue } from 'react-native';
 import { StyleSheet } from 'react-native';
 import Animated, {
+  // @ts-ignore - Reanimated 4.x type exports issue
+  cancelAnimation,
   FadeIn,
   ReduceMotion,
   useAnimatedStyle,
@@ -54,6 +56,11 @@ export function GuidanceSlide({
         reduceMotion: ReduceMotion.System,
       })
     );
+
+    return () => {
+      cancelAnimation(titleOpacity);
+      cancelAnimation(titleScale);
+    };
   }, [titleOpacity, titleScale]);
 
   const titleStyle = useAnimatedStyle(() => ({
@@ -111,19 +118,34 @@ export function GuidanceSlide({
           {/* Minimal feature pills */}
           <FeaturePillRow>
             <FeaturePill
-              icon={<Sprout size={18} color={colors.primary[700]} />}
+              icon={
+                <Sprout
+                  size={18}
+                  color={isDark ? colors.primary[300] : colors.primary[700]}
+                />
+              }
               labelKey="onboarding.guidance.feature_playbooks_title"
               index={0}
               testID="pill-playbooks"
             />
             <FeaturePill
-              icon={<Check size={18} color={colors.primary[700]} />}
+              icon={
+                <Check
+                  size={18}
+                  color={isDark ? colors.primary[300] : colors.primary[700]}
+                />
+              }
               labelKey="onboarding.guidance.feature_tasks_title"
               index={1}
               testID="pill-tasks"
             />
             <FeaturePill
-              icon={<Lightbulb size={18} color={colors.primary[700]} />}
+              icon={
+                <Lightbulb
+                  size={18}
+                  color={isDark ? colors.primary[300] : colors.primary[700]}
+                />
+              }
               labelKey="onboarding.guidance.feature_tips_title"
               index={2}
               testID="pill-tips"

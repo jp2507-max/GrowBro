@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 import { InteractionManager } from 'react-native';
 
 import { useNetworkStatus } from '@/lib/hooks/use-network-status';
-import { isSyncPipelineInFlight } from '@/lib/sync/sync-coordinator';
+import { useSyncState } from '@/lib/sync/sync-state';
 
 import { useFavorites } from './use-favorites';
 
@@ -28,6 +28,7 @@ export function useFavoritesAutoSync(): FavoritesAutoSyncState {
   const fullSync = useFavorites.use.fullSync();
   const isSyncing = useFavorites.use.isSyncing();
   const syncError = useFavorites.use.syncError();
+  const pipelineInFlight = useSyncState.use.pipelineInFlight();
   const wasOfflineRef = useRef(!isInternetReachable);
   const isSyncScheduledRef = useRef(false);
   const [lastSyncAttempt, setLastSyncAttempt] = useState(0);
@@ -41,7 +42,7 @@ export function useFavoritesAutoSync(): FavoritesAutoSyncState {
     const shouldSync =
       isInternetReachable &&
       !isSyncing &&
-      !isSyncPipelineInFlight() &&
+      !pipelineInFlight &&
       (justCameOnline || timeSinceLastSync > MIN_SYNC_INTERVAL);
 
     if (shouldSync && !isSyncScheduledRef.current) {
@@ -66,7 +67,13 @@ export function useFavoritesAutoSync(): FavoritesAutoSyncState {
     return () => {
       cancelled = true;
     };
-  }, [isInternetReachable, isSyncing, fullSync, lastSyncAttempt]);
+  }, [
+    isInternetReachable,
+    isSyncing,
+    fullSync,
+    lastSyncAttempt,
+    pipelineInFlight,
+  ]);
 
   return {
     isSyncing,

@@ -41,10 +41,10 @@ export function AddPlantFab(): React.ReactElement {
   }, [scale]);
 
   const handlePressOut = React.useCallback((): void => {
-    scale.value = withSpring(1.05, SPRING_CONFIG_RELEASE);
-    setTimeout(() => {
-      scale.value = withSpring(1, SPRING_CONFIG_RELEASE);
-    }, 80);
+    scale.value = withSequence(
+      withSpring(1.05, SPRING_CONFIG_RELEASE),
+      withDelay(80, withSpring(1, SPRING_CONFIG_RELEASE))
+    );
   }, [scale]);
 
   const handlePress = React.useCallback((): void => {

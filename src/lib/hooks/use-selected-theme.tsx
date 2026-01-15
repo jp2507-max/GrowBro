@@ -17,6 +17,9 @@ export type ColorSchemeType = 'light' | 'dark' | 'system';
 export const useSelectedTheme = () => {
   const { setColorScheme } = useColorScheme();
   const [theme, _setTheme] = useMMKVString(SELECTED_THEME, storage);
+  const pendingTaskRef = React.useRef<ReturnType<
+    typeof InteractionManager.runAfterInteractions
+  > | null>(null);
 
   const setSelectedTheme = React.useCallback(
     (t: ColorSchemeType) => {
@@ -24,7 +27,8 @@ export const useSelectedTheme = () => {
       _setTheme(t);
       // Defer NativeWind colorScheme change to avoid "state update on unmounted component"
       // error from react-native-css-interop's appearance listeners during render
-      InteractionManager.runAfterInteractions(() => {
+      pendingTaskRef.current?.cancel?.();
+      pendingTaskRef.current = InteractionManager.runAfterInteractions(() => {
         setColorScheme(t);
       });
     },
@@ -32,6 +36,14 @@ export const useSelectedTheme = () => {
   );
 
   const selectedTheme = (theme ?? 'system') as ColorSchemeType;
+
+  React.useEffect(() => {
+    return () => {
+      pendingTaskRef.current?.cancel?.();
+      pendingTaskRef.current = null;
+    };
+  }, []);
+
   return { selectedTheme, setSelectedTheme } as const;
 };
 // to be used in the root file to load the selected theme from MMKV

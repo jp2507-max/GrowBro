@@ -269,12 +269,16 @@ export const useCancelAccountDeletion = createMutation({
     }
 
     // Find pending deletion request
-    const { data: deletionRequest, error: fetchError } = await supabase
+    const { data: deletionRequests, error: fetchError } = await supabase
       .from('account_deletion_requests')
       .select('*')
       .eq('user_id', user.id)
       .eq('status', 'pending')
-      .single();
+      .limit(1);
+
+    const deletionRequest = (
+      deletionRequests as DeletionRequestRecord[] | null
+    )?.[0];
 
     if (fetchError || !deletionRequest) {
       throw new Error('settings.delete_account.error_no_pending_request');

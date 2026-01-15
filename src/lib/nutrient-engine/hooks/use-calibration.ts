@@ -35,24 +35,34 @@ export function useActiveCalibration(
   const [calibration, setCalibration] = useState<CalibrationModel | null>(null);
 
   useEffect(() => {
+    let isActive = true;
     let subscription: { unsubscribe: () => void } | undefined;
 
     const loadAndObserve = async () => {
       // Load initial data
       const active = await getActiveCalibration(meterId, type);
+      if (!isActive) return;
       setCalibration(active);
 
       // Observe changes
       subscription = observeActiveCalibration(meterId, type).subscribe(
         (calibrations: CalibrationModel[]) => {
+          if (!isActive) return;
           setCalibration(calibrations.length > 0 ? calibrations[0] : null);
         }
       );
+
+      // If we were unmounted while awaiting, immediately clean up.
+      if (!isActive && subscription) {
+        subscription.unsubscribe();
+        subscription = undefined;
+      }
     };
 
     void loadAndObserve();
 
     return () => {
+      isActive = false;
       if (subscription) {
         subscription.unsubscribe();
       }

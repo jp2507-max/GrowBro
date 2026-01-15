@@ -9,6 +9,7 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { AppState, type AppStateStatus } from 'react-native';
 
 import type {
   AccessResult,
@@ -22,11 +23,43 @@ import type {
   DbUserAgeStatus,
 } from '@/types/database-records';
 
+const USER_AGE_STATUS_CACHE_TTL_MS = 2 * 60 * 1000;
+
+type UserAgeStatusCacheEntry = {
+  value: UserAgeStatus | null;
+  expiresAt: number;
+};
+
+const userAgeStatusCache = new Map<string, UserAgeStatusCacheEntry>();
+let appStateSubscription: ReturnType<typeof AppState.addEventListener> | null =
+  null;
+let lastAppState: AppStateStatus = AppState.currentState;
+
+function handleAppStateChange(nextAppState: AppStateStatus): void {
+  const shouldInvalidate =
+    (lastAppState === 'inactive' || lastAppState === 'background') &&
+    nextAppState === 'active';
+  lastAppState = nextAppState;
+
+  if (shouldInvalidate) {
+    userAgeStatusCache.clear();
+  }
+}
+
+function ensureAppStateListener(): void {
+  if (appStateSubscription) return;
+  appStateSubscription = AppState.addEventListener(
+    'change',
+    handleAppStateChange
+  );
+}
+
 export class ContentAgeGatingEngine {
   private supabase: SupabaseClient;
 
   constructor(supabase: SupabaseClient) {
     this.supabase = supabase;
+    ensureAppStateListener();
   }
 
   /**
@@ -309,11 +342,40 @@ export class ContentAgeGatingEngine {
       DbUserAgeStatus,
       'verified_at' | 'active_token_id' | 'created_at' | 'updated_at'
     >);
+    this.clearCachedUserAgeStatus(userId);
   }
 
   // ============================================================================
   // Private Helper Methods
   // ============================================================================
+
+  private getCachedUserAgeStatus(
+    userId: string
+  ): UserAgeStatus | null | undefined {
+    const cachedEntry = userAgeStatusCache.get(userId);
+    if (!cachedEntry) return undefined;
+
+    if (cachedEntry.expiresAt <= Date.now()) {
+      userAgeStatusCache.delete(userId);
+      return undefined;
+    }
+
+    return cachedEntry.value;
+  }
+
+  private setCachedUserAgeStatus(
+    userId: string,
+    status: UserAgeStatus | null
+  ): void {
+    userAgeStatusCache.set(userId, {
+      value: status,
+      expiresAt: Date.now() + USER_AGE_STATUS_CACHE_TTL_MS,
+    });
+  }
+
+  private clearCachedUserAgeStatus(userId: string): void {
+    userAgeStatusCache.delete(userId);
+  }
 
   /**
    * Get content restriction from database
@@ -329,7 +391,8 @@ export class ContentAgeGatingEngine {
       .eq('content_type', contentType)
       .limit(1);
 
-    const restriction = data?.[0];
+    const restriction = (data as DbContentRestriction[] | null)?.[0];
+
     if (error || !restriction) {
       return null;
     }
@@ -343,20 +406,31 @@ export class ContentAgeGatingEngine {
   private async getUserAgeStatus(
     userId: string
   ): Promise<UserAgeStatus | null> {
+    ensureAppStateListener();
+
+    const cachedStatus = this.getCachedUserAgeStatus(userId);
+    if (cachedStatus !== undefined) {
+      return cachedStatus;
+    }
+
     const { data, error } = await this.supabase
       .from('user_age_status')
       .select('*')
       .eq('user_id', userId)
       .limit(1);
 
-    const status = data?.[0];
-    if (error || !status) {
+    if (error) {
       return null;
     }
 
-    const statusData = status as DbUserAgeStatus;
+    const statusData = (data as DbUserAgeStatus[] | null)?.[0];
 
-    return {
+    if (!statusData) {
+      this.setCachedUserAgeStatus(userId, null);
+      return null;
+    }
+
+    const status = {
       userId: statusData.user_id,
       isAgeVerified: statusData.is_age_verified,
       verifiedAt: statusData.verified_at
@@ -369,6 +443,9 @@ export class ContentAgeGatingEngine {
       createdAt: new Date(statusData.created_at),
       updatedAt: new Date(statusData.updated_at),
     };
+
+    this.setCachedUserAgeStatus(userId, status);
+    return status;
   }
 
   /**

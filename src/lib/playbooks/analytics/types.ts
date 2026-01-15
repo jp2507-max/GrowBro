@@ -207,4 +207,5 @@ export interface AnalyticsConfig {
   batchSize: number;
   flushIntervalMs: number;
   persistEvents: boolean;
+  maxQueueSize?: number;
 }

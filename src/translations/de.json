@@ -89,6 +89,7 @@
       "go_back": "Zurück",
       "loading_hint": "Inhalt wird geladen, bitte warten",
       "loading_label": "Lädt",
+      "opens_screen_hint": "Öffnet den {{label}}-Bildschirm.",
       "refresh_hint": "Aktualisiert den aktuellen Inhalt.",
       "reset_date_hint": "Löscht das ausgewählte Datum.",
       "retry_hint": "Wiederholt die letzte Aktion.",

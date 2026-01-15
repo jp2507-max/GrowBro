@@ -9,6 +9,7 @@ import React from 'react';
 import type { ColorValue } from 'react-native';
 import { StyleSheet } from 'react-native';
 import Animated, {
+  cancelAnimation,
   FadeIn,
   ReduceMotion,
   useAnimatedStyle,
@@ -54,6 +55,11 @@ export function WelcomeSlide({
         reduceMotion: ReduceMotion.System,
       })
     );
+
+    return () => {
+      cancelAnimation(titleOpacity);
+      cancelAnimation(titleScale);
+    };
   }, [titleOpacity, titleScale]);
 
   const titleStyle = useAnimatedStyle(() => ({

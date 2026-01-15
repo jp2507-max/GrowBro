@@ -202,6 +202,7 @@ function createExpoConfig(config) {
     },
     experiments: {
       typedRoutes: true,
+      reactCompiler: true,
     },
     android: {
       adaptiveIcon: {

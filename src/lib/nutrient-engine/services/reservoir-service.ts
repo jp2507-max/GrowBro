@@ -229,28 +229,36 @@ export async function listReservoirs(
  */
 export function observeReservoir(id: string): Observable<ReservoirModel> {
   return new Observable((subscriber) => {
+    let isDisposed = false;
     let subscription: { unsubscribe: () => void } | undefined;
 
     const setup = async () => {
       try {
         const reservoir = await getReservoir(id);
+        if (isDisposed) return;
         if (!reservoir) {
           subscriber.error(new Error('Reservoir not found'));
           return;
         }
 
-        subscription = reservoir.observe().subscribe({
+        const nextSub = reservoir.observe().subscribe({
           next: (updated) => subscriber.next(updated),
           error: (error) => subscriber.error(error),
         });
+        if (isDisposed) {
+          nextSub.unsubscribe();
+          return;
+        }
+        subscription = nextSub;
       } catch (error) {
-        subscriber.error(error);
+        if (!isDisposed) subscriber.error(error);
       }
     };
 
     void setup();
 
     return () => {
+      isDisposed = true;
       if (subscription) {
         subscription.unsubscribe();
       }
@@ -268,6 +276,7 @@ export function observeReservoirs(
   userId?: string
 ): Observable<ReservoirModel[]> {
   return new Observable((subscriber) => {
+    let isDisposed = false;
     let subscription: { unsubscribe: () => void } | undefined;
 
     const setup = async () => {
@@ -279,18 +288,24 @@ export function observeReservoirs(
           ? reservoirsCollection.query(Q.where('user_id', userId))
           : reservoirsCollection.query();
 
-        subscription = query.observe().subscribe({
+        const nextSub = query.observe().subscribe({
           next: (reservoirs: ReservoirModel[]) => subscriber.next(reservoirs),
           error: (error: unknown) => subscriber.error(error),
         });
+        if (isDisposed) {
+          nextSub.unsubscribe();
+          return;
+        }
+        subscription = nextSub;
       } catch (error) {
-        subscriber.error(error);
+        if (!isDisposed) subscriber.error(error);
       }
     };
 
     void setup();
 
     return () => {
+      isDisposed = true;
       if (subscription) {
         subscription.unsubscribe();
       }

@@ -21,7 +21,7 @@ import {
   type SyncTrigger,
 } from '@/lib/sync/sync-performance-metrics';
 import { getSyncState } from '@/lib/sync/sync-state';
-import { TaskNotificationService } from '@/lib/task-notifications';
+import { getTaskNotificationService } from '@/lib/task-notifications';
 import { database } from '@/lib/watermelon';
 import type { HarvestModel } from '@/lib/watermelon-models/harvest';
 import type { HarvestAuditModel } from '@/lib/watermelon-models/harvest-audit';
@@ -1492,7 +1492,7 @@ async function updateNotificationsForChangedTasks(
 ): Promise<void> {
   if (changedTaskIds.length > 0) {
     try {
-      const notifier = new TaskNotificationService();
+      const notifier = getTaskNotificationService();
       await notifier.rehydrateNotifications(
         Array.from(new Set(changedTaskIds))
       );

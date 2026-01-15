@@ -43,8 +43,8 @@ export const RaceBadge = React.memo<Props>(
       ? 'bg-primary-50 dark:bg-primary-900/30'
       : getRaceStyles(race);
     const textStyles = isPremium
-      ? 'text-primary-800 dark:text-primary-200 font-bold'
-      : `${getRaceTextStyles(race)} font-semibold`;
+      ? 'text-primary-800 dark:text-primary-200'
+      : getRaceTextStyles(race);
 
     return (
       <View

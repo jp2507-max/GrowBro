@@ -64,10 +64,9 @@ async function downloadMissingPlantPhotosAfterSync(): Promise<void> {
     const { database } = await import('@/lib/watermelon');
 
     // Only fetch plants that have remoteImagePath in metadata
-    // Use JSON path query for precise field matching and better performance
     const plants = await database.collections
       .get('plants')
-      .query(Q.where('metadata->>remoteImagePath', Q.notEq(null)))
+      .query(Q.where('metadata', Q.like('%"remoteImagePath"%')))
       .fetch();
 
     // Convert WatermelonDB models to Plant type
@@ -109,6 +108,14 @@ async function syncPlantsAfterSync(): Promise<void> {
   } catch (error) {
     console.warn('[SyncCoordinator] Plant sync error:', error);
   }
+}
+
+// Helper to keep store in sync
+function updatePipelineState() {
+  const inFlight = Boolean(syncPipelinePromise || pendingSyncPromise);
+  // Avoid redundant store updates if efficient, but Zustand handles it well usually.
+  // We'll just set it.
+  getSyncState().setPipelineInFlight(inFlight);
 }
 
 export function isSyncPipelineInFlight(): boolean {
@@ -260,6 +267,20 @@ function mergeSyncOptions(
   };
 }
 
+async function runSyncPipeline(
+  options: SyncCoordinatorOptions
+): Promise<SyncResult> {
+  const run = performSyncInternal(options);
+  syncPipelinePromise = run;
+  updatePipelineState();
+  try {
+    return await run;
+  } finally {
+    syncPipelinePromise = null;
+    updatePipelineState();
+  }
+}
+
 /**
  * Single-flight wrapper for the sync pipeline.
  * Queues recursive calls if a sync is already in progress, merging options to ensure strongest guarantees.
@@ -267,35 +288,47 @@ function mergeSyncOptions(
 export async function performSync(
   options: SyncCoordinatorOptions = {}
 ): Promise<SyncResult> {
-  // 1. If no sync is running, start immediately
-  if (!syncPipelinePromise) {
-    const run = performSyncInternal(options);
-    syncPipelinePromise = run;
-    try {
-      return await run;
-    } finally {
-      syncPipelinePromise = null;
-    }
+  // 1. If no sync is running (and no pending worker exists), start immediately
+  if (!syncPipelinePromise && !pendingSyncPromise) {
+    return runSyncPipeline(options);
   }
 
-  // 2. If sync is running, merge options for the next run
+  // 2. If sync is running or a pending worker exists, merge options for the next run
   pendingSyncOptions = mergeSyncOptions(pendingSyncOptions, options);
 
   // 3. Setup the pending promise if not already waiting
   if (!pendingSyncPromise) {
     pendingSyncPromise = (async () => {
+      let lastResult: SyncResult | null = null;
       try {
-        await syncPipelinePromise;
-      } catch {
-        // Ignore errors from the previous run; we still want to run the next one
-      }
+        const current = syncPipelinePromise;
+        if (current) {
+          try {
+            await current;
+          } catch {
+            // Ignore errors from the previous run; we still want to run the next one
+          }
+        }
 
-      const nextOptions = pendingSyncOptions || {};
-      const result = await performSync(nextOptions);
-      pendingSyncOptions = null;
-      pendingSyncPromise = null;
-      return result;
+        // Loop to handle any new options that arrive while sync is running
+        while (pendingSyncOptions !== null) {
+          // Capture and clear pending options atomically before starting next sync
+          const nextOptions = pendingSyncOptions || {};
+          pendingSyncOptions = null;
+
+          lastResult = await runSyncPipeline(nextOptions);
+        }
+
+        if (!lastResult) {
+          throw new Error('Pending sync loop exited without running a sync');
+        }
+        return lastResult;
+      } finally {
+        pendingSyncPromise = null;
+        updatePipelineState();
+      }
     })();
+    updatePipelineState();
   }
 
   return pendingSyncPromise;

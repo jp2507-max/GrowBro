@@ -1,6 +1,9 @@
 {
   "expo": {
     "userInterfaceStyle": "automatic",
+    "experiments": {
+      "reactCompiler": true
+    },
     "extra": {
       "eas": {
         "projectId": "0ce1e1fc-7b61-4a2f-ae2b-790c097ced82"

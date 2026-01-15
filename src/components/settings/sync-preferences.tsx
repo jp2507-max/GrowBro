@@ -55,7 +55,10 @@ export function SyncPreferences(): React.ReactElement {
               variant="outline"
               onPress={() => router.push('/sync-diagnostics')}
               accessibilityLabel={translate('diagnostics.title')}
-              accessibilityHint={translate('sync.offline_banner_action_hint')}
+              accessibilityHint={translate(
+                'accessibility.common.opens_screen_hint',
+                { label: translate('diagnostics.title') }
+              )}
               testID="sync-open-diagnostics"
             />
           </View>

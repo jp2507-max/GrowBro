@@ -134,7 +134,9 @@ export function AnimatedPrimerIcon({
       ? 'bg-success-100 dark:bg-success-900/30'
       : 'bg-primary-100 dark:bg-primary-900/30';
   const innerBgClass =
-    variant === 'success' ? 'bg-success-600' : 'bg-primary-600';
+    variant === 'success'
+      ? 'bg-success-600 dark:bg-success-500'
+      : 'bg-primary-600 dark:bg-primary-500';
 
   return (
     <View testID={testID} className="items-center justify-center">

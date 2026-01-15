@@ -127,18 +127,30 @@ function SearchHistoryList({
 function useSearchHistory(onChangeText: (text: string) => void) {
   const [showHistory, setShowHistory] = React.useState(false);
   const [history, setHistory] = React.useState<SearchHistoryItem[]>([]);
+  const blurTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
 
   const handleFocus = React.useCallback(() => {
+    if (blurTimeoutRef.current) {
+      clearTimeout(blurTimeoutRef.current);
+      blurTimeoutRef.current = null;
+    }
     setShowHistory(true);
     setHistory(getSearchHistory());
   }, []);
 
   const handleBlur = React.useCallback(() => {
-    setTimeout(() => setShowHistory(false), 150);
+    if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
+    blurTimeoutRef.current = setTimeout(() => setShowHistory(false), 150);
   }, []);
 
   const handleHistorySelect = React.useCallback(
     (query: string) => {
+      if (blurTimeoutRef.current) {
+        clearTimeout(blurTimeoutRef.current);
+        blurTimeoutRef.current = null;
+      }
       onChangeText(query);
       setShowHistory(false);
       Keyboard.dismiss();
@@ -155,6 +167,15 @@ function useSearchHistory(onChangeText: (text: string) => void) {
   const handleClearHistory = React.useCallback(() => {
     clearSearchHistory();
     setHistory([]);
+  }, []);
+
+  React.useEffect(() => {
+    return () => {
+      if (blurTimeoutRef.current) {
+        clearTimeout(blurTimeoutRef.current);
+        blurTimeoutRef.current = null;
+      }
+    };
   }, []);
 
   return {

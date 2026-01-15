@@ -10,6 +10,7 @@
  * - 8.7: Filter age-restricted content in feeds
  */
 
+import type { RealtimeChannel } from '@supabase/supabase-js';
 import { useEffect, useState } from 'react';
 
 import { supabase } from '@/lib/supabase';
@@ -93,12 +94,34 @@ export function useAgeVerificationStatus(): AgeVerificationStatus {
 
   useEffect(() => {
     let mounted = true;
+    let subscription: RealtimeChannel | null = null;
 
     const syncStatus = async () => {
       if (!mounted) return;
       setStatus((previous) => ({ ...previous, isLoading: true }));
 
       try {
+        const userId = await getOptionalAuthenticatedUserId();
+
+        // Setup subscription only when we have a userId
+        if (userId && !subscription) {
+          subscription = supabase
+            .channel('age_verification_changes')
+            .on(
+              'postgres_changes',
+              {
+                event: '*',
+                schema: 'public',
+                table: 'user_age_status',
+                filter: `user_id=eq.${userId}`,
+              },
+              (_payload) => {
+                syncStatus();
+              }
+            )
+            .subscribe();
+        }
+
         const nextStatus = await resolveAgeVerificationStatus();
         if (mounted) {
           setStatus(nextStatus);
@@ -117,24 +140,12 @@ export function useAgeVerificationStatus(): AgeVerificationStatus {
 
     syncStatus();
 
-    const subscription = supabase
-      .channel('age_verification_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'user_age_status',
-        },
-        (_payload) => {
-          syncStatus();
-        }
-      )
-      .subscribe();
-
     return () => {
       mounted = false;
-      subscription.unsubscribe();
+      if (subscription) {
+        supabase.removeChannel(subscription);
+        subscription = null;
+      }
     };
   }, []);
 
@@ -165,17 +176,19 @@ export function useNeedsAgeVerification(): boolean {
           .from('user_age_status')
           .select('is_verified')
           .eq('user_id', userId)
-          .single();
+          .limit(1);
 
-        if (error && error.code !== 'PGRST116') {
+        if (error) {
           console.error('Error checking age verification need:', error);
           if (mounted) setNeedsVerification(false);
           return;
         }
 
+        const row = data?.[0] ?? null;
+
         // User needs verification if no record or not verified
         if (mounted) {
-          setNeedsVerification(!data || !data.is_verified);
+          setNeedsVerification(!row || !row.is_verified);
         }
       } catch (error) {
         console.error('Error in needs verification check:', error);

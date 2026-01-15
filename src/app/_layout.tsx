@@ -356,6 +356,8 @@ function usePhotoJanitorSetup(isI18nReady: boolean): void {
     return () => {
       // Abort first to signal all pending operations to stop
       abortController.abort();
+      // Remove listener to avoid retaining closures unnecessarily
+      abortController.signal.removeEventListener('abort', abortHandler);
       // Cancel the interaction task if it hasn't started yet
       task?.cancel?.();
       // Clear timeout as backup (abort handler should have done this already)
@@ -514,7 +516,24 @@ async function initializeAuthAndStates(): Promise<void> {
 
   // Timeout promise - runs cleanup if hydration takes too long
   const timeoutPromise = new Promise<void>((resolve) => {
-    const timeoutId = setTimeout(async () => {
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+    const onAbort = () => {
+      abortController.signal.removeEventListener('abort', onAbort);
+      if (timeoutId !== null) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+      resolve();
+    };
+
+    // Cancel timeout if hydration completes first
+    abortController.signal.addEventListener('abort', onAbort);
+
+    timeoutId = setTimeout(async () => {
+      // No longer needed once the timeout fires
+      abortController.signal.removeEventListener('abort', onAbort);
+
       if (abortController.signal.aborted) {
         resolve();
         return;
@@ -524,12 +543,6 @@ async function initializeAuthAndStates(): Promise<void> {
       );
       resolve();
     }, HYDRATE_AUTH_TIMEOUT_MS);
-
-    // Cancel timeout if hydration completes first
-    abortController.signal.addEventListener('abort', () => {
-      clearTimeout(timeoutId);
-      resolve();
-    });
   });
 
   // Race hydration against timeout - unblocks startup on whichever finishes first

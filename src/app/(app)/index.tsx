@@ -23,7 +23,9 @@ import {
 import { getMediumFlashListConfig } from '@/lib/flashlist-config';
 import { usePlantsAttention } from '@/lib/hooks/use-plants-attention';
 
-const AnimatedFlashList = Animated.createAnimatedComponent(FlashList);
+const AnimatedFlashList = Animated.createAnimatedComponent(
+  FlashList
+) as typeof FlashList;
 
 const BOTTOM_PADDING_EXTRA = 24;
 const MAX_ENTERING_ANIMATIONS = 6;

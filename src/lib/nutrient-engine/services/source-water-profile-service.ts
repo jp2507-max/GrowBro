@@ -224,28 +224,36 @@ export function observeSourceWaterProfile(
   id: string
 ): Observable<SourceWaterProfileModel> {
   return new Observable((subscriber) => {
+    let isDisposed = false;
     let subscription: { unsubscribe: () => void } | undefined;
 
     const setup = async () => {
       try {
         const profile = await getSourceWaterProfile(id);
+        if (isDisposed) return;
         if (!profile) {
           subscriber.error(new Error('Source water profile not found'));
           return;
         }
 
-        subscription = profile.observe().subscribe({
+        const nextSub = profile.observe().subscribe({
           next: (updated) => subscriber.next(updated),
           error: (error) => subscriber.error(error),
         });
+        if (isDisposed) {
+          nextSub.unsubscribe();
+          return;
+        }
+        subscription = nextSub;
       } catch (error) {
-        subscriber.error(error);
+        if (!isDisposed) subscriber.error(error);
       }
     };
 
     void setup();
 
     return () => {
+      isDisposed = true;
       if (subscription) {
         subscription.unsubscribe();
       }
@@ -263,6 +271,7 @@ export function observeSourceWaterProfiles(
   userId?: string
 ): Observable<SourceWaterProfileModel[]> {
   return new Observable((subscriber) => {
+    let isDisposed = false;
     let subscription: { unsubscribe: () => void } | undefined;
 
     const setup = async () => {
@@ -275,19 +284,25 @@ export function observeSourceWaterProfiles(
           ? profilesCollection.query(Q.where('user_id', userId))
           : profilesCollection.query();
 
-        subscription = query.observe().subscribe({
+        const nextSub = query.observe().subscribe({
           next: (profiles: SourceWaterProfileModel[]) =>
             subscriber.next(profiles),
           error: (error: unknown) => subscriber.error(error),
         });
+        if (isDisposed) {
+          nextSub.unsubscribe();
+          return;
+        }
+        subscription = nextSub;
       } catch (error) {
-        subscriber.error(error);
+        if (!isDisposed) subscriber.error(error);
       }
     };
 
     void setup();
 
     return () => {
+      isDisposed = true;
       if (subscription) {
         subscription.unsubscribe();
       }

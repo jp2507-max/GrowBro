@@ -138,7 +138,6 @@ export default function SyncDiagnostics(): React.ReactElement {
       logEvent({ stage: 'total', message: 'manual sync invoked' });
       await performSync({
         withRetry: false,
-        maxRetries: 1,
         trackAnalytics: true,
         trigger: 'diagnostic',
       });

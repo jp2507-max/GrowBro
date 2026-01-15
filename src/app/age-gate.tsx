@@ -276,17 +276,32 @@ function AgeGateCopy(): React.ReactElement {
       {/* Collapsible legal details */}
       {showDetails ? (
         <>
-          <Animated.View entering={detailsFadeIn}>
+          <Animated.View
+            entering={createStaggeredFadeInUp(
+              0,
+              onboardingMotion.stagger.content
+            )}
+          >
             <Text className="mt-3 text-sm text-neutral-500 dark:text-neutral-400">
               {translate('cannabis.age_gate_disclaimer')}
             </Text>
           </Animated.View>
-          <Animated.View entering={detailsFadeIn}>
+          <Animated.View
+            entering={createStaggeredFadeInUp(
+              1,
+              onboardingMotion.stagger.content
+            )}
+          >
             <Text className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
               {translate('cannabis.age_gate_secondary_disclaimer')}
             </Text>
           </Animated.View>
-          <Animated.View entering={detailsFadeIn}>
+          <Animated.View
+            entering={createStaggeredFadeInUp(
+              2,
+              onboardingMotion.stagger.content
+            )}
+          >
             <Text className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
               {translate('cannabis.age_gate_re_verification')}
             </Text>

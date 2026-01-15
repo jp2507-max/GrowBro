@@ -382,17 +382,23 @@ export class AgeVerificationService {
     const { userId, contentId, contentType } = input;
 
     // Check if content is age-restricted
-    const { data: restriction } = await this.supabase
+    const { data: restriction, error: restrictionError } = await this.supabase
       .from('content_age_restrictions')
       .select('*')
       .eq('content_id', contentId)
       .eq('content_type', contentType)
-      .single();
+      .limit(1);
 
-    const restrictionData = restriction as DbContentRestrictionRecord | null;
+    const restrictionData = (
+      restriction as DbContentRestrictionRecord[] | null
+    )?.[0];
 
     // Content not restricted
-    if (!restrictionData || !restrictionData.is_age_restricted) {
+    if (
+      restrictionError ||
+      !restrictionData ||
+      !restrictionData.is_age_restricted
+    ) {
       await this.logAuditEvent({
         eventType: 'age_gating_check',
         userId,
@@ -414,9 +420,9 @@ export class AgeVerificationService {
       .from('user_age_status')
       .select('*')
       .eq('user_id', userId)
-      .single();
+      .limit(1);
 
-    const userStatusData = userStatus as DbUserAgeStatus | null;
+    const userStatusData = (userStatus as DbUserAgeStatus[] | null)?.[0];
 
     // User is age-verified
     if (userStatusData?.is_age_verified) {
@@ -525,13 +531,13 @@ export class AgeVerificationService {
       .from('user_age_status')
       .select('*')
       .eq('user_id', userId)
-      .single();
+      .limit(1);
 
-    if (error || !status) {
+    const statusData = (status as DbUserAgeStatus[] | null)?.[0];
+
+    if (error || !statusData) {
       return null;
     }
-
-    const statusData = status as DbUserAgeStatus;
 
     return {
       userId: statusData.user_id,

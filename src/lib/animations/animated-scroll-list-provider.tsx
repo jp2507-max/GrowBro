@@ -19,7 +19,7 @@ export type AnimatedScrollListContextType = {
   offsetYAnchorOnChangeDirection: SharedValue<number>;
   velocityOnEndDrag: SharedValue<number>;
   listPointerEvents: SharedValue<boolean>;
-  scrollHandler: (event: ReanimatedScrollEvent) => void;
+  scrollHandler: ReturnType<typeof useAnimatedScrollHandler>;
   enableAutoScrollLock: (durationMs?: number) => void;
   /** Reset all scroll state to neutral values so the tab bar becomes visible */
   resetScrollState: () => void;
@@ -39,7 +39,9 @@ export function AnimatedScrollListProvider({
   const isDragging = useSharedValue(false);
   const velocityOnEndDrag = useSharedValue(0);
   const listPointerEvents = useSharedValue(true);
-  const pointerLockTimeout = React.useRef<NodeJS.Timeout | null>(null);
+  const pointerLockTimeout = React.useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
   const scrollDir = useScrollDirection();
 
   const enableAutoScrollLock = React.useCallback(

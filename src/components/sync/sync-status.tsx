@@ -78,7 +78,9 @@ export function SyncStatus({
       testID={testID}
     >
       {syncInFlight ? <ActivityIndicator /> : null}
-      <Text className="text-xs text-neutral-600">{label}</Text>
+      <Text className="text-xs text-neutral-600 dark:text-neutral-400">
+        {label}
+      </Text>
     </View>
   );
 }

@@ -9,6 +9,8 @@ import React from 'react';
 import type { ColorValue } from 'react-native';
 import { StyleSheet } from 'react-native';
 import Animated, {
+  // @ts-ignore - Reanimated 4.x type exports issue
+  cancelAnimation,
   FadeIn,
   ReduceMotion,
   useAnimatedStyle,

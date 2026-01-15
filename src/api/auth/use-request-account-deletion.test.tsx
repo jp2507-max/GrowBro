@@ -287,20 +287,22 @@ describe('useRequestAccountDeletion', () => {
       });
 
       // Mock the select chain
-      const selectSingleMock = jest.fn(() =>
+      const selectLimitMock = jest.fn(() =>
         Promise.resolve({
-          data: {
-            request_id: 'req-123',
-            user_id: 'user-123',
-            status: 'pending',
-            policy_version: '1.0.0',
-          },
+          data: [
+            {
+              request_id: 'req-123',
+              user_id: 'user-123',
+              status: 'pending',
+              policy_version: '1.0.0',
+            },
+          ],
           error: null,
         })
       );
 
       const selectSecondEqMock = jest.fn(() => ({
-        single: selectSingleMock,
+        limit: selectLimitMock,
       }));
 
       const selectFirstEqMock = jest.fn(() => ({
@@ -388,20 +390,22 @@ describe('useRequestAccountDeletion', () => {
       });
 
       // Mock the select chain
-      const selectSingleMock = jest.fn(() =>
+      const selectLimitMock = jest.fn(() =>
         Promise.resolve({
-          data: {
-            request_id: 'req-123',
-            user_id: 'user-123',
-            status: 'pending',
-            policy_version: '1.0.0',
-          },
+          data: [
+            {
+              request_id: 'req-123',
+              user_id: 'user-123',
+              status: 'pending',
+              policy_version: '1.0.0',
+            },
+          ],
           error: null,
         })
       );
 
       const selectSecondEqMock = jest.fn(() => ({
-        single: selectSingleMock,
+        limit: selectLimitMock,
       }));
 
       const selectFirstEqMock = jest.fn(() => ({
