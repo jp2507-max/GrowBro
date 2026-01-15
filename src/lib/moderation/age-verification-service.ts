@@ -393,72 +393,102 @@ export class AgeVerificationService {
       restriction as DbContentRestrictionRecord[] | null
     )?.[0];
 
+    // If restriction lookup fails, fail-closed (safer for compliance)
+    if (restrictionError) {
+      await this.logAgeGatingEvent({
+        userId,
+        contentId,
+        contentType,
+        accessGranted: false,
+      });
+      return this.buildAgeGatingResult(false, 'verification_required', true);
+    }
+
     // Content not restricted
-    if (
-      restrictionError ||
-      !restrictionData ||
-      !restrictionData.is_age_restricted
-    ) {
-      await this.logAuditEvent({
-        eventType: 'age_gating_check',
+    if (!restrictionData || !restrictionData.is_age_restricted) {
+      await this.logAgeGatingEvent({
         userId,
         contentId,
         contentType,
         accessGranted: true,
-        legalBasis: 'GDPR Art. 6(1)(f) - Legitimate interest',
       });
-
-      return {
-        granted: true,
-        reason: 'content_not_restricted',
-        requiresVerification: false,
-      };
+      return this.buildAgeGatingResult(true, 'content_not_restricted', false);
     }
 
     // Check user age verification status
-    const { data: userStatus } = await this.supabase
+    const { data: userStatus, error: userStatusError } = await this.supabase
       .from('user_age_status')
       .select('*')
       .eq('user_id', userId)
       .limit(1);
 
+    if (userStatusError) {
+      await this.logAgeGatingEvent({
+        userId,
+        contentId,
+        contentType,
+        accessGranted: false,
+        failureReason: `user_status_error: ${userStatusError.message}`,
+      });
+      return this.buildAgeGatingResult(
+        false,
+        'verification_check_failed',
+        true
+      );
+    }
+
     const userStatusData = (userStatus as DbUserAgeStatus[] | null)?.[0];
 
     // User is age-verified
     if (userStatusData?.is_age_verified) {
-      await this.logAuditEvent({
-        eventType: 'age_gating_check',
+      await this.logAgeGatingEvent({
         userId,
         contentId,
         contentType,
         accessGranted: true,
-        legalBasis: 'GDPR Art. 6(1)(c) - Legal obligation (DSA Art. 28)',
       });
-
-      return {
-        granted: true,
-        reason: 'age_verified',
-        requiresVerification: false,
-      };
+      return this.buildAgeGatingResult(true, 'age_verified', false);
     }
 
     // Access denied - verification required
-    await this.logAuditEvent({
-      eventType: 'age_gating_check',
+    await this.logAgeGatingEvent({
       userId,
       contentId,
       contentType,
       accessGranted: false,
-      legalBasis: 'GDPR Art. 6(1)(c) - Legal obligation (DSA Art. 28)',
     });
+    const reason = userStatusData?.is_minor
+      ? 'minor_protections_active'
+      : 'age_not_verified';
+    return this.buildAgeGatingResult(false, reason, true);
+  }
 
-    return {
-      granted: false,
-      reason: userStatusData?.is_minor
-        ? 'minor_protections_active'
-        : 'age_not_verified',
-      requiresVerification: true,
-    };
+  private async logAgeGatingEvent(opts: {
+    userId: string;
+    contentId: string;
+    contentType: string;
+    accessGranted: boolean;
+    failureReason?: string;
+  }): Promise<void> {
+    await this.logAuditEvent({
+      eventType: 'age_gating_check',
+      userId: opts.userId,
+      contentId: opts.contentId,
+      contentType: opts.contentType,
+      accessGranted: opts.accessGranted,
+      failureReason: opts.failureReason,
+      legalBasis: opts.accessGranted
+        ? 'GDPR Art. 6(1)(f) - Legitimate interest'
+        : 'GDPR Art. 6(1)(c) - Legal obligation (DSA Art. 28)',
+    });
+  }
+
+  private buildAgeGatingResult(
+    granted: boolean,
+    reason: string,
+    requiresVerification: boolean
+  ): { granted: boolean; reason: string; requiresVerification: boolean } {
+    return { granted, reason, requiresVerification };
   }
 
   /**
@@ -531,13 +561,13 @@ export class AgeVerificationService {
       .from('user_age_status')
       .select('*')
       .eq('user_id', userId)
-      .limit(1);
+      .single();
 
-    const statusData = (status as DbUserAgeStatus[] | null)?.[0];
-
-    if (error || !statusData) {
+    if (error || !status) {
       return null;
     }
+
+    const statusData = status as DbUserAgeStatus;
 
     return {
       userId: statusData.user_id,

@@ -10,7 +10,7 @@ const UNDO_TIMEOUT_MS = 5000; // 5 seconds
 type UndoState = {
   taskIds: string[];
   previousOrder: Record<string, number>;
-  timeoutId: NodeJS.Timeout;
+  timeoutId: ReturnType<typeof setTimeout>;
 };
 
 /**

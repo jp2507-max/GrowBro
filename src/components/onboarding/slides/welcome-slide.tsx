@@ -9,6 +9,7 @@ import React from 'react';
 import type { ColorValue } from 'react-native';
 import { StyleSheet } from 'react-native';
 import Animated, {
+  // @ts-ignore - Reanimated 4.x type exports issue
   cancelAnimation,
   FadeIn,
   ReduceMotion,
@@ -70,6 +71,7 @@ export function WelcomeSlide({
   const gradientColors: readonly [ColorValue, ColorValue, ColorValue] = isDark
     ? [colors.charcoal[950], colors.charcoal[900], colors.charcoal[950]]
     : [colors.primary[50], colors.primary[100], colors.primary[50]];
+  const iconColor = isDark ? colors.primary[300] : colors.primary[700];
 
   return (
     <View testID="welcome-slide" className="flex-1">
@@ -117,19 +119,19 @@ export function WelcomeSlide({
           {/* Minimal feature pills */}
           <FeaturePillRow>
             <FeaturePill
-              icon={<Calendar size={18} color={colors.primary[700]} />}
+              icon={<Calendar size={18} color={iconColor} />}
               labelKey="onboarding.welcome.feature_calendar_title"
               index={0}
               testID="pill-calendar"
             />
             <FeaturePill
-              icon={<Leaf size={18} color={colors.primary[700]} />}
+              icon={<Leaf size={18} color={iconColor} />}
               labelKey="onboarding.welcome.feature_tracking_title"
               index={1}
               testID="pill-tracking"
             />
             <FeaturePill
-              icon={<Camera size={18} color={colors.primary[700]} />}
+              icon={<Camera size={18} color={iconColor} />}
               labelKey="onboarding.welcome.feature_ai_title"
               index={2}
               testID="pill-ai"

@@ -1,4 +1,4 @@
-import { Redirect, useLocalSearchParams } from 'expo-router';
+import { type Href, Redirect, useLocalSearchParams } from 'expo-router';
 import type { ReactElement } from 'react';
 
 export default function PostCommentRedirect(): ReactElement {
@@ -14,9 +14,11 @@ export default function PostCommentRedirect(): ReactElement {
     return <Redirect href="/feed" />;
   }
 
-  const href = commentId
-    ? `/feed/${postId}?commentId=${encodeURIComponent(commentId)}`
-    : `/feed/${postId}`;
+  const href = (
+    commentId
+      ? `/feed/${postId}?commentId=${encodeURIComponent(commentId)}`
+      : `/feed/${postId}`
+  ) as Href;
 
   return <Redirect href={href} />;
 }

@@ -205,6 +205,7 @@ export function WeekStrip({
   taskCounts,
   testID = 'week-strip',
 }: WeekStripProps): React.ReactElement {
+  // @ts-ignore - Reanimated 4.x: Animated.ScrollView type not exposed properly
   const scrollViewRef = useAnimatedRef<Animated.ScrollView>();
   const { width: screenWidth } = useWindowDimensions();
   const hasScrolledRef = React.useRef(false);

@@ -8,7 +8,6 @@ const ACTIVATION_STATE_KEY = 'compliance.activation.state';
 
 export type ActivationAction =
   | 'create-task'
-  | 'open-playbook'
   | 'try-ai-diagnosis'
   | 'explore-strains';
 
@@ -40,7 +39,6 @@ export type ActivationStoreState = {
 
 const ALL_ACTIONS: ActivationAction[] = [
   'create-task',
-  'open-playbook',
   'try-ai-diagnosis',
   'explore-strains',
 ];

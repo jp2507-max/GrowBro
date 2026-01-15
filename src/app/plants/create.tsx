@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { type Href, Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { DateTime } from 'luxon';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -343,7 +343,7 @@ export default function CreatePlantScreen(): React.ReactElement {
 
   const handleViewPlant = React.useCallback(() => {
     successModal.dismiss();
-    if (createdPlant?.id) router.replace(`/plants/${createdPlant.id}`);
+    if (createdPlant?.id) router.replace(`/plants/${createdPlant.id}` as Href);
   }, [createdPlant?.id, router, successModal]);
 
   const handleGoToSchedule = React.useCallback(() => {
@@ -360,7 +360,7 @@ export default function CreatePlantScreen(): React.ReactElement {
 
   const handleComplete = React.useCallback(() => {
     haptics.selection();
-    router.replace(params?.returnTo ?? '/');
+    router.replace((params?.returnTo ?? '/') as Href);
   }, [params?.returnTo, router]);
 
   const handleSubmitReady = React.useCallback((submit: () => void) => {

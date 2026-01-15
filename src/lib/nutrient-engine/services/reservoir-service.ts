@@ -8,8 +8,9 @@
  */
 
 import { Q } from '@nozbe/watermelondb';
-import { Observable } from 'rxjs';
+import { type Observable } from 'rxjs';
 
+import { createDisposableObservable } from '@/lib/utils/disposable-observable';
 import { database } from '@/lib/watermelon';
 import type { ReservoirModel } from '@/lib/watermelon-models/reservoir';
 
@@ -228,41 +229,23 @@ export async function listReservoirs(
  * @returns Observable of reservoir model
  */
 export function observeReservoir(id: string): Observable<ReservoirModel> {
-  return new Observable((subscriber) => {
-    let isDisposed = false;
-    let subscription: { unsubscribe: () => void } | undefined;
-
-    const setup = async () => {
-      try {
-        const reservoir = await getReservoir(id);
-        if (isDisposed) return;
-        if (!reservoir) {
-          subscriber.error(new Error('Reservoir not found'));
-          return;
-        }
-
-        const nextSub = reservoir.observe().subscribe({
-          next: (updated) => subscriber.next(updated),
-          error: (error) => subscriber.error(error),
-        });
-        if (isDisposed) {
-          nextSub.unsubscribe();
-          return;
-        }
-        subscription = nextSub;
-      } catch (error) {
-        if (!isDisposed) subscriber.error(error);
+  return createDisposableObservable(async (onNext, onError, isDisposed) => {
+    try {
+      const reservoir = await getReservoir(id);
+      if (isDisposed()) return;
+      if (!reservoir) {
+        onError(new Error('Reservoir not found'));
+        return;
       }
-    };
 
-    void setup();
-
-    return () => {
-      isDisposed = true;
-      if (subscription) {
-        subscription.unsubscribe();
-      }
-    };
+      return reservoir.observe().subscribe({
+        next: onNext,
+        error: onError,
+      });
+    } catch (error) {
+      if (!isDisposed()) onError(error);
+      return undefined;
+    }
   });
 }
 
@@ -275,41 +258,23 @@ export function observeReservoir(id: string): Observable<ReservoirModel> {
 export function observeReservoirs(
   userId?: string
 ): Observable<ReservoirModel[]> {
-  return new Observable((subscriber) => {
-    let isDisposed = false;
-    let subscription: { unsubscribe: () => void } | undefined;
+  return createDisposableObservable(async (onNext, onError, isDisposed) => {
+    try {
+      const reservoirsCollection =
+        database.get<ReservoirModel>('reservoirs_v2');
 
-    const setup = async () => {
-      try {
-        const reservoirsCollection =
-          database.get<ReservoirModel>('reservoirs_v2');
+      const query = userId
+        ? reservoirsCollection.query(Q.where('user_id', userId))
+        : reservoirsCollection.query();
 
-        const query = userId
-          ? reservoirsCollection.query(Q.where('user_id', userId))
-          : reservoirsCollection.query();
-
-        const nextSub = query.observe().subscribe({
-          next: (reservoirs: ReservoirModel[]) => subscriber.next(reservoirs),
-          error: (error: unknown) => subscriber.error(error),
-        });
-        if (isDisposed) {
-          nextSub.unsubscribe();
-          return;
-        }
-        subscription = nextSub;
-      } catch (error) {
-        if (!isDisposed) subscriber.error(error);
-      }
-    };
-
-    void setup();
-
-    return () => {
-      isDisposed = true;
-      if (subscription) {
-        subscription.unsubscribe();
-      }
-    };
+      return query.observe().subscribe({
+        next: onNext,
+        error: onError,
+      });
+    } catch (error) {
+      if (!isDisposed()) onError(error);
+      return undefined;
+    }
   });
 }
 

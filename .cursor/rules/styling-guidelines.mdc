@@ -6,7 +6,7 @@ alwaysApply: true
 
 ## applyTo: '**'
 
-# 🎬 React Native Reanimated Production Guidelines (4.x, Expo SDK 54)
+ # 🎬 React Native Reanimated Production Guidelines (4.x, Expo SDK 54)
 
 ---
 
@@ -142,54 +142,122 @@ return (
 
 ## 🎛️ Animation Strategy & Syntax (Cheat)
 
-**1. CSS Transitions (State-driven)**
-_Use for simple toggles (hover, focus, active). No Shared Values needed._
+**1. State-Driven Animations (Continuous/Toggle)**
+_Use `useSharedValue` + `useAnimatedStyle` with `withTiming` or `withSpring` for reactive state changes._
 
-- **Props:** `transitionProperty`, `transitionDuration`, `transitionTimingFunction`, `transitionDelay`.
+- **APIs:** `useSharedValue`, `useAnimatedStyle`, `withTiming`, `withSpring`
 
-````tsx
-<Animated.View
-  style={{
-    width: isActive ? 200 : 100, // Reactive state
-    backgroundColor: isActive ? '#ff0000' : '#0000ff',
-    transitionProperty: ['width', 'backgroundColor'],
-    transitionDuration: 300,
-  }}
-/>
+```tsx
+import { useEffect } from 'react';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withSpring,
+} from 'react-native-reanimated';
 
-**2. CSS Animations (Keyframes) Fire-and-forget loops (spinners, skeletons). No state dependency.**
+function ToggleBox({ isActive }: { isActive: boolean }) {
+  const width = useSharedValue(100);
+  const bgProgress = useSharedValue(0);
 
-- **Props:** animationName, animationDuration, animationIterationCount
-<Animated.View
-  style={{
-    animationName: {
-      from: { opacity: 0, transform: [{ scale: 0.5 }] },
-      to: { opacity: 1, transform: [{ scale: 1 }] },
-    }, // OR use 0%, 50%, 100% object syntax
-    animationDuration: '1s',
-    animationIterationCount: 'infinite',
-  }}
-/>
+  // Update shared values when state changes
+  useEffect(() => {
+    width.value = withSpring(isActive ? 200 : 100);
+    bgProgress.value = withTiming(isActive ? 1 : 0, { duration: 300 });
+  }, [isActive]);
 
-** 3.Layout Animations (Mount/Unmount) List items, conditional rendering. Always wrap with withRM.**
+  const animatedStyle = useAnimatedStyle(() => ({
+    width: width.value,
+    backgroundColor: bgProgress.value > 0.5 ? '#ff0000' : '#0000ff',
+  }));
+
+  return <Animated.View style={animatedStyle} className="h-20 rounded-lg" />;
+}
+```
+
+**2. Looping/Keyframe-Like Animations (Spinners, Skeletons)**
+_Use `withRepeat` and `withSequence` for infinite or multi-step animations. Always use `cancelAnimation` for cleanup._
+
+- **APIs:** `withRepeat`, `withSequence`, `cancelAnimation`
+
+```tsx
+import { useEffect } from 'react';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withSequence,
+  withTiming,
+  cancelAnimation,
+  Easing,
+} from 'react-native-reanimated';
+
+function PulsingDot() {
+  const scale = useSharedValue(1);
+  const opacity = useSharedValue(0.5);
+
+  useEffect(() => {
+    // Infinite loop: scale up then down
+    scale.value = withRepeat(
+      withSequence(
+        withTiming(1.2, { duration: 500, easing: Easing.inOut(Easing.ease) }),
+        withTiming(1, { duration: 500, easing: Easing.inOut(Easing.ease) })
+      ),
+      -1, // -1 = infinite
+      true // reverse
+    );
+
+    opacity.value = withRepeat(
+      withSequence(
+        withTiming(1, { duration: 500 }),
+        withTiming(0.5, { duration: 500 })
+      ),
+      -1,
+      true
+    );
+
+    // ⚠️ CRITICAL: Cancel animations on unmount to prevent memory leaks
+    return () => {
+      cancelAnimation(scale);
+      cancelAnimation(opacity);
+    };
+  }, []);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    opacity: opacity.value,
+  }));
+
+  return (
+    <Animated.View
+      style={animatedStyle}
+      className="size-4 rounded-full bg-primary-500"
+    />
+  );
+}
+```
+
+**3. Layout Animations (Mount/Unmount)** List items, conditional rendering. Always wrap with withRM.
 
 Entering/Exiting: FadeIn, ZoomOutLeft, SlideInUp.
 
 Layout: LinearTransition (simple) or CurvedTransition.
+
+```tsx
 <Animated.View
   entering={withRM(FadeInUp.springify())}
   exiting={withRM(ZoomOut.duration(200))}
   layout={LinearTransition}
 />
+```
 
-** 4.Shared Values (Interactive) Gestures, Scroll, Sensors. The "Heavy Lifting".**
+**4. Shared Values (Interactive)** Gestures, Scroll, Sensors. The "Heavy Lifting".
 
 Logic: useSharedValue + useAnimatedStyle. Keep math in worklets.
 
 Syntax: transform: [{ translateX: offset.value }].
 
 Legacy Warning: Never use useAnimatedGestureHandler (v1). Use Gesture.Pan().onUpdate(...) (v2).
-
 
 ---
 
@@ -268,7 +336,7 @@ export const motion = {
 };
 export const withRM = (anim: any) =>
   anim.reduceMotion?.(ReduceMotion.System) ?? anim;
-````
+```
 
 **Use**
 

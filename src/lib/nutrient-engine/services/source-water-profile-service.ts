@@ -9,8 +9,9 @@
  */
 
 import { Q } from '@nozbe/watermelondb';
-import { Observable } from 'rxjs';
+import { type Observable } from 'rxjs';
 
+import { createDisposableObservable } from '@/lib/utils/disposable-observable';
 import { database } from '@/lib/watermelon';
 import type { SourceWaterProfileModel } from '@/lib/watermelon-models/source-water-profile';
 
@@ -223,41 +224,23 @@ export async function listSourceWaterProfiles(
 export function observeSourceWaterProfile(
   id: string
 ): Observable<SourceWaterProfileModel> {
-  return new Observable((subscriber) => {
-    let isDisposed = false;
-    let subscription: { unsubscribe: () => void } | undefined;
-
-    const setup = async () => {
-      try {
-        const profile = await getSourceWaterProfile(id);
-        if (isDisposed) return;
-        if (!profile) {
-          subscriber.error(new Error('Source water profile not found'));
-          return;
-        }
-
-        const nextSub = profile.observe().subscribe({
-          next: (updated) => subscriber.next(updated),
-          error: (error) => subscriber.error(error),
-        });
-        if (isDisposed) {
-          nextSub.unsubscribe();
-          return;
-        }
-        subscription = nextSub;
-      } catch (error) {
-        if (!isDisposed) subscriber.error(error);
+  return createDisposableObservable(async (onNext, onError, isDisposed) => {
+    try {
+      const profile = await getSourceWaterProfile(id);
+      if (isDisposed()) return;
+      if (!profile) {
+        onError(new Error('Source water profile not found'));
+        return;
       }
-    };
 
-    void setup();
-
-    return () => {
-      isDisposed = true;
-      if (subscription) {
-        subscription.unsubscribe();
-      }
-    };
+      return profile.observe().subscribe({
+        next: onNext,
+        error: onError,
+      });
+    } catch (error) {
+      if (!isDisposed()) onError(error);
+      return undefined;
+    }
   });
 }
 
@@ -270,43 +253,24 @@ export function observeSourceWaterProfile(
 export function observeSourceWaterProfiles(
   userId?: string
 ): Observable<SourceWaterProfileModel[]> {
-  return new Observable((subscriber) => {
-    let isDisposed = false;
-    let subscription: { unsubscribe: () => void } | undefined;
+  return createDisposableObservable(async (onNext, onError, isDisposed) => {
+    try {
+      const profilesCollection = database.get<SourceWaterProfileModel>(
+        'source_water_profiles_v2'
+      );
 
-    const setup = async () => {
-      try {
-        const profilesCollection = database.get<SourceWaterProfileModel>(
-          'source_water_profiles_v2'
-        );
+      const query = userId
+        ? profilesCollection.query(Q.where('user_id', userId))
+        : profilesCollection.query();
 
-        const query = userId
-          ? profilesCollection.query(Q.where('user_id', userId))
-          : profilesCollection.query();
-
-        const nextSub = query.observe().subscribe({
-          next: (profiles: SourceWaterProfileModel[]) =>
-            subscriber.next(profiles),
-          error: (error: unknown) => subscriber.error(error),
-        });
-        if (isDisposed) {
-          nextSub.unsubscribe();
-          return;
-        }
-        subscription = nextSub;
-      } catch (error) {
-        if (!isDisposed) subscriber.error(error);
-      }
-    };
-
-    void setup();
-
-    return () => {
-      isDisposed = true;
-      if (subscription) {
-        subscription.unsubscribe();
-      }
-    };
+      return query.observe().subscribe({
+        next: onNext,
+        error: onError,
+      });
+    } catch (error) {
+      if (!isDisposed()) onError(error);
+      return undefined;
+    }
   });
 }
 

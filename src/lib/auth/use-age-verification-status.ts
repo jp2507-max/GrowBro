@@ -96,32 +96,11 @@ export function useAgeVerificationStatus(): AgeVerificationStatus {
     let mounted = true;
     let subscription: RealtimeChannel | null = null;
 
-    const syncStatus = async () => {
+    const fetchStatus = async () => {
       if (!mounted) return;
       setStatus((previous) => ({ ...previous, isLoading: true }));
 
       try {
-        const userId = await getOptionalAuthenticatedUserId();
-
-        // Setup subscription only when we have a userId
-        if (userId && !subscription) {
-          subscription = supabase
-            .channel('age_verification_changes')
-            .on(
-              'postgres_changes',
-              {
-                event: '*',
-                schema: 'public',
-                table: 'user_age_status',
-                filter: `user_id=eq.${userId}`,
-              },
-              (_payload) => {
-                syncStatus();
-              }
-            )
-            .subscribe();
-        }
-
         const nextStatus = await resolveAgeVerificationStatus();
         if (mounted) {
           setStatus(nextStatus);
@@ -138,7 +117,29 @@ export function useAgeVerificationStatus(): AgeVerificationStatus {
       }
     };
 
-    syncStatus();
+    const setupSubscription = async () => {
+      const userId = await getOptionalAuthenticatedUserId();
+      if (!mounted || !userId) return;
+
+      subscription = supabase
+        .channel(`age_verification_${userId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'user_age_status',
+            filter: `user_id=eq.${userId}`,
+          },
+          () => {
+            fetchStatus();
+          }
+        )
+        .subscribe();
+    };
+
+    fetchStatus();
+    setupSubscription();
 
     return () => {
       mounted = false;

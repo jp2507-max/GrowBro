@@ -324,16 +324,6 @@ export function HomeDashboard({
         },
         testID: 'home-quick-action-strains',
       },
-      {
-        key: 'playbook',
-        labelKey: 'home.quick_actions.open_playbook',
-        icon: '📖',
-        onPress: () => {
-          router.push('/playbooks');
-          onActivationActionComplete('open-playbook');
-        },
-        testID: 'home-quick-action-playbook',
-      },
     ],
     [onShareUpdatePress, onActivationActionComplete, router]
   );

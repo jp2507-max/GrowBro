@@ -474,7 +474,7 @@ function createRealtimeHandlers(
 function setupPollingMonitor(
   manager: RealtimeConnectionManager,
   setIsPolling: (polling: boolean) => void
-): NodeJS.Timeout {
+): ReturnType<typeof setInterval> {
   const pollingCheckInterval = setInterval(() => {
     setIsPolling(manager.isPollingActive());
   }, 1000);
@@ -518,7 +518,9 @@ function setupPollingMonitor(
 function useReconciliationTimer(
   queryClient: ReturnType<typeof useQueryClient>
 ) {
-  const reconciliationTimerRef = React.useRef<NodeJS.Timeout | null>(null);
+  const reconciliationTimerRef = React.useRef<ReturnType<
+    typeof setInterval
+  > | null>(null);
 
   const reconcile = React.useCallback(() => {
     console.log('Reconciling counters with server...');
@@ -553,7 +555,9 @@ function usePollingEffect(
   isPolling: boolean,
   queryClient: ReturnType<typeof useQueryClient>
 ) {
-  const pollingIntervalRef = React.useRef<NodeJS.Timeout | null>(null);
+  const pollingIntervalRef = React.useRef<ReturnType<
+    typeof setInterval
+  > | null>(null);
 
   React.useEffect(() => {
     if (isPolling) {

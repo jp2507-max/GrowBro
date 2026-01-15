@@ -1,6 +1,7 @@
 import { queryClient } from '@/api/common/api-provider';
 import { getOptionalAuthenticatedUserId } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
+import type { DeletedPlantRecord } from '@/lib/watermelon-models/plants-repository';
 import {
   applyRemotePlantDeletions,
   claimLocalPlantsForUser,
@@ -35,6 +36,18 @@ function getRetentionCutoffMs(): number {
 
 function getRetentionCutoffIso(): string {
   return new Date(getRetentionCutoffMs()).toISOString();
+}
+
+function getDeletionTimestampIso(
+  record: DeletedPlantRecord,
+  referenceMs: number
+): string {
+  const deletedAtMs = record.deletedAt?.getTime?.();
+  const effectiveMs =
+    typeof deletedAtMs === 'number' && !Number.isNaN(deletedAtMs)
+      ? Math.min(deletedAtMs, referenceMs)
+      : referenceMs;
+  return new Date(effectiveMs).toISOString();
 }
 
 async function invalidatePlantQueries(): Promise<void> {
@@ -107,27 +120,31 @@ async function syncDeletedPlantsToCloud(): Promise<number> {
 
   // Use UPDATE instead of UPSERT to avoid NOT NULL constraint violations
   // Only mark existing cloud records as deleted (plants never synced are skipped)
-  const plantIds = deletedPlants.map((p) => p.id);
-  const now = new Date().toISOString();
+  const now = new Date();
+  const updatedAtIso = now.toISOString();
+  const referenceMs = now.getTime();
 
-  const { error } = await supabase
-    .from('plants')
-    .update({
-      deleted_at: now,
-      updated_at: now,
-    })
-    .in('id', plantIds)
-    .eq('user_id', userId)
-    .is('deleted_at', null);
+  for (const plant of deletedPlants) {
+    const deletedAtIso = getDeletionTimestampIso(plant, referenceMs);
+    const { error } = await supabase
+      .from('plants')
+      .update({
+        deleted_at: deletedAtIso,
+        updated_at: updatedAtIso,
+      })
+      .eq('id', plant.id)
+      .eq('user_id', userId)
+      .is('deleted_at', null);
 
-  if (error) {
-    console.error('[PlantsSync] failed to batch-mark plants deleted', {
-      count: deletedPlants.length,
-      message: error.message,
-      code: error.code,
-      details: error.details,
-    });
-    throw error;
+    if (error) {
+      console.error('[PlantsSync] failed to batch-mark plants deleted', {
+        plantId: plant.id,
+        message: error.message,
+        code: error.code,
+        details: error.details,
+      });
+      throw error;
+    }
   }
 
   if (__DEV__) {

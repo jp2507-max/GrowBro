@@ -58,7 +58,6 @@ const SF_SYMBOLS = {
   home: 'house.fill',
   calendar: 'calendar',
   community: 'bubble.left.and.bubble.right.fill',
-  playbooks: 'book.fill',
   strains: 'leaf.fill',
 } as const;
 
@@ -128,11 +127,6 @@ export default function TabLayout() {
           <NativeTabs.Trigger name="community">
             <Icon sf={SF_SYMBOLS.community} />
             <Label>{translate('tabs.community')}</Label>
-          </NativeTabs.Trigger>
-
-          <NativeTabs.Trigger name="playbooks">
-            <Icon sf={SF_SYMBOLS.playbooks} />
-            <Label>{translate('tabs.playbooks')}</Label>
           </NativeTabs.Trigger>
 
           <NativeTabs.Trigger name="strains">

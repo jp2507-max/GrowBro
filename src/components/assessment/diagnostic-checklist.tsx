@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { type Href, router } from 'expo-router';
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -89,16 +89,15 @@ export function DiagnosticChecklist({
   };
 
   const handleCreateTask = (check: DiagnosticCheckItem) => {
-    // Navigate to task creation with prefilled data
-    router.push({
-      pathname: '/calendar/add-task',
-      params: {
-        plantId,
-        taskType: check.taskType || 'custom',
-        title: t(check.nameKey),
-        description: t(check.instructionsKey),
-      },
+    // Navigate to calendar with add-task action and prefilled data
+    const params = new URLSearchParams({
+      action: 'add-task',
+      plantId,
+      taskType: check.taskType || 'custom',
+      title: t(check.nameKey),
+      description: t(check.instructionsKey),
     });
+    router.push(`/calendar?${params.toString()}` as Href);
   };
 
   return (

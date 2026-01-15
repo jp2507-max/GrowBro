@@ -488,7 +488,17 @@ async function initializeAuthAndStates(): Promise<void> {
   await initAuthStorage();
   if (__DEV__) console.log('[RootLayout] after initAuthStorage');
 
-  const abortController = new AbortController();
+  const abortController =
+    typeof AbortController !== 'undefined' ? new AbortController() : null;
+  const abortSignal = abortController?.signal;
+
+  const attachAbortListener = (listener: () => void) => {
+    abortSignal?.addEventListener?.('abort', listener);
+  };
+
+  const detachAbortListener = (listener: () => void) => {
+    abortSignal?.removeEventListener?.('abort', listener);
+  };
 
   // Cleanup helper - clears auth state if not already signed in
   const executeCleanup = async (reason: string): Promise<void> => {
@@ -510,7 +520,7 @@ async function initializeAuthAndStates(): Promise<void> {
       console.error('[RootLayout] hydrateAuth error', error);
       await executeCleanup('hydrateAuth failed');
     } finally {
-      abortController.abort();
+      abortController?.abort();
     }
   })();
 
@@ -519,7 +529,7 @@ async function initializeAuthAndStates(): Promise<void> {
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
     const onAbort = () => {
-      abortController.signal.removeEventListener('abort', onAbort);
+      detachAbortListener(onAbort);
       if (timeoutId !== null) {
         clearTimeout(timeoutId);
         timeoutId = null;
@@ -528,13 +538,13 @@ async function initializeAuthAndStates(): Promise<void> {
     };
 
     // Cancel timeout if hydration completes first
-    abortController.signal.addEventListener('abort', onAbort);
+    attachAbortListener(onAbort);
 
     timeoutId = setTimeout(async () => {
       // No longer needed once the timeout fires
-      abortController.signal.removeEventListener('abort', onAbort);
+      detachAbortListener(onAbort);
 
-      if (abortController.signal.aborted) {
+      if (abortSignal?.aborted) {
         resolve();
         return;
       }

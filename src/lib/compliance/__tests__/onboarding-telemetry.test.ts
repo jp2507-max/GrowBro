@@ -327,12 +327,12 @@ describe('Onboarding Telemetry', () => {
       });
     });
 
-    it('should track open-playbook action', () => {
-      trackActivationAction('open-playbook', true);
+    it('should track try-ai-diagnosis action', () => {
+      trackActivationAction('try-ai-diagnosis', true);
 
       const events = metrics.getAll();
       expect(events[0]?.payload).toMatchObject({
-        action: 'open-playbook',
+        action: 'try-ai-diagnosis',
         completed: true,
         context: undefined,
       });

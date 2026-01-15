@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { type Href, useRouter } from 'expo-router';
 import React from 'react';
 
 import { LoginForm } from '@/components/auth/login-form';
@@ -14,7 +14,7 @@ export default function Login() {
     if (authStatus === 'signIn') {
       const pendingPath = consumePendingDeepLink();
       if (pendingPath) {
-        router.replace(pendingPath);
+        router.replace(pendingPath as Href);
         return;
       }
       router.replace('/');

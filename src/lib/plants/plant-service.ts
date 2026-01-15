@@ -21,6 +21,7 @@ import type { SeriesModel } from '@/lib/watermelon-models/series';
 import type { TaskModel } from '@/lib/watermelon-models/task';
 
 import { createTaskEngine } from '../growbro-task-engine';
+import { maybeAutoApplyPlaybook } from './playbook-auto-apply';
 
 type PlantUpsertInput = CreatePlantVariables;
 
@@ -197,6 +198,17 @@ export async function createPlantFromForm(
   engine.ensureSchedulesForPlant(toPlant(record)).catch((error) => {
     console.warn(
       '[PlantService] Failed to create task schedules for new plant:',
+      error
+    );
+  });
+
+  // Non-blocking: Auto-apply matching playbook template for guided tasks
+  maybeAutoApplyPlaybook(id, {
+    photoperiodType: input.photoperiodType,
+    environment: input.environment,
+  }).catch((error) => {
+    console.warn(
+      '[PlantService] Failed to auto-apply playbook for new plant:',
       error
     );
   });

@@ -8,13 +8,13 @@ import { useColorScheme } from 'nativewind';
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import Animated, {
-  // @ts-expect-error - Reanimated 4.1.2: cancelAnimation type export missing
+  // @ts-ignore - Reanimated 4.x type exports issue
   cancelAnimation,
   Easing,
   ReduceMotion,
   useAnimatedStyle,
   useSharedValue,
-  // @ts-expect-error - Reanimated 4.1.2: withDelay type export missing
+  // @ts-ignore - Reanimated 4.x type exports issue
   withDelay,
   withRepeat,
   withTiming,

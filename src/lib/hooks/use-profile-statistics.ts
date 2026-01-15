@@ -13,7 +13,6 @@ import { Q } from '@nozbe/watermelondb';
 import { useDatabase } from '@nozbe/watermelondb/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import type { PostModel } from '@/lib/watermelon-models/post';
 import type { ProfileStatistics } from '@/types/settings';
 
 const THROTTLE_MS = 250;
@@ -22,17 +21,24 @@ async function queryUserCounts(
   database: Database,
   userId: string
 ): Promise<Pick<ProfileStatistics, 'plantsCount' | 'harvestsCount'>> {
-  const plantsCollection = database.collections.get('plants');
-  const plants = await plantsCollection
-    .query(Q.where('user_id', userId))
-    .fetchCount();
+  let plantsCount = 0;
+  let harvestsCount = 0;
 
-  const harvestsCollection = database.collections.get('harvests');
-  const harvests = await harvestsCollection
-    .query(Q.where('user_id', userId))
-    .fetchCount();
+  try {
+    const plantsCollection = database.collections.get('plants');
+    plantsCount = await plantsCollection
+      .query(Q.where('user_id', userId))
+      .fetchCount();
 
-  return { plantsCount: plants, harvestsCount: harvests };
+    const harvestsCollection = database.collections.get('harvests');
+    harvestsCount = await harvestsCollection
+      .query(Q.where('user_id', userId))
+      .fetchCount();
+  } catch {
+    // Table doesn't exist yet, keep defaults at 0
+  }
+
+  return { plantsCount, harvestsCount };
 }
 
 async function queryPostsAndLikes(
@@ -44,17 +50,21 @@ async function queryPostsAndLikes(
 
   try {
     const postsCollection = database.collections.get('posts');
-    postsCount = await postsCollection
-      .query(Q.where('user_id', userId))
-      .fetchCount();
+    const userPostIds = await postsCollection
+      .query(
+        Q.where('user_id', userId),
+        Q.where('deleted_at', null),
+        Q.where('hidden_at', null)
+      )
+      .fetchIds();
 
-    const userPosts = await postsCollection
-      .query(Q.where('user_id', userId))
-      .fetch();
+    postsCount = userPostIds.length;
 
-    for (const post of userPosts) {
-      const postLikesCount = await (post as PostModel).likes.fetchCount();
-      likesReceived += postLikesCount;
+    if (postsCount > 0) {
+      const postLikesCollection = database.collections.get('post_likes');
+      likesReceived = await postLikesCollection
+        .query(Q.where('post_id', Q.oneOf(userPostIds)))
+        .fetchCount();
     }
   } catch {
     // Table doesn't exist yet, keep defaults at 0
@@ -168,7 +178,7 @@ export function useProfileStatistics(
       // Observe plants changes
       const plantsCollection = database.collections.get('plants');
       const plantsSubscription = plantsCollection
-        .query()
+        .query(Q.where('user_id', userId))
         .observe()
         .subscribe(() => {
           void fetchStatistics();
@@ -182,7 +192,7 @@ export function useProfileStatistics(
       // Observe harvests changes
       const harvestsCollection = database.collections.get('harvests');
       const harvestsSubscription = harvestsCollection
-        .query()
+        .query(Q.where('user_id', userId))
         .observe()
         .subscribe(() => {
           void fetchStatistics();

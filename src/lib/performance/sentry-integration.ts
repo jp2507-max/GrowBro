@@ -124,7 +124,7 @@ function createFinishPromise(): {
   cleanup: () => void;
 } {
   let resolveFinish: (() => void) | null = null;
-  let timeoutId: NodeJS.Timeout | null = null;
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
   const finishPromise = new Promise<void>((resolve) => {
     resolveFinish = resolve;

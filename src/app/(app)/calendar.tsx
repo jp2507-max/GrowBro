@@ -43,7 +43,7 @@ function debounce<T extends (...args: unknown[]) => unknown>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => Promise<ReturnType<T>> {
-  let timeout: NodeJS.Timeout;
+  let timeout: ReturnType<typeof setTimeout>;
   return (...args: Parameters<T>) => {
     return new Promise<ReturnType<T>>((resolve, reject) => {
       clearTimeout(timeout);

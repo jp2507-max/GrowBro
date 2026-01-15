@@ -8,8 +8,9 @@
  */
 
 import { Q } from '@nozbe/watermelondb';
-import { Observable } from 'rxjs';
+import { type Observable } from 'rxjs';
 
+import { createDisposableObservable } from '@/lib/utils/disposable-observable';
 import { database } from '@/lib/watermelon';
 import type { ReservoirEventModel } from '@/lib/watermelon-models/reservoir-event';
 
@@ -261,43 +262,25 @@ export function observeReservoirEvents(
   reservoirId: string,
   limit: number = 100
 ): Observable<ReservoirEventModel[]> {
-  return new Observable((subscriber) => {
-    let isDisposed = false;
-    let subscription: { unsubscribe: () => void } | undefined;
+  return createDisposableObservable(async (onNext, onError, isDisposed) => {
+    try {
+      const eventsCollection =
+        database.get<ReservoirEventModel>('reservoir_events');
 
-    const setup = async () => {
-      try {
-        const eventsCollection =
-          database.get<ReservoirEventModel>('reservoir_events');
+      const query = eventsCollection.query(
+        Q.where('reservoir_id', reservoirId),
+        Q.sortBy('created_at', Q.desc),
+        Q.take(limit)
+      );
 
-        const query = eventsCollection.query(
-          Q.where('reservoir_id', reservoirId),
-          Q.sortBy('created_at', Q.desc),
-          Q.take(limit)
-        );
-
-        const nextSub = query.observe().subscribe({
-          next: (events: ReservoirEventModel[]) => subscriber.next(events),
-          error: (error: unknown) => subscriber.error(error),
-        });
-        if (isDisposed) {
-          nextSub.unsubscribe();
-          return;
-        }
-        subscription = nextSub;
-      } catch (error) {
-        if (!isDisposed) subscriber.error(error);
-      }
-    };
-
-    void setup();
-
-    return () => {
-      isDisposed = true;
-      if (subscription) {
-        subscription.unsubscribe();
-      }
-    };
+      return query.observe().subscribe({
+        next: onNext,
+        error: onError,
+      });
+    } catch (error) {
+      if (!isDisposed()) onError(error);
+      return undefined;
+    }
   });
 }
 
@@ -310,49 +293,30 @@ export function observeReservoirEvents(
 export function observeRecentEvents(
   reservoirId: string
 ): Observable<ReservoirEventModel[]> {
-  return new Observable((subscriber) => {
-    let isDisposed = false;
-    let subscription: { unsubscribe: () => void } | undefined;
+  return createDisposableObservable(async (onNext, onError, isDisposed) => {
+    try {
+      const eventsCollection =
+        database.get<ReservoirEventModel>('reservoir_events');
 
-    const setup = async () => {
-      try {
-        const eventsCollection =
-          database.get<ReservoirEventModel>('reservoir_events');
+      const query = eventsCollection.query(
+        Q.where('reservoir_id', reservoirId),
+        Q.sortBy('created_at', Q.desc)
+      );
 
-        const query = eventsCollection.query(
-          Q.where('reservoir_id', reservoirId),
-          Q.sortBy('created_at', Q.desc)
-        );
-
-        const nextSub = query.observe().subscribe({
-          next: (events: ReservoirEventModel[]) => {
-            const cutoff = Date.now() - UNDO_WINDOW_MS;
-            const recentEvents = events.filter(
-              (event: ReservoirEventModel) =>
-                event.createdAt.getTime() >= cutoff
-            );
-            subscriber.next(recentEvents);
-          },
-          error: (error: unknown) => subscriber.error(error),
-        });
-        if (isDisposed) {
-          nextSub.unsubscribe();
-          return;
-        }
-        subscription = nextSub;
-      } catch (error) {
-        if (!isDisposed) subscriber.error(error);
-      }
-    };
-
-    void setup();
-
-    return () => {
-      isDisposed = true;
-      if (subscription) {
-        subscription.unsubscribe();
-      }
-    };
+      return query.observe().subscribe({
+        next: (events: ReservoirEventModel[]) => {
+          const cutoff = Date.now() - UNDO_WINDOW_MS;
+          const recentEvents = events.filter(
+            (event: ReservoirEventModel) => event.createdAt.getTime() >= cutoff
+          );
+          onNext(recentEvents);
+        },
+        error: onError,
+      });
+    } catch (error) {
+      if (!isDisposed()) onError(error);
+      return undefined;
+    }
   });
 }
 

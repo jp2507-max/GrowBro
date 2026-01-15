@@ -5,6 +5,7 @@ import { translate } from '@/lib';
 import { getItem } from '@/lib/storage';
 import { useSyncState } from '@/lib/sync/sync-state';
 import { getPendingChangesCount } from '@/lib/sync-engine';
+import { cn } from '@/lib/utils';
 
 type Props = {
   className?: string;
@@ -74,7 +75,7 @@ export function SyncStatus({
 
   return (
     <View
-      className={`flex-row items-center gap-2 px-3 py-2 ${className ?? ''}`}
+      className={cn('flex-row items-center gap-2 px-3 py-2', className)}
       testID={testID}
     >
       {syncInFlight ? <ActivityIndicator /> : null}

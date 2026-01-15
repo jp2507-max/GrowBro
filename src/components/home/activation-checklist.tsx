@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { type Href, useRouter } from 'expo-router';
 import React from 'react';
 import Animated, {
   FadeIn,
@@ -31,11 +31,6 @@ const ACTION_CONFIGS: ActionConfig[] = [
     action: 'create-task',
     icon: '✓',
     route: '/calendar',
-  },
-  {
-    action: 'open-playbook',
-    icon: '📖',
-    route: '/playbooks',
   },
   {
     action: 'try-ai-diagnosis',
@@ -150,7 +145,7 @@ export function ActivationChecklist({
       if (!config) return;
 
       // Navigate to the action's route
-      router.push(config.route);
+      router.push(config.route as Href);
 
       // Notify parent if callback provided
       onActionComplete?.(action);

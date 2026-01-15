@@ -142,7 +142,10 @@ function useSearchHistory(onChangeText: (text: string) => void) {
 
   const handleBlur = React.useCallback(() => {
     if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
-    blurTimeoutRef.current = setTimeout(() => setShowHistory(false), 150);
+    blurTimeoutRef.current = setTimeout(() => {
+      setShowHistory(false);
+      blurTimeoutRef.current = null;
+    }, 150);
   }, []);
 
   const handleHistorySelect = React.useCallback(

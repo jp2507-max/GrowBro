@@ -207,5 +207,6 @@ export interface AnalyticsConfig {
   batchSize: number;
   flushIntervalMs: number;
   persistEvents: boolean;
+  /** Maximum number of events to keep in the queue before truncating oldest entries. Defaults to 1000. */
   maxQueueSize?: number;
 }

@@ -132,8 +132,8 @@ export default function Feed() {
   );
 
   const isLoading = isPlantsLoading;
-  const hasPlantsError = isPlantsError && !isLoading && plants.length > 0;
-  const isEmpty = !isLoading && plants.length === 0;
+  const hasPlantsError = isPlantsError && !isLoading;
+  const isEmpty = !isLoading && plants.length === 0 && !isPlantsError;
 
   // Single attention query - passed to all plant cards
   const plantIds = React.useMemo(

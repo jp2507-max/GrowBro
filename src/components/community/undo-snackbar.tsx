@@ -38,7 +38,7 @@ export function UndoSnackbar({
   testID = 'undo-snackbar',
 }: UndoSnackbarProps): React.ReactElement | null {
   const [remainingSeconds, setRemainingSeconds] = React.useState(0);
-  const intervalRef = React.useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = React.useRef<ReturnType<typeof setInterval> | null>(null);
 
   React.useEffect(() => {
     if (!visible) return;

@@ -11,7 +11,6 @@ import Animated, {
   ReduceMotion,
   useAnimatedStyle,
   useSharedValue,
-  // @ts-expect-error - Reanimated 4.1.2: withDelay type export missing
   withDelay,
   withRepeat,
   withSequence,

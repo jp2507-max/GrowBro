@@ -42,7 +42,7 @@ const DEFAULT_CLEANUP_CONFIG: BackgroundCleanupConfig = {
  * Background cleanup job manager
  */
 class BackgroundPhotoCleanup {
-  private intervalId: NodeJS.Timeout | null = null;
+  private intervalId: ReturnType<typeof setInterval> | null = null;
   private appStateSubscription: ReturnType<
     typeof AppState.addEventListener
   > | null = null;

@@ -26,7 +26,7 @@ class AnalyticsService {
 
   private storage: MMKV;
   private eventQueue: AnalyticsEvent[] = [];
-  private flushTimer?: NodeJS.Timeout;
+  private flushTimer?: ReturnType<typeof setInterval>;
   private sessionId: string;
 
   constructor() {

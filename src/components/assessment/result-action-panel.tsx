@@ -12,7 +12,7 @@
  * - 4.3: Enable community post creation from assessments
  */
 
-import { useRouter } from 'expo-router';
+import { type Href, useRouter } from 'expo-router';
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -41,10 +41,7 @@ export function ResultActionPanel({
 
   const handleViewHistory = React.useCallback(() => {
     // Navigate to plant profile with assessment history
-    router.push({
-      pathname: `/plants/${plantId}`,
-      params: { showAssessments: 'true' },
-    });
+    router.push(`/plants/${plantId}?showAssessments=true` as Href);
   }, [router, plantId]);
 
   const hasActionPlan =

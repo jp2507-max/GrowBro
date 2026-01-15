@@ -148,7 +148,7 @@ function useCommunityData(params: CommunityQueryParams) {
 
 function useSkeletonVisibility(isLoading: boolean, postsLength: number) {
   const [isVisible, setVisible] = React.useState(false);
-  const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   React.useEffect(() => {
     const isInitial = isLoading && postsLength === 0;
@@ -620,7 +620,7 @@ export default function CommunityScreen(): React.ReactElement {
                 keyExtractor={(item: Post) => String(item.id)}
                 onEndReached={onEndReached}
                 onEndReachedThreshold={0.4}
-                // @ts-expect-error - Reanimated scroll handler type is incompatible with FlashList onScroll
+                // AnimatedFlashList ref type mismatch with FlashListRef
                 onScroll={scrollHandler}
                 scrollEventThrottle={flashListConfig.scrollEventThrottle}
                 removeClippedSubviews={flashListConfig.removeClippedSubviews}

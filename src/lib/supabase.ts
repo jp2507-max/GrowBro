@@ -126,7 +126,14 @@ if (!isTestEnvironment) {
   // Ensure a single AppState listener even across Fast Refresh in development.
   try {
     globalWithSupabaseAppState.__gbSupabaseAppStateSubscription?.remove?.();
-  } catch {}
+  } catch (e) {
+    if (__DEV__) {
+      console.warn(
+        '[Supabase] failed to remove previous AppState subscription',
+        e
+      );
+    }
+  }
 
   globalWithSupabaseAppState.__gbSupabaseAppStateSubscription =
     AppState.addEventListener('change', (state) => {

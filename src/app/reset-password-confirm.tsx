@@ -41,7 +41,7 @@ type FormData = z.infer<typeof schema>;
 export default function ResetPasswordConfirm() {
   const { t } = useTranslation();
   const router = useRouter();
-  useLocalSearchParams<{ token_hash?: string }>();
+  const { token_hash } = useLocalSearchParams<{ token_hash?: string }>();
   const navTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(
     null
   );
@@ -74,6 +74,7 @@ export default function ResetPasswordConfirm() {
 
   const onSubmit: SubmitHandler<FormData> = (data) => {
     confirmMutation.mutate({
+      tokenHash: token_hash,
       newPassword: data.password,
     });
   };

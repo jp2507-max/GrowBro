@@ -24,13 +24,21 @@ import type {
 } from '@/types/database-records';
 
 const USER_AGE_STATUS_CACHE_TTL_MS = 2 * 60 * 1000;
+const MAX_CACHE_SIZE = 1000; // Bound cache growth for multi-user scenarios
+const TRANSIENT_ERROR_CACHE_TTL_MS = 30 * 1000; // Brief cache for DB errors
 
 type UserAgeStatusCacheEntry = {
   value: UserAgeStatus | null;
   expiresAt: number;
 };
 
+type TransientErrorCacheEntry = {
+  error: Error;
+  expiresAt: number;
+};
+
 const userAgeStatusCache = new Map<string, UserAgeStatusCacheEntry>();
+const transientErrorCache = new Map<string, TransientErrorCacheEntry>();
 let appStateSubscription: ReturnType<typeof AppState.addEventListener> | null =
   null;
 let lastAppState: AppStateStatus = AppState.currentState;
@@ -52,6 +60,19 @@ function ensureAppStateListener(): void {
     'change',
     handleAppStateChange
   );
+}
+
+/**
+ * Cleanup method for tests to prevent listener accumulation
+ * Should be called in test teardown
+ */
+export function cleanupAppStateListener(): void {
+  if (appStateSubscription) {
+    appStateSubscription.remove();
+    appStateSubscription = null;
+  }
+  userAgeStatusCache.clear();
+  transientErrorCache.clear();
 }
 
 export class ContentAgeGatingEngine {
@@ -332,7 +353,7 @@ export class ContentAgeGatingEngine {
    * @param userId - User UUID
    */
   async applySaferDefaults(userId: string): Promise<void> {
-    await this.supabase.from('user_age_status').upsert({
+    const { error } = await this.supabase.from('user_age_status').upsert({
       user_id: userId,
       is_age_verified: false,
       is_minor: true,
@@ -342,6 +363,11 @@ export class ContentAgeGatingEngine {
       DbUserAgeStatus,
       'verified_at' | 'active_token_id' | 'created_at' | 'updated_at'
     >);
+
+    if (error) {
+      throw new Error(`Failed to apply safer defaults: ${error.message}`);
+    }
+
     this.clearCachedUserAgeStatus(userId);
   }
 
@@ -367,6 +393,14 @@ export class ContentAgeGatingEngine {
     userId: string,
     status: UserAgeStatus | null
   ): void {
+    // Bound cache growth - remove oldest entries if at max capacity
+    if (userAgeStatusCache.size >= MAX_CACHE_SIZE) {
+      const oldestKey = userAgeStatusCache.keys().next().value;
+      if (oldestKey) {
+        userAgeStatusCache.delete(oldestKey);
+      }
+    }
+
     userAgeStatusCache.set(userId, {
       value: status,
       expiresAt: Date.now() + USER_AGE_STATUS_CACHE_TTL_MS,
@@ -379,6 +413,7 @@ export class ContentAgeGatingEngine {
 
   /**
    * Get content restriction from database
+   * Assumes (content_id, content_type) is unique at DB level
    */
   private async getContentRestriction(
     contentId: string,
@@ -389,7 +424,7 @@ export class ContentAgeGatingEngine {
       .select('*')
       .eq('content_id', contentId)
       .eq('content_type', contentType)
-      .limit(1);
+      .limit(1); // Safe due to unique constraint on (content_id, content_type)
 
     const restriction = (data as DbContentRestriction[] | null)?.[0];
 
@@ -402,6 +437,7 @@ export class ContentAgeGatingEngine {
 
   /**
    * Get user age status from database
+   * Caches null on "no row" and transient DB errors briefly
    */
   private async getUserAgeStatus(
     userId: string
@@ -413,6 +449,12 @@ export class ContentAgeGatingEngine {
       return cachedStatus;
     }
 
+    // Check for cached transient errors
+    const cachedError = transientErrorCache.get(userId);
+    if (cachedError && cachedError.expiresAt > Date.now()) {
+      return null; // Return null as if no data found
+    }
+
     const { data, error } = await this.supabase
       .from('user_age_status')
       .select('*')
@@ -420,8 +462,16 @@ export class ContentAgeGatingEngine {
       .limit(1);
 
     if (error) {
+      // Cache transient DB errors briefly to avoid hot-looping
+      transientErrorCache.set(userId, {
+        error,
+        expiresAt: Date.now() + TRANSIENT_ERROR_CACHE_TTL_MS,
+      });
       return null;
     }
+
+    // Clear any cached errors on successful query
+    transientErrorCache.delete(userId);
 
     const statusData = (data as DbUserAgeStatus[] | null)?.[0];
 

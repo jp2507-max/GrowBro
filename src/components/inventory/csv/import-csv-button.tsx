@@ -1,15 +1,6 @@
-/**
- * CSV Import Button Component
- *
- * Handles CSV file selection, validation, and import with dry-run preview.
- * Implements RFC 4180 parsing and idempotent upserts by external_key.
- *
- * Requirements: 5.2, 5.3, 5.4
- */
-
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
-import { router } from 'expo-router';
+import { type Href, router } from 'expo-router';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { showMessage } from 'react-native-flash-message';
@@ -74,13 +65,11 @@ export function ImportCSVButton({
       const preview = await previewCSVImport(files);
 
       // Navigate to preview screen with preview data
-      router.push({
-        pathname: '/(app)/inventory/csv-import-preview',
-        params: {
-          fileName: asset.name,
-          previewData: JSON.stringify(preview),
-        },
+      const params = new URLSearchParams({
+        fileName: asset.name,
+        previewData: JSON.stringify(preview),
       });
+      router.push(`/inventory/csv-import-preview?${params.toString()}` as Href);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';

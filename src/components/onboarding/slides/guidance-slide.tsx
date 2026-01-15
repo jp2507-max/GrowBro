@@ -22,7 +22,7 @@ import Animated, {
 
 import { Text, View } from '@/components/ui';
 import colors from '@/components/ui/colors';
-import { Check, Lightbulb, Sprout } from '@/components/ui/icons';
+import { Calendar, Check, Lightbulb } from '@/components/ui/icons';
 import { translate } from '@/lib/i18n';
 
 import { AnimatedLottieHero } from '../animated-lottie-hero';
@@ -119,14 +119,14 @@ export function GuidanceSlide({
           <FeaturePillRow>
             <FeaturePill
               icon={
-                <Sprout
+                <Calendar
                   size={18}
                   color={isDark ? colors.primary[300] : colors.primary[700]}
                 />
               }
-              labelKey="onboarding.guidance.feature_playbooks_title"
+              labelKey="onboarding.guidance.feature_schedule_title"
               index={0}
-              testID="pill-playbooks"
+              testID="pill-schedule"
             />
             <FeaturePill
               icon={
