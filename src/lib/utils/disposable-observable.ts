@@ -18,7 +18,9 @@ export function createDisposableObservable<T>(
     let subscription: { unsubscribe: () => void } | undefined;
 
     void subscribe(
-      (value) => subscriber.next(value),
+      (value) => {
+        if (!isDisposed) subscriber.next(value);
+      },
       (error) => {
         if (!isDisposed) subscriber.error(error);
       },

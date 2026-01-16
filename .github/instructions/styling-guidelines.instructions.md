@@ -117,6 +117,7 @@ import Animated, {
   interpolateColor,
   ReduceMotion,
 } from 'react-native-reanimated';
+import { motion } from '@/lib/animations/motion';
 
 function ToggleBox({ isActive }: { isActive: boolean }) {
   const width = useSharedValue(100);
@@ -242,11 +243,13 @@ import Animated, {
 
 function DraggableBox() {
   const offsetX = useSharedValue(0);
+  const offsetY = useSharedValue(0);
   const gesture = Gesture.Pan().onUpdate((e) => {
     offsetX.value = e.translationX;
+    offsetY.value = e.translationY;
   });
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: offsetX.value }],
+    transform: [{ translateX: offsetX.value }, { translateY: offsetY.value }],
   }));
   return (
     <GestureDetector gesture={gesture}>

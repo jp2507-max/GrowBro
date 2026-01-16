@@ -82,11 +82,21 @@ export default function ResetPasswordConfirm() {
 
   if (!token_hash) {
     return (
-      <View className="flex-1 items-center justify-center p-4">
-        <Text className="text-center text-red-500">
+      <View
+        className="flex-1 items-center justify-center p-4"
+        testID="reset-invalid-container"
+      >
+        <Text
+          className="text-center text-red-500"
+          testID="reset-invalid-message"
+        >
           {t('auth.invalid_reset_link')}
         </Text>
-        <Button label={t('common.go_back')} onPress={() => router.back()} />
+        <Button
+          testID="reset-invalid-go-back"
+          label={t('common.go_back')}
+          onPress={() => router.back()}
+        />
       </View>
     );
   }

@@ -41,6 +41,7 @@ class AnalyticsService {
    */
   configure(config: Partial<AnalyticsConfig>): void {
     this.config = { ...this.config, ...config };
+    this.trimToQueueCap();
     if (this.config.debug) {
       console.log('[Analytics] Configured:', this.config);
     }
@@ -196,7 +197,10 @@ class AnalyticsService {
   }
 
   private trimToQueueCap(): void {
-    const maxQueueSize = this.config.maxQueueSize ?? 1000;
+    const maxQueueSize = Math.max(
+      0,
+      Math.floor(this.config.maxQueueSize ?? 1000)
+    );
     if (this.eventQueue.length > maxQueueSize) {
       this.eventQueue.splice(0, this.eventQueue.length - maxQueueSize);
     }

@@ -9,6 +9,7 @@ trigger: always_on
 - Keep `className` **stable**. Static styles in `className`, animated/gesture styles via Reanimated `style`.
 - Always write explicit Light/Dark pairs: `bg-white dark:bg-charcoal-900`. **No CSS vars**.
 - Never toggle Tailwind classes per frame; derive animation values in worklets.
+- Always respect Reduced Motion: detect `prefers-reduced-motion` and disable or simplify non-essential animations/gestures, use `ReduceMotion.System` in Reanimated worklets/animated styles, and verify smooth transitions with the Expo Dev Menu FPS monitor so components honoring `className`/animated style stay accessible.
 - Class order: layout → flex → spacing → size → border → bg → text → effects → dark.
 - Custom components must forward/merge `className` via `cn` (tailwind-merge).
 
@@ -61,3 +62,14 @@ function Card({ className, ...props }: { className?: string }) {
 **Do**: Use explicit Light/Dark pairs; keep `className` stable; use Tailwind for static styles; forward `className` via `cn`.
 
 **Avoid**: Per-frame class churn; semantic background tokens; CSS variables; hard-coded colors.
+
+---
+
+## Animation & Motion Guidance
+
+- Tailwind remains for **static layouts**; drive motion with Reanimated styles (`style={animatedStyle}`) so the fluent UI runtime handles transforms/opacity. Keep `className` stable and inject dynamic values through `useAnimatedStyle`, `Animated.View`, or gesture worklets.
+- Prefer the shared motion tokens in `src/lib/animations/motion.ts` (`motion.dur`, `motion.ease`, `withRM`) when configuring timing/spring values so duration semantics (xs/sm/md/lg) and reduced-motion handling stay consistent.
+- Use layout animation builders (`withRM`, `FadeIn`, `LinearTransition`, etc.) for mount/unmount changes and always cancel long-lived animations (`cancelAnimation(sharedValue)`) during cleanup effects.
+- When composing shared transitions, use `sharedTransitionTag` prefixes scoped by feature (e.g., `feed.post.image`, `settings.avatar`) so hooks remain discoverable across screens.
+- State-driven animations should leverage `useSharedValue`, `useAnimatedStyle`, and helpers such as `interpolateColor` to interpolate between definitions instead of toggling classes; keep per-frame math inside worklets and only run `runOnJS` for side effects (haptics, analytics, logging).
+- For gesture/motion guidance and primitives, see `src/lib/animations/README.md` and `src/lib/animations/shared.ts` (searchable via the main animation docs referenced in toolchain). Alternatively, cross-reference existing animation documentation in the repo when rebasing or updating instructions.

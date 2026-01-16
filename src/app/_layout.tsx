@@ -519,7 +519,7 @@ async function initializeAuthAndStates(): Promise<void> {
       console.error('[RootLayout] hydrateAuth error', error);
       await executeCleanup('hydrateAuth failed');
     } finally {
-      abortController?.abort();
+      abortController.abort();
     }
   })();
 
@@ -542,7 +542,7 @@ async function initializeAuthAndStates(): Promise<void> {
     timeoutId = setTimeout(async () => {
       // No longer needed once the timeout fires
       detachAbortListener(onAbort);
-      if (abortSignal?.aborted) {
+      if (abortSignal.aborted) {
         resolve();
         return;
       }

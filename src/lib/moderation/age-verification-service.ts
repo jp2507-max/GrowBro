@@ -7,47 +7,50 @@
  * Requirements:
  * - 8.1: Privacy-preserving age-attribute (≥18) compatible with EU blueprint/EUDI wallet
  * - 8.6: Fallback verification on suspicious signals, avoid device fingerprinting without consent
+ *
+ * This service orchestrates:
+ * - AgeTokenService — token issuance, validation, revocation
+ * - AgeGatingService — content access checks
+ * - AgeAuditService — audit event logging
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
-import * as Crypto from 'expo-crypto';
 
 import type {
-  AgeVerificationAuditEvent,
   CheckAgeGatingInput,
   DetectSuspiciousActivityInput,
-  IssueVerificationTokenInput,
   ReusableToken,
   TokenValidationResult,
   UserAgeStatus,
   VerificationToken,
   VerifyAgeAttributeInput,
 } from '@/types/age-verification';
-import {
-  AGE_VERIFICATION_CONSTANTS,
-  calculateExpiryDate,
-  isTokenUsable,
-} from '@/types/age-verification';
-import type { DbTokenRecord, DbUserAgeStatus } from '@/types/database-records';
+import { AGE_VERIFICATION_CONSTANTS } from '@/types/age-verification';
+import type { DbUserAgeStatus } from '@/types/database-records';
 
-// DbUserStatusRecord is now imported as DbUserAgeStatus from database-records
-
-type DbContentRestrictionRecord = {
-  content_id: string;
-  content_type: string;
-  is_age_restricted: boolean;
-};
+import { AgeAuditService } from './age-audit-service';
+import type { AgeGatingResult } from './age-gating-service';
+import { AgeGatingService } from './age-gating-service';
+import { AgeTokenService } from './age-token-service';
 
 export class AgeVerificationService {
   private supabase: SupabaseClient;
-  private tokenSecret: string;
+  private tokenService: AgeTokenService;
+  private gatingService: AgeGatingService;
+  private auditService: AgeAuditService;
 
   constructor(
     supabase: SupabaseClient,
     tokenSecret: string = process.env.AGE_TOKEN_SECRET || 'default-secret'
   ) {
     this.supabase = supabase;
-    this.tokenSecret = tokenSecret;
+    this.auditService = new AgeAuditService(supabase);
+    this.tokenService = new AgeTokenService(
+      supabase,
+      this.auditService,
+      tokenSecret
+    );
+    this.gatingService = new AgeGatingService(supabase, this.auditService);
   }
 
   /**
@@ -64,7 +67,7 @@ export class AgeVerificationService {
 
     // Validate age attribute
     if (!ageAttribute.over18) {
-      await this.logAuditEvent({
+      await this.auditService.logTokenEvent({
         eventType: 'verification_failure',
         userId,
         verificationMethod: ageAttribute.verificationMethod,
@@ -72,25 +75,23 @@ export class AgeVerificationService {
         failureReason: 'under_age',
         ipAddress: ipAddress || null,
         userAgent: userAgent || null,
-        legalBasis: 'GDPR Art. 6(1)(c) - Legal obligation (DSA Art. 28)',
       });
 
       throw new Error('User is under 18. Age verification failed.');
     }
 
     // Log successful verification attempt
-    await this.logAuditEvent({
+    await this.auditService.logTokenEvent({
       eventType: 'verification_success',
       userId,
       verificationMethod: ageAttribute.verificationMethod,
       result: 'success',
       ipAddress: ipAddress || null,
       userAgent: userAgent || null,
-      legalBasis: 'GDPR Art. 6(1)(c) - Legal obligation (DSA Art. 28)',
     });
 
     // Issue verification token
-    const token = await this.issueVerificationToken({
+    const token = await this.tokenService.issueVerificationToken({
       userId,
       verificationMethod: ageAttribute.verificationMethod,
       verificationProvider: ageAttribute.verificationProvider,
@@ -103,211 +104,6 @@ export class AgeVerificationService {
     await this.updateUserAgeStatus(userId, true, token.id);
 
     return token;
-  }
-
-  /**
-   * Issue a new verification token
-   * Implements privacy-preserving token generation with HMAC-SHA256
-   *
-   * @param input - Token issuance parameters
-   * @returns Reusable verification token
-   */
-  async issueVerificationToken(
-    input: IssueVerificationTokenInput
-  ): Promise<ReusableToken> {
-    const {
-      userId,
-      verificationMethod,
-      verificationProvider,
-      assuranceLevel,
-      maxUses = AGE_VERIFICATION_CONSTANTS.MAX_TOKEN_USES,
-      expiryDays = AGE_VERIFICATION_CONSTANTS.DEFAULT_TOKEN_EXPIRY_DAYS,
-    } = input;
-
-    // Generate token hash (privacy-preserving, no plaintext storage)
-    const randomValue = await Crypto.getRandomBytesAsync(16);
-    const randomHex = Array.from(randomValue)
-      .map((b) => b.toString(16).padStart(2, '0'))
-      .join('');
-    const tokenString = `${userId}-${Date.now()}-${randomHex}`;
-    const tokenHash = await this.generateTokenHash(tokenString);
-
-    const expiresAt = calculateExpiryDate(expiryDays);
-
-    // Insert token into database
-    const { data: token, error } = await this.supabase
-      .from('age_verification_tokens')
-      .insert({
-        user_id: userId,
-        verification_method: verificationMethod,
-        verification_provider: verificationProvider || null,
-        assurance_level: assuranceLevel || null,
-        token_hash: tokenHash,
-        expires_at: expiresAt.toISOString(),
-        max_uses: maxUses,
-        age_attribute_verified: true,
-      })
-      .select()
-      .single();
-
-    if (error || !token) {
-      throw new Error(
-        `Failed to issue verification token: ${error?.message || 'Unknown error'}`
-      );
-    }
-
-    const tokenResult = token as DbTokenRecord;
-
-    // Log token issuance
-    await this.logAuditEvent({
-      eventType: 'token_issued',
-      userId,
-      tokenId: tokenResult.id,
-      verificationMethod,
-      result: 'success',
-      legalBasis: 'GDPR Art. 6(1)(c) - Legal obligation (DSA Art. 28)',
-    });
-
-    return {
-      id: tokenResult.id,
-      isValid: true,
-      expiresAt,
-      remainingUses: maxUses,
-    };
-  }
-
-  /**
-   * Validate an existing verification token
-   * Prevents replay attacks through use_count tracking
-   *
-   * ⚠️ CRITICAL SECURITY ISSUE: Race Condition Vulnerability
-   * This implementation has a race condition where concurrent validations
-   * can both pass the usability check and increment use_count, allowing
-   * tokens to be used more times than intended (e.g., single-use tokens
-   * could be used multiple times).
-   *
-   * Problem Flow:
-   * 1. Request A fetches token (use_count = 0, max_uses = 1)
-   * 2. Request B fetches token (use_count = 0, max_uses = 1)
-   * 3. Both pass isTokenUsable() check (0 < 1)
-   * 4. Both increment use_count to 1
-   * 5. Both succeed validation when only one should
-   *
-   * Recommended Fix: Use atomic conditional update
-   * .update({ use_count: tokenData.use_count + 1 })
-   * .eq('id', tokenId)
-   * .lt('use_count', token.maxUses) // Only update if still under limit
-   *
-   * @param tokenId - Token UUID to validate
-   * @returns Token validation result with error details
-   */
-  async validateToken(tokenId: string): Promise<TokenValidationResult> {
-    const { data: token, error } = await this.supabase
-      .from('age_verification_tokens')
-      .select('*')
-      .eq('id', tokenId)
-      .single();
-
-    if (error || !token) {
-      return { isValid: false, error: 'token_not_found', token: null };
-    }
-
-    const tokenData = token as DbTokenRecord;
-    const verificationToken = this.mapDbTokenToType(tokenData);
-
-    if (!isTokenUsable(verificationToken)) {
-      return await this.handleInvalidToken(
-        tokenData,
-        tokenId,
-        verificationToken
-      );
-    }
-
-    const updateResult = await this.atomicTokenUpdate(
-      tokenId,
-      tokenData,
-      verificationToken
-    );
-    if (!updateResult.success) {
-      return await this.handleConcurrentUsage(
-        tokenData,
-        tokenId,
-        verificationToken
-      );
-    }
-
-    await this.logAuditEvent({
-      eventType: 'token_validated',
-      userId: tokenData.user_id,
-      tokenId,
-      result: 'success',
-      legalBasis: 'GDPR Art. 6(1)(c) - Legal obligation (DSA Art. 28)',
-    });
-
-    return {
-      isValid: true,
-      error: null,
-      token: { ...verificationToken, useCount: verificationToken.useCount + 1 },
-    };
-  }
-
-  private async handleInvalidToken(
-    tokenData: DbTokenRecord,
-    tokenId: string,
-    verificationToken: VerificationToken
-  ): Promise<TokenValidationResult> {
-    const error = this.determineTokenError(verificationToken);
-    await this.logAuditEvent({
-      eventType: 'token_validated',
-      userId: tokenData.user_id,
-      tokenId,
-      result: 'failure',
-      failureReason: error,
-      legalBasis: 'GDPR Art. 6(1)(c) - Legal obligation (DSA Art. 28)',
-    });
-    return { isValid: false, error, token: verificationToken };
-  }
-
-  private async atomicTokenUpdate(
-    tokenId: string,
-    tokenData: DbTokenRecord,
-    verificationToken: VerificationToken
-  ): Promise<{ success: boolean }> {
-    const { data, error } = await this.supabase
-      .from('age_verification_tokens')
-      .update({
-        use_count: tokenData.use_count + 1,
-        used_at:
-          tokenData.use_count === 0
-            ? new Date().toISOString()
-            : tokenData.used_at,
-      })
-      .eq('id', tokenId)
-      .lt('use_count', verificationToken.maxUses)
-      .select()
-      .single();
-
-    return { success: !error && !!data };
-  }
-
-  private async handleConcurrentUsage(
-    tokenData: DbTokenRecord,
-    tokenId: string,
-    verificationToken: VerificationToken
-  ): Promise<TokenValidationResult> {
-    await this.logAuditEvent({
-      eventType: 'token_validated',
-      userId: tokenData.user_id,
-      tokenId,
-      result: 'failure',
-      failureReason: 'concurrent_usage_detected',
-      legalBasis: 'GDPR Art. 6(1)(c) - Legal obligation (DSA Art. 28)',
-    });
-    return {
-      isValid: false,
-      error: 'token_already_used',
-      token: verificationToken,
-    };
   }
 
   /**
@@ -339,15 +135,10 @@ export class AgeVerificationService {
     };
 
     // Log suspicious activity
-    await this.logAuditEvent({
-      eventType: 'suspicious_activity_detected',
+    await this.auditService.logSuspiciousActivityEvent({
       userId,
-      result: 'pending',
       suspiciousSignals: allowedSignals,
       consentGiven: hasConsent,
-      legalBasis: hasConsent
-        ? 'GDPR Art. 6(1)(a) - Consent'
-        : 'GDPR Art. 6(1)(f) - Legitimate interest (fraud prevention)',
     });
 
     // Determine if additional verification is required
@@ -365,189 +156,6 @@ export class AgeVerificationService {
         minor_protections_enabled: true,
       });
     }
-  }
-
-  /**
-   * Check age-gating access for content
-   * Implements Requirement 8.2: Age-restricted content filtering
-   *
-   * @param input - Age-gating check input
-   * @returns Access result with gating status
-   */
-  async checkAgeGating(input: CheckAgeGatingInput): Promise<{
-    granted: boolean;
-    reason: string;
-    requiresVerification: boolean;
-  }> {
-    const { userId, contentId, contentType } = input;
-
-    // Check if content is age-restricted
-    const { data: restriction, error: restrictionError } = await this.supabase
-      .from('content_age_restrictions')
-      .select('*')
-      .eq('content_id', contentId)
-      .eq('content_type', contentType)
-      .limit(1);
-
-    const restrictionData = (
-      restriction as DbContentRestrictionRecord[] | null
-    )?.[0];
-
-    // If restriction lookup fails, fail-closed (safer for compliance)
-    if (restrictionError) {
-      await this.logAgeGatingEvent({
-        userId,
-        contentId,
-        contentType,
-        accessGranted: false,
-      });
-      return this.buildAgeGatingResult(false, 'verification_required', true);
-    }
-
-    // Content not restricted
-    if (!restrictionData || !restrictionData.is_age_restricted) {
-      await this.logAgeGatingEvent({
-        userId,
-        contentId,
-        contentType,
-        accessGranted: true,
-      });
-      return this.buildAgeGatingResult(true, 'content_not_restricted', false);
-    }
-
-    // Check user age verification status
-    const { data: userStatus, error: userStatusError } = await this.supabase
-      .from('user_age_status')
-      .select('*')
-      .eq('user_id', userId)
-      .limit(1);
-
-    if (userStatusError) {
-      await this.logAgeGatingEvent({
-        userId,
-        contentId,
-        contentType,
-        accessGranted: false,
-        failureReason: 'user_status_lookup_failed',
-      });
-      return this.buildAgeGatingResult(
-        false,
-        'verification_check_failed',
-        true
-      );
-    }
-
-    const userStatusData = (userStatus as DbUserAgeStatus[] | null)?.[0];
-
-    // User is age-verified
-    if (userStatusData?.is_age_verified) {
-      await this.logAgeGatingEvent({
-        userId,
-        contentId,
-        contentType,
-        accessGranted: true,
-      });
-      return this.buildAgeGatingResult(true, 'age_verified', false);
-    }
-
-    // Access denied - verification required
-    await this.logAgeGatingEvent({
-      userId,
-      contentId,
-      contentType,
-      accessGranted: false,
-    });
-    const reason = userStatusData?.is_minor
-      ? 'minor_protections_active'
-      : 'age_not_verified';
-    return this.buildAgeGatingResult(false, reason, true);
-  }
-
-  private async logAgeGatingEvent(opts: {
-    userId: string;
-    contentId: string;
-    contentType: string;
-    accessGranted: boolean;
-    failureReason?: string;
-  }): Promise<void> {
-    await this.logAuditEvent({
-      eventType: 'age_gating_check',
-      userId: opts.userId,
-      contentId: opts.contentId,
-      contentType: opts.contentType,
-      accessGranted: opts.accessGranted,
-      failureReason: opts.failureReason,
-      legalBasis: opts.accessGranted
-        ? 'GDPR Art. 6(1)(f) - Legitimate interest'
-        : 'GDPR Art. 6(1)(c) - Legal obligation (DSA Art. 28)',
-    });
-  }
-
-  private buildAgeGatingResult(
-    granted: boolean,
-    reason: string,
-    requiresVerification: boolean
-  ): { granted: boolean; reason: string; requiresVerification: boolean } {
-    return { granted, reason, requiresVerification };
-  }
-
-  /**
-   * Revoke a verification token
-   *
-   * @param tokenId - Token UUID to revoke
-   * @param reason - Revocation reason
-   */
-  async revokeToken(tokenId: string, reason: string): Promise<void> {
-    const { data: token, error } = await this.supabase
-      .from('age_verification_tokens')
-      .update({
-        revoked_at: new Date().toISOString(),
-        revocation_reason: reason,
-      })
-      .eq('id', tokenId)
-      .select()
-      .single();
-
-    if (error || !token) {
-      throw new Error(
-        `Failed to revoke token: ${error?.message || 'Unknown error'}`
-      );
-    }
-
-    const revokedToken = token as DbTokenRecord;
-
-    await this.logAuditEvent({
-      eventType: 'token_revoked',
-      userId: revokedToken.user_id,
-      tokenId,
-      result: 'success',
-      failureReason: reason,
-      legalBasis: 'GDPR Art. 6(1)(c) - Legal obligation (DSA Art. 28)',
-    });
-  }
-
-  /**
-   * Get active verification token for user
-   *
-   * @param userId - User UUID
-   * @returns Active token or null
-   */
-  async getActiveToken(userId: string): Promise<VerificationToken | null> {
-    const { data: token, error } = await this.supabase
-      .from('age_verification_tokens')
-      .select('*')
-      .eq('user_id', userId)
-      .gt('expires_at', new Date().toISOString())
-      .is('revoked_at', null)
-      .order('issued_at', { ascending: false })
-      .limit(1)
-      .single();
-
-    if (error || !token) {
-      return null;
-    }
-
-    return this.mapDbTokenToType(token);
   }
 
   /**
@@ -594,20 +202,39 @@ export class AgeVerificationService {
   }
 
   // ============================================================================
-  // Private Helper Methods
+  // Delegated Methods (for backward compatibility)
   // ============================================================================
 
-  /**
-   * Generate HMAC-SHA256 token hash
-   * Privacy-preserving, no plaintext storage
-   */
-  private async generateTokenHash(tokenData: string): Promise<string> {
-    const hash = await Crypto.digestStringAsync(
-      Crypto.CryptoDigestAlgorithm.SHA256,
-      tokenData + this.tokenSecret
-    );
-    return hash;
+  /** @see AgeTokenService.issueVerificationToken */
+  async issueVerificationToken(
+    ...args: Parameters<AgeTokenService['issueVerificationToken']>
+  ): ReturnType<AgeTokenService['issueVerificationToken']> {
+    return this.tokenService.issueVerificationToken(...args);
   }
+
+  /** @see AgeTokenService.validateToken */
+  async validateToken(tokenId: string): Promise<TokenValidationResult> {
+    return this.tokenService.validateToken(tokenId);
+  }
+
+  /** @see AgeTokenService.revokeToken */
+  async revokeToken(tokenId: string, reason: string): Promise<void> {
+    return this.tokenService.revokeToken(tokenId, reason);
+  }
+
+  /** @see AgeTokenService.getActiveToken */
+  async getActiveToken(userId: string): Promise<VerificationToken | null> {
+    return this.tokenService.getActiveToken(userId);
+  }
+
+  /** @see AgeGatingService.checkAgeGating */
+  async checkAgeGating(input: CheckAgeGatingInput): Promise<AgeGatingResult> {
+    return this.gatingService.checkAgeGating(input);
+  }
+
+  // ============================================================================
+  // Private Helper Methods
+  // ============================================================================
 
   /**
    * Update user age status
@@ -627,72 +254,9 @@ export class AgeVerificationService {
       show_age_restricted_content: isVerified,
     });
   }
-
-  /**
-   * Log audit event (append-only)
-   */
-  private async logAuditEvent(
-    event: Partial<Omit<AgeVerificationAuditEvent, 'id' | 'createdAt'>>
-  ): Promise<void> {
-    await this.supabase.from('age_verification_audit').insert({
-      event_type: event.eventType,
-      user_id: event.userId || null,
-      token_id: event.tokenId || null,
-      verification_method: event.verificationMethod || null,
-      result: event.result || null,
-      failure_reason: event.failureReason || null,
-      suspicious_signals: event.suspiciousSignals || null,
-      consent_given: event.consentGiven || null,
-      content_id: event.contentId || null,
-      content_type: event.contentType || null,
-      access_granted: event.accessGranted || null,
-      ip_address: event.ipAddress || null,
-      user_agent: event.userAgent || null,
-      legal_basis: event.legalBasis || null,
-      retention_period:
-        AGE_VERIFICATION_CONSTANTS.AUDIT_RETENTION_MONTHS + ' months',
-    });
-  }
-
-  /**
-   * Map database token to TypeScript type
-   */
-  private mapDbTokenToType(dbToken: DbTokenRecord): VerificationToken {
-    return {
-      id: dbToken.id,
-      userId: dbToken.user_id,
-      tokenHash: dbToken.token_hash,
-      issuedAt: new Date(dbToken.issued_at),
-      expiresAt: new Date(dbToken.expires_at),
-      revokedAt: dbToken.revoked_at ? new Date(dbToken.revoked_at) : null,
-      revocationReason: dbToken.revocation_reason,
-      usedAt: dbToken.used_at ? new Date(dbToken.used_at) : null,
-      useCount: dbToken.use_count,
-      maxUses: dbToken.max_uses,
-      verificationMethod: dbToken.verification_method as
-        | 'eudi_wallet'
-        | 'third_party_verifier'
-        | 'id_attribute'
-        | 'credit_card'
-        | 'other',
-      verificationProvider: dbToken.verification_provider,
-      assuranceLevel: dbToken.assurance_level,
-      ageAttributeVerified: dbToken.age_attribute_verified,
-      createdAt: new Date(dbToken.created_at),
-      updatedAt: new Date(dbToken.updated_at),
-    };
-  }
-
-  /**
-   * Determine token error type
-   */
-  private determineTokenError(
-    token: VerificationToken
-  ): TokenValidationResult['error'] {
-    if (token.revokedAt) return 'token_revoked';
-    if (new Date() > token.expiresAt) return 'token_expired';
-    if (token.useCount >= token.maxUses) return 'max_uses_exceeded';
-    if (token.usedAt && token.maxUses === 1) return 'token_already_used';
-    return 'invalid_token_format';
-  }
 }
+
+// Re-export sub-services for direct use
+export { AgeAuditService } from './age-audit-service';
+export { type AgeGatingResult, AgeGatingService } from './age-gating-service';
+export { AgeTokenService } from './age-token-service';

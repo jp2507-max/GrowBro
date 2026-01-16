@@ -86,14 +86,26 @@ export class ContentAgeGatingEngine {
   private supabase: SupabaseClient;
   private userAgeStatusCache = new Map<string, UserAgeStatusCacheEntry>();
   private transientErrorCache = new Map<string, TransientErrorCacheEntry>();
+  private instanceCacheRef: {
+    userAgeStatus: Map<string, UserAgeStatusCacheEntry>;
+  };
 
   constructor(supabase: SupabaseClient) {
     this.supabase = supabase;
     ensureAppStateListener();
-    // Register this instance's cache for app state invalidation
-    instanceCaches.add({
-      userAgeStatus: this.userAgeStatusCache,
-    });
+    this.instanceCacheRef = { userAgeStatus: this.userAgeStatusCache };
+    instanceCaches.add(this.instanceCacheRef);
+  }
+
+  dispose(): void {
+    instanceCaches.delete(this.instanceCacheRef);
+    this.userAgeStatusCache.clear();
+    this.transientErrorCache.clear();
+
+    if (instanceCaches.size === 0 && appStateSubscription) {
+      appStateSubscription.remove();
+      appStateSubscription = null;
+    }
   }
 
   /**
@@ -462,8 +474,6 @@ export class ContentAgeGatingEngine {
   private async getUserAgeStatus(
     userId: string
   ): Promise<UserAgeStatus | null> {
-    ensureAppStateListener();
-
     const cachedStatus = this.getCachedUserAgeStatus(userId);
     if (cachedStatus !== undefined) {
       return cachedStatus;

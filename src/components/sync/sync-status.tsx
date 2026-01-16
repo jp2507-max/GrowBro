@@ -1,6 +1,5 @@
 import React from 'react';
 import { AppState } from 'react-native';
-import { setTimeout } from 'timers';
 
 import { ActivityIndicator, Text, View } from '@/components/ui';
 import { translate } from '@/lib';

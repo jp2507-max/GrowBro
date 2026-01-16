@@ -23,7 +23,7 @@ describe('runSql error handling', () => {
     try {
       await runSql('plants', 'SELECT * FROM plants');
     } catch (error) {
-      expect(error).not.toContain('Unknown table');
+      expect((error as Error).message).not.toContain('Unknown table');
       // Should be a database connection error instead
     }
   });

@@ -93,15 +93,15 @@ export function useProfileStatistics(
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const lastUpdateRef = useRef<number>(0);
-  const inFlightRef = useRef<Promise<void> | null>(null);
+  const inFlightRef = useRef<Promise<boolean> | null>(null);
   const pendingRef = useRef(false);
   const rerunTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const runStatisticsQuery = useCallback(async () => {
+  const runStatisticsQuery = useCallback(async (): Promise<boolean> => {
     // Throttle updates to avoid jank (max once per 250ms) - Requirement 10.7
     const now = Date.now();
     if (now - lastUpdateRef.current < THROTTLE_MS) {
-      return;
+      return false;
     }
     lastUpdateRef.current = now;
 
@@ -114,6 +114,7 @@ export function useProfileStatistics(
       ...userCounts,
       ...postsAndLikes,
     });
+    return true;
   }, [database, userId]);
 
   const fetchStatistics = useCallback(async () => {
@@ -134,7 +135,10 @@ export function useProfileStatistics(
     inFlightRef.current = run;
 
     try {
-      await run;
+      const didRun = await run;
+      if (!didRun) {
+        pendingRef.current = true;
+      }
     } catch (error) {
       console.error('Failed to fetch profile statistics:', error);
     } finally {

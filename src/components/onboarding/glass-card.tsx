@@ -45,11 +45,11 @@ const styles = StyleSheet.create({
 type GlassCardOverlayProps = {
   isDark: boolean;
   style: ViewStyle;
-  children: React.ReactNode;
+  children?: React.ReactNode;
 };
 
 const GlassCardOverlay = React.memo<GlassCardOverlayProps>(
-  ({ isDark, style, children }) => {
+  ({ isDark, style, children = null }) => {
     if (Platform.OS !== 'ios') {
       return (
         <View
@@ -98,9 +98,12 @@ export function GlassCard({
         .stiffness(120)
         .mass(0.8)
         .reduceMotion(ReduceMotion.System)}
-      className="flex-row items-center rounded-2xl border border-white/20 bg-white/70 p-4 shadow-sm dark:border-white/10 dark:bg-charcoal-900/70"
+      className="overflow-hidden rounded-2xl border border-white/20 dark:border-white/10"
     >
-      <GlassCardOverlay isDark={isDark} style={styles.absoluteFill}>
+      {/* Background blur layer */}
+      <GlassCardOverlay isDark={isDark} style={styles.absoluteFill} />
+      {/* Content layer */}
+      <View className="flex-row items-center p-4">
         <View
           className={`mr-4 size-12 items-center justify-center rounded-xl ${iconBg}`}
         >
@@ -118,7 +121,7 @@ export function GlassCard({
             {translate(bodyKey)}
           </Text>
         </View>
-      </GlassCardOverlay>
+      </View>
     </Animated.View>
   );
 }
