@@ -77,12 +77,9 @@ function buildPlantPayload(plant: PlantData, userId: string): RemotePlant {
     metadata.remoteImagePath.length > 0
       ? metadata.remoteImagePath
       : null;
-  const isLocalFileUri = plant.imageUrl?.startsWith('file://');
   const cloudImageUrl = remoteImagePath
     ? remoteImagePath
-    : isLocalFileUri
-      ? null
-      : (plant.imageUrl ?? null);
+    : (plant.imageUrl ?? null);
 
   return {
     id: plant.id,

@@ -298,7 +298,10 @@ export class AgeTokenService {
   }
 
   /**
-   * Compute HMAC-SHA256 of the token data, keyed by AGE_TOKEN_SECRET
+   * Compute keyed hash of token data using HMAC-like structure.
+   * Note: Uses hex string encoding due to expo-crypto API constraints,
+   * producing a consistent but non-standard keyed hash (not interoperable
+   * with standard HMAC-SHA256 implementations).
    */
   private async generateTokenHash(tokenData: string): Promise<string> {
     const keyBytes = encodeUtf8(this.tokenSecret);

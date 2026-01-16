@@ -136,6 +136,7 @@
       "view_comments_hint": "Doppeltippen, um Kommentare zu diesem Beitrag anzuzeigen.",
       "view_strain_hint": "Öffnet Details für diese Sorte."
     },
+    "dismiss_banner_hint": "Schließt das Offline-Banner.",
     "home": {
       "activation_action_hint": "Doppeltippen, um {{action}}",
       "activation_dismiss_hint": "Doppeltippen, um die Aktivierungs-Checkliste auszublenden",
@@ -1009,6 +1010,7 @@
     "outbox_failed": "Senden fehlgeschlagen",
     "outbox_retry": "Erneut senden",
     "outbox_retrying": "Wird erneut gesendet...",
+    "outbox_retrying_with_count": "Wird erneut gesendet ({{count}}/5)...",
     "outbox_sending": "Wird gesendet...",
     "phases": "Phasen",
     "playbooks": {
@@ -1822,35 +1824,6 @@
     "accept_terms_label": "Nutzungsbedingungen akzeptieren",
     "checkbox_label": "Kontrollkästchen",
     "switch_label": "Schalter"
-  },
-  "inventory": {
-    "add_item": "Artikel hinzufügen",
-    "form": {
-      "barcode": "Barcode",
-      "barcode_placeholder": "Barcode eingeben",
-      "category": "Kategorie",
-      "lead_time_days": "Lieferzeit (Tage)",
-      "min_stock": "Mindestbestand",
-      "name": "Name",
-      "name_placeholder": "Artikelname eingeben",
-      "reorder_multiple": "Nachbestellmenge",
-      "sku": "Artikelnummer",
-      "sku_placeholder": "Artikelnummer eingeben",
-      "submit": "Artikel hinzufügen",
-      "tracking_batched": "Chargenweise",
-      "tracking_mode": "Verfolgungsmodus",
-      "tracking_simple": "Einfach",
-      "unit": "Mengeneinheit",
-      "unit_placeholder": "z.B. ml, g, Stk",
-      "validation": {
-        "min_stock_positive": "Mindestbestand muss 0 oder größer sein",
-        "name_max_length": "Name darf maximal 100 Zeichen lang sein",
-        "name_required": "Name ist erforderlich",
-        "reorder_multiple_min": "Nachbestellmenge muss mindestens 1 sein",
-        "unit_max_length": "Einheit darf maximal 20 Zeichen lang sein",
-        "unit_required": "Einheit ist erforderlich"
-      }
-    }
   },
   "list": {
     "empty": {

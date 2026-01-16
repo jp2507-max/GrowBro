@@ -45,9 +45,12 @@ export function WelcomeSlide({
 
         <View className="flex-1 items-center justify-center px-6">
           {/* Large Lottie hero animation */}
-          <View className="mb-8">
+          <Animated.View
+            className="mb-8"
+            entering={withRM(FadeIn.delay(150).duration(500))}
+          >
             <AnimatedLottieHero animation="welcome" testID="welcome-header" />
-          </View>
+          </Animated.View>
           {/* Title with gentle spring animation */}
           <Animated.View
             className="mb-4"

@@ -111,7 +111,7 @@ async function syncPlantsAfterSync(): Promise<void> {
 }
 
 // Helper to keep store in sync
-function updatePipelineState() {
+function updatePipelineState(): void {
   const inFlight = Boolean(syncPipelinePromise || pendingSyncPromise);
   // Avoid redundant store updates if efficient, but Zustand handles it well usually.
   // We'll just set it.
@@ -205,7 +205,9 @@ async function performSyncInternal(
       console.warn('[SyncCoordinator] Plant photo download failed:', err);
     });
 
-    await syncPlantsAfterSync();
+    if (result) {
+      await syncPlantsAfterSync();
+    }
   } catch (error) {
     coreError = error;
     // Track failure
@@ -312,14 +314,12 @@ export async function performSync(
 
         // Loop to handle any new options that arrive while sync is running
         while (true) {
-          const optionsToRun: SyncCoordinatorOptions | null =
-            pendingSyncOptions;
+          const optionsToRun = pendingSyncOptions;
+          pendingSyncOptions = null;
+
           if (!optionsToRun) {
             break;
           }
-
-          pendingSyncOptions =
-            pendingSyncOptions === optionsToRun ? null : pendingSyncOptions;
 
           lastResult = await runSyncPipeline(optionsToRun);
         }
@@ -342,7 +342,7 @@ export async function performSync(
 /**
  * Gets the current sync status
  */
-export function getSyncStatus() {
+export function getSyncStatus(): { inFlight: boolean } {
   return {
     inFlight: getSyncState().syncInFlight,
   };

@@ -123,8 +123,6 @@ export function useAgeVerificationStatus(): AgeVerificationStatus {
       const userId = await getOptionalAuthenticatedUserId();
       if (!mounted || !userId) return;
 
-      if (!mounted) return;
-
       const channel = supabase.channel(`age_verification_${userId}`).on(
         'postgres_changes',
         {
@@ -161,10 +159,6 @@ export function useAgeVerificationStatus(): AgeVerificationStatus {
       if (subscription) {
         supabase.removeChannel(subscription);
         subscription = null;
-      }
-      if (pendingChannel) {
-        supabase.removeChannel(pendingChannel);
-        pendingChannel = null;
       }
     };
   }, [user?.id]);

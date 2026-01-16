@@ -136,6 +136,7 @@
       "view_comments_hint": "Double-tap to view comments for this post.",
       "view_strain_hint": "Opens details for this strain."
     },
+    "dismiss_banner_hint": "Dismisses the offline banner.",
     "home": {
       "activation_action_hint": "Double-tap to {{action}}",
       "activation_dismiss_hint": "Double-tap to dismiss the activation checklist",
@@ -1009,6 +1010,7 @@
     "outbox_failed": "Failed to send",
     "outbox_retry": "Retry",
     "outbox_retrying": "Retrying...",
+    "outbox_retrying_with_count": "Retrying ({{count}}/5)...",
     "outbox_sending": "Sending...",
     "phases": "Phases",
     "playbooks": {
@@ -1822,35 +1824,6 @@
     "accept_terms_label": "Accept terms and conditions",
     "checkbox_label": "Checkbox",
     "switch_label": "Switch"
-  },
-  "inventory": {
-    "add_item": "Add Item",
-    "form": {
-      "barcode": "Barcode",
-      "barcode_placeholder": "Enter barcode",
-      "category": "Category",
-      "lead_time_days": "Lead Time (Days)",
-      "min_stock": "Minimum Stock",
-      "name": "Name",
-      "name_placeholder": "Enter item name",
-      "reorder_multiple": "Reorder Multiple",
-      "sku": "SKU",
-      "sku_placeholder": "Enter SKU",
-      "submit": "Add Item",
-      "tracking_batched": "Batched",
-      "tracking_mode": "Tracking Mode",
-      "tracking_simple": "Simple",
-      "unit": "Unit of Measure",
-      "unit_placeholder": "e.g., ml, g, pcs",
-      "validation": {
-        "min_stock_positive": "Minimum stock must be 0 or greater",
-        "name_max_length": "Name must be 100 characters or less",
-        "name_required": "Name is required",
-        "reorder_multiple_min": "Reorder multiple must be at least 1",
-        "unit_max_length": "Unit must be 20 characters or less",
-        "unit_required": "Unit is required"
-      }
-    }
   },
   "list": {
     "empty": {

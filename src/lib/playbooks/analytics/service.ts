@@ -161,6 +161,9 @@ class AnalyticsService {
    */
   clearQueue(): void {
     this.eventQueue = [];
+    if (this.config.persistEvents) {
+      this.storage.delete(STORAGE_KEY);
+    }
   }
 
   // Private methods
@@ -184,7 +187,10 @@ class AnalyticsService {
     try {
       const persisted = this.storage.getString(STORAGE_KEY);
       if (persisted) {
-        this.eventQueue = JSON.parse(persisted);
+        const parsed: unknown = JSON.parse(persisted);
+        this.eventQueue = Array.isArray(parsed)
+          ? (parsed as AnalyticsEvent[])
+          : [];
         this.trimToQueueCap();
         if (this.config.debug) {
           console.log(

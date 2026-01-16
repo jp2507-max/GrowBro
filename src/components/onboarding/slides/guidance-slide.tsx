@@ -10,15 +10,17 @@ import type { ColorValue } from 'react-native';
 import { StyleSheet } from 'react-native';
 import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
 
+import { AnimatedLottieHero } from '@/components/onboarding/animated-lottie-hero';
+import {
+  FeaturePill,
+  FeaturePillRow,
+} from '@/components/onboarding/feature-pill';
+import { FloatingParticles } from '@/components/onboarding/floating-particles';
+import type { OnboardingSlideProps } from '@/components/onboarding/onboarding-pager';
 import { Text, View } from '@/components/ui';
 import colors from '@/components/ui/colors';
 import { Calendar, Check, Lightbulb } from '@/components/ui/icons';
 import { translate } from '@/lib/i18n';
-
-import { AnimatedLottieHero } from '../animated-lottie-hero';
-import { FeaturePill, FeaturePillRow } from '../feature-pill';
-import { FloatingParticles } from '../floating-particles';
-import type { OnboardingSlideProps } from '../onboarding-pager';
 
 export function GuidanceSlide({
   index: _index,
