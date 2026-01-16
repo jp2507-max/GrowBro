@@ -1,3 +1,4 @@
+import type { Model, TableName } from '@nozbe/watermelondb';
 import { Q } from '@nozbe/watermelondb';
 
 import { database } from '@/lib/watermelon';
@@ -38,11 +39,15 @@ export async function runSql(
     );
   }
 
+  const tableName = table as TableName<Model>;
+  const collection = database.collections.map[tableName];
+  if (!collection) {
+    throw new Error(
+      `runSql: Table "${table}" exists in appSchema but is not registered with the database model classes.`
+    );
+  }
+
   const rows = await database.read(async () => {
-    // We cast to never because `database.get(table)` expects strict TableName types,
-    // but this utility is designed for dynamic table access.
-    // Safety is guaranteed by the runtime check `VALID_TABLE_NAMES.has(table)` above.
-    const collection = database.get(table as never);
     return collection.query(Q.unsafeSqlQuery(sql, params)).unsafeFetchRaw();
   }, `runSql:${table}`);
 

@@ -204,6 +204,8 @@ async function performSyncInternal(
     downloadMissingPlantPhotosAfterSync().catch((err) => {
       console.warn('[SyncCoordinator] Plant photo download failed:', err);
     });
+
+    await syncPlantsAfterSync();
   } catch (error) {
     coreError = error;
     // Track failure
@@ -224,8 +226,6 @@ async function performSyncInternal(
       await trackSyncFailure('total', syncErrorCode, errorCategory.message);
     }
   }
-
-  await syncPlantsAfterSync();
 
   if (coreError) throw coreError;
   if (!result) {

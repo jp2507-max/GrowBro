@@ -31,11 +31,25 @@ export class AgeTokenService {
   constructor(
     supabase: SupabaseClient,
     auditService: AgeAuditService,
-    tokenSecret: string = process.env.AGE_TOKEN_SECRET || 'default-secret'
+    tokenSecret?: string
   ) {
     this.supabase = supabase;
     this.auditService = auditService;
-    this.tokenSecret = tokenSecret;
+
+    const secret = tokenSecret ?? process.env.AGE_TOKEN_SECRET;
+
+    if (!secret) {
+      if (__DEV__) {
+        console.warn(
+          '[AgeTokenService] No token secret configured, using insecure default'
+        );
+        this.tokenSecret = 'default-dev-secret';
+      } else {
+        throw new Error('AGE_TOKEN_SECRET must be configured in production');
+      }
+    } else {
+      this.tokenSecret = secret;
+    }
   }
 
   /**
@@ -212,14 +226,14 @@ export class AgeTokenService {
       .gt('expires_at', new Date().toISOString())
       .is('revoked_at', null)
       .order('issued_at', { ascending: false })
-      .limit(1)
-      .single();
+      .limit(1);
 
-    if (error || !token) {
+    const tokenData = (token as DbTokenRecord[] | null | undefined)?.[0];
+    if (error || !tokenData) {
       return null;
     }
 
-    return this.mapDbTokenToType(token);
+    return this.mapDbTokenToType(tokenData);
   }
 
   // ============================================================================
@@ -284,21 +298,32 @@ export class AgeTokenService {
   }
 
   /**
-   * Generate HMAC-SHA256 token hash
-   * Privacy-preserving, no plaintext storage
+   * Compute HMAC-SHA256 of the token data, keyed by AGE_TOKEN_SECRET
    */
   private async generateTokenHash(tokenData: string): Promise<string> {
-    const hash = await Crypto.digestStringAsync(
+    const keyBytes = encodeUtf8(this.tokenSecret);
+    const preparedKey = await getHmacKey(keyBytes);
+    const dataBytes = encodeUtf8(tokenData);
+
+    const inner = xorBytes(preparedKey, IPAD);
+    const outer = xorBytes(preparedKey, OPAD);
+
+    const innerHashHex = await Crypto.digestStringAsync(
       Crypto.CryptoDigestAlgorithm.SHA256,
-      tokenData + this.tokenSecret
+      bytesToHex(concatBytes(inner, dataBytes))
     );
-    return hash;
+    const innerHashBytes = hexToBytes(innerHashHex);
+    const hmacHex = await Crypto.digestStringAsync(
+      Crypto.CryptoDigestAlgorithm.SHA256,
+      bytesToHex(concatBytes(outer, innerHashBytes))
+    );
+    return hmacHex;
   }
 
   /**
    * Map database token to TypeScript type
    */
-  mapDbTokenToType(dbToken: DbTokenRecord): VerificationToken {
+  private mapDbTokenToType(dbToken: DbTokenRecord): VerificationToken {
     return {
       id: dbToken.id,
       userId: dbToken.user_id,
@@ -336,4 +361,62 @@ export class AgeTokenService {
     if (token.usedAt && token.maxUses === 1) return 'token_already_used';
     return 'invalid_token_format';
   }
+}
+
+const IPAD = new Uint8Array(64).fill(0x36);
+const OPAD = new Uint8Array(64).fill(0x5c);
+const textEncoder = new TextEncoder();
+
+function encodeUtf8(value: string): Uint8Array {
+  return textEncoder.encode(value);
+}
+
+function concatBytes(...arrays: Uint8Array[]): Uint8Array {
+  const length = arrays.reduce((total, arr) => total + arr.length, 0);
+  const result = new Uint8Array(length);
+  let offset = 0;
+  for (const arr of arrays) {
+    result.set(arr, offset);
+    offset += arr.length;
+  }
+  return result;
+}
+
+function xorBytes(a: Uint8Array, b: Uint8Array): Uint8Array {
+  const result = new Uint8Array(a.length);
+  for (let i = 0; i < a.length; i += 1) {
+    result[i] = a[i] ^ b[i];
+  }
+  return result;
+}
+
+function bytesToHex(bytes: Uint8Array): string {
+  return Array.from(bytes)
+    .map((value) => value.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+function hexToBytes(hex: string): Uint8Array {
+  const bytes = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < bytes.length; i += 1) {
+    bytes[i] = parseInt(hex.substr(i * 2, 2), 16);
+  }
+  return bytes;
+}
+
+async function getHmacKey(keyBytes: Uint8Array): Promise<Uint8Array> {
+  if (keyBytes.length > 64) {
+    const hashedKey = await Crypto.digestStringAsync(
+      Crypto.CryptoDigestAlgorithm.SHA256,
+      bytesToHex(keyBytes)
+    );
+    const hashedBytes = hexToBytes(hashedKey);
+    return concatBytes(hashedBytes, new Uint8Array(64 - hashedBytes.length));
+  }
+
+  if (keyBytes.length < 64) {
+    return concatBytes(keyBytes, new Uint8Array(64 - keyBytes.length));
+  }
+
+  return keyBytes;
 }

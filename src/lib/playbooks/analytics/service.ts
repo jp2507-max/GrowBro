@@ -197,10 +197,12 @@ class AnalyticsService {
   }
 
   private trimToQueueCap(): void {
-    const maxQueueSize = Math.max(
-      0,
-      Math.floor(this.config.maxQueueSize ?? 1000)
-    );
+    const rawMaxQueueSize = this.config.maxQueueSize ?? 1000;
+    const normalizedMaxQueueSize = Number.isFinite(rawMaxQueueSize)
+      ? rawMaxQueueSize
+      : 1000;
+    const maxQueueSize = Math.max(0, Math.floor(normalizedMaxQueueSize));
+
     if (this.eventQueue.length > maxQueueSize) {
       this.eventQueue.splice(0, this.eventQueue.length - maxQueueSize);
     }

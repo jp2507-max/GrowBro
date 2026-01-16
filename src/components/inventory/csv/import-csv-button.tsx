@@ -47,7 +47,8 @@ export function ImportCSVButton({
       const content = await FileSystem.readAsStringAsync(fileUri);
 
       // Determine file type from name
-      const fileName = asset.name.toLowerCase();
+      const selectedFileName = asset.name ?? 'unknown.csv';
+      const fileName = selectedFileName.toLowerCase();
       const files: {
         items?: string;
         batches?: string;
@@ -67,7 +68,7 @@ export function ImportCSVButton({
 
       // Store preview data before navigation so the next screen can read it from the store
       useImportPreviewStore.getState().setPreview({
-        fileName: asset.name!,
+        fileName: selectedFileName,
         data: preview,
       });
       router.push('/inventory/csv-import-preview' as Href);

@@ -57,11 +57,9 @@ export function SyncStatus({
       await refresh();
       if (!isMounted) return;
 
-      if (AppState.currentState === 'active') {
-        timeoutId = setTimeout(() => {
-          void loop();
-        }, SYNC_STATUS_POLL_INTERVAL_MS);
-      }
+      timeoutId = setTimeout(() => {
+        void loop();
+      }, SYNC_STATUS_POLL_INTERVAL_MS);
     };
 
     if (AppState.currentState === 'active') {

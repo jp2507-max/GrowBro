@@ -9,7 +9,10 @@ trigger: always_on
 - Keep `className` **stable**. Static styles in `className`, animated/gesture styles via Reanimated `style`.
 - Always write explicit Light/Dark pairs: `bg-white dark:bg-charcoal-900`. **No CSS vars**.
 - Never toggle Tailwind classes per frame; derive animation values in worklets.
-- Always respect Reduced Motion: detect `prefers-reduced-motion` and disable or simplify non-essential animations/gestures, use `ReduceMotion.System` in Reanimated worklets/animated styles, and verify smooth transitions with the Expo Dev Menu FPS monitor so components honoring `className`/animated style stay accessible.
+- Always respect Reduced Motion:
+  - Detect system `prefers-reduced-motion` and disable or simplify non-essential animations/gestures
+  - Use `ReduceMotion.System` in all Reanimated worklets and animated styles
+  - Verify smooth transitions with Expo Dev Menu FPS monitor
 - Class order: layout → flex → spacing → size → border → bg → text → effects → dark.
 - Custom components must forward/merge `className` via `cn` (tailwind-merge).
 

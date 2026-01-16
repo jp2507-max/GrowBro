@@ -6,11 +6,11 @@
 
 import React from 'react';
 import Reanimated, {
-  // @ts-ignore - Reanimated 4.x type exports issue
+  // @ts-expect-error - Reanimated 4.x type exports issue
   Extrapolation,
-  // @ts-ignore - Reanimated 4.x type exports issue
+  // @ts-expect-error - Reanimated 4.x type exports issue
   interpolate,
-  // @ts-ignore - Reanimated 4.x type exports issue
+  // @ts-expect-error - Reanimated 4.x type exports issue
   interpolateColor,
   type SharedValue,
   useAnimatedStyle,

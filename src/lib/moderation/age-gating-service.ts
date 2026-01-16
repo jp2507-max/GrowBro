@@ -8,15 +8,17 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import type { CheckAgeGatingInput } from '@/types/age-verification';
-import type { DbUserAgeStatus } from '@/types/database-records';
+import type {
+  DbContentRestriction,
+  DbUserAgeStatus,
+} from '@/types/database-records';
 
 import { type AgeAuditService } from './age-audit-service';
 
-type DbContentRestrictionRecord = {
-  content_id: string;
-  content_type: string;
-  is_age_restricted: boolean;
-};
+type DbContentRestrictionRecord = Pick<
+  DbContentRestriction,
+  'content_id' | 'content_type' | 'is_age_restricted'
+>;
 
 export type AgeGatingResult = {
   granted: boolean;
@@ -132,12 +134,21 @@ export class AgeGatingService {
     contentId: string,
     contentType: string
   ): Promise<boolean> {
-    const { data: restriction } = await this.supabase
+    const { data: restriction, error } = await this.supabase
       .from('content_age_restrictions')
       .select('is_age_restricted')
       .eq('content_id', contentId)
       .eq('content_type', contentType)
       .limit(1);
+
+    // Fail-closed: assume restricted if lookup fails
+    if (error) {
+      console.error(
+        '[AgeGatingService] Restriction lookup failed:',
+        error.message
+      );
+      return true;
+    }
 
     const restrictionData = (
       restriction as Pick<DbContentRestrictionRecord, 'is_age_restricted'>[]

@@ -36,7 +36,8 @@ export class AgeAuditService {
   async logAuditEvent(
     event: Partial<Omit<AgeVerificationAuditEvent, 'id' | 'createdAt'>>
   ): Promise<void> {
-    await this.supabase.from('age_verification_audit').insert({
+    const retentionPeriod = `${AGE_VERIFICATION_CONSTANTS.AUDIT_RETENTION_MONTHS} months`;
+    const auditPayload = {
       event_type: event.eventType,
       user_id: event.userId || null,
       token_id: event.tokenId || null,
@@ -51,9 +52,34 @@ export class AgeAuditService {
       ip_address: event.ipAddress || null,
       user_agent: event.userAgent || null,
       legal_basis: event.legalBasis || null,
-      retention_period:
-        AGE_VERIFICATION_CONSTANTS.AUDIT_RETENTION_MONTHS + ' months',
-    });
+      retention_period: retentionPeriod,
+    };
+
+    const maxAttempts = 2;
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      const { error } = await this.supabase
+        .from('age_verification_audit')
+        .insert(auditPayload);
+
+      if (!error) {
+        return;
+      }
+
+      console.error('[AgeAuditService] Failed to log audit event', {
+        attempt,
+        error: error.message,
+        auditPayload,
+        retentionMonths: AGE_VERIFICATION_CONSTANTS.AUDIT_RETENTION_MONTHS,
+      });
+
+      if (attempt === maxAttempts) {
+        throw new Error(
+          `[AgeAuditService] Failed to persist audit event after ${maxAttempts} attempts: ${error.message}`
+        );
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, attempt * 100));
+    }
   }
 
   /**
@@ -115,14 +141,17 @@ export class AgeAuditService {
    */
   async logSuspiciousActivityEvent(opts: {
     userId: string;
-    suspiciousSignals: Partial<SuspiciousSignals> & { consentGiven: boolean };
+    suspiciousSignals: Partial<SuspiciousSignals>;
     consentGiven: boolean;
   }): Promise<void> {
     await this.logAuditEvent({
       eventType: 'suspicious_activity_detected',
       userId: opts.userId,
       result: 'pending',
-      suspiciousSignals: opts.suspiciousSignals,
+      suspiciousSignals: {
+        ...opts.suspiciousSignals,
+        consentGiven: opts.consentGiven,
+      },
       consentGiven: opts.consentGiven,
       legalBasis: opts.consentGiven
         ? 'GDPR Art. 6(1)(a) - Consent'

@@ -39,10 +39,7 @@ export class AgeVerificationService {
   private gatingService: AgeGatingService;
   private auditService: AgeAuditService;
 
-  constructor(
-    supabase: SupabaseClient,
-    tokenSecret: string = process.env.AGE_TOKEN_SECRET || 'default-secret'
-  ) {
+  constructor(supabase: SupabaseClient, tokenSecret?: string) {
     this.supabase = supabase;
     this.auditService = new AgeAuditService(supabase);
     this.tokenService = new AgeTokenService(
@@ -149,12 +146,19 @@ export class AgeVerificationService {
 
     if (requiresAdditionalVerification) {
       // Mark user for additional verification
-      await this.supabase.from('user_age_status').upsert({
+      const { error } = await this.supabase.from('user_age_status').upsert({
         user_id: userId,
         is_age_verified: false,
         is_minor: true, // Safer default
         minor_protections_enabled: true,
       });
+
+      if (error) {
+        console.error(
+          '[AgeVerificationService] Failed to apply safer defaults for suspicious activity:',
+          error.message
+        );
+      }
     }
   }
 
@@ -244,7 +248,7 @@ export class AgeVerificationService {
     isVerified: boolean,
     tokenId: string
   ): Promise<void> {
-    await this.supabase.from('user_age_status').upsert({
+    const { error } = await this.supabase.from('user_age_status').upsert({
       user_id: userId,
       is_age_verified: isVerified,
       verified_at: isVerified ? new Date().toISOString() : null,
@@ -253,6 +257,10 @@ export class AgeVerificationService {
       minor_protections_enabled: !isVerified,
       show_age_restricted_content: isVerified,
     });
+
+    if (error) {
+      throw new Error(`Failed to update user age status: ${error.message}`);
+    }
   }
 }
 

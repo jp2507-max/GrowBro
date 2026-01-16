@@ -33,6 +33,7 @@ expo-env.d.ts
 
 # Build artifacts and reports
 build/reports/
+test-output.txt
 
 # Ignore MCP config stored by VS Code and Cursor
 .vscode/mcp.json

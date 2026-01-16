@@ -8,6 +8,7 @@ create index if not exists plants_deleted_at_idx on public.plants (deleted_at)
 do $$
 begin
   -- consistent upsert of the job
+  perform cron.unschedule('purge_deleted_plants');
   perform cron.schedule(
     'purge_deleted_plants',
     '0 3 * * *',

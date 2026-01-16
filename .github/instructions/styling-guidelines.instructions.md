@@ -244,10 +244,19 @@ import Animated, {
 function DraggableBox() {
   const offsetX = useSharedValue(0);
   const offsetY = useSharedValue(0);
-  const gesture = Gesture.Pan().onUpdate((e) => {
-    offsetX.value = e.translationX;
-    offsetY.value = e.translationY;
-  });
+  const startX = useSharedValue(0);
+  const startY = useSharedValue(0);
+
+  const gesture = Gesture.Pan()
+    .onStart(() => {
+      startX.value = offsetX.value;
+      startY.value = offsetY.value;
+    })
+    .onUpdate((e) => {
+      offsetX.value = startX.value + e.translationX;
+      offsetY.value = startY.value + e.translationY;
+    });
+
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: offsetX.value }, { translateY: offsetY.value }],
   }));

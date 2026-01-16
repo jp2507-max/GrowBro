@@ -62,12 +62,16 @@ async function queryPostsAndLikes(
 
     if (postsCount > 0) {
       const postLikesCollection = database.collections.get('post_likes');
-      likesReceived = await postLikesCollection
-        .query(Q.where('post_id', Q.oneOf(userPostIds)))
-        .fetchCount();
+      const chunkSize = 900;
+      for (let i = 0; i < userPostIds.length; i += chunkSize) {
+        const batchIds = userPostIds.slice(i, i + chunkSize);
+        likesReceived += await postLikesCollection
+          .query(Q.where('post_id', Q.oneOf(batchIds)))
+          .fetchCount();
+      }
     }
-  } catch {
-    // Table doesn't exist yet, keep defaults at 0
+  } catch (error) {
+    console.error('Failed to query posts and likes', error);
   }
 
   return { postsCount, likesReceived };
@@ -96,6 +100,11 @@ export function useProfileStatistics(
   const inFlightRef = useRef<Promise<boolean> | null>(null);
   const pendingRef = useRef(false);
   const rerunTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const activeUserIdRef = useRef(userId);
+
+  useEffect(() => {
+    activeUserIdRef.current = userId;
+  }, [userId]);
 
   const runStatisticsQuery = useCallback(async (): Promise<boolean> => {
     // Throttle updates to avoid jank (max once per 250ms) - Requirement 10.7
@@ -110,6 +119,10 @@ export function useProfileStatistics(
       queryPostsAndLikes(database, userId),
     ]);
 
+    if (activeUserIdRef.current !== userId) {
+      return false;
+    }
+
     setStatistics({
       ...userCounts,
       ...postsAndLikes,
@@ -117,7 +130,7 @@ export function useProfileStatistics(
     return true;
   }, [database, userId]);
 
-  const fetchStatistics = useCallback(async () => {
+  const fetchStatistics = useCallback(async (): Promise<void> => {
     if (!database) {
       setIsLoading(false);
       return;
@@ -146,7 +159,7 @@ export function useProfileStatistics(
       setIsLoading(false);
       setIsSyncing(false);
 
-      if (pendingRef.current) {
+      if (pendingRef.current && activeUserIdRef.current === userId) {
         pendingRef.current = false;
         if (rerunTimeoutRef.current) {
           clearTimeout(rerunTimeoutRef.current);
@@ -163,7 +176,7 @@ export function useProfileStatistics(
         }, delayMs);
       }
     }
-  }, [database, runStatisticsQuery]);
+  }, [database, runStatisticsQuery, userId]);
 
   const refresh = useCallback(async () => {
     setIsSyncing(true);

@@ -194,13 +194,14 @@ async function purgeExpiredDeletedPlantsLocally(
   const candidates = await getDeletedPlantsForPurge(getRetentionCutoffMs());
   if (candidates.length === 0) return 0;
 
-  // Only purge plants that have been hard-deleted from the cloud OR lack server timestamps.
+  // Only purge plants that have been hard-deleted from the cloud OR lack server timestamps while still assigned to a user.
   // Unassigned plants (userId: null) are retained until cloud confirms deletion to prevent
   // accidental data loss during offline periods or before user authentication.
   const ids = candidates
     .filter(
       (candidate) =>
-        cloudDeletedIds.has(candidate.id) || !candidate.serverUpdatedAtMs
+        cloudDeletedIds.has(candidate.id) ||
+        (candidate.userId && !candidate.serverUpdatedAtMs)
     )
     .map((candidate) => candidate.id);
 
@@ -342,6 +343,7 @@ export async function syncPlantsBidirectional(): Promise<SyncResult> {
     if (plantsSyncPromise === run) {
       if (plantsSyncQueued) {
         // Re-arm a new run to preserve queued requests
+        plantsSyncPromise = null;
         plantsSyncPromise = syncPlantsBidirectional();
       } else {
         plantsSyncPromise = null;

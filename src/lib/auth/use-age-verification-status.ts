@@ -15,6 +15,7 @@ import { useEffect, useState } from 'react';
 
 import { supabase } from '@/lib/supabase';
 
+import { useAuth } from '.';
 import { getOptionalAuthenticatedUserId } from './user-utils';
 
 type AgeStatusRow = {
@@ -87,6 +88,7 @@ export interface AgeVerificationStatus {
  * Returns cached status to avoid repeated database queries
  */
 export function useAgeVerificationStatus(): AgeVerificationStatus {
+  const user = useAuth.use.user();
   const [status, setStatus] = useState<AgeVerificationStatus>({
     isVerified: false,
     isLoading: true,
@@ -160,7 +162,7 @@ export function useAgeVerificationStatus(): AgeVerificationStatus {
         pendingChannel = null;
       }
     };
-  }, []);
+  }, [user?.id]);
 
   return status;
 }
