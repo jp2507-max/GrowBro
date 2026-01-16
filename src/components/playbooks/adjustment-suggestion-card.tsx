@@ -71,7 +71,7 @@ export function AdjustmentSuggestionCard({
 
   return (
     <View
-      className="dark:bg-warning-950 mb-3 rounded-xl border border-warning-200 bg-warning-50 p-4 dark:border-warning-800"
+      className="mb-3 rounded-xl border border-warning-200 bg-warning-50 p-4 dark:border-warning-800 dark:bg-warning-950"
       testID="adjustment-suggestion-card"
     >
       <CardHeader onDismiss={onDismiss} suggestionId={suggestion.id} />

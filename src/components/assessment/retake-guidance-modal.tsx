@@ -73,7 +73,7 @@ export const RetakeGuidanceModal = React.forwardRef<
     if (onRetake) {
       onRetake();
     } else {
-      // Navigate back to camera with plant context
+      // Navigate back to capture with plant context
       router.push({
         pathname: '/assessment/capture' as const,
         params: {

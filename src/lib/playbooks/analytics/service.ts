@@ -147,6 +147,22 @@ class AnalyticsService {
     await this.flush();
   }
 
+  /**
+   * Get current queue size
+   * @internal Exposed for testing
+   */
+  getQueueSize(): number {
+    return this.eventQueue.length;
+  }
+
+  /**
+   * Clear the event queue
+   * @internal Exposed for testing
+   */
+  clearQueue(): void {
+    this.eventQueue = [];
+  }
+
   // Private methods
 
   private getOrCreateSessionId(): string {

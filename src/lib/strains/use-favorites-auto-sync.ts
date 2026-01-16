@@ -33,6 +33,7 @@ export function useFavoritesAutoSync(): FavoritesAutoSyncState {
   const isSyncScheduledRef = useRef(false);
   const pendingOnlineSyncRef = useRef(false);
   const isMountedRef = useRef(true);
+  const lastSyncAttemptRef = useRef(0);
   const [lastSyncAttempt, setLastSyncAttempt] = useState(0);
 
   useEffect(() => {
@@ -44,7 +45,7 @@ export function useFavoritesAutoSync(): FavoritesAutoSyncState {
 
   useEffect(() => {
     const now = Date.now();
-    const timeSinceLastSync = now - lastSyncAttempt;
+    const timeSinceLastSync = now - lastSyncAttemptRef.current;
     const justCameOnline = wasOfflineRef.current && isInternetReachable;
     if (justCameOnline && pipelineInFlight) {
       pendingOnlineSyncRef.current = true;
@@ -62,6 +63,7 @@ export function useFavoritesAutoSync(): FavoritesAutoSyncState {
       pendingOnlineSyncRef.current = false;
       console.info('[useFavoritesAutoSync] Triggering auto-sync');
       setLastSyncAttempt(now);
+      lastSyncAttemptRef.current = now;
       isSyncScheduledRef.current = true;
 
       InteractionManager.runAfterInteractions(() => {
@@ -81,13 +83,7 @@ export function useFavoritesAutoSync(): FavoritesAutoSyncState {
     }
 
     wasOfflineRef.current = !isInternetReachable;
-  }, [
-    isInternetReachable,
-    isSyncing,
-    fullSync,
-    lastSyncAttempt,
-    pipelineInFlight,
-  ]);
+  }, [isInternetReachable, isSyncing, fullSync, pipelineInFlight]);
 
   return {
     isSyncing,

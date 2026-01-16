@@ -209,7 +209,7 @@ function AcceptedSuggestionsSection({
       {suggestions.map((suggestion) => (
         <UIView
           key={suggestion.id}
-          className="dark:bg-success-950 mb-3 rounded-xl border border-success-200 bg-success-50 p-4 dark:border-success-800"
+          className="mb-3 rounded-xl border border-success-200 bg-success-50 p-4 dark:border-success-800 dark:bg-success-950"
         >
           <UIView className="mb-2 flex-row items-center">
             <Text className="text-lg font-semibold text-success-900 dark:text-success-100">

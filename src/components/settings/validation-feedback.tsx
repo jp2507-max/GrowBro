@@ -114,7 +114,7 @@ export function SuccessMessage({
   const { t } = useTranslation();
   return (
     <View
-      className="dark:bg-success-950 mb-4 flex-row items-center rounded-lg bg-success-50 p-4"
+      className="mb-4 flex-row items-center rounded-lg bg-success-50 p-4 dark:bg-success-950"
       testID={testID}
       accessibilityRole="alert"
       accessibilityLiveRegion="polite"

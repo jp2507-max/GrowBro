@@ -65,7 +65,7 @@ export function ConflictResolutionModal({
                 <Text className="mb-1 text-xs font-medium text-success-600 dark:text-success-400">
                   {translate('sync.conflict.server_version')}
                 </Text>
-                <View className="dark:bg-success-950 rounded bg-success-50 p-2">
+                <View className="rounded bg-success-50 p-2 dark:bg-success-950">
                   <Text className="font-mono text-xs text-neutral-800 dark:text-neutral-200">
                     {formatValue(conflict.remoteRecord?.[field])}
                   </Text>
@@ -75,7 +75,7 @@ export function ConflictResolutionModal({
           ))}
         </View>
 
-        <View className="dark:bg-warning-950 mb-2 rounded-lg border border-warning-200 bg-warning-50 p-3 dark:border-warning-800">
+        <View className="mb-2 rounded-lg border border-warning-200 bg-warning-50 p-3 dark:border-warning-800 dark:bg-warning-950">
           <Text className="text-xs text-warning-800 dark:text-warning-200">
             {translate('sync.conflict.note')}
           </Text>

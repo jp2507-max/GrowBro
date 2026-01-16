@@ -44,7 +44,7 @@ export function UncertaintyResultCard({
 
   return (
     <View
-      className="dark:bg-warning-950 rounded-xl border-2 border-warning-400 bg-warning-50 p-4 dark:border-warning-600"
+      className="rounded-xl border-2 border-warning-400 bg-warning-50 p-4 dark:border-warning-600 dark:bg-warning-950"
       testID={testID}
     >
       {/* Header */}

@@ -23,7 +23,7 @@ const statusVariants = tv({
   variants: {
     status: {
       pending: {
-        container: 'dark:bg-warning-950 bg-warning-100',
+        container: 'bg-warning-100 dark:bg-warning-950',
         text: 'text-warning-800 dark:text-warning-200',
       },
       failed: {

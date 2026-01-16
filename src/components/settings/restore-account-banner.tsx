@@ -91,7 +91,7 @@ export function RestoreAccountBanner({
   }
 
   return (
-    <View className="dark:bg-warning-950 mx-4 my-2 rounded-lg border-2 border-warning-500 bg-warning-50 p-4 dark:border-warning-600">
+    <View className="mx-4 my-2 rounded-lg border-2 border-warning-500 bg-warning-50 p-4 dark:border-warning-600 dark:bg-warning-950">
       {/* Warning Icon + Title */}
       <View className="mb-2 flex-row items-center">
         <Text className="mr-2 text-2xl">⚠️</Text>

@@ -38,7 +38,7 @@ export function FeedWithGeoNotice({
 }: FeedWithGeoNoticeProps): React.ReactElement {
   return (
     <View className="flex-1">
-      <View className="dark:bg-warning-950 m-4 rounded-lg border border-warning-300 bg-warning-50 p-4 dark:border-warning-700">
+      <View className="m-4 rounded-lg border border-warning-300 bg-warning-50 p-4 dark:border-warning-700 dark:bg-warning-950">
         <Text className="text-sm font-medium text-warning-800 dark:text-warning-200">
           {translate('moderation.geo_restriction_notice', {
             count: blockedCount,

@@ -107,7 +107,7 @@ function GuidanceDisplay({ guidance }: { guidance: EcGuidance }) {
         </>
       )}
 
-      <View className="dark:bg-warning-950 mt-3 rounded-md border border-warning-200 bg-warning-50 p-2 dark:border-warning-800">
+      <View className="mt-3 rounded-md border border-warning-200 bg-warning-50 p-2 dark:border-warning-800 dark:bg-warning-950">
         <Text className="mb-1 text-xs font-semibold text-warning-800 dark:text-warning-200">
           {t('nutrient.safetyNotes')}
         </Text>
@@ -179,7 +179,7 @@ export function useEcGuidanceCalculation({
 function EducationalWarning(): React.ReactElement {
   const { t } = useTranslation();
   return (
-    <View className="dark:bg-warning-950 mb-3 rounded-md bg-warning-50 p-2">
+    <View className="mb-3 rounded-md bg-warning-50 p-2 dark:bg-warning-950">
       <Text className="text-xs text-warning-800 dark:text-warning-200">
         ⚠️ {t('nutrient.educationalGuidanceOnly')}
       </Text>

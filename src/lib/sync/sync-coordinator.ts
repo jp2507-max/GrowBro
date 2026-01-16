@@ -311,12 +311,17 @@ export async function performSync(
         }
 
         // Loop to handle any new options that arrive while sync is running
-        while (pendingSyncOptions !== null) {
-          // Capture and clear pending options atomically before starting next sync
-          const nextOptions = pendingSyncOptions || {};
-          pendingSyncOptions = null;
+        while (true) {
+          const optionsToRun: SyncCoordinatorOptions | null =
+            pendingSyncOptions;
+          if (!optionsToRun) {
+            break;
+          }
 
-          lastResult = await runSyncPipeline(nextOptions);
+          pendingSyncOptions =
+            pendingSyncOptions === optionsToRun ? null : pendingSyncOptions;
+
+          lastResult = await runSyncPipeline(optionsToRun);
         }
 
         if (!lastResult) {

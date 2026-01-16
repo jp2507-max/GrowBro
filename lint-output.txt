@@ -1,0 +1,4 @@
+﻿
+> growbro@0.0.1 lint C:\Users\Peter\GrowBro
+> eslint . --ext .js,.jsx,.ts,.tsx
+

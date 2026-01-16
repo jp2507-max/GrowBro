@@ -39,6 +39,8 @@ type WeekStripProps = {
 
 // Number of weeks to render on each side of anchor week
 const WEEKS_BUFFER = 2;
+// Total weeks rendered: anchor + buffer on each side
+const TOTAL_WEEKS = WEEKS_BUFFER * 2 + 1;
 
 /**
  * Get the ISO week key for stable identification
@@ -250,7 +252,7 @@ export function WeekStrip({
       // Clamp to valid range
       const clampedIndex = Math.max(
         0,
-        Math.min(targetWeekIndex, WEEKS_BUFFER * 2)
+        Math.min(targetWeekIndex, TOTAL_WEEKS - 1)
       );
       const scrollX = clampedIndex * screenWidth;
       scrollTo(scrollViewRef, scrollX, 0, hasScrolledRef.current);

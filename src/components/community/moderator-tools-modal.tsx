@@ -121,7 +121,7 @@ function ModeratorToolsModalContent({
         </View>
       </View>
 
-      <View className="dark:bg-warning-950 mb-2 rounded-lg bg-warning-50 p-3">
+      <View className="mb-2 rounded-lg bg-warning-50 p-3 dark:bg-warning-950">
         <Text className="text-xs text-warning-800 dark:text-warning-200">
           {t('moderation.moderator_modal.audit_notice')}
         </Text>

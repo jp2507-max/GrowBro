@@ -8,17 +8,7 @@ import { useColorScheme } from 'nativewind';
 import React from 'react';
 import type { ColorValue } from 'react-native';
 import { StyleSheet } from 'react-native';
-import Animated, {
-  // @ts-ignore - Reanimated 4.x type exports issue
-  cancelAnimation,
-  FadeIn,
-  ReduceMotion,
-  useAnimatedStyle,
-  useSharedValue,
-  // @ts-ignore - Reanimated 4.x type exports issue
-  withDelay,
-  withSpring,
-} from 'react-native-reanimated';
+import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
 
 import { Text, View } from '@/components/ui';
 import colors from '@/components/ui/colors';
@@ -36,37 +26,9 @@ export function GuidanceSlide({
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
 
-  const titleScale = useSharedValue(0.95);
-  const titleOpacity = useSharedValue(0);
-
-  React.useEffect(() => {
-    titleOpacity.value = withDelay(
-      200,
-      withSpring(1, {
-        damping: 25,
-        stiffness: 80,
-        reduceMotion: ReduceMotion.System,
-      })
-    );
-    titleScale.value = withDelay(
-      200,
-      withSpring(1, {
-        damping: 20,
-        stiffness: 80,
-        reduceMotion: ReduceMotion.System,
-      })
-    );
-
-    return () => {
-      cancelAnimation(titleOpacity);
-      cancelAnimation(titleScale);
-    };
-  }, [titleOpacity, titleScale]);
-
-  const titleStyle = useAnimatedStyle(() => ({
-    opacity: titleOpacity.value,
-    transform: [{ scale: titleScale.value }],
-  }));
+  const titleEntering = FadeIn.delay(200)
+    .duration(450)
+    .reduceMotion(ReduceMotion.System);
 
   const gradientColors: readonly [ColorValue, ColorValue, ColorValue] = isDark
     ? [colors.charcoal[950], colors.charcoal[900], colors.charcoal[950]]
@@ -90,7 +52,7 @@ export function GuidanceSlide({
           </View>
 
           {/* Title with gentle spring animation */}
-          <Animated.View style={titleStyle} className="mb-4">
+          <Animated.View entering={titleEntering} className="mb-4">
             <Text
               testID="guidance-title"
               className="text-center text-4xl font-bold text-charcoal-950 dark:text-white"

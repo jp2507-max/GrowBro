@@ -340,7 +340,6 @@ export async function syncPlantsBidirectional(): Promise<SyncResult> {
   try {
     return await run;
   } finally {
-    await run.catch(() => {});
     if (plantsSyncPromise === run) {
       if (plantsSyncQueued) {
         // Re-arm a new run to preserve queued requests

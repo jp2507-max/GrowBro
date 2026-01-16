@@ -97,7 +97,6 @@ export function useAgeVerificationStatus(): AgeVerificationStatus {
   useEffect(() => {
     let mounted = true;
     let subscription: RealtimeChannel | null = null;
-    let pendingChannel: RealtimeChannel | null = null;
 
     const fetchStatus = async () => {
       if (!mounted) return;
@@ -124,8 +123,9 @@ export function useAgeVerificationStatus(): AgeVerificationStatus {
       const userId = await getOptionalAuthenticatedUserId();
       if (!mounted || !userId) return;
 
-      // Create channel first, then check mounted before subscribing
-      pendingChannel = supabase.channel(`age_verification_${userId}`).on(
+      if (!mounted) return;
+
+      const channel = supabase.channel(`age_verification_${userId}`).on(
         'postgres_changes',
         {
           event: '*',
@@ -139,13 +139,18 @@ export function useAgeVerificationStatus(): AgeVerificationStatus {
       );
 
       if (!mounted) {
-        supabase.removeChannel(pendingChannel);
-        pendingChannel = null;
+        supabase.removeChannel(channel);
         return;
       }
 
-      subscription = pendingChannel.subscribe();
-      pendingChannel = null;
+      channel.subscribe();
+
+      if (!mounted) {
+        supabase.removeChannel(channel);
+        return;
+      }
+
+      subscription = channel;
     };
 
     fetchStatus();
