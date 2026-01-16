@@ -515,6 +515,9 @@ async function updatePlantWithRemotePath(
       row.update((rec) => {
         const meta = (rec.metadata ?? {}) as Record<string, unknown>;
         rec.metadata = { ...meta, remoteImagePath: remotePath };
+        // Also set the dedicated remote_image_path column
+        (rec as { remoteImagePath?: string | null }).remoteImagePath =
+          remotePath;
         rec.updatedAt = new Date();
       })
     );

@@ -79,6 +79,7 @@ export function OutboxStatusIndicator({
           {retryCount > 0
             ? translate('community.outbox_retrying_with_count', {
                 count: retryCount,
+                max: 5,
               })
             : translate('community.outbox_sending')}
         </Text>

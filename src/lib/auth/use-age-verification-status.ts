@@ -43,13 +43,13 @@ async function fetchAgeVerificationStatusForUser(
     .from('user_age_status')
     .select('is_verified, verified_at, token_expiry')
     .eq('user_id', userId)
-    .limit(1);
+    .maybeSingle();
 
   if (error) {
     throw error;
   }
 
-  const row = data?.[0] ?? null;
+  const row = data ?? null;
   if (!row) {
     return {
       isVerified: false,
@@ -120,7 +120,7 @@ export function useAgeVerificationStatus(): AgeVerificationStatus {
     };
 
     const setupSubscription = async () => {
-      const userId = await getOptionalAuthenticatedUserId();
+      const userId = user?.id ?? (await getOptionalAuthenticatedUserId());
       if (!mounted || !userId) return;
 
       const channel = supabase.channel(`age_verification_${userId}`).on(

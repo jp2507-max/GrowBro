@@ -26,6 +26,7 @@ export class PlantModel extends Model {
   @text('notes') notes?: string | null;
   @json('metadata', (raw) => raw as PlantMetadataLocal)
   metadata?: PlantMetadataLocal | null;
+  @text('remote_image_path') remoteImagePath?: string | null;
   @field('server_revision') serverRevision?: number;
   @field('server_updated_at_ms') serverUpdatedAtMs?: number;
   @date('created_at') createdAt!: Date;

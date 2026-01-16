@@ -21,6 +21,7 @@ type RemotePlant = {
   image_url?: string | null;
   notes?: string | null;
   metadata?: Record<string, unknown> | null;
+  remote_image_path?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
   deleted_at?: string | null;
@@ -263,10 +264,14 @@ async function updatePlantFromRemote(
     if (remoteHasPhoto || !hasValidLocalPhoto) {
       record.imageUrl = remote.image_url ?? null;
     }
-    if (remoteHasPhoto) {
+    // Set remote_image_path from the dedicated column if available, otherwise from image_url
+    const remoteImagePath =
+      remote.remote_image_path ?? (remoteHasPhoto ? remote.image_url : null);
+    if (remoteImagePath) {
       const meta = (record.metadata ?? {}) as Record<string, unknown>;
-      meta.remoteImagePath = remote.image_url;
+      meta.remoteImagePath = remoteImagePath;
       record.metadata = meta;
+      record.remoteImagePath = remoteImagePath;
     }
     record.notes = remote.notes ?? null;
     if (remote.metadata) {
@@ -372,6 +377,18 @@ export async function upsertRemotePlants(
           record.imageUrl = remote.image_url ?? null;
           record.notes = remote.notes ?? null;
           record.metadata = remote.metadata ?? undefined;
+          // Set remote_image_path from metadata if available
+          if (remote.metadata && 'remoteImagePath' in remote.metadata) {
+            record.remoteImagePath =
+              typeof remote.metadata.remoteImagePath === 'string'
+                ? remote.metadata.remoteImagePath
+                : null;
+          } else if (
+            remote.image_url &&
+            !remote.image_url.startsWith('file://')
+          ) {
+            record.remoteImagePath = remote.image_url;
+          }
           const created = toDate(remote.created_at ?? Date.now());
           const updated = toDate(
             remote.updated_at ?? remote.created_at ?? Date.now()

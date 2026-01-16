@@ -45,11 +45,16 @@ async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
 }
 
 /**
- * Extract remoteImagePath from plant metadata with type safety.
+ * Extract remoteImagePath from plant, preferring the dedicated column.
  * @param plant - Plant object or null
  * @returns Remote image path or undefined
  */
 function getRemoteImagePath(plant: Plant | null): string | undefined {
+  // Prefer the dedicated remote_image_path column if available
+  if (plant && 'remoteImagePath' in plant && plant.remoteImagePath) {
+    return plant.remoteImagePath;
+  }
+  // Fall back to metadata for backward compatibility
   const metadata = plant?.metadata as PlantMetadata | undefined;
   return metadata?.remoteImagePath;
 }

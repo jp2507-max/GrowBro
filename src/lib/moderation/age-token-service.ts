@@ -226,14 +226,14 @@ export class AgeTokenService {
       .gt('expires_at', new Date().toISOString())
       .is('revoked_at', null)
       .order('issued_at', { ascending: false })
-      .limit(1);
+      .limit(1)
+      .maybeSingle();
 
-    const tokenData = (token as DbTokenRecord[] | null | undefined)?.[0];
-    if (error || !tokenData) {
+    if (error || !token) {
       return null;
     }
 
-    return this.mapDbTokenToType(tokenData);
+    return this.mapDbTokenToType(token as DbTokenRecord);
   }
 
   // ============================================================================
@@ -327,6 +327,12 @@ export class AgeTokenService {
    * Map database token to TypeScript type
    */
   private mapDbTokenToType(dbToken: DbTokenRecord): VerificationToken {
+    const verificationMethod = isValidVerificationMethod(
+      dbToken.verification_method
+    )
+      ? dbToken.verification_method
+      : 'other';
+
     return {
       id: dbToken.id,
       userId: dbToken.user_id,
@@ -338,12 +344,7 @@ export class AgeTokenService {
       usedAt: dbToken.used_at ? new Date(dbToken.used_at) : null,
       useCount: dbToken.use_count,
       maxUses: dbToken.max_uses,
-      verificationMethod: dbToken.verification_method as
-        | 'eudi_wallet'
-        | 'third_party_verifier'
-        | 'id_attribute'
-        | 'credit_card'
-        | 'other',
+      verificationMethod,
       verificationProvider: dbToken.verification_provider,
       assuranceLevel: dbToken.assurance_level,
       ageAttributeVerified: dbToken.age_attribute_verified,
@@ -397,6 +398,25 @@ function bytesToHex(bytes: Uint8Array): string {
   return Array.from(bytes)
     .map((value) => value.toString(16).padStart(2, '0'))
     .join('');
+}
+
+const VALID_VERIFICATION_METHODS = [
+  'eudi_wallet',
+  'third_party_verifier',
+  'id_attribute',
+  'credit_card',
+  'other',
+] as const;
+
+type VerificationMethodType = (typeof VALID_VERIFICATION_METHODS)[number];
+
+function isValidVerificationMethod(
+  value: string | null | undefined
+): value is VerificationMethodType {
+  return (
+    typeof value === 'string' &&
+    VALID_VERIFICATION_METHODS.includes(value as VerificationMethodType)
+  );
 }
 
 function hexToBytes(hex: string): Uint8Array {

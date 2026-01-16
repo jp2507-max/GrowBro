@@ -1010,7 +1010,7 @@
     "outbox_failed": "Senden fehlgeschlagen",
     "outbox_retry": "Erneut senden",
     "outbox_retrying": "Wird erneut gesendet...",
-    "outbox_retrying_with_count": "Wird erneut gesendet ({{count}}/5)...",
+    "outbox_retrying_with_count": "Wird erneut gesendet ({{count}}/{{max}})...",
     "outbox_sending": "Wird gesendet...",
     "phases": "Phasen",
     "playbooks": {

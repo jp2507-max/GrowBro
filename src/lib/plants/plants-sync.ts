@@ -1,5 +1,9 @@
 import { queryClient } from '@/api/common/api-provider';
 import { getOptionalAuthenticatedUserId } from '@/lib/auth';
+import {
+  getPlantDeletionRetentionCutoffIso,
+  getPlantDeletionRetentionCutoffMs,
+} from '@/lib/plants/plant-retention-config';
 import { supabase } from '@/lib/supabase';
 import type { DeletedPlantRecord } from '@/lib/watermelon-models/plants-repository';
 import {
@@ -17,10 +21,6 @@ type RemotePlant = Parameters<typeof upsertRemotePlants>[0][number];
 
 type SyncResult = { pushed: number; pulled: number };
 
-const PLANT_DELETION_RETENTION_DAYS = 10;
-const PLANT_DELETION_RETENTION_MS =
-  PLANT_DELETION_RETENTION_DAYS * 24 * 60 * 60 * 1000;
-
 let plantsSyncPromise: Promise<SyncResult> | null = null;
 let plantsSyncQueued = false;
 
@@ -28,14 +28,6 @@ function toIso(value: Date | string | null | undefined): string | null {
   if (!value) return null;
   if (typeof value === 'string') return value;
   return value.toISOString();
-}
-
-function getRetentionCutoffMs(): number {
-  return Date.now() - PLANT_DELETION_RETENTION_MS;
-}
-
-function getRetentionCutoffIso(): string {
-  return new Date(getRetentionCutoffMs()).toISOString();
 }
 
 function getDeletionTimestampIso(
@@ -71,15 +63,24 @@ type PlantData = Awaited<ReturnType<typeof getPlantsNeedingSync>>[number];
 function buildPlantPayload(plant: PlantData, userId: string): RemotePlant {
   const metadata =
     plant.metadata && typeof plant.metadata === 'object' ? plant.metadata : {};
-  const remoteImagePath =
+
+  // Prefer the dedicated remoteImagePath column if available
+  let remoteImagePath: string | null = null;
+  if (
+    'remoteImagePath' in plant &&
+    typeof plant.remoteImagePath === 'string' &&
+    plant.remoteImagePath.length > 0
+  ) {
+    remoteImagePath = plant.remoteImagePath;
+  } else if (
     'remoteImagePath' in metadata &&
     typeof metadata.remoteImagePath === 'string' &&
     metadata.remoteImagePath.length > 0
-      ? metadata.remoteImagePath
-      : null;
-  const cloudImageUrl = remoteImagePath
-    ? remoteImagePath
-    : (plant.imageUrl ?? null);
+  ) {
+    remoteImagePath = metadata.remoteImagePath;
+  }
+
+  const cloudImageUrl = remoteImagePath;
 
   return {
     id: plant.id,
@@ -98,6 +99,7 @@ function buildPlantPayload(plant: PlantData, userId: string): RemotePlant {
     image_url: cloudImageUrl,
     notes: plant.notes ?? null,
     metadata: plant.metadata ?? null,
+    remote_image_path: remoteImagePath,
     created_at: toIso(plant.createdAt) ?? new Date().toISOString(),
     updated_at: toIso(plant.updatedAt) ?? new Date().toISOString(),
   };
@@ -140,7 +142,7 @@ async function syncDeletedPlantsToCloud(): Promise<number> {
   }
 
   const { error } = await supabase.rpc('batch_mark_plants_deleted', {
-    updates: JSON.stringify(updates),
+    updates,
   });
 
   if (error) {
@@ -165,7 +167,7 @@ async function syncDeletedPlantsToCloud(): Promise<number> {
 async function hardDeleteExpiredPlantsFromCloud(
   userId: string
 ): Promise<string[]> {
-  const cutoffIso = getRetentionCutoffIso();
+  const cutoffIso = getPlantDeletionRetentionCutoffIso();
   const { data, error } = await supabase
     .from('plants')
     .delete()
@@ -188,7 +190,9 @@ async function hardDeleteExpiredPlantsFromCloud(
 async function purgeExpiredDeletedPlantsLocally(
   cloudDeletedIds: Set<string>
 ): Promise<number> {
-  const candidates = await getDeletedPlantsForPurge(getRetentionCutoffMs());
+  const candidates = await getDeletedPlantsForPurge(
+    getPlantDeletionRetentionCutoffMs()
+  );
   if (candidates.length === 0) return 0;
 
   // Only purge plants that have been hard-deleted from the cloud OR lack server timestamps while still assigned to a user.

@@ -16,6 +16,8 @@ import { translate } from '@/lib/i18n';
 function useTabLayoutRedirects() {
   const status = useAuth.use.status();
   const [isFirstTime] = useIsFirstTime();
+  // Zustand createSelectors pattern: .status() calls ARE hooks, but react-compiler
+  // misinterprets `useX.propertySelector` as referencing hooks as values.
   // eslint-disable-next-line react-compiler/react-compiler
   const ageGateStatus = useAgeGate.status();
 

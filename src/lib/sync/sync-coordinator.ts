@@ -63,10 +63,10 @@ async function downloadMissingPlantPhotosAfterSync(): Promise<void> {
     );
     const { database } = await import('@/lib/watermelon');
 
-    // Only fetch plants that have remoteImagePath in metadata
+    // Only fetch plants that have remote_image_path set
     const plants = await database.collections
       .get('plants')
-      .query(Q.where('metadata', Q.like('%"remoteImagePath"%')))
+      .query(Q.where('remote_image_path', Q.notEq(null)))
       .fetch();
 
     // Convert WatermelonDB models to Plant type
