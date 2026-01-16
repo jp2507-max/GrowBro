@@ -300,7 +300,7 @@ export async function pullPlantsFromCloud(): Promise<number> {
 export async function syncPlantsBidirectional(): Promise<SyncResult> {
   if (plantsSyncPromise) {
     plantsSyncQueued = true;
-    return plantsSyncPromise;
+    return await plantsSyncPromise;
   }
 
   plantsSyncQueued = false;
@@ -340,6 +340,7 @@ export async function syncPlantsBidirectional(): Promise<SyncResult> {
   try {
     return await run;
   } finally {
+    await run.catch(() => {});
     if (plantsSyncPromise === run) {
       if (plantsSyncQueued) {
         // Re-arm a new run to preserve queued requests

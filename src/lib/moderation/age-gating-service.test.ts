@@ -17,11 +17,6 @@ const mockFrom = jest.fn(() => ({
   select: mockSelect,
 }));
 
-mockSelect.mockReturnValue({ eq: mockEq });
-mockEq.mockReturnValue({ eq: mockEq }); // Chained eq
-// The second eq returns object with limit
-mockEq.mockReturnValue({ limit: mockLimit });
-
 const mockSupabase = {
   from: mockFrom,
 } as unknown as SupabaseClient;

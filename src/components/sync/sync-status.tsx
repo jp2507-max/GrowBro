@@ -37,11 +37,13 @@ export function SyncStatus({
     let isMounted = true;
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
     let appStateSub: ReturnType<typeof AppState.addEventListener> | null = null;
+    let pollToken = 0;
 
     const refresh = async (): Promise<void> => {
+      const token = pollToken;
       try {
         const count = await getPendingChangesCount();
-        if (!isMounted) return;
+        if (!isMounted || token !== pollToken) return;
         setPendingCount(count);
         setLastSyncMs(getItem<number>('sync.lastPulledAt'));
       } catch (error) {
@@ -52,10 +54,11 @@ export function SyncStatus({
     };
 
     const loop = async (): Promise<void> => {
+      const token = pollToken;
       if (AppState.currentState !== 'active') return;
 
       await refresh();
-      if (!isMounted) return;
+      if (!isMounted || token !== pollToken) return;
 
       timeoutId = setTimeout(() => {
         void loop();
@@ -63,18 +66,22 @@ export function SyncStatus({
     };
 
     if (AppState.currentState === 'active') {
+      pollToken += 1;
       void loop();
     }
 
     appStateSub = AppState.addEventListener('change', (nextAppState) => {
       if (nextAppState === 'active') {
         if (timeoutId) clearTimeout(timeoutId);
+        timeoutId = null;
+        pollToken += 1;
         void loop();
       }
     });
 
     return () => {
       isMounted = false;
+      pollToken += 1;
       if (timeoutId) {
         clearTimeout(timeoutId);
         timeoutId = null;
