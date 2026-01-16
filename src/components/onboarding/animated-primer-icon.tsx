@@ -8,14 +8,14 @@ import { useColorScheme } from 'nativewind';
 import React from 'react';
 import { StyleSheet, type ViewStyle } from 'react-native';
 import Animated, {
-  // @ts-ignore - Reanimated 4.x type exports issue
+  // @ts-expect-error - Reanimated 4.x type exports issue
   cancelAnimation,
   Easing,
   ReduceMotion,
   type SharedValue,
   useAnimatedStyle,
   useSharedValue,
-  // @ts-ignore - Reanimated 4.x type exports issue
+  // @ts-expect-error - Reanimated 4.x type exports issue
   withDelay,
   withRepeat,
   withSequence,

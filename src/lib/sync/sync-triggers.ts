@@ -131,7 +131,7 @@ export function setupSyncTriggers(
   // Connectivity trigger
   const removeNet = onConnectivityChange((netState) => {
     const isOnline =
-      netState.isConnected && (netState.isInternetReachable ?? true);
+      netState.isConnected && netState.isInternetReachable === true;
     if (state.lastOnline === null) {
       state.lastOnline = isOnline;
       return;

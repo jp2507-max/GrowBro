@@ -4012,6 +4012,8 @@
       "description_soil_veg_safe": "Wachstums-Dünger. **Tipp: Starte mit 50% der Hersteller-Dosierung.**",
       "title": "Nährstoffe geben"
     },
+    "reorderError": "Neuordnung fehlgeschlagen. Bitte erneut versuchen.",
+    "reordered": "Aufgaben neu geordnet",
     "start_flushing": {
       "description": "Spülphase beginnen - nur pH-ausgeglichenes Wasser verwenden. Dies hilft, überschüssige Nährstoffe zu entfernen und verbessert den Endgeschmack.",
       "description_rich": "Nur Wasser! Keinen Dünger mehr. pH-ausgeglichenes Wasser verwenden, um überschüssige Salze auszuspülen.",
@@ -4025,6 +4027,8 @@
       "description": "Organische Zusätze auf die Bodenoberfläche geben für langsam freisetzende Nährstoffe.",
       "title": "Oberflächendüngung"
     },
+    "undoError": "Rückgängigmachen fehlgeschlagen. Bitte erneut versuchen.",
+    "undoHint": "Tippen zum Rückgängigmachen (5 Sek.)",
     "water_plant": {
       "description_coco": "Gießen bis ~10-20% Ablauf. Kokos trocknet schnell - täglich prüfen.",
       "description_coco_rich": "Ca. {{min}}-{{max}}L gießen (wenn Medium trocken). Ablauf EC/pH prüfen.",

@@ -37,11 +37,13 @@ type TransientErrorCacheEntry = {
   expiresAt: number;
 };
 
-const userAgeStatusCache = new Map<string, UserAgeStatusCacheEntry>();
-const transientErrorCache = new Map<string, TransientErrorCacheEntry>();
+// Shared app state listener (singleton pattern across all instances)
 let appStateSubscription: ReturnType<typeof AppState.addEventListener> | null =
   null;
-let lastAppState: AppStateStatus = AppState.currentState;
+let lastAppState: AppStateStatus = AppState.currentState ?? 'active';
+const instanceCaches = new Set<{
+  userAgeStatus: Map<string, UserAgeStatusCacheEntry>;
+}>();
 
 function handleAppStateChange(nextAppState: AppStateStatus): void {
   const shouldInvalidate =
@@ -50,7 +52,10 @@ function handleAppStateChange(nextAppState: AppStateStatus): void {
   lastAppState = nextAppState;
 
   if (shouldInvalidate) {
-    userAgeStatusCache.clear();
+    // Clear all instance caches
+    instanceCaches.forEach((cache) => {
+      cache.userAgeStatus.clear();
+    });
   }
 }
 
@@ -71,16 +76,24 @@ export function cleanupAppStateListener(): void {
     appStateSubscription.remove();
     appStateSubscription = null;
   }
-  userAgeStatusCache.clear();
-  transientErrorCache.clear();
+  instanceCaches.forEach((cache) => {
+    cache.userAgeStatus.clear();
+  });
+  instanceCaches.clear();
 }
 
 export class ContentAgeGatingEngine {
   private supabase: SupabaseClient;
+  private userAgeStatusCache = new Map<string, UserAgeStatusCacheEntry>();
+  private transientErrorCache = new Map<string, TransientErrorCacheEntry>();
 
   constructor(supabase: SupabaseClient) {
     this.supabase = supabase;
     ensureAppStateListener();
+    // Register this instance's cache for app state invalidation
+    instanceCaches.add({
+      userAgeStatus: this.userAgeStatusCache,
+    });
   }
 
   /**
@@ -378,13 +391,17 @@ export class ContentAgeGatingEngine {
   private getCachedUserAgeStatus(
     userId: string
   ): UserAgeStatus | null | undefined {
-    const cachedEntry = userAgeStatusCache.get(userId);
+    const cachedEntry = this.userAgeStatusCache.get(userId);
     if (!cachedEntry) return undefined;
 
     if (cachedEntry.expiresAt <= Date.now()) {
-      userAgeStatusCache.delete(userId);
+      this.userAgeStatusCache.delete(userId);
       return undefined;
     }
+
+    // True LRU: refresh access time by re-inserting (move to end of Map)
+    this.userAgeStatusCache.delete(userId);
+    this.userAgeStatusCache.set(userId, cachedEntry);
 
     return cachedEntry.value;
   }
@@ -393,22 +410,25 @@ export class ContentAgeGatingEngine {
     userId: string,
     status: UserAgeStatus | null
   ): void {
-    // Bound cache growth - remove oldest entries if at max capacity
-    if (userAgeStatusCache.size >= MAX_CACHE_SIZE) {
-      const oldestKey = userAgeStatusCache.keys().next().value;
-      if (oldestKey) {
-        userAgeStatusCache.delete(oldestKey);
+    // Ensure LRU behavior: remove existing to refresh position, or evict oldest if full
+    if (this.userAgeStatusCache.has(userId)) {
+      this.userAgeStatusCache.delete(userId);
+    } else if (this.userAgeStatusCache.size >= MAX_CACHE_SIZE) {
+      // True LRU eviction: remove least recently used (first key in Map)
+      const lruKey = this.userAgeStatusCache.keys().next().value;
+      if (lruKey) {
+        this.userAgeStatusCache.delete(lruKey);
       }
     }
 
-    userAgeStatusCache.set(userId, {
+    this.userAgeStatusCache.set(userId, {
       value: status,
       expiresAt: Date.now() + USER_AGE_STATUS_CACHE_TTL_MS,
     });
   }
 
   private clearCachedUserAgeStatus(userId: string): void {
-    userAgeStatusCache.delete(userId);
+    this.userAgeStatusCache.delete(userId);
   }
 
   /**
@@ -450,7 +470,7 @@ export class ContentAgeGatingEngine {
     }
 
     // Check for cached transient errors
-    const cachedError = transientErrorCache.get(userId);
+    const cachedError = this.transientErrorCache.get(userId);
     if (cachedError && cachedError.expiresAt > Date.now()) {
       return null; // Return null as if no data found
     }
@@ -463,7 +483,7 @@ export class ContentAgeGatingEngine {
 
     if (error) {
       // Cache transient DB errors briefly to avoid hot-looping
-      transientErrorCache.set(userId, {
+      this.transientErrorCache.set(userId, {
         error,
         expiresAt: Date.now() + TRANSIENT_ERROR_CACHE_TTL_MS,
       });
@@ -471,7 +491,7 @@ export class ContentAgeGatingEngine {
     }
 
     // Clear any cached errors on successful query
-    transientErrorCache.delete(userId);
+    this.transientErrorCache.delete(userId);
 
     const statusData = (data as DbUserAgeStatus[] | null)?.[0];
 

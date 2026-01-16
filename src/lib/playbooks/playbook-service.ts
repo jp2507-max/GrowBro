@@ -23,6 +23,7 @@ import type {
 
 import type { AnalyticsClient } from '../analytics';
 import { getPlaybookNotificationScheduler } from '../notifications/playbook-notification-scheduler';
+import type { PlantModel } from '../watermelon-models/plant';
 import type { PlaybookModel } from '../watermelon-models/playbook';
 import type { PlaybookApplicationModel } from '../watermelon-models/playbook-application';
 import { type TaskModel } from '../watermelon-models/task';
@@ -399,13 +400,14 @@ export class PlaybookService {
       const { DateTime } = await import('luxon');
 
       // Query plant directly - we only need plantedAt field
-      const plantModel = await this.database.get('plants').find(plantId);
-      const plant = plantModel as unknown as { plantedAt?: string };
+      const plantModel = await this.database
+        .get<PlantModel>('plants')
+        .find(plantId);
 
       // Use plantedAt as the anchor date for scheduling
       let startDate: Date | undefined;
-      if (plant.plantedAt) {
-        const parsed = new Date(plant.plantedAt);
+      if (plantModel.plantedAt) {
+        const parsed = new Date(plantModel.plantedAt);
         if (!isNaN(parsed.getTime())) {
           startDate = parsed;
         }

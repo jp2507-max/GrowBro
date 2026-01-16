@@ -1,8 +1,8 @@
 import type { ColorValue } from 'react-native';
 import {
-  // @ts-ignore - Reanimated 4.x type exports issue
+  // @ts-expect-error - Reanimated 4.x type exports issue
   interpolate,
-  // @ts-ignore - Reanimated 4.x type exports issue
+  // @ts-expect-error - Reanimated 4.x type exports issue
   interpolateColor,
   type SharedValue,
   withSpring,

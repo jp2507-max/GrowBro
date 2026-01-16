@@ -123,37 +123,44 @@ async function syncDeletedPlantsToCloud(): Promise<number> {
   const now = new Date();
   const updatedAtIso = now.toISOString();
   const referenceMs = now.getTime();
+  const updates = deletedPlants
+    .filter((plant) => plant.userId === userId)
+    .map((plant) => ({
+      id: plant.id,
+      user_id: userId,
+      deleted_at: getDeletionTimestampIso(plant, referenceMs),
+      updated_at: updatedAtIso,
+    }));
 
-  for (const plant of deletedPlants) {
-    const deletedAtIso = getDeletionTimestampIso(plant, referenceMs);
-    const { error } = await supabase
-      .from('plants')
-      .update({
-        deleted_at: deletedAtIso,
-        updated_at: updatedAtIso,
-      })
-      .eq('id', plant.id)
-      .eq('user_id', userId)
-      .is('deleted_at', null);
+  if (updates.length === 0) {
+    if (__DEV__)
+      console.info(
+        '[PlantsSync] deleted plants belong to another user; skipping cloud push'
+      );
+    return 0;
+  }
 
-    if (error) {
-      console.error('[PlantsSync] failed to batch-mark plants deleted', {
-        plantId: plant.id,
-        message: error.message,
-        code: error.code,
-        details: error.details,
-      });
-      throw error;
-    }
+  const { error } = await supabase.rpc('batch_mark_plants_deleted', {
+    updates: JSON.stringify(updates),
+  });
+
+  if (error) {
+    console.error('[PlantsSync] failed to batch-mark plants deleted', {
+      rows: updates.length,
+      message: error.message,
+      code: error.code,
+      details: error.details,
+    });
+    throw error;
   }
 
   if (__DEV__) {
     console.info(
-      `[PlantsSync] pushed ${deletedPlants.length} deleted plant(s) to cloud`
+      `[PlantsSync] pushed ${updates.length} deleted plant(s) to cloud`
     );
   }
 
-  return deletedPlants.length;
+  return updates.length;
 }
 
 async function hardDeleteExpiredPlantsFromCloud(

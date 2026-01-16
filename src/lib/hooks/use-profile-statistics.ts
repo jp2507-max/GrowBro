@@ -27,12 +27,12 @@ async function queryUserCounts(
   try {
     const plantsCollection = database.collections.get('plants');
     plantsCount = await plantsCollection
-      .query(Q.where('user_id', userId))
+      .query(Q.where('user_id', userId), Q.where('deleted_at', null))
       .fetchCount();
 
     const harvestsCollection = database.collections.get('harvests');
     harvestsCount = await harvestsCollection
-      .query(Q.where('user_id', userId))
+      .query(Q.where('user_id', userId), Q.where('deleted_at', null))
       .fetchCount();
   } catch {
     // Table doesn't exist yet, keep defaults at 0
@@ -218,6 +218,8 @@ export function useProfileStatistics(
 
     try {
       // Observe post_likes changes (affects likes received count)
+      // Note: Observes ALL likes since WatermelonDB can't filter by user's posts
+      // in a subscription. Throttling mitigates the performance impact.
       const postLikesCollection = database.collections.get('post_likes');
       const postLikesSubscription = postLikesCollection
         .query()

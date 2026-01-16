@@ -7,6 +7,8 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import Animated, {
+  // @ts-ignore - Reanimated 4.x type exports issue
+  cancelAnimation,
   Easing,
   ReduceMotion,
   useAnimatedStyle,
@@ -85,6 +87,11 @@ export function AnimatedHero({
         false
       )
     );
+    return () => {
+      cancelAnimation(translateY);
+      cancelAnimation(scale);
+      cancelAnimation(glowOpacity);
+    };
   }, [translateY, scale, glowOpacity]);
 
   const iconStyle = useAnimatedStyle(() => ({

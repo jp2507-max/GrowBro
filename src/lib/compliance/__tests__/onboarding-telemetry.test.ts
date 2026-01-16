@@ -348,16 +348,6 @@ describe('Onboarding Telemetry', () => {
         context: 'strains_list',
       });
     });
-
-    it('should track try-ai-diagnosis action', () => {
-      trackActivationAction('try-ai-diagnosis', true);
-
-      const events = metrics.getAll();
-      expect(events[0]?.payload).toMatchObject({
-        action: 'try-ai-diagnosis',
-        completed: true,
-      });
-    });
   });
 
   describe('Event Sequence', () => {

@@ -31,27 +31,41 @@ export function useFavoritesAutoSync(): FavoritesAutoSyncState {
   const pipelineInFlight = useSyncState.use.pipelineInFlight();
   const wasOfflineRef = useRef(!isInternetReachable);
   const isSyncScheduledRef = useRef(false);
+  const pendingOnlineSyncRef = useRef(false);
+  const isMountedRef = useRef(true);
   const [lastSyncAttempt, setLastSyncAttempt] = useState(0);
 
   useEffect(() => {
-    let cancelled = false;
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
     const now = Date.now();
     const timeSinceLastSync = now - lastSyncAttempt;
     const justCameOnline = wasOfflineRef.current && isInternetReachable;
+    if (justCameOnline && pipelineInFlight) {
+      pendingOnlineSyncRef.current = true;
+    }
+    const shouldHonorOnlineTransition =
+      justCameOnline || pendingOnlineSyncRef.current;
 
     const shouldSync =
       isInternetReachable &&
       !isSyncing &&
       !pipelineInFlight &&
-      (justCameOnline || timeSinceLastSync > MIN_SYNC_INTERVAL);
+      (shouldHonorOnlineTransition || timeSinceLastSync > MIN_SYNC_INTERVAL);
 
     if (shouldSync && !isSyncScheduledRef.current) {
+      pendingOnlineSyncRef.current = false;
       console.info('[useFavoritesAutoSync] Triggering auto-sync');
       setLastSyncAttempt(now);
       isSyncScheduledRef.current = true;
 
       InteractionManager.runAfterInteractions(() => {
-        if (cancelled) return;
+        if (!isMountedRef.current) return;
         void fullSync()
           .catch((error: Error) => {
             console.error('[useFavoritesAutoSync] Auto-sync failed:', error);
@@ -62,12 +76,11 @@ export function useFavoritesAutoSync(): FavoritesAutoSyncState {
       });
     }
 
-    wasOfflineRef.current = !isInternetReachable;
+    if (!isInternetReachable) {
+      pendingOnlineSyncRef.current = false;
+    }
 
-    return () => {
-      cancelled = true;
-      isSyncScheduledRef.current = false;
-    };
+    wasOfflineRef.current = !isInternetReachable;
   }, [
     isInternetReachable,
     isSyncing,

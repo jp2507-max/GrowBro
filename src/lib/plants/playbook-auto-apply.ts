@@ -5,6 +5,8 @@
  * Uses plant properties (photoperiodType, environment) to find the best match.
  */
 
+import * as Localization from 'expo-localization';
+
 import type {
   PhotoperiodType,
   Plant,
@@ -55,7 +57,8 @@ export async function maybeAutoApplyPlaybook(
     const playbookId = await selector.findMatchingPlaybook({
       photoperiodType: criteria.photoperiodType,
       environment: criteria.environment,
-      locale: criteria.locale ?? 'en',
+      locale:
+        criteria.locale ?? Localization.getLocales()[0]?.languageCode ?? 'en',
     });
 
     if (!playbookId) {

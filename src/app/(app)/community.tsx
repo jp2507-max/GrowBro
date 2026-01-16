@@ -612,7 +612,7 @@ export default function CommunityScreen(): React.ReactElement {
 
             <View className="flex-1" testID="community-screen">
               <AnimatedFlashList
-                // @ts-expect-error - AnimatedFlashList ref type mismatch with FlashListRef
+                // @ts-expect-error - AnimatedFlashList ref type incompatible with FlashListRef; onScroll also affected
                 ref={listRef}
                 data={filteredPosts as Post[]}
                 renderItem={renderItem}
@@ -620,7 +620,6 @@ export default function CommunityScreen(): React.ReactElement {
                 keyExtractor={(item: Post) => String(item.id)}
                 onEndReached={onEndReached}
                 onEndReachedThreshold={0.4}
-                // AnimatedFlashList ref type mismatch with FlashListRef
                 onScroll={scrollHandler}
                 scrollEventThrottle={flashListConfig.scrollEventThrottle}
                 removeClippedSubviews={flashListConfig.removeClippedSubviews}

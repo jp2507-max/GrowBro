@@ -23,13 +23,18 @@ export function createDisposableObservable<T>(
         if (!isDisposed) subscriber.error(error);
       },
       () => isDisposed
-    ).then((sub) => {
-      if (isDisposed) {
-        sub?.unsubscribe();
-      } else {
+    )
+      .then((sub) => {
+        if (isDisposed) {
+          sub?.unsubscribe();
+          return;
+        }
+
         subscription = sub;
-      }
-    });
+      })
+      .catch((error) => {
+        if (!isDisposed) subscriber.error(error);
+      });
 
     return () => {
       isDisposed = true;

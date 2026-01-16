@@ -1,4 +1,6 @@
 import React from 'react';
+import { AppState } from 'react-native';
+import { setTimeout } from 'timers';
 
 import { ActivityIndicator, Text, View } from '@/components/ui';
 import { translate } from '@/lib';
@@ -35,6 +37,7 @@ export function SyncStatus({
   React.useEffect(() => {
     let isMounted = true;
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    let appStateSub: ReturnType<typeof AppState.addEventListener> | null = null;
 
     const refresh = async (): Promise<void> => {
       try {
@@ -50,14 +53,28 @@ export function SyncStatus({
     };
 
     const loop = async (): Promise<void> => {
+      if (AppState.currentState !== 'active') return;
+
       await refresh();
       if (!isMounted) return;
-      timeoutId = setTimeout(() => {
-        void loop();
-      }, SYNC_STATUS_POLL_INTERVAL_MS);
+
+      if (AppState.currentState === 'active') {
+        timeoutId = setTimeout(() => {
+          void loop();
+        }, SYNC_STATUS_POLL_INTERVAL_MS);
+      }
     };
 
-    void loop();
+    if (AppState.currentState === 'active') {
+      void loop();
+    }
+
+    appStateSub = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState === 'active') {
+        if (timeoutId) clearTimeout(timeoutId);
+        void loop();
+      }
+    });
 
     return () => {
       isMounted = false;
@@ -65,6 +82,7 @@ export function SyncStatus({
         clearTimeout(timeoutId);
         timeoutId = null;
       }
+      appStateSub?.remove();
     };
   }, []);
 

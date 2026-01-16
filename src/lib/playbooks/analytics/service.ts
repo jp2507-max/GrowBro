@@ -63,10 +63,7 @@ class AnalyticsService {
     } as unknown as AnalyticsEvent;
 
     this.eventQueue.push(event);
-    const maxQueueSize = this.config.maxQueueSize ?? 1000;
-    if (this.eventQueue.length > maxQueueSize) {
-      this.eventQueue.splice(0, this.eventQueue.length - maxQueueSize);
-    }
+    this.trimToQueueCap();
 
     if (this.config.debug) {
       console.log('[Analytics] Event tracked:', event);
@@ -115,6 +112,7 @@ class AnalyticsService {
     } catch (error) {
       // Re-queue events on failure
       this.eventQueue.unshift(...events);
+      this.trimToQueueCap();
       console.error('[Analytics] Failed to flush events:', error);
       Sentry.captureException(error);
     }
@@ -170,6 +168,7 @@ class AnalyticsService {
       const persisted = this.storage.getString(STORAGE_KEY);
       if (persisted) {
         this.eventQueue = JSON.parse(persisted);
+        this.trimToQueueCap();
         if (this.config.debug) {
           console.log(
             '[Analytics] Loaded persisted events:',
@@ -194,6 +193,13 @@ class AnalyticsService {
     this.flushTimer = setInterval(() => {
       this.flush();
     }, this.config.flushIntervalMs);
+  }
+
+  private trimToQueueCap(): void {
+    const maxQueueSize = this.config.maxQueueSize ?? 1000;
+    if (this.eventQueue.length > maxQueueSize) {
+      this.eventQueue.splice(0, this.eventQueue.length - maxQueueSize);
+    }
   }
 
   private async sendEvents(events: AnalyticsEvent[]): Promise<void> {

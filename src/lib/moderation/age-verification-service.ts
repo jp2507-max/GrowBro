@@ -428,7 +428,7 @@ export class AgeVerificationService {
         contentId,
         contentType,
         accessGranted: false,
-        failureReason: `user_status_error: ${userStatusError.message}`,
+        failureReason: 'user_status_lookup_failed',
       });
       return this.buildAgeGatingResult(
         false,

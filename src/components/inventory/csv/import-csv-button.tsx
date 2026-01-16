@@ -7,6 +7,7 @@ import { showMessage } from 'react-native-flash-message';
 
 import { Button } from '@/components/ui';
 import { previewCSVImport } from '@/lib/inventory/csv-import-service';
+import { useImportPreviewStore } from '@/lib/inventory/import-preview-store';
 
 interface ImportCSVButtonProps {
   variant?: 'default' | 'secondary' | 'outline' | 'ghost';
@@ -64,12 +65,12 @@ export function ImportCSVButton({
       // Preview import
       const preview = await previewCSVImport(files);
 
-      // Navigate to preview screen with preview data
-      const params = new URLSearchParams({
-        fileName: asset.name,
-        previewData: JSON.stringify(preview),
+      // Store preview data before navigation so the next screen can read it from the store
+      useImportPreviewStore.getState().setPreview({
+        fileName: asset.name!,
+        data: preview,
       });
-      router.push(`/inventory/csv-import-preview?${params.toString()}` as Href);
+      router.push('/inventory/csv-import-preview' as Href);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';

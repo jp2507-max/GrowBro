@@ -3,22 +3,14 @@
  * Premium glassmorphism card with spring animation for onboarding
  */
 
-import React, { type ReactNode, useMemo } from 'react';
+import React, { type ReactNode } from 'react';
 import {
   Platform,
   StyleSheet,
   useColorScheme,
   type ViewStyle,
 } from 'react-native';
-import Animated, {
-  FadeIn,
-  ReduceMotion,
-  useAnimatedStyle,
-  useSharedValue,
-  // @ts-ignore - Reanimated 4.x type exports issue
-  withDelay,
-  withSpring,
-} from 'react-native-reanimated';
+import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
 
 import { OptionalBlurView } from '@/components/shared/optional-blur-view';
 import { Text, View } from '@/components/ui';
@@ -92,41 +84,20 @@ export function GlassCard({
   titleKey,
   bodyKey,
 }: GlassCardProps): React.ReactElement {
-  const cardScale = useSharedValue(0.85);
-  const cardTranslateY = useSharedValue(20);
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
   const staggerDelay = 200 + index * 100;
-  const springConfig = useMemo(
-    () => ({
-      damping: 14,
-      stiffness: 120,
-      mass: 0.8,
-      reduceMotion: ReduceMotion.System,
-    }),
-    []
-  );
-
-  React.useEffect(() => {
-    cardScale.value = withDelay(staggerDelay, withSpring(1, springConfig));
-    cardTranslateY.value = withDelay(staggerDelay, withSpring(0, springConfig));
-  }, [cardScale, cardTranslateY, staggerDelay, springConfig]);
-
-  const cardStyle = useAnimatedStyle(() => ({
-    transform: [
-      { scale: cardScale.value },
-      { translateY: cardTranslateY.value },
-    ],
-  }));
 
   return (
     <Animated.View
       testID={testID}
       entering={FadeIn.delay(staggerDelay)
-        .duration(300)
+        .springify()
+        .damping(14)
+        .stiffness(120)
+        .mass(0.8)
         .reduceMotion(ReduceMotion.System)}
-      style={cardStyle}
       className="flex-row items-center rounded-2xl border border-white/20 bg-white/70 p-4 shadow-sm dark:border-white/10 dark:bg-charcoal-900/70"
     >
       <GlassCardOverlay isDark={isDark} style={styles.absoluteFill}>

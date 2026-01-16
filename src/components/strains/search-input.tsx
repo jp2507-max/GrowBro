@@ -201,12 +201,13 @@ export function SearchInput({
   testID = 'strains-search-input',
 }: SearchInputProps) {
   const searchHistory = useSearchHistory(onChangeText);
+  const { setShowHistory } = searchHistory;
 
   const handleClear = React.useCallback(() => {
     onChangeText('');
     onClear?.();
-    searchHistory.setShowHistory(false);
-  }, [onChangeText, onClear, searchHistory]);
+    setShowHistory(false);
+  }, [onChangeText, onClear, setShowHistory]);
 
   const hasValue = value.length > 0;
   const showHistoryList =

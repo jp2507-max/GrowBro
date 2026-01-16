@@ -488,16 +488,15 @@ async function initializeAuthAndStates(): Promise<void> {
   await initAuthStorage();
   if (__DEV__) console.log('[RootLayout] after initAuthStorage');
 
-  const abortController =
-    typeof AbortController !== 'undefined' ? new AbortController() : null;
-  const abortSignal = abortController?.signal;
+  const abortController = new AbortController();
+  const abortSignal = abortController.signal;
 
-  const attachAbortListener = (listener: () => void) => {
-    abortSignal?.addEventListener?.('abort', listener);
+  const attachAbortListener = (listener: () => void): void => {
+    abortSignal.addEventListener('abort', listener);
   };
 
-  const detachAbortListener = (listener: () => void) => {
-    abortSignal?.removeEventListener?.('abort', listener);
+  const detachAbortListener = (listener: () => void): void => {
+    abortSignal.removeEventListener('abort', listener);
   };
 
   // Cleanup helper - clears auth state if not already signed in
@@ -543,15 +542,19 @@ async function initializeAuthAndStates(): Promise<void> {
     timeoutId = setTimeout(async () => {
       // No longer needed once the timeout fires
       detachAbortListener(onAbort);
-
       if (abortSignal?.aborted) {
         resolve();
         return;
       }
-      await executeCleanup(
-        `hydrateAuth timeout after ${HYDRATE_AUTH_TIMEOUT_MS}ms`
-      );
-      resolve();
+      try {
+        await executeCleanup(
+          `hydrateAuth timeout after ${HYDRATE_AUTH_TIMEOUT_MS}ms`
+        );
+      } catch (error) {
+        console.error('[RootLayout] executeCleanup failed:', error);
+      } finally {
+        resolve();
+      }
     }, HYDRATE_AUTH_TIMEOUT_MS);
   });
 

@@ -42,8 +42,8 @@ describe('reservoir-event-service', () => {
     id: string;
     reservoirId: string;
     kind: string;
-    deltaEc25c: number;
-    deltaPh: number;
+    deltaEc25c?: number;
+    deltaPh?: number;
     note: string;
     userId: string;
     createdAt: Date;
@@ -389,6 +389,7 @@ describe('reservoir-event-service', () => {
 
       test('handles event with only EC change', async () => {
         const lastEvent = { ...mockEvent, deltaEc25c: 0.3, deltaPh: undefined };
+        mockEvent.deltaPh = undefined;
 
         mockCollection.query.mockReturnValue({
           fetch: jest.fn().mockResolvedValue([lastEvent]),
@@ -402,6 +403,7 @@ describe('reservoir-event-service', () => {
 
       test('handles event with only pH change', async () => {
         const lastEvent = { ...mockEvent, deltaPh: 0.1, deltaEc25c: undefined };
+        mockEvent.deltaEc25c = undefined;
 
         mockCollection.query.mockReturnValue({
           fetch: jest.fn().mockResolvedValue([lastEvent]),

@@ -73,11 +73,23 @@ export default function ResetPasswordConfirm() {
   }, []);
 
   const onSubmit: SubmitHandler<FormData> = (data) => {
+    if (!token_hash) return;
     confirmMutation.mutate({
       tokenHash: token_hash,
       newPassword: data.password,
     });
   };
+
+  if (!token_hash) {
+    return (
+      <View className="flex-1 items-center justify-center p-4">
+        <Text className="text-center text-red-500">
+          {t('auth.invalid_reset_link')}
+        </Text>
+        <Button label={t('common.go_back')} onPress={() => router.back()} />
+      </View>
+    );
+  }
 
   return (
     <>

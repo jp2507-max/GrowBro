@@ -86,7 +86,17 @@ function toMillisFromUnknown(value: unknown): number | null {
 function dedupeRemotePlants(plants: RemotePlant[]): RemotePlant[] {
   const map = new Map<string, RemotePlant>();
   for (const plant of plants) {
-    map.set(plant.id, plant);
+    const existing = map.get(plant.id);
+    if (!existing) {
+      map.set(plant.id, plant);
+      continue;
+    }
+    // Keep the plant with the newest updated_at to ensure we don't apply stale data
+    const existingMs = toMillis(existing.updated_at) ?? 0;
+    const currentMs = toMillis(plant.updated_at) ?? 0;
+    if (currentMs > existingMs) {
+      map.set(plant.id, plant);
+    }
   }
   return Array.from(map.values());
 }

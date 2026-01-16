@@ -4012,6 +4012,8 @@
       "description_soil_veg_safe": "Veg nutrients. **Tip: Start with 50% of manufacturer's dosage.**",
       "title": "Feed Plant"
     },
+    "reorderError": "Failed to reorder tasks. Please try again.",
+    "reordered": "Tasks reordered",
     "start_flushing": {
       "description": "Begin the flush period - use plain pH-balanced water only. This helps remove excess nutrients and improves final taste.",
       "description_rich": "Water only! No more nutrients. Use pH-balanced water to flush excess salts.",
@@ -4025,6 +4027,8 @@
       "description": "Add organic amendments to the soil surface for slow-release nutrients.",
       "title": "Top Dressing"
     },
+    "undoError": "Failed to undo task reorder. Please try again.",
+    "undoHint": "Tap to undo within 5 seconds",
     "water_plant": {
       "description_coco": "Water until ~10-20% runoff. Coco dries quickly - check daily.",
       "description_coco_rich": "~{{min}}-{{max}}L to water (when medium is dry). Check runoff EC/pH.",
