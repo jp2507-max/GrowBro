@@ -173,10 +173,14 @@ export class AgeTokenService {
       result: 'success',
     });
 
+    const updatedVerificationToken = updateResult.updatedToken
+      ? this.mapDbTokenToType(updateResult.updatedToken)
+      : { ...verificationToken, useCount: verificationToken.useCount + 1 };
+
     return {
       isValid: true,
       error: null,
-      token: { ...verificationToken, useCount: verificationToken.useCount + 1 },
+      token: updatedVerificationToken,
     };
   }
 
@@ -263,11 +267,11 @@ export class AgeTokenService {
     tokenId: string,
     tokenData: DbTokenRecord,
     verificationToken: VerificationToken
-  ): Promise<{ success: boolean }> {
+  ): Promise<{ success: boolean; updatedToken?: DbTokenRecord }> {
     const { data, error } = await this.supabase
       .from('age_verification_tokens')
       .update({
-        use_count: () => 'use_count + 1',
+        use_count: tokenData.use_count + 1,
         used_at:
           tokenData.use_count === 0 ? new Date().toISOString() : undefined,
       })
@@ -276,7 +280,7 @@ export class AgeTokenService {
       .select()
       .single();
 
-    return { success: !error && !!data };
+    return { success: !error && !!data, updatedToken: data ?? undefined };
   }
 
   private async handleConcurrentUsage(
@@ -300,9 +304,12 @@ export class AgeTokenService {
 
   /**
    * Compute keyed hash of token data using HMAC-like structure.
-   * Note: Uses hex string encoding due to expo-crypto API constraints,
-   * producing a consistent but non-standard keyed hash (not interoperable
-   * with standard HMAC-SHA256 implementations).
+   * Note: Expo Crypto only digests strings, so we encode the inner/outer
+   * concatenations as hex before hashing. That makes the digest valid
+   * within this system but non-interoperable with standard HMAC-SHA256
+   * implementations (they expect raw byte input). When a well-tested
+   * React Native HMAC library becomes available, consider replacing this
+   * custom implementation to reduce cryptographic risk.
    */
   private async generateTokenHash(tokenData: string): Promise<string> {
     const keyBytes = encodeUtf8(this.tokenSecret);

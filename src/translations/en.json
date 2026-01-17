@@ -876,6 +876,7 @@
     "on": "ON",
     "open_settings": "Open Settings",
     "optional": "Optional",
+    "read_more": "Read more",
     "reconnect": "Reconnect",
     "remove": "Remove",
     "reset": "Reset",
@@ -922,6 +923,8 @@
       "verify_age_button": "Verify Your Age"
     },
     "age_verification": {
+      "error_fetch_failed": "Failed to verify age status",
+      "error_unknown": "An unexpected error occurred",
       "feed_message": "Some content in this feed is age-restricted and requires age verification to view.",
       "feed_title": "Age Verification Required",
       "post_message": "This post contains age-restricted content and requires age verification to view.",

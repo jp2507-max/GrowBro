@@ -14,6 +14,7 @@
  * - AgeAuditService — audit event logging
  */
 
+import * as Sentry from '@sentry/react-native';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import type {
@@ -154,10 +155,24 @@ export class AgeVerificationService {
       });
 
       if (error) {
-        console.error(
-          '[AgeVerificationService] Failed to apply safer defaults for suspicious activity:',
-          error.message
-        );
+        const errorMsg = `[AgeVerificationService] Failed to apply safer defaults for suspicious activity: ${error.message}`;
+        console.error(errorMsg);
+
+        // Capture structured error for production monitoring
+        Sentry.captureMessage(errorMsg, {
+          level: 'warning',
+          extra: {
+            userId,
+            errorCode: error.code,
+            errorDetails: error.details,
+            operation: 'apply_safer_defaults',
+            suspiciousSignals: allowedSignals,
+          },
+          tags: {
+            component: 'AgeVerificationService',
+            operation: 'suspicious_activity_handling',
+          },
+        });
       }
     }
   }

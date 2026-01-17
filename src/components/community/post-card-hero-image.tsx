@@ -1,6 +1,6 @@
 /**
  * PostCardHeroImage - Row 2: Hero Image - No text overlays
- * Used by PostCard component for the "Instagram Pro" clean design
+ * Premium "Deep Garden" design with 4:5 aspect ratio (Instagram-like)
  */
 
 import React from 'react';
@@ -16,8 +16,8 @@ const AnimatedImage = Animated.createAnimatedComponent(Image);
 
 const styles = StyleSheet.create({
   image: {
-    // 4:3 aspect ratio for clean visual-first design
-    aspectRatio: 4 / 3,
+    // 4:5 aspect ratio for taller, more visual-first design (Instagram-like)
+    aspectRatio: 4 / 5,
     width: '100%',
   },
 });

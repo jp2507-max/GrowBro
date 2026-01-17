@@ -876,6 +876,7 @@
     "on": "AN",
     "open_settings": "Einstellungen öffnen",
     "optional": "Optional",
+    "read_more": "Mehr lesen",
     "reconnect": "Verbinden",
     "remove": "Entfernen",
     "reset": "Zurücksetzen",
@@ -922,6 +923,8 @@
       "verify_age_button": "Alter verifizieren"
     },
     "age_verification": {
+      "error_fetch_failed": "Altersstatus konnte nicht überprüft werden",
+      "error_unknown": "Ein unerwarteter Fehler ist aufgetreten",
       "feed_message": "Einige Inhalte in diesem Feed sind altersbeschränkt und erfordern eine Altersverifikation.",
       "feed_title": "Altersverifikation erforderlich",
       "post_message": "Dieser Beitrag enthält altersbeschränkte Inhalte und erfordert eine Altersverifikation.",

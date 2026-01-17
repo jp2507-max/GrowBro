@@ -272,6 +272,13 @@ async function updatePlantFromRemote(
       meta.remoteImagePath = remoteImagePath;
       record.metadata = meta;
       record.remoteImagePath = remoteImagePath;
+    } else {
+      record.remoteImagePath = null;
+      if (record.metadata && 'remoteImagePath' in record.metadata) {
+        const meta = { ...(record.metadata as Record<string, unknown>) };
+        delete meta.remoteImagePath;
+        record.metadata = meta;
+      }
     }
     record.notes = remote.notes ?? null;
     if (remote.metadata) {
@@ -378,17 +385,20 @@ export async function upsertRemotePlants(
           record.imageUrl = remote.image_url ?? null;
           record.notes = remote.notes ?? null;
           record.metadata = remote.metadata ?? undefined;
-          // Set remote_image_path from metadata if available
-          if (remote.metadata && 'remoteImagePath' in remote.metadata) {
-            record.remoteImagePath =
-              typeof remote.metadata.remoteImagePath === 'string'
-                ? remote.metadata.remoteImagePath
-                : null;
-          } else if (
-            remote.image_url &&
-            !remote.image_url.startsWith('file://')
-          ) {
-            record.remoteImagePath = remote.image_url;
+          const remoteImagePath =
+            remote.remote_image_path ??
+            (remote.metadata &&
+            typeof remote.metadata.remoteImagePath === 'string'
+              ? remote.metadata.remoteImagePath
+              : null) ??
+            (remote.image_url && !remote.image_url.startsWith('file://')
+              ? remote.image_url
+              : null);
+          if (remoteImagePath) {
+            const meta = (record.metadata ?? {}) as Record<string, unknown>;
+            meta.remoteImagePath = remoteImagePath;
+            record.metadata = meta;
+            record.remoteImagePath = remoteImagePath;
           }
           const created = toDate(remote.created_at ?? Date.now());
           const updated = toDate(

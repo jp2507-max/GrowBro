@@ -13,10 +13,10 @@
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { useEffect, useState } from 'react';
 
-import { supabase } from '@/lib/supabase';
-
-import { useAuth } from '.';
-import { getOptionalAuthenticatedUserId } from './user-utils';
+import { supabase } from '@/lib';
+import { useAuth } from '@/lib/auth';
+import { getOptionalAuthenticatedUserId } from '@/lib/auth/user-utils';
+import { translateDynamic } from '@/lib/i18n';
 
 type AgeStatusRow = {
   is_verified: boolean;
@@ -113,7 +113,10 @@ export function useAgeVerificationStatus(): AgeVerificationStatus {
           setStatus({
             isVerified: false,
             isLoading: false,
-            error: error instanceof Error ? error.message : 'Unknown error',
+            error:
+              error instanceof Error
+                ? translateDynamic('feed.age_verification.error_fetch_failed')
+                : translateDynamic('feed.age_verification.error_unknown'),
           });
         }
       }

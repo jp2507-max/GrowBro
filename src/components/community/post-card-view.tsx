@@ -1,6 +1,6 @@
 /**
  * PostCardView - Main view component for PostCard
- * Instagram Pro layout: Header → Image → ActionBar → Content
+ * Premium "Deep Garden" layout: Header → Image → ActionBar → Content
  */
 
 import { Link } from 'expo-router';
@@ -28,10 +28,10 @@ import { useCardInteractions } from './use-card-interactions';
 const cardStyles = StyleSheet.create({
   shadow: {
     shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
   },
 });
 
