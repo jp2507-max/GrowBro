@@ -33,7 +33,7 @@ function capturePreviousOrder(data: Task[]): Record<string, number> {
 function showUndoToast(onUndo: () => Promise<void>): void {
   showMessage({
     message: i18n.t('tasks.reordered'),
-    description: i18n.t('tasks.undoHint'),
+    description: i18n.t('tasks.undo_hint'),
     type: 'info',
     duration: UNDO_TIMEOUT_MS,
     onPress: () => {
@@ -91,7 +91,7 @@ export function useTaskReorder() {
       );
     } catch (error) {
       console.error('Failed to undo task reorder:', error);
-      showErrorMessage(i18n.t('tasks.undoError'));
+      showErrorMessage(i18n.t('tasks.undo_error'));
     }
   }, []);
 
@@ -122,7 +122,7 @@ export function useTaskReorder() {
         showUndoToast(performUndo);
       } catch (error) {
         console.error('Failed to reorder tasks:', error);
-        showErrorMessage(i18n.t('tasks.reorderError'));
+        showErrorMessage(i18n.t('tasks.reorder_error'));
       }
     },
     [performUndo]

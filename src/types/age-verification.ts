@@ -66,6 +66,7 @@ export type VerificationToken = z.infer<typeof verificationTokenSchema>;
  */
 export const reusableTokenSchema = z.object({
   id: z.string().uuid(),
+  token: z.string(),
   isValid: z.boolean(),
   expiresAt: z.date(),
   remainingUses: z.number().int().min(0),

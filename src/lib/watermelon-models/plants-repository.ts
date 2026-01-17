@@ -338,6 +338,7 @@ export async function upsertRemotePlants(
   // If remote sends tombstones, they must be applied via applyRemotePlantDeletions()
   // to avoid resurrecting records here.
   const activePlants = uniquePlants.filter((p) => !p.deleted_at);
+  if (activePlants.length === 0) return { applied: 0 };
   const collection = getCollection();
   const deletedIds = await getDeletedPlantIds(
     activePlants.map((plant) => plant.id)

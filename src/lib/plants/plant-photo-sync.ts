@@ -50,12 +50,15 @@ async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
  * @returns Remote image path or undefined
  */
 function getRemoteImagePath(plant: Plant | null): string | undefined {
-  // Prefer the dedicated remote_image_path column if available
-  if (plant && 'remoteImagePath' in plant && plant.remoteImagePath) {
-    return plant.remoteImagePath;
+  if (!plant) {
+    return undefined;
+  }
+  // Prefer the dedicated remote_image_path column if present (even if null/empty)
+  if (Object.prototype.hasOwnProperty.call(plant, 'remoteImagePath')) {
+    return plant.remoteImagePath || undefined;
   }
   // Fall back to metadata for backward compatibility
-  const metadata = plant?.metadata as PlantMetadata | undefined;
+  const metadata = plant.metadata as PlantMetadata | undefined;
   return metadata?.remoteImagePath;
 }
 

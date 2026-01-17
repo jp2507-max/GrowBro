@@ -116,6 +116,7 @@ export class AgeTokenService {
 
     return {
       id: tokenResult.id,
+      token: tokenString,
       isValid: true,
       expiresAt,
       remainingUses: maxUses,
@@ -126,40 +127,41 @@ export class AgeTokenService {
    * Validate an existing verification token
    * Prevents replay attacks through use_count tracking with atomic updates
    *
-   * @param tokenId - Token UUID to validate
+   * @param token - Client-facing token string to validate
    * @returns Token validation result with error details
    */
-  async validateToken(tokenId: string): Promise<TokenValidationResult> {
-    const { data: token, error } = await this.supabase
+  async validateToken(token: string): Promise<TokenValidationResult> {
+    const tokenHash = await this.generateTokenHash(token);
+    const { data: tokenRow, error } = await this.supabase
       .from('age_verification_tokens')
       .select('*')
-      .eq('id', tokenId)
+      .eq('token_hash', tokenHash)
       .single();
 
-    if (error || !token) {
+    if (error || !tokenRow) {
       return { isValid: false, error: 'token_not_found', token: null };
     }
 
-    const tokenData = token as DbTokenRecord;
+    const tokenData = tokenRow as DbTokenRecord;
     const verificationToken = this.mapDbTokenToType(tokenData);
 
     if (!isTokenUsable(verificationToken)) {
       return await this.handleInvalidToken(
         tokenData,
-        tokenId,
+        tokenData.id,
         verificationToken
       );
     }
 
     const updateResult = await this.atomicTokenUpdate(
-      tokenId,
+      tokenData.id,
       tokenData,
       verificationToken
     );
     if (!updateResult.success) {
       return await this.handleConcurrentUsage(
         tokenData,
-        tokenId,
+        tokenData.id,
         verificationToken
       );
     }
@@ -167,7 +169,7 @@ export class AgeTokenService {
     await this.auditService.logTokenEvent({
       eventType: 'token_validated',
       userId: tokenData.user_id,
-      tokenId,
+      tokenId: tokenData.id,
       result: 'success',
     });
 
@@ -181,32 +183,33 @@ export class AgeTokenService {
   /**
    * Revoke a verification token
    *
-   * @param tokenId - Token UUID to revoke
+   * @param token - Client-facing token string to revoke
    * @param reason - Revocation reason
    */
-  async revokeToken(tokenId: string, reason: string): Promise<void> {
-    const { data: token, error } = await this.supabase
+  async revokeToken(token: string, reason: string): Promise<void> {
+    const tokenHash = await this.generateTokenHash(token);
+    const { data: tokenRow, error } = await this.supabase
       .from('age_verification_tokens')
       .update({
         revoked_at: new Date().toISOString(),
         revocation_reason: reason,
       })
-      .eq('id', tokenId)
+      .eq('token_hash', tokenHash)
       .select()
       .single();
 
-    if (error || !token) {
+    if (error || !tokenRow) {
       throw new Error(
         `Failed to revoke token: ${error?.message || 'Unknown error'}`
       );
     }
 
-    const revokedToken = token as DbTokenRecord;
+    const revokedToken = tokenRow as DbTokenRecord;
 
     await this.auditService.logTokenEvent({
       eventType: 'token_revoked',
       userId: revokedToken.user_id,
-      tokenId,
+      tokenId: revokedToken.id,
       result: 'success',
       failureReason: reason,
     });
@@ -264,11 +267,9 @@ export class AgeTokenService {
     const { data, error } = await this.supabase
       .from('age_verification_tokens')
       .update({
-        use_count: tokenData.use_count + 1,
+        use_count: () => 'use_count + 1',
         used_at:
-          tokenData.use_count === 0
-            ? new Date().toISOString()
-            : tokenData.used_at,
+          tokenData.use_count === 0 ? new Date().toISOString() : undefined,
       })
       .eq('id', tokenId)
       .lt('use_count', verificationToken.maxUses)

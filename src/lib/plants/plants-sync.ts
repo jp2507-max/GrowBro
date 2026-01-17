@@ -1,9 +1,5 @@
 import { queryClient } from '@/api/common/api-provider';
 import { getOptionalAuthenticatedUserId } from '@/lib/auth';
-import {
-  getPlantDeletionRetentionCutoffIso,
-  getPlantDeletionRetentionCutoffMs,
-} from '@/lib/plants/plant-retention-config';
 import { supabase } from '@/lib/supabase';
 import type { DeletedPlantRecord } from '@/lib/watermelon-models/plants-repository';
 import {
@@ -16,6 +12,11 @@ import {
   purgeDeletedPlantsByIds,
   upsertRemotePlants,
 } from '@/lib/watermelon-models/plants-repository';
+
+import {
+  getPlantDeletionRetentionCutoffIso,
+  getPlantDeletionRetentionCutoffMs,
+} from './plant-retention-config';
 
 type RemotePlant = Parameters<typeof upsertRemotePlants>[0][number];
 
@@ -78,6 +79,8 @@ function buildPlantPayload(plant: PlantData, userId: string): RemotePlant {
     metadata.remoteImagePath.length > 0
   ) {
     remoteImagePath = metadata.remoteImagePath;
+  } else if (plant.imageUrl && !plant.imageUrl.startsWith('file://')) {
+    remoteImagePath = plant.imageUrl;
   }
 
   const cloudImageUrl = remoteImagePath;

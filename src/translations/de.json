@@ -109,6 +109,7 @@
       "delete_post": "Beitrag löschen",
       "delete_post_failed": "Beitrag konnte nicht gelöscht werden",
       "delete_post_hint": "Doppeltippen, um diesen Beitrag zu löschen. Du hast 15 Sekunden Zeit zum Rückgängig machen.",
+      "dismiss_banner_hint": "Schließt das Offline-Banner.",
       "error_card_hint": "Informiert, dass der Community-Feed nicht geladen werden konnte.",
       "like_button_hint": "Doppeltippen, um den Gefällt-mir-Status für diesen Beitrag umzuschalten.",
       "offline_message": "Du bist offline. Änderungen werden synchronisiert, sobald du wieder online bist.",
@@ -136,7 +137,6 @@
       "view_comments_hint": "Doppeltippen, um Kommentare zu diesem Beitrag anzuzeigen.",
       "view_strain_hint": "Öffnet Details für diese Sorte."
     },
-    "dismiss_banner_hint": "Schließt das Offline-Banner.",
     "home": {
       "activation_action_hint": "Doppeltippen, um {{action}}",
       "activation_dismiss_hint": "Doppeltippen, um die Aktivierungs-Checkliste auszublenden",
@@ -3985,7 +3985,7 @@
       "description_soil_veg_safe": "Wachstums-Dünger. **Tipp: Starte mit 50% der Hersteller-Dosierung.**",
       "title": "Nährstoffe geben"
     },
-    "reorderError": "Neuordnung fehlgeschlagen. Bitte erneut versuchen.",
+    "reorder_error": "Neuordnung fehlgeschlagen. Bitte erneut versuchen.",
     "reordered": "Aufgaben neu geordnet",
     "start_flushing": {
       "description": "Spülphase beginnen - nur pH-ausgeglichenes Wasser verwenden. Dies hilft, überschüssige Nährstoffe zu entfernen und verbessert den Endgeschmack.",
@@ -4000,8 +4000,8 @@
       "description": "Organische Zusätze auf die Bodenoberfläche geben für langsam freisetzende Nährstoffe.",
       "title": "Oberflächendüngung"
     },
-    "undoError": "Rückgängigmachen fehlgeschlagen. Bitte erneut versuchen.",
-    "undoHint": "Tippen zum Rückgängigmachen (5 Sek.)",
+    "undo_error": "Rückgängigmachen fehlgeschlagen. Bitte erneut versuchen.",
+    "undo_hint": "Tippen zum Rückgängigmachen (5 Sek.)",
     "water_plant": {
       "description_coco": "Gießen bis ~10-20% Ablauf. Kokos trocknet schnell - täglich prüfen.",
       "description_coco_rich": "Ca. {{min}}-{{max}}L gießen (wenn Medium trocken). Ablauf EC/pH prüfen.",

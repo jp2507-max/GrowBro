@@ -217,13 +217,13 @@ export class AgeVerificationService {
   }
 
   /** @see AgeTokenService.validateToken */
-  async validateToken(tokenId: string): Promise<TokenValidationResult> {
-    return this.tokenService.validateToken(tokenId);
+  async validateToken(token: string): Promise<TokenValidationResult> {
+    return this.tokenService.validateToken(token);
   }
 
   /** @see AgeTokenService.revokeToken */
-  async revokeToken(tokenId: string, reason: string): Promise<void> {
-    return this.tokenService.revokeToken(tokenId, reason);
+  async revokeToken(token: string, reason: string): Promise<void> {
+    return this.tokenService.revokeToken(token, reason);
   }
 
   /** @see AgeTokenService.getActiveToken */

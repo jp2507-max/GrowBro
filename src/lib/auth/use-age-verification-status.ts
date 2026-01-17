@@ -98,7 +98,7 @@ export function useAgeVerificationStatus(): AgeVerificationStatus {
     let mounted = true;
     let subscription: RealtimeChannel | null = null;
 
-    const fetchStatus = async () => {
+    const fetchStatus = async (): Promise<void> => {
       if (!mounted) return;
       setStatus((previous) => ({ ...previous, isLoading: true }));
 
@@ -119,7 +119,7 @@ export function useAgeVerificationStatus(): AgeVerificationStatus {
       }
     };
 
-    const setupSubscription = async () => {
+    const setupSubscription = async (): Promise<void> => {
       const userId = user?.id ?? (await getOptionalAuthenticatedUserId());
       if (!mounted || !userId) return;
 

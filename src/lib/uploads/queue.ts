@@ -494,6 +494,7 @@ async function updatePlantWithRemotePath(
       imageUrl?: string | null;
       metadata?: Record<string, unknown> | null;
       updatedAt: Date;
+      remoteImagePath?: string | null;
     };
     const coll = database.collections.get<PlantRecord>('plants');
     const row = await coll.find(plantId);
@@ -516,8 +517,7 @@ async function updatePlantWithRemotePath(
         const meta = (rec.metadata ?? {}) as Record<string, unknown>;
         rec.metadata = { ...meta, remoteImagePath: remotePath };
         // Also set the dedicated remote_image_path column
-        (rec as { remoteImagePath?: string | null }).remoteImagePath =
-          remotePath;
+        rec.remoteImagePath = remotePath;
         rec.updatedAt = new Date();
       })
     );
