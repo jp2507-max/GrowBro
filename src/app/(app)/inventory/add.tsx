@@ -97,14 +97,10 @@ function FormHeader({ onCancel }: { onCancel: () => void }) {
 
 function NameField({
   control,
-  errors: _errors,
   isSubmitting,
-  serverValidationErrors: _serverValidationErrors,
 }: {
   control: Control<AddItemFormData>;
-  errors: FieldErrors<AddItemFormData>;
   isSubmitting: boolean;
-  serverValidationErrors: Record<string, string>;
 }) {
   const { t } = useTranslation();
 
@@ -157,14 +153,10 @@ function CategoryField({ control }: { control: Control<AddItemFormData> }) {
 
 function UnitField({
   control,
-  errors: _errors,
   isSubmitting,
-  serverValidationErrors: _serverValidationErrors,
 }: {
   control: Control<AddItemFormData>;
-  errors: FieldErrors<AddItemFormData>;
   isSubmitting: boolean;
-  serverValidationErrors: Record<string, string>;
 }) {
   const { t } = useTranslation();
 
@@ -358,11 +350,9 @@ function LeadTimeField({
 function SkuField({
   control,
   isSubmitting,
-  serverValidationErrors,
 }: {
   control: Control<AddItemFormData>;
   isSubmitting: boolean;
-  serverValidationErrors: Record<string, string>;
 }) {
   const { t } = useTranslation();
 
@@ -374,7 +364,7 @@ function SkuField({
       <Controller
         control={control}
         name="sku"
-        render={({ field: { onChange, onBlur, value } }) => (
+        render={({ field: { onChange, onBlur, value }, fieldState }) => (
           <Input
             value={value}
             placeholder={t('inventory.form.sku_placeholder')}
@@ -382,14 +372,10 @@ function SkuField({
             onBlur={onBlur}
             editable={!isSubmitting}
             testID="sku-input"
+            errorTx={fieldState.error?.message}
           />
         )}
       />
-      {serverValidationErrors.sku && (
-        <Text className="mt-1 text-xs text-danger-600 dark:text-danger-400">
-          {serverValidationErrors.sku}
-        </Text>
-      )}
     </View>
   );
 }
@@ -445,9 +431,7 @@ const styles = StyleSheet.create({
 type UseAddInventorySubmitResult = {
   isSubmitting: boolean;
   error: string | null;
-  serverValidationErrors: Record<string, string>;
   onSubmit: (data: AddItemFormData) => Promise<void>;
-  clearServerErrors: () => void;
 };
 
 function useAddInventorySubmit(
@@ -457,16 +441,13 @@ function useAddInventorySubmit(
 ): UseAddInventorySubmitResult {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [error, setGlobalError] = React.useState<string | null>(null);
-  const [serverValidationErrors, setServerValidationErrors] = React.useState<
-    Record<string, string>
-  >({});
+  const addItemSchema = useAddItemSchema();
 
   const onSubmit = React.useCallback(
     async (data: AddItemFormData) => {
       try {
         setIsSubmitting(true);
         setGlobalError(null);
-        setServerValidationErrors({});
 
         const result = await createInventoryItem({
           name: data.name,
@@ -488,18 +469,15 @@ function useAddInventorySubmit(
           result.validationErrors.length > 0
         ) {
           clearErrors();
-          const fieldErrors: Record<string, string> = {};
           result.validationErrors.forEach((validationError) => {
-            if (validationError.field === 'barcode') {
-              setError('barcode', {
+            const fieldName = validationError.field as keyof AddItemFormData;
+            if (fieldName in addItemSchema.shape) {
+              setError(fieldName, {
                 type: 'server',
                 message: validationError.message,
               });
-            } else {
-              fieldErrors[validationError.field] = validationError.message;
             }
           });
-          setServerValidationErrors(fieldErrors);
           if (result.error) setGlobalError(result.error);
         } else {
           setGlobalError(result.error || 'Failed to create item');
@@ -510,20 +488,13 @@ function useAddInventorySubmit(
         setIsSubmitting(false);
       }
     },
-    [clearErrors, router, setError]
+    [clearErrors, router, setError, addItemSchema]
   );
-
-  const clearServerErrors = React.useCallback(() => {
-    setServerValidationErrors({});
-    setGlobalError(null);
-  }, []);
 
   return {
     isSubmitting,
     error,
-    serverValidationErrors,
     onSubmit,
-    clearServerErrors,
   };
 }
 
@@ -554,8 +525,11 @@ export default function AddInventoryItemScreen(): React.ReactElement {
     },
   });
 
-  const { isSubmitting, error, serverValidationErrors, onSubmit } =
-    useAddInventorySubmit(router, clearErrors, setError);
+  const { isSubmitting, error, onSubmit } = useAddInventorySubmit(
+    router,
+    clearErrors,
+    setError
+  );
 
   return (
     <View className="flex-1" testID="add-inventory-item-screen">
@@ -586,19 +560,9 @@ export default function AddInventoryItemScreen(): React.ReactElement {
             </View>
           )}
 
-          <NameField
-            control={control}
-            errors={errors}
-            isSubmitting={isSubmitting}
-            serverValidationErrors={serverValidationErrors}
-          />
+          <NameField control={control} isSubmitting={isSubmitting} />
           <CategoryField control={control} />
-          <UnitField
-            control={control}
-            errors={errors}
-            isSubmitting={isSubmitting}
-            serverValidationErrors={serverValidationErrors}
-          />
+          <UnitField control={control} isSubmitting={isSubmitting} />
           <TrackingModeField control={control} />
           <MinStockField
             control={control}
@@ -611,11 +575,7 @@ export default function AddInventoryItemScreen(): React.ReactElement {
             isSubmitting={isSubmitting}
           />
           <LeadTimeField control={control} isSubmitting={isSubmitting} />
-          <SkuField
-            control={control}
-            isSubmitting={isSubmitting}
-            serverValidationErrors={serverValidationErrors}
-          />
+          <SkuField control={control} isSubmitting={isSubmitting} />
           <BarcodeField control={control} isSubmitting={isSubmitting} />
 
           {/* Submit Button */}

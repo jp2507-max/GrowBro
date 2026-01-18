@@ -13,9 +13,13 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
-import type { ScrollView } from 'react-native';
 import { Platform, StyleSheet } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
+import type Animated from 'react-native-reanimated';
+import {
+  // @ts-ignore - Reanimated 4.x type exports issue
+  useAnimatedRef,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { usePost } from '@/api/community';
@@ -49,7 +53,8 @@ export default function PostDetailScreen(): React.ReactElement {
   const isDark = colorScheme === 'dark';
   const headerColors = getHeaderColors(isDark);
 
-  const scrollViewRef = React.useRef<ScrollView>(null);
+  // @ts-ignore - Reanimated 4.x: Animated.ScrollView type not exposed properly
+  const scrollViewRef = useAnimatedRef<Animated.ScrollView>();
   const outboxAdapter = React.useMemo(() => createOutboxAdapter(database), []);
   useCommunityFeedRealtime({ outboxAdapter, postId: local.id });
 

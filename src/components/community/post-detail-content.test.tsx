@@ -1,9 +1,19 @@
 import React from 'react';
+// @ts-ignore - Reanimated 4.x type exports issue
+import { scrollTo } from 'react-native-reanimated';
 
 import { act, cleanup, fireEvent, render, screen } from '@/lib/test-utils';
 import type { Post, PostComment } from '@/types/community';
 
 import { PostDetailContent } from './post-detail-content';
+
+jest.mock('react-native-reanimated', () => {
+  const Reanimated = jest.requireActual('react-native-reanimated/mock');
+  return {
+    ...Reanimated,
+    scrollTo: jest.fn(),
+  };
+});
 
 jest.mock('@/components/community/post-action-bar', () => ({
   PostActionBar: () => null,
@@ -69,13 +79,12 @@ describe('PostDetailContent', () => {
 
   afterEach(() => {
     jest.useRealTimers();
+    jest.clearAllMocks();
   });
 
   test('scrolls to highlighted comment when layout is known', () => {
-    const scrollTo = jest.fn();
-    const scrollViewRef = { current: null } as React.RefObject<{
-      scrollTo: typeof scrollTo;
-    } | null>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const scrollViewRef = { current: {} } as any;
 
     const comments: PostComment[] = [
       createTestComment({ id: 'c1' }),
@@ -105,10 +114,9 @@ describe('PostDetailContent', () => {
       />
     );
 
-    // Assign scrollViewRef.current before triggering layout events
-    (
-      scrollViewRef as { current: { scrollTo: typeof scrollTo } | null }
-    ).current = { scrollTo };
+    // Assign scrollViewRef.current (already done but explicit to match old test flow if needed)
+    // Actually in the new implementation we pass refs to Animated.ScrollView.
+    // We already mocked scrollViewRef as { current: {} }.
 
     fireEvent(screen.getByTestId('comment-list'), 'layout', {
       nativeEvent: { layout: { x: 0, y: 400, width: 100, height: 100 } },
@@ -121,8 +129,6 @@ describe('PostDetailContent', () => {
       jest.runAllTimers();
     });
 
-    expect(scrollTo).toHaveBeenCalledWith(
-      expect.objectContaining({ y: 496, animated: true })
-    );
+    expect(scrollTo).toHaveBeenCalledWith(scrollViewRef, 0, 496, true);
   });
 });

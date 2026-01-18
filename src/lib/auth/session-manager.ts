@@ -420,6 +420,11 @@ export function useOfflineModeMonitor(checkInterval: number = 60 * 1000): void {
  * Provides immediate revocation enforcement when the app is online.
  */
 export function useRealtimeSessionRevocation(): void {
+  // Opt out of React Compiler for this hook - it incorrectly transforms the
+  // Zustand selector pattern and useEffect dependency arrays, causing
+  // "Cannot read property 'length' of undefined" in areHookInputsEqual
+  'use no memo';
+
   const session = useAuth.use.session();
   const userId = session?.user?.id ?? null;
   const refreshToken = session?.refresh_token ?? null;

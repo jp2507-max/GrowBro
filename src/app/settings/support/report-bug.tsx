@@ -79,7 +79,8 @@ export default function ReportBugScreen() {
   useEffect(() => {
     void (async () => {
       const collected = await collectDiagnostics();
-      collected.networkStatus = isInternetReachable ? 'online' : 'offline';
+      collected.networkStatus =
+        isInternetReachable === false ? 'offline' : 'online';
       setDiagnostics(collected);
     })();
   }, [isInternetReachable]);
@@ -197,6 +198,9 @@ export default function ReportBugScreen() {
                 name="category"
                 render={({ field: { onChange, value } }) => (
                   <Select
+                    label={translate(
+                      'settings.support.report_bug.category_label'
+                    )}
                     value={value}
                     onSelect={(selectedValue) => onChange(selectedValue)}
                     testID="report-bug-category-select"
@@ -310,7 +314,7 @@ export default function ReportBugScreen() {
             </View>
 
             {/* Offline Warning */}
-            {!isInternetReachable && (
+            {isInternetReachable === false && (
               <View className="mb-4 rounded-lg bg-warning-50 p-3 dark:bg-warning-900/20">
                 <Text className="text-sm text-warning-700 dark:text-warning-300">
                   {translate('settings.support.report_bug.offline_warning')}
