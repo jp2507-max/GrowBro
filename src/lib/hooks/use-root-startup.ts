@@ -126,47 +126,54 @@ function useSyncAndMetrics(): void {
   const registrationRef = React.useRef<Promise<void> | null>(null);
 
   React.useEffect(() => {
-    if (authStatus !== 'signIn') return;
     let isMounted = true;
+    let dispose: (() => void) | undefined;
+    let metrics: ReturnType<typeof createMetricsManager> | undefined;
+    let unsubscribe: (() => void) | undefined;
 
-    const registrationPromise = registerBackgroundTask()
-      .then(() => {
-        if (!isMounted) void unregisterBackgroundTask().catch(() => {});
-      })
-      .catch((error) => {
-        console.warn(
-          '[use-root-startup] Background task registration failed:',
-          error
-        );
-      })
-      .finally(() => {
-        if (registrationRef.current === registrationPromise)
-          registrationRef.current = null;
-      });
+    if (authStatus === 'signIn') {
+      const registrationPromise = registerBackgroundTask()
+        .then(() => {
+          if (!isMounted) void unregisterBackgroundTask().catch(() => {});
+        })
+        .catch((error) => {
+          console.warn(
+            '[use-root-startup] Background task registration failed:',
+            error
+          );
+        })
+        .finally(() => {
+          if (registrationRef.current === registrationPromise)
+            registrationRef.current = null;
+        });
 
-    registrationRef.current = registrationPromise;
-    const dispose = setupSyncTriggers();
-    const metrics = createMetricsManager(Date.now());
+      registrationRef.current = registrationPromise;
+      const disposeInstance = setupSyncTriggers();
+      dispose = disposeInstance;
+      const metricsInstance = createMetricsManager(Date.now());
+      metrics = metricsInstance;
 
-    if (consentManager.hasConsented('analytics')) metrics.registerOnce();
+      if (consentManager.hasConsented('analytics'))
+        metricsInstance.registerOnce();
 
-    const unsubscribe = consentManager.onConsentChanged(
-      'analytics',
-      (consented) => {
-        try {
-          if (consented) metrics.registerOnce();
-          else metrics.unregisterAll();
-        } catch {}
-      }
-    );
+      unsubscribe = consentManager.onConsentChanged(
+        'analytics',
+        (consented) => {
+          try {
+            if (consented) metricsInstance.registerOnce();
+            else metricsInstance.unregisterAll();
+          } catch {}
+        }
+      );
+    }
 
     return () => {
       isMounted = false;
       try {
-        unsubscribe();
+        unsubscribe?.();
       } catch {}
-      metrics.unregisterAll();
-      dispose();
+      metrics?.unregisterAll();
+      dispose?.();
       const pending = registrationRef.current;
       if (pending)
         void pending.finally(() => {

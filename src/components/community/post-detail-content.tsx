@@ -97,22 +97,12 @@ function useScrollToHighlightedComment({
       scrollViewRef.current?.scrollTo({ y: targetY, animated: true });
     };
 
-    let raf1: number | null = null;
-    let raf2: number | null = null;
-    let timeout: ReturnType<typeof setTimeout> | null = null;
-
-    raf1 = requestAnimationFrame(() => {
+    const raf = requestAnimationFrame(() => {
       scrollToHighlightedComment();
-      timeout = setTimeout(() => {
-        scrollToHighlightedComment();
-        raf2 = requestAnimationFrame(scrollToHighlightedComment);
-      }, 16);
     });
 
     return () => {
-      if (raf1 !== null) cancelAnimationFrame(raf1);
-      if (raf2 !== null) cancelAnimationFrame(raf2);
-      if (timeout !== null) clearTimeout(timeout);
+      cancelAnimationFrame(raf);
     };
   }, [commentListY, highlightedCommentId, highlightedCommentY, scrollViewRef]);
 

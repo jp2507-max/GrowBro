@@ -8,7 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { Alert, Platform } from 'react-native';
+import { Alert, Platform, StyleSheet } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { z } from 'zod';
 
@@ -177,6 +177,7 @@ export default function ReportBugScreen() {
                   'settings.support.report_bug.title_placeholder'
                 )}
                 error={errors.title?.message}
+                testID="report-bug-title-input"
                 accessibilityLabel={translate(
                   'settings.support.report_bug.title_label'
                 )}
@@ -198,6 +199,7 @@ export default function ReportBugScreen() {
                   <Select
                     value={value}
                     onSelect={(selectedValue) => onChange(selectedValue)}
+                    testID="report-bug-category-select"
                     options={[
                       {
                         label: translate(
@@ -252,6 +254,7 @@ export default function ReportBugScreen() {
                 multiline
                 numberOfLines={6}
                 error={errors.description?.message}
+                testID="report-bug-description-input"
                 accessibilityLabel={translate(
                   'settings.support.report_bug.description_label'
                 )}
@@ -278,6 +281,14 @@ export default function ReportBugScreen() {
                       onPress={() => onChange(!value)}
                       variant={value ? 'default' : 'outline'}
                       size="sm"
+                      accessibilityRole="switch"
+                      accessibilityState={{ checked: value }}
+                      accessibilityLabel={translate(
+                        'settings.support.report_bug.include_diagnostics'
+                      )}
+                      accessibilityHint={translate(
+                        'settings.support.report_bug.diagnostics_description'
+                      )}
                     />
                   )}
                 />
@@ -290,7 +301,7 @@ export default function ReportBugScreen() {
 
               {/* Show diagnostics preview */}
               {includeDiagnostics && diagnostics && (
-                <View className="mt-3 rounded border border-neutral-200 bg-white p-2 dark:border-white/10 dark:bg-charcoal-900">
+                <View className="mt-3 rounded border border-neutral-200 bg-neutral-50 p-2 dark:border-white/10 dark:bg-charcoal-800">
                   <Text className="font-mono text-xs text-neutral-500 dark:text-neutral-400">
                     {`App: ${diagnostics.appVersion}\nBuild: ${diagnostics.buildNumber}\nDevice: ${diagnostics.deviceModel}\nOS: ${diagnostics.osVersion}\nLocale: ${diagnostics.locale}\nStorage: ${diagnostics.freeStorage}MB\nNetwork: ${diagnostics.networkStatus}`}
                   </Text>
@@ -313,6 +324,7 @@ export default function ReportBugScreen() {
               onPress={handleSubmit(onSubmit)}
               loading={isSubmitting}
               disabled={isSubmitting}
+              testID="report-bug-submit-button"
             />
           </View>
         </ScrollView>

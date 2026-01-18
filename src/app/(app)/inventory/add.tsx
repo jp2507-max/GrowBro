@@ -15,6 +15,7 @@ import {
   Controller,
   type FieldErrors,
   useForm,
+  type UseFormSetError,
 } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Platform, ScrollView, StyleSheet } from 'react-native';
@@ -410,7 +411,7 @@ function BarcodeField({
       <Controller
         control={control}
         name="barcode"
-        render={({ field: { onChange, onBlur, value } }) => (
+        render={({ field: { onChange, onBlur, value }, fieldState }) => (
           <Input
             value={value}
             placeholder={t('inventory.form.barcode_placeholder')}
@@ -418,6 +419,7 @@ function BarcodeField({
             onBlur={onBlur}
             editable={!isSubmitting}
             testID="barcode-input"
+            errorTx={fieldState.error?.message}
           />
         )}
       />
@@ -450,10 +452,11 @@ type UseAddInventorySubmitResult = {
 
 function useAddInventorySubmit(
   router: ReturnType<typeof useRouter>,
-  clearErrors: () => void
+  clearErrors: () => void,
+  setError: UseFormSetError<AddItemFormData>
 ): UseAddInventorySubmitResult {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
+  const [error, setGlobalError] = React.useState<string | null>(null);
   const [serverValidationErrors, setServerValidationErrors] = React.useState<
     Record<string, string>
   >({});
@@ -462,7 +465,7 @@ function useAddInventorySubmit(
     async (data: AddItemFormData) => {
       try {
         setIsSubmitting(true);
-        setError(null);
+        setGlobalError(null);
         setServerValidationErrors({});
 
         const result = await createInventoryItem({
@@ -487,25 +490,32 @@ function useAddInventorySubmit(
           clearErrors();
           const fieldErrors: Record<string, string> = {};
           result.validationErrors.forEach((validationError) => {
-            fieldErrors[validationError.field] = validationError.message;
+            if (validationError.field === 'barcode') {
+              setError('barcode', {
+                type: 'server',
+                message: validationError.message,
+              });
+            } else {
+              fieldErrors[validationError.field] = validationError.message;
+            }
           });
           setServerValidationErrors(fieldErrors);
-          if (result.error) setError(result.error);
+          if (result.error) setGlobalError(result.error);
         } else {
-          setError(result.error || 'Failed to create item');
+          setGlobalError(result.error || 'Failed to create item');
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Unknown error');
+        setGlobalError(err instanceof Error ? err.message : 'Unknown error');
       } finally {
         setIsSubmitting(false);
       }
     },
-    [clearErrors, router]
+    [clearErrors, router, setError]
   );
 
   const clearServerErrors = React.useCallback(() => {
     setServerValidationErrors({});
-    setError(null);
+    setGlobalError(null);
   }, []);
 
   return {
@@ -527,6 +537,7 @@ export default function AddInventoryItemScreen(): React.ReactElement {
     handleSubmit,
     formState: { errors },
     clearErrors,
+    setError,
   } = useForm<AddItemFormData>({
     resolver: zodResolver(addItemSchema),
     defaultValues: {
@@ -544,7 +555,7 @@ export default function AddInventoryItemScreen(): React.ReactElement {
   });
 
   const { isSubmitting, error, serverValidationErrors, onSubmit } =
-    useAddInventorySubmit(router, clearErrors);
+    useAddInventorySubmit(router, clearErrors, setError);
 
   return (
     <View className="flex-1" testID="add-inventory-item-screen">
