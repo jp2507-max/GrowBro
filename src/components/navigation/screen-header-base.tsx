@@ -3,7 +3,6 @@ import { useColorScheme } from 'nativewind';
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { EdgeInsets } from 'react-native-safe-area-context';
-import { twMerge } from 'tailwind-merge';
 
 import { GlassSurface } from '@/components/shared/glass-surface';
 import { GlassButton, Text, View } from '@/components/ui';
@@ -11,6 +10,7 @@ import { Settings as SettingsIcon } from '@/components/ui/icons';
 import { translate } from '@/lib/i18n';
 import type { TxKeyPath } from '@/lib/i18n/utils';
 import { getHeaderColors } from '@/lib/theme-utils';
+import { cn } from '@/lib/utils';
 
 const styles = StyleSheet.create({
   statsPill: {
@@ -63,7 +63,7 @@ export function ScreenHeaderBase({
 
   return (
     <View
-      className={twMerge(
+      className={cn(
         'z-0 px-4',
         compact ? 'pb-4' : 'pb-6',
         'shadow-lg',
@@ -87,7 +87,7 @@ export function ScreenHeaderBase({
       {/* Main Title */}
       {title ? (
         <Text
-          className={twMerge(
+          className={cn(
             'font-bold tracking-tight',
             compact ? 'text-2xl' : 'text-3xl'
           )}

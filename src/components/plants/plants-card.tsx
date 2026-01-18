@@ -12,6 +12,7 @@ import { OptimizedImage, Pressable, Text, View } from '@/components/ui';
 import { ArrowRight } from '@/components/ui/icons/arrow-right';
 import colors from '@/components/ui/colors';
 import { useAnimatedScrollList } from '@/lib/animations/animated-scroll-list-provider';
+import { createStaggeredFadeIn } from '@/lib/animations/stagger';
 import { haptics } from '@/lib/haptics';
 import { usePlantPhotoSync } from '@/lib/plants/plant-photo-sync';
 import { translate } from '@/lib/i18n';
@@ -23,6 +24,8 @@ export type PlantCardProps = {
   onPress: (id: string) => void;
   itemY?: SharedValue<number>;
   needsAttention?: boolean;
+  index?: number;
+  enableEnteringAnimation?: boolean;
 };
 
 type StageColors = {
@@ -124,10 +127,10 @@ function getStageProgress(stage?: string): number {
 
 const cardStyles = StyleSheet.create({
   shadow: {
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.09,
+    shadowRadius: 12,
+    elevation: 6,
   },
 });
 
@@ -153,6 +156,7 @@ function PlantCardImage({
           className="size-full"
           contentFit="cover"
           recyclingKey={plant.id}
+          transition={0}
           testID={`plant-card-${plant.id}-image`}
         />
       ) : (
@@ -306,7 +310,7 @@ function PlantCardContent({
 
   return (
     <Pressable
-      className="mb-3 overflow-hidden rounded-3xl border border-neutral-200 bg-white active:scale-[0.98] active:opacity-95 dark:border-charcoal-700 dark:bg-charcoal-900"
+      className="mb-3 rounded-3xl active:scale-[0.98] active:opacity-95"
       style={[cardStyles.shadow]}
       testID={`plant-card-${plant.id}`}
       accessibilityRole="button"
@@ -314,9 +318,15 @@ function PlantCardContent({
       accessibilityHint={translate('accessibility.plants.open_detail_hint')}
       onPress={handlePress}
     >
-      <PlantCardHeader plant={plant} stageLabel={stageLabel} colors={colors} />
-      <PlantCardProgress plantId={plant.id} progress={progress} />
-      <PlantCardFooter needsAttention={needsAttention} />
+      <View className="overflow-hidden rounded-3xl border border-neutral-200 bg-white dark:border-charcoal-700 dark:bg-charcoal-900">
+        <PlantCardHeader
+          plant={plant}
+          stageLabel={stageLabel}
+          colors={colors}
+        />
+        <PlantCardProgress plantId={plant.id} progress={progress} />
+        <PlantCardFooter needsAttention={needsAttention} />
+      </View>
     </Pressable>
   );
 }
@@ -326,12 +336,26 @@ export function PlantCard({
   onPress,
   itemY,
   needsAttention = false,
+  index = 0,
+  enableEnteringAnimation = false,
 }: PlantCardProps): React.ReactElement {
   const { listOffsetY } = useAnimatedScrollList();
   const localItemY = useSharedValue(0);
   const effItemY = itemY ?? localItemY;
   const measuredHeight = useSharedValue(0);
   const reduceMotion = useReduceMotionEnabled();
+
+  const enteringAnimation = React.useMemo(
+    () =>
+      enableEnteringAnimation
+        ? createStaggeredFadeIn(index, {
+            baseDelay: 0,
+            staggerDelay: 50,
+            duration: 300,
+          })
+        : undefined,
+    [enableEnteringAnimation, index]
+  );
 
   const containerStyle = useAnimatedStyle(() => {
     'worklet';
@@ -369,7 +393,11 @@ export function PlantCard({
   );
 
   return (
-    <Animated.View style={containerStyle} onLayout={onLayout}>
+    <Animated.View
+      entering={enteringAnimation}
+      style={containerStyle}
+      onLayout={onLayout}
+    >
       <PlantCardContent
         plant={plant}
         onPress={onPress}

@@ -6,7 +6,7 @@
  */
 
 import * as Sentry from '@sentry/react-native';
-import { router } from 'expo-router';
+import { type Href, router } from 'expo-router';
 import { AppState, type AppStateStatus } from 'react-native';
 import { showMessage } from 'react-native-flash-message';
 
@@ -632,7 +632,7 @@ async function handleAuthDeepLinks(
 
       // Handle redirect only after successful verification
       if (verificationSuccess && redirect && validateRedirect(redirect)) {
-        router.push(redirect);
+        router.push(redirect as Href);
       }
       break;
     }
@@ -671,11 +671,11 @@ function handleNavigationDeepLink(fullPath: string): void {
       router.replace('/login');
     } else {
       // Navigate directly to public route
-      router.push(normalizedPath);
+      router.push(normalizedPath as Href);
     }
   } else {
     // User is signed in - navigate directly
-    router.push(normalizedPath);
+    router.push(normalizedPath as Href);
   }
 }
 

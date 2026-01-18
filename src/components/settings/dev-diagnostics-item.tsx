@@ -9,7 +9,7 @@ export function DevDiagnosticsItem(): React.ReactElement | null {
   if (!__DEV__) return null;
   return (
     <ItemsContainer title="settings.more">
-      <Link href="/(app)/sync-diagnostics">
+      <Link href="/sync-diagnostics">
         <Text className="text-primary-600 underline">
           {translate('diagnostics.title')}
         </Text>

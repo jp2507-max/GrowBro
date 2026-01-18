@@ -16,7 +16,8 @@ import { Stack, useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, ScrollView } from 'react-native';
+import { Alert, Platform, ScrollView, StyleSheet } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 
 import { useRequestAccountDeletion } from '@/api/auth/use-request-account-deletion';
 import { ReAuthModal, useReAuthModal } from '@/components/auth/re-auth-modal';
@@ -31,6 +32,10 @@ import { AlertCircle, Trash } from '@/components/ui/icons';
 import { showErrorMessage, showSuccessMessage, useAuth } from '@/lib';
 import { clearAuthStorage } from '@/lib/auth/auth-storage';
 import { database } from '@/lib/watermelon';
+
+const styles = StyleSheet.create({
+  flex1: { flex: 1 },
+});
 
 /**
  * Clear all local data
@@ -286,73 +291,85 @@ export default function DeleteAccountScreen() {
       />
       <FocusAwareStatusBar />
 
-      <ScrollView className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
-        <View className="p-4">
-          {/* Anonymous User Flow */}
-          {isAnonymous && (
-            <View>
-              <ExplanationSection />
-              <View className="mt-6">
-                <Button
-                  label={t('settings.delete_account.delete_local_data')}
-                  onPress={handleAnonymousDelete}
-                  loading={false}
-                  disabled={false}
-                  variant="outline"
-                  className="border-danger-600"
-                  textClassName="text-danger-600"
-                />
-                <Button
-                  label={t('common.cancel')}
-                  onPress={() => router.back()}
-                  variant="ghost"
-                  className="mt-3"
-                />
-              </View>
-            </View>
-          )}
-
-          {/* Authenticated User Flow */}
-          {!isAnonymous && (
-            <>
-              {currentStep === 'explanation' && (
-                <View>
-                  <ExplanationSection />
-                  <View className="mt-6">
-                    <Button
-                      label={t('common.continue')}
-                      onPress={handleContinueToAuth}
-                      variant="outline"
-                      className="border-danger-600"
-                      textClassName="text-danger-600"
-                    />
-                    <Button
-                      label={t('common.cancel')}
-                      onPress={() => router.back()}
-                      variant="ghost"
-                      className="mt-3"
-                    />
-                  </View>
-                </View>
-              )}
-
-              {currentStep === 'confirmation' && (
-                <View>
-                  <FinalConfirmationSection
-                    deleteConfirmText={deleteConfirmText}
-                    onChangeText={setDeleteConfirmText}
-                    isValid={isDeleteConfirmValid}
-                    onConfirm={handleConfirmDeletion}
-                    onCancel={() => router.back()}
-                    isDeleting={requestDeletion.isPending}
-                    deleteKeyword={deleteKeyword}
+      <KeyboardAvoidingView
+        style={styles.flex1}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={0}
+      >
+        <ScrollView
+          className="flex-1 bg-neutral-50 dark:bg-charcoal-950"
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={
+            Platform.OS === 'ios' ? 'interactive' : 'on-drag'
+          }
+        >
+          <View className="p-4">
+            {/* Anonymous User Flow */}
+            {isAnonymous && (
+              <View>
+                <ExplanationSection />
+                <View className="mt-6">
+                  <Button
+                    label={t('settings.delete_account.delete_local_data')}
+                    onPress={handleAnonymousDelete}
+                    loading={false}
+                    disabled={false}
+                    variant="outline"
+                    className="border-danger-600"
+                    textClassName="text-danger-600"
+                  />
+                  <Button
+                    label={t('common.cancel')}
+                    onPress={() => router.back()}
+                    variant="ghost"
+                    className="mt-3"
                   />
                 </View>
-              )}
-            </>
-          )}
-        </View>
-      </ScrollView>
+              </View>
+            )}
+
+            {/* Authenticated User Flow */}
+            {!isAnonymous && (
+              <>
+                {currentStep === 'explanation' && (
+                  <View>
+                    <ExplanationSection />
+                    <View className="mt-6">
+                      <Button
+                        label={t('common.continue')}
+                        onPress={handleContinueToAuth}
+                        variant="outline"
+                        className="border-danger-600"
+                        textClassName="text-danger-600"
+                      />
+                      <Button
+                        label={t('common.cancel')}
+                        onPress={() => router.back()}
+                        variant="ghost"
+                        className="mt-3"
+                      />
+                    </View>
+                  </View>
+                )}
+
+                {currentStep === 'confirmation' && (
+                  <View>
+                    <FinalConfirmationSection
+                      deleteConfirmText={deleteConfirmText}
+                      onChangeText={setDeleteConfirmText}
+                      isValid={isDeleteConfirmValid}
+                      onConfirm={handleConfirmDeletion}
+                      onCancel={() => router.back()}
+                      isDeleting={requestDeletion.isPending}
+                      deleteKeyword={deleteKeyword}
+                    />
+                  </View>
+                )}
+              </>
+            )}
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Re-authentication Modal */}
       <ReAuthModal

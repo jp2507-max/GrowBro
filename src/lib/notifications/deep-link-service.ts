@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { type Href, router } from 'expo-router';
 
 import {
   DeepLinkValidator,
@@ -43,7 +43,7 @@ export const DeepLinkService = {
       }
     }
 
-    router.push(resolvedPath);
+    router.push(resolvedPath as Href);
     return { ok: true, path: resolvedPath };
   },
 };

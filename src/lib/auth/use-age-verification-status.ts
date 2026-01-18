@@ -10,11 +10,13 @@
  * - 8.7: Filter age-restricted content in feeds
  */
 
+import type { RealtimeChannel } from '@supabase/supabase-js';
 import { useEffect, useState } from 'react';
 
-import { supabase } from '@/lib/supabase';
-
-import { getOptionalAuthenticatedUserId } from './user-utils';
+import { supabase } from '@/lib';
+import { useAuth } from '@/lib/auth';
+import { getOptionalAuthenticatedUserId } from '@/lib/auth/user-utils';
+import { translateDynamic } from '@/lib/i18n';
 
 type AgeStatusRow = {
   is_verified: boolean;
@@ -41,9 +43,9 @@ async function fetchAgeVerificationStatusForUser(
     .from('user_age_status')
     .select('is_verified, verified_at, token_expiry')
     .eq('user_id', userId)
-    .single();
+    .maybeSingle();
 
-  if (error && error.code !== 'PGRST116') {
+  if (error) {
     throw error;
   }
 
@@ -85,6 +87,7 @@ export interface AgeVerificationStatus {
  * Returns cached status to avoid repeated database queries
  */
 export function useAgeVerificationStatus(): AgeVerificationStatus {
+  const user = useAuth.use.user();
   const [status, setStatus] = useState<AgeVerificationStatus>({
     isVerified: false,
     isLoading: true,
@@ -92,8 +95,9 @@ export function useAgeVerificationStatus(): AgeVerificationStatus {
 
   useEffect(() => {
     let mounted = true;
+    let subscription: RealtimeChannel | null = null;
 
-    const syncStatus = async () => {
+    const fetchStatus = async (): Promise<void> => {
       if (!mounted) return;
       setStatus((previous) => ({ ...previous, isLoading: true }));
 
@@ -108,86 +112,58 @@ export function useAgeVerificationStatus(): AgeVerificationStatus {
           setStatus({
             isVerified: false,
             isLoading: false,
-            error: error instanceof Error ? error.message : 'Unknown error',
+            error:
+              error instanceof Error
+                ? translateDynamic('feed.age_verification.error_fetch_failed')
+                : translateDynamic('feed.age_verification.error_unknown'),
           });
         }
       }
     };
 
-    syncStatus();
+    const setupSubscription = async (): Promise<void> => {
+      const userId = user?.id ?? (await getOptionalAuthenticatedUserId());
+      if (!mounted || !userId) return;
 
-    const subscription = supabase
-      .channel('age_verification_changes')
-      .on(
+      const channel = supabase.channel(`age_verification_${userId}`).on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'user_age_status',
+          filter: `user_id=eq.${userId}`,
         },
-        (_payload) => {
-          syncStatus();
+        () => {
+          fetchStatus();
         }
-      )
-      .subscribe();
+      );
+
+      if (!mounted) {
+        supabase.removeChannel(channel);
+        return;
+      }
+
+      channel.subscribe();
+
+      if (!mounted) {
+        supabase.removeChannel(channel);
+        return;
+      }
+
+      subscription = channel;
+    };
+
+    fetchStatus();
+    setupSubscription();
 
     return () => {
       mounted = false;
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  return status;
-}
-
-/**
- * Hook to check if user needs age verification
- *
- * Returns true if user is authenticated but not age-verified
- */
-export function useNeedsAgeVerification(): boolean {
-  const [needsVerification, setNeedsVerification] = useState(false);
-
-  useEffect(() => {
-    let mounted = true;
-
-    const checkNeedsVerification = async () => {
-      try {
-        const userId = await getOptionalAuthenticatedUserId();
-
-        if (!userId) {
-          if (mounted) setNeedsVerification(false);
-          return;
-        }
-
-        const { data, error } = await supabase
-          .from('user_age_status')
-          .select('is_verified')
-          .eq('user_id', userId)
-          .single();
-
-        if (error && error.code !== 'PGRST116') {
-          console.error('Error checking age verification need:', error);
-          if (mounted) setNeedsVerification(false);
-          return;
-        }
-
-        // User needs verification if no record or not verified
-        if (mounted) {
-          setNeedsVerification(!data || !data.is_verified);
-        }
-      } catch (error) {
-        console.error('Error in needs verification check:', error);
-        if (mounted) setNeedsVerification(false);
+      if (subscription) {
+        supabase.removeChannel(subscription);
+        subscription = null;
       }
     };
+  }, [user?.id]);
 
-    checkNeedsVerification();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  return needsVerification;
+  return status;
 }

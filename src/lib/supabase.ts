@@ -18,6 +18,14 @@ const isTestEnvironment =
   process.env &&
   (process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID !== undefined);
 
+type GlobalWithSupabaseAppState = typeof globalThis & {
+  __gbSupabaseAppStateSubscription?: ReturnType<
+    typeof AppState.addEventListener
+  >;
+};
+
+const globalWithSupabaseAppState = globalThis as GlobalWithSupabaseAppState;
+
 // Validate environment variables and set up Supabase configuration
 export let supabaseUrl: string;
 export let supabaseAnonKey: string;
@@ -115,14 +123,26 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 // Per Supabase best practices: stop auto-refresh when backgrounded, restart when foregrounded
 // This prevents unnecessary network requests and conserves resources on mobile
 if (!isTestEnvironment) {
-  // Register once at module load time
-  AppState.addEventListener('change', (state) => {
-    if (state === 'active') {
-      supabase.auth.startAutoRefresh();
-    } else {
-      supabase.auth.stopAutoRefresh();
+  // Ensure a single AppState listener even across Fast Refresh in development.
+  try {
+    globalWithSupabaseAppState.__gbSupabaseAppStateSubscription?.remove?.();
+  } catch (e) {
+    if (__DEV__) {
+      console.warn(
+        '[Supabase] failed to remove previous AppState subscription',
+        e
+      );
     }
-  });
+  }
+
+  globalWithSupabaseAppState.__gbSupabaseAppStateSubscription =
+    AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        supabase.auth.startAutoRefresh();
+      } else {
+        supabase.auth.stopAutoRefresh();
+      }
+    });
 }
 
 // Export types for TypeScript

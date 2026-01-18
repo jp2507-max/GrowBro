@@ -35,12 +35,6 @@ export default function ModeratorLayout() {
           title: 'Moderation Queue',
         }}
       />
-      <Stack.Screen
-        name="report/[id]"
-        options={{
-          title: 'Review Report',
-        }}
-      />
     </Stack>
   );
 }

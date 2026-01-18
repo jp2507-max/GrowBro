@@ -23,6 +23,7 @@ import type {
 
 import type { AnalyticsClient } from '../analytics';
 import { getPlaybookNotificationScheduler } from '../notifications/playbook-notification-scheduler';
+import type { PlantModel } from '../watermelon-models/plant';
 import type { PlaybookModel } from '../watermelon-models/playbook';
 import type { PlaybookApplicationModel } from '../watermelon-models/playbook-application';
 import { type TaskModel } from '../watermelon-models/task';
@@ -388,17 +389,49 @@ export class PlaybookService {
 
   /**
    * Get plant information for task generation
+   * Fetches plant from database and extracts relevant scheduling data
    */
   private async getPlantInfo(plantId: string): Promise<{
     id: string;
     startDate?: Date;
     timezone?: string;
   }> {
-    return {
-      id: plantId,
-      startDate: new Date(),
-      timezone: 'UTC',
-    };
+    try {
+      const { DateTime } = await import('luxon');
+
+      // Query plant directly - we only need plantedAt field
+      const plantModel = await this.database
+        .get<PlantModel>('plants')
+        .find(plantId);
+
+      // Use plantedAt as the anchor date for scheduling
+      let startDate: Date | undefined;
+      if (plantModel.plantedAt) {
+        const parsed = new Date(plantModel.plantedAt);
+        if (!isNaN(parsed.getTime())) {
+          startDate = parsed;
+        }
+      }
+
+      // Use device timezone
+      const timezone = DateTime.local().zoneName ?? 'UTC';
+
+      return {
+        id: plantId,
+        startDate: startDate ?? new Date(),
+        timezone,
+      };
+    } catch (error) {
+      console.warn(
+        `[PlaybookService] Failed to fetch plant ${plantId}, using defaults:`,
+        error
+      );
+      return {
+        id: plantId,
+        startDate: new Date(),
+        timezone: 'UTC',
+      };
+    }
   }
 
   /**

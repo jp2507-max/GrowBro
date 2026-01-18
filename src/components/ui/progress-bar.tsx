@@ -9,9 +9,9 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import { twMerge } from 'tailwind-merge';
 
 import colors from '@/components/ui/colors';
+import { cn } from '@/lib/utils';
 
 const BAR_HEIGHT = 2;
 
@@ -71,7 +71,7 @@ export const ProgressBar = forwardRef<ProgressBarRef, Props>(
     }, [colorScheme]);
     return (
       <View
-        className={twMerge('bg-neutral-200 dark:bg-white/10', className)}
+        className={cn('bg-neutral-200 dark:bg-white/10', className)}
         onLayout={handleLayout}
       >
         <Animated.View style={style} />

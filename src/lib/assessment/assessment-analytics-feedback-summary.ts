@@ -6,12 +6,15 @@ export async function getFeedbackMetrics(): Promise<{
 }> {
   // Get feedback counts using targeted queries
   const [totalFeedbackResult] = await runSql(
+    'assessment_feedback',
     'SELECT COUNT(*) as count FROM assessment_feedback'
   );
   const [helpfulResult] = await runSql(
+    'assessment_feedback',
     'SELECT COUNT(*) as count FROM assessment_feedback WHERE helpful = 1'
   );
   const [resolvedResult] = await runSql(
+    'assessment_feedback',
     'SELECT COUNT(*) as count FROM assessment_feedback WHERE issue_resolved = ?',
     ['yes']
   );

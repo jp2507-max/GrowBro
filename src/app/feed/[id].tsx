@@ -14,12 +14,18 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import { Platform, StyleSheet } from 'react-native';
-import type { ScrollView } from 'react-native-gesture-handler';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
+import type Animated from 'react-native-reanimated';
+import {
+  // @ts-ignore - Reanimated 4.x type exports issue
+  useAnimatedRef,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { usePost } from '@/api/community';
+import { PostDetailContent } from '@/components/community/post-detail-content';
 import { PostDetailErrorState } from '@/components/community/post-detail-error-state';
+import { PostDetailHeader } from '@/components/community/post-detail-header';
 import { PostDetailLoadingState } from '@/components/community/post-detail-loading-state';
 import { usePostDetailState } from '@/components/community/use-post-detail-state';
 import { usePostSharing } from '@/components/community/use-post-sharing';
@@ -35,9 +41,6 @@ import { getHeaderColors } from '@/lib/theme-utils';
 import { database } from '@/lib/watermelon';
 import type { Post } from '@/types/community';
 
-import { PostDetailContent } from './post-detail-content';
-import { PostDetailHeader } from './post-detail-header';
-
 const styles = StyleSheet.create({
   flex1: { flex: 1 },
 });
@@ -50,7 +53,8 @@ export default function PostDetailScreen(): React.ReactElement {
   const isDark = colorScheme === 'dark';
   const headerColors = getHeaderColors(isDark);
 
-  const scrollViewRef = React.useRef<ScrollView>(null);
+  // @ts-ignore - Reanimated 4.x: Animated.ScrollView type not exposed properly
+  const scrollViewRef = useAnimatedRef<Animated.ScrollView>();
   const outboxAdapter = React.useMemo(() => createOutboxAdapter(database), []);
   useCommunityFeedRealtime({ outboxAdapter, postId: local.id });
 

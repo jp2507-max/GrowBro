@@ -1,21 +1,13 @@
-/**
- * CSV Import Button Component
- *
- * Handles CSV file selection, validation, and import with dry-run preview.
- * Implements RFC 4180 parsing and idempotent upserts by external_key.
- *
- * Requirements: 5.2, 5.3, 5.4
- */
-
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
-import { router } from 'expo-router';
+import { type Href, router } from 'expo-router';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { showMessage } from 'react-native-flash-message';
 
 import { Button } from '@/components/ui';
 import { previewCSVImport } from '@/lib/inventory/csv-import-service';
+import { useImportPreviewStore } from '@/lib/inventory/import-preview-store';
 
 interface ImportCSVButtonProps {
   variant?: 'default' | 'secondary' | 'outline' | 'ghost';
@@ -55,7 +47,8 @@ export function ImportCSVButton({
       const content = await FileSystem.readAsStringAsync(fileUri);
 
       // Determine file type from name
-      const fileName = asset.name.toLowerCase();
+      const selectedFileName = asset.name ?? 'unknown.csv';
+      const fileName = selectedFileName.toLowerCase();
       const files: {
         items?: string;
         batches?: string;
@@ -73,14 +66,12 @@ export function ImportCSVButton({
       // Preview import
       const preview = await previewCSVImport(files);
 
-      // Navigate to preview screen with preview data
-      router.push({
-        pathname: '/(app)/inventory/csv-import-preview',
-        params: {
-          fileName: asset.name,
-          previewData: JSON.stringify(preview),
-        },
+      // Store preview data before navigation so the next screen can read it from the store
+      useImportPreviewStore.getState().setPreview({
+        fileName: selectedFileName,
+        data: preview,
       });
+      router.push('/inventory/csv-import-preview' as Href);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';

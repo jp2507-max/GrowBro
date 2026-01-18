@@ -1,10 +1,11 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { type Href, Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { DateTime } from 'luxon';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { ScrollView } from 'react-native';
+import { Platform, ScrollView, StyleSheet } from 'react-native';
 import { showMessage } from 'react-native-flash-message';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { Plant } from '@/api/plants/types';
@@ -31,6 +32,10 @@ import { createPlantFromForm, toPlant } from '@/lib/plants/plant-service';
 import { syncPlantsToCloud } from '@/lib/plants/plants-sync';
 import { captureExceptionIfConsented } from '@/lib/settings/privacy-runtime';
 import { createTask } from '@/lib/task-manager';
+
+const styles = StyleSheet.create({
+  flex1: { flex: 1 },
+});
 
 type SubmitHookParams = {
   setIsSaving: React.Dispatch<React.SetStateAction<boolean>>;
@@ -343,7 +348,7 @@ export default function CreatePlantScreen(): React.ReactElement {
 
   const handleViewPlant = React.useCallback(() => {
     successModal.dismiss();
-    if (createdPlant?.id) router.replace(`/plants/${createdPlant.id}`);
+    if (createdPlant?.id) router.replace(`/plants/${createdPlant.id}` as Href);
   }, [createdPlant?.id, router, successModal]);
 
   const handleGoToSchedule = React.useCallback(() => {
@@ -360,7 +365,7 @@ export default function CreatePlantScreen(): React.ReactElement {
 
   const handleComplete = React.useCallback(() => {
     haptics.selection();
-    router.replace(params?.returnTo ?? '/');
+    router.replace((params?.returnTo ?? '/') as Href);
   }, [params?.returnTo, router]);
 
   const handleSubmitReady = React.useCallback((submit: () => void) => {
@@ -390,46 +395,55 @@ export default function CreatePlantScreen(): React.ReactElement {
       />
 
       <View className="z-10 -mt-10 flex-1">
-        <View className="flex-1 rounded-t-[35px] bg-sheet shadow-xl dark:bg-charcoal-900">
-          <View className="mb-2 mt-4 h-1.5 w-12 self-center rounded-full bg-sheet-handle dark:bg-white/10" />
-          <ScrollView
-            className="flex-1"
-            contentContainerStyle={scrollContentStyle}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-          >
-            <HeroPhotoSection
-              imageUrl={imageUrl}
-              onPhotoCaptured={handlePhotoCaptured}
-              disabled={isSaving}
-              testID="create-plant-hero-photo"
-            />
-            <PlantForm
-              key={formKey}
-              onSubmit={handleSubmit}
-              isSubmitting={isSaving}
-              onSubmitReady={handleSubmitReady}
-              onProgressChange={handleProgressChange}
-              onPhotoInfo={handlePhotoInfo}
-              renderAsFragment
-            />
-          </ScrollView>
-          <View
-            className="absolute inset-x-0 bottom-0 bg-sheet/95 px-4 pt-3 dark:bg-charcoal-900/95"
-            style={{ paddingBottom: insets.bottom + 8 }}
-          >
-            <Button
-              variant="default"
-              className="h-auto w-full rounded-2xl bg-terracotta-500 py-4 active:bg-terracotta-600"
-              textClassName="text-white text-lg font-semibold"
-              onPress={handleHeaderSave}
-              disabled={isSaving}
-              loading={isSaving}
-              label={t('plants.form.create_cta')}
-              testID="create-plant-cta"
-            />
+        <KeyboardAvoidingView
+          style={styles.flex1}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={0}
+        >
+          <View className="flex-1 rounded-t-[35px] bg-sheet shadow-xl dark:bg-charcoal-900">
+            <View className="mb-2 mt-4 h-1.5 w-12 self-center rounded-full bg-sheet-handle dark:bg-white/10" />
+            <ScrollView
+              className="flex-1"
+              contentContainerStyle={scrollContentStyle}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode={
+                Platform.OS === 'ios' ? 'interactive' : 'on-drag'
+              }
+            >
+              <HeroPhotoSection
+                imageUrl={imageUrl}
+                onPhotoCaptured={handlePhotoCaptured}
+                disabled={isSaving}
+                testID="create-plant-hero-photo"
+              />
+              <PlantForm
+                key={formKey}
+                onSubmit={handleSubmit}
+                isSubmitting={isSaving}
+                onSubmitReady={handleSubmitReady}
+                onProgressChange={handleProgressChange}
+                onPhotoInfo={handlePhotoInfo}
+                renderAsFragment
+              />
+            </ScrollView>
+            <View
+              className="absolute inset-x-0 bottom-0 bg-sheet/95 px-4 pt-3 dark:bg-charcoal-900/95"
+              style={{ paddingBottom: insets.bottom + 8 }}
+            >
+              <Button
+                variant="default"
+                className="h-auto w-full rounded-2xl bg-terracotta-500 py-4 active:bg-terracotta-600"
+                textClassName="text-white text-lg font-semibold"
+                onPress={handleHeaderSave}
+                disabled={isSaving}
+                loading={isSaving}
+                label={t('plants.form.create_cta')}
+                testID="create-plant-cta"
+              />
+            </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </View>
       <PlantAddedModal
         modal={successModal}

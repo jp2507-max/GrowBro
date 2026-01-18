@@ -1,6 +1,6 @@
 import {
   ReduceMotion,
-  // @ts-ignore SharedTransition is exported in runtime but types might be missing in this version
+  // @ts-ignore SharedTransition is exported in runtime but types are missing in this version
   SharedTransition,
   withSpring,
 } from 'react-native-reanimated';
@@ -19,8 +19,8 @@ type SharedTransitionValues = {
   targetOriginY: number;
 };
 
-export const sharedTransitionStyle = SharedTransition.custom(
-  (values: SharedTransitionValues) => {
+export const sharedTransitionStyle =
+  SharedTransition?.custom?.((values: SharedTransitionValues) => {
     'worklet';
     return {
       height: withSpring(values.targetHeight),
@@ -28,5 +28,4 @@ export const sharedTransitionStyle = SharedTransition.custom(
       originX: withSpring(values.targetOriginX),
       originY: withSpring(values.targetOriginY),
     };
-  }
-).reduceMotion(ReduceMotion.System);
+  })?.reduceMotion(ReduceMotion.System) ?? {};

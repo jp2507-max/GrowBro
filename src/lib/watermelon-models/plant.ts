@@ -1,6 +1,10 @@
 import { Model } from '@nozbe/watermelondb';
 import { date, field, json, text } from '@nozbe/watermelondb/decorators';
 
+// NOTE: When adding new table models, update the VALID_TABLE_NAMES Set in:
+// src/lib/database/unsafe-sql-utils.ts
+// This ensures runSql() validation includes all available tables.
+
 export type PlantMetadataLocal = Record<string, unknown>;
 
 export class PlantModel extends Model {
@@ -22,6 +26,7 @@ export class PlantModel extends Model {
   @text('notes') notes?: string | null;
   @json('metadata', (raw) => raw as PlantMetadataLocal)
   metadata?: PlantMetadataLocal | null;
+  @text('remote_image_path') remoteImagePath?: string | null;
   @field('server_revision') serverRevision?: number;
   @field('server_updated_at_ms') serverUpdatedAtMs?: number;
   @date('created_at') createdAt!: Date;

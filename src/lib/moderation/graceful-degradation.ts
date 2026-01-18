@@ -61,7 +61,8 @@ export class GracefulDegradationManager {
   private serviceHealth: Map<string, ServiceHealth> = new Map();
   private degradationStrategies: Map<FeatureFlag, DegradationStrategy> =
     new Map();
-  private healthCheckIntervals: Map<string, NodeJS.Timeout> = new Map();
+  private healthCheckIntervals: Map<string, ReturnType<typeof setInterval>> =
+    new Map();
 
   constructor() {
     this.degradationStrategies = createDegradationStrategies();

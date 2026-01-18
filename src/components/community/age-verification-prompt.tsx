@@ -49,7 +49,7 @@ export function AgeVerificationPrompt({
 
   return (
     <View
-      className="dark:bg-warning-950 m-4 rounded-xl border border-warning-300 bg-warning-50 p-4 dark:border-warning-700"
+      className="m-4 rounded-xl border border-warning-300 bg-warning-50 p-4 dark:border-warning-700 dark:bg-warning-950"
       testID="age-verification-prompt"
     >
       <View className="mb-3">

@@ -70,7 +70,7 @@ jest.mock('@/lib/compliance/onboarding-state', () => ({
   completeOnboardingStep: jest.fn(),
 }));
 
-jest.mock('@/lib/telemetry/onboarding-telemetry', () => ({
+jest.mock('@/lib/compliance/onboarding-telemetry', () => ({
   trackOnboardingStepComplete: jest.fn(),
   trackOnboardingComplete: jest.fn(),
   trackOnboardingSkipped: jest.fn(),

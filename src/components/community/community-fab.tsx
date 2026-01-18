@@ -11,6 +11,8 @@ import Animated, {
   ReduceMotion,
   useAnimatedStyle,
   useSharedValue,
+  withDelay,
+  withSequence,
   withSpring,
 } from 'react-native-reanimated';
 
@@ -74,19 +76,29 @@ export function CommunityFab({
   }));
 
   const handlePressIn = React.useCallback(() => {
-    scale.value = withSpring(0.92, {
-      damping: 15,
-      stiffness: 400,
+    scale.value = withSpring(0.85, {
+      damping: 12,
+      stiffness: 450,
       reduceMotion: ReduceMotion.System,
     });
   }, [scale]);
 
   const handlePressOut = React.useCallback(() => {
-    scale.value = withSpring(1, {
-      damping: 15,
-      stiffness: 400,
-      reduceMotion: ReduceMotion.System,
-    });
+    scale.value = withSequence(
+      withSpring(1.08, {
+        damping: 8,
+        stiffness: 350,
+        reduceMotion: ReduceMotion.System,
+      }),
+      withDelay(
+        80,
+        withSpring(1, {
+          damping: 10,
+          stiffness: 300,
+          reduceMotion: ReduceMotion.System,
+        })
+      )
+    );
   }, [scale]);
 
   const handlePress = React.useCallback(() => {

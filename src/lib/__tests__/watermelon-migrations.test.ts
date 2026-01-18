@@ -38,8 +38,8 @@ const testOccurrenceOverridesTable = () => {
 };
 
 const testSchemaVersion = () => {
-  it('has schema version 35', () => {
-    expect((schema as any).version).toBe(35);
+  it('has schema version 39', () => {
+    expect((schema as any).version).toBe(39);
   });
 };
 
@@ -78,6 +78,13 @@ const testDataTypeConsistency = () => {
       'last_tested_at'
     );
     expect(lastTestedAtColumn.type).toBe('number');
+
+    // Check plants table deleted_at type (should be numeric for purge logic)
+    const plantsTable = getTableByName(tables, 'plants');
+    expect(plantsTable).toBeTruthy();
+    const plantsDeletedAt = getColumnByName(plantsTable.columns, 'deleted_at');
+    expect(plantsDeletedAt).toBeTruthy();
+    expect(plantsDeletedAt.type).toBe('number');
 
     // Check server_revision types in existing tables
     const existingTables = ['series', 'tasks', 'occurrence_overrides'];

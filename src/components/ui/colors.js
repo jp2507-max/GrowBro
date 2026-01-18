@@ -139,6 +139,7 @@ module.exports = {
     700: '#047857',
     800: '#065F46',
     900: '#064E3B',
+    950: '#022C22', // Darkest success for dark mode backgrounds
   },
 
   warning: {
@@ -152,6 +153,7 @@ module.exports = {
     700: '#B45309',
     800: '#92400E',
     900: '#78350F',
+    950: '#451A03', // Darkest warning for dark mode backgrounds
   },
 
   danger: {

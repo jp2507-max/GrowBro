@@ -1,125 +1,165 @@
 /**
  * Community Slide Component
- * Introduces the community features
+ * Calm, serene onboarding slide with large Lottie animation and minimal feature pills
  */
 
+import { LinearGradient } from 'expo-linear-gradient';
+import { useColorScheme } from 'nativewind';
 import React from 'react';
-import Animated from 'react-native-reanimated';
+import type { ColorValue } from 'react-native';
+import { StyleSheet } from 'react-native';
+import Animated, {
+  // @ts-ignore - Reanimated 4.x type exports issue
+  cancelAnimation,
+  FadeIn,
+  ReduceMotion,
+  useAnimatedStyle,
+  useSharedValue,
+  // @ts-ignore - Reanimated 4.x type exports issue
+  withDelay,
+  withSpring,
+} from 'react-native-reanimated';
 
 import { Text, View } from '@/components/ui';
-import {
-  createStaggeredFadeIn,
-  onboardingMotion,
-} from '@/lib/animations/stagger';
+import colors from '@/components/ui/colors';
+import { MessageCircle, Shield, Users } from '@/components/ui/icons';
 import { translate } from '@/lib/i18n';
 
+import { AnimatedLottieHero } from '../animated-lottie-hero';
+import { FeaturePill, FeaturePillRow } from '../feature-pill';
+import { FloatingParticles } from '../floating-particles';
 import type { OnboardingSlideProps } from '../onboarding-pager';
 
 export function CommunitySlide({
   index: _index,
 }: OnboardingSlideProps): React.ReactElement {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
+  const titleScale = useSharedValue(0.95);
+  const titleOpacity = useSharedValue(0);
+
+  React.useEffect(() => {
+    titleOpacity.value = withDelay(
+      200,
+      withSpring(1, {
+        damping: 25,
+        stiffness: 80,
+        reduceMotion: ReduceMotion.System,
+      })
+    );
+    titleScale.value = withDelay(
+      200,
+      withSpring(1, {
+        damping: 20,
+        stiffness: 80,
+        reduceMotion: ReduceMotion.System,
+      })
+    );
+
+    return () => {
+      cancelAnimation(titleOpacity);
+      cancelAnimation(titleScale);
+    };
+  }, [titleOpacity, titleScale]);
+
+  const titleStyle = useAnimatedStyle(() => ({
+    opacity: titleOpacity.value,
+    transform: [{ scale: titleScale.value }],
+  }));
+
+  const gradientColors: readonly [ColorValue, ColorValue, ColorValue] = isDark
+    ? [colors.charcoal[950], colors.charcoal[900], colors.charcoal[950]]
+    : [colors.primary[50], colors.primary[100], colors.primary[50]];
+
   return (
-    <View
-      testID="community-slide"
-      className="flex-1 items-center justify-center px-8"
-    >
-      {/* Icon */}
-      <Animated.View
-        testID="community-header"
-        entering={createStaggeredFadeIn(0, onboardingMotion.stagger.header)}
-        className="mb-8"
+    <View testID="community-slide" className="flex-1">
+      <LinearGradient
+        colors={gradientColors}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 1 }}
+        style={styles.flex}
       >
-        <View className="size-24 items-center justify-center rounded-3xl bg-success-600">
-          <Text className="text-5xl">👥</Text>
+        {/* Subtle floating particles */}
+        <FloatingParticles />
+
+        <View className="flex-1 items-center justify-center px-6">
+          {/* Large Lottie hero animation */}
+          <View className="mb-8">
+            <AnimatedLottieHero
+              animation="community"
+              testID="community-header"
+            />
+          </View>
+
+          {/* Title with gentle spring animation */}
+          <Animated.View style={titleStyle} className="mb-4">
+            <Text
+              testID="community-title"
+              className="text-center text-4xl font-bold text-charcoal-950 dark:text-white"
+            >
+              {translate('onboarding.community.title')}
+            </Text>
+          </Animated.View>
+
+          {/* Body text - softer */}
+          <Animated.View
+            testID="community-content"
+            entering={FadeIn.delay(350)
+              .duration(500)
+              .reduceMotion(ReduceMotion.System)}
+            className="mb-12 px-4"
+          >
+            <Text
+              testID="community-body"
+              className="text-center text-lg leading-relaxed text-neutral-600 dark:text-neutral-400"
+            >
+              {translate('onboarding.community.body')}
+            </Text>
+          </Animated.View>
+
+          {/* Minimal feature pills */}
+          <FeaturePillRow>
+            <FeaturePill
+              icon={
+                <MessageCircle
+                  size={18}
+                  color={isDark ? colors.primary[300] : colors.primary[700]}
+                />
+              }
+              labelKey="onboarding.community.benefit_share_title"
+              index={0}
+              testID="pill-share"
+            />
+            <FeaturePill
+              icon={
+                <Users
+                  size={18}
+                  color={isDark ? colors.primary[300] : colors.primary[700]}
+                />
+              }
+              labelKey="onboarding.community.benefit_learn_title"
+              index={1}
+              testID="pill-learn"
+            />
+            <FeaturePill
+              icon={
+                <Shield
+                  size={18}
+                  color={isDark ? colors.primary[300] : colors.primary[700]}
+                />
+              }
+              labelKey="onboarding.community.benefit_privacy_title"
+              index={2}
+              testID="pill-privacy"
+            />
+          </FeaturePillRow>
         </View>
-      </Animated.View>
-
-      {/* Title */}
-      <Animated.View
-        entering={createStaggeredFadeIn(1, onboardingMotion.stagger.header)}
-        className="mb-4"
-      >
-        <Text
-          testID="community-title"
-          className="text-center text-4xl font-bold text-charcoal-950 dark:text-white"
-        >
-          {translate('onboarding.community.title')}
-        </Text>
-      </Animated.View>
-
-      {/* Body */}
-      <Animated.View
-        testID="community-content"
-        entering={createStaggeredFadeIn(2, onboardingMotion.stagger.content)}
-        className="mb-8"
-      >
-        <Text
-          testID="community-body"
-          className="text-center text-lg text-neutral-600 dark:text-neutral-400"
-        >
-          {translate('onboarding.community.body')}
-        </Text>
-      </Animated.View>
-
-      {/* Benefits */}
-      <View className="w-full max-w-md space-y-3">
-        <Animated.View
-          testID="community-list-0"
-          entering={createStaggeredFadeIn(3, onboardingMotion.stagger.list)}
-          className="rounded-xl bg-neutral-100 p-4 dark:bg-neutral-900"
-        >
-          <Text
-            testID="benefit-share-title"
-            className="font-semibold text-charcoal-950 dark:text-white"
-          >
-            {translate('onboarding.community.benefit_share_title')}
-          </Text>
-          <Text
-            testID="benefit-share-body"
-            className="text-sm text-neutral-600 dark:text-neutral-400"
-          >
-            {translate('onboarding.community.benefit_share_body')}
-          </Text>
-        </Animated.View>
-
-        <Animated.View
-          testID="community-list-1"
-          entering={createStaggeredFadeIn(4, onboardingMotion.stagger.list)}
-          className="rounded-xl bg-neutral-100 p-4 dark:bg-neutral-900"
-        >
-          <Text
-            testID="benefit-learn-title"
-            className="font-semibold text-charcoal-950 dark:text-white"
-          >
-            {translate('onboarding.community.benefit_learn_title')}
-          </Text>
-          <Text
-            testID="benefit-learn-body"
-            className="text-sm text-neutral-600 dark:text-neutral-400"
-          >
-            {translate('onboarding.community.benefit_learn_body')}
-          </Text>
-        </Animated.View>
-
-        <Animated.View
-          testID="community-list-2"
-          entering={createStaggeredFadeIn(5, onboardingMotion.stagger.list)}
-          className="rounded-xl bg-neutral-100 p-4 dark:bg-neutral-900"
-        >
-          <Text
-            testID="benefit-privacy-title"
-            className="font-semibold text-charcoal-950 dark:text-white"
-          >
-            {translate('onboarding.community.benefit_privacy_title')}
-          </Text>
-          <Text
-            testID="benefit-privacy-body"
-            className="text-sm text-neutral-600 dark:text-neutral-400"
-          >
-            {translate('onboarding.community.benefit_privacy_body')}
-          </Text>
-        </Animated.View>
-      </View>
+      </LinearGradient>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  flex: { flex: 1 },
+});

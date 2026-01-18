@@ -13,13 +13,13 @@ type Props = {
 const getDifficultyStyles = (difficulty: GrowDifficulty): string => {
   switch (difficulty) {
     case 'beginner':
-      return 'bg-success-100 dark:bg-success-900/40';
+      return 'bg-success-100 dark:bg-success-800/50';
     case 'intermediate':
-      return 'bg-warning-100 dark:bg-warning-900/40';
+      return 'bg-warning-100 dark:bg-warning-800/50';
     case 'advanced':
-      return 'bg-danger-100 dark:bg-danger-900/40';
+      return 'bg-danger-100 dark:bg-danger-800/50';
     default:
-      return 'bg-neutral-200 dark:bg-neutral-800';
+      return 'bg-neutral-200 dark:bg-neutral-700';
   }
 };
 
@@ -43,18 +43,20 @@ export const DifficultyBadge = React.memo<Props>(
       ? 'bg-primary-50 dark:bg-primary-900/30'
       : getDifficultyStyles(difficulty);
     const textStyles = isPremium
-      ? 'text-primary-800 dark:text-primary-200 font-bold'
-      : `${getDifficultyTextStyles(difficulty)} font-semibold`;
+      ? 'text-primary-800 dark:text-primary-200'
+      : getDifficultyTextStyles(difficulty);
 
     return (
       <View
-        className={`rounded-full ${isPremium ? 'px-4 py-2' : 'px-2.5 py-1'} ${containerStyles}`}
+        className={`rounded-full ${isPremium ? 'px-4 py-2' : 'px-3 py-1.5'} ${containerStyles}`}
         testID={testID}
         accessibilityRole="text"
         accessibilityLabel={translate(`strains.difficulty.${difficulty}`)}
         accessibilityHint={translate(`strains.difficulty.${difficulty}_hint`)}
       >
-        <Text className={`text-xs uppercase tracking-wide ${textStyles}`}>
+        <Text
+          className={`text-[11px] font-bold uppercase tracking-wider ${textStyles}`}
+        >
           {translate(`strains.difficulty.${difficulty}`)}
         </Text>
       </View>

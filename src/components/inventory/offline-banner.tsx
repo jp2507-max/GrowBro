@@ -29,7 +29,7 @@ export function OfflineBanner({
 
   return (
     <View
-      className="dark:bg-warning-950 border-b border-warning-200 bg-warning-50 px-4 py-3 dark:border-warning-800"
+      className="border-b border-warning-200 bg-warning-50 px-4 py-3 dark:border-warning-800 dark:bg-warning-950"
       testID="offline-banner"
       accessibilityRole="alert"
       accessibilityLabel={t('common.offline_mode')}

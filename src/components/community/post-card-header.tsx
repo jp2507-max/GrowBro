@@ -1,12 +1,13 @@
 /**
  * PostCardHeader - Row 1: Avatar + Name + Time + More Options
- * Used by PostCard component for the "Instagram Pro" clean design
+ * Premium "Deep Garden" design with larger avatar and verified badge
  */
 
 import React from 'react';
 
 import { Pressable, Text, View } from '@/components/ui';
-import { MoreHorizontal } from '@/components/ui/icons';
+import colors from '@/components/ui/colors';
+import { Check, MoreHorizontal } from '@/components/ui/icons';
 import { translate } from '@/lib/i18n';
 
 import type { PressEvent } from './types';
@@ -20,6 +21,7 @@ export type PostCardHeaderProps = {
   deletePending: boolean;
   moreIconColor: string;
   testID: string;
+  isVerified?: boolean;
 };
 
 export function PostCardHeader({
@@ -31,9 +33,10 @@ export function PostCardHeader({
   deletePending,
   moreIconColor,
   testID,
+  isVerified = false,
 }: PostCardHeaderProps) {
   return (
-    <View className="flex-row items-center justify-between p-4">
+    <View className="flex-row items-center justify-between px-4 py-3.5">
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={translate(
@@ -44,22 +47,39 @@ export function PostCardHeader({
           'accessibility.community.view_author_profile_hint'
         )}
         onPress={onAuthorPress}
-        className="flex-row items-center gap-3"
+        className="flex-1 flex-row items-center gap-3"
         testID={`${testID}-author-button`}
       >
-        {/* Avatar */}
-        <View className="size-10 items-center justify-center rounded-full bg-primary-100 dark:bg-primary-900">
-          <Text className="text-sm font-bold text-primary-600 dark:text-primary-300">
-            {displayUsername.charAt(0).toUpperCase()}
-          </Text>
+        {/* Avatar - larger and more prominent */}
+        <View className="relative">
+          <View className="size-11 items-center justify-center rounded-full bg-primary-100 dark:bg-primary-900">
+            <Text className="text-base font-bold text-primary-600 dark:text-primary-300">
+              {displayUsername.charAt(0).toUpperCase()}
+            </Text>
+          </View>
+          {/* Verified badge */}
+          {isVerified && (
+            <View
+              className="absolute -bottom-0.5 -right-0.5 size-5 items-center justify-center rounded-full border-2 border-white bg-primary-500 dark:border-charcoal-900"
+              accessibilityLabel={translate(
+                'accessibility.community.verified_author'
+              )}
+              accessibilityHint={translate(
+                'accessibility.community.verified_author_hint'
+              )}
+              accessibilityRole="image"
+            >
+              <Check size={10} color={colors.white} />
+            </View>
+          )}
         </View>
         {/* Name + Time */}
-        <View>
-          <Text className="text-sm font-bold text-neutral-900 dark:text-neutral-50">
+        <View className="flex-1">
+          <Text className="text-[15px] font-semibold text-neutral-900 dark:text-neutral-50">
             {displayUsername}
           </Text>
           {relativeTime && (
-            <Text className="text-xs text-neutral-400 dark:text-neutral-500">
+            <Text className="mt-0.5 text-xs text-neutral-600 dark:text-neutral-400">
               {relativeTime}
             </Text>
           )}
@@ -77,7 +97,7 @@ export function PostCardHeader({
             'accessibility.community.post_options_hint'
           )}
           accessibilityState={{ disabled: deletePending }}
-          className="p-2"
+          className="ml-2 p-2"
           testID={`${testID}-more-button`}
         >
           <MoreHorizontal size={20} color={moreIconColor} />

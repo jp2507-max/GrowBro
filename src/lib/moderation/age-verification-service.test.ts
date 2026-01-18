@@ -197,10 +197,11 @@ describe('AgeVerificationService', () => {
 
   describe('validateToken', () => {
     it('should validate a valid token and increment use count', async () => {
+      const token = 'user-123-1234567890abcdef';
       const tokenId = 'token-123';
       const userId = 'user-123';
 
-      // Mock token fetch
+      // Mock token fetch by hash
       mockSupabase.single.mockResolvedValueOnce({
         data: {
           id: tokenId,
@@ -237,7 +238,7 @@ describe('AgeVerificationService', () => {
       // Mock audit log
       mockSupabase.insert.mockResolvedValue({ error: null });
 
-      const result = await service.validateToken(tokenId);
+      const result = await service.validateToken(token);
 
       expect(result.isValid).toBe(true);
       expect(result.error).toBeNull();
@@ -250,6 +251,7 @@ describe('AgeVerificationService', () => {
     });
 
     it('should prevent replay attacks on single-use tokens', async () => {
+      const token = 'user-123-1234567890abcdef';
       const tokenId = 'token-123';
       const userId = 'user-123';
 
@@ -278,7 +280,7 @@ describe('AgeVerificationService', () => {
       // Mock audit log
       mockSupabase.insert.mockResolvedValue({ error: null });
 
-      const result = await service.validateToken(tokenId);
+      const result = await service.validateToken(token);
 
       expect(result.isValid).toBe(false);
       expect(result.error).toBe('max_uses_exceeded');
@@ -286,6 +288,7 @@ describe('AgeVerificationService', () => {
     });
 
     it('should reject expired tokens', async () => {
+      const token = 'user-123-1234567890abcdef';
       const tokenId = 'token-123';
       const userId = 'user-123';
 
@@ -316,13 +319,14 @@ describe('AgeVerificationService', () => {
       // Mock audit log
       mockSupabase.insert.mockResolvedValue({ error: null });
 
-      const result = await service.validateToken(tokenId);
+      const result = await service.validateToken(token);
 
       expect(result.isValid).toBe(false);
       expect(result.error).toBe('token_expired');
     });
 
     it('should reject revoked tokens', async () => {
+      const token = 'user-123-1234567890abcdef';
       const tokenId = 'token-123';
       const userId = 'user-123';
 
@@ -352,7 +356,7 @@ describe('AgeVerificationService', () => {
       // Mock audit log
       mockSupabase.insert.mockResolvedValue({ error: null });
 
-      const result = await service.validateToken(tokenId);
+      const result = await service.validateToken(token);
 
       expect(result.isValid).toBe(false);
       expect(result.error).toBe('token_revoked');
@@ -573,6 +577,7 @@ describe('AgeVerificationService', () => {
 
   describe('revokeToken', () => {
     it('should revoke a token and log the event', async () => {
+      const token = 'user-123-1234567890abcdef';
       const tokenId = 'token-123';
       const userId = 'user-123';
       const reason = 'security_incident';
@@ -589,7 +594,7 @@ describe('AgeVerificationService', () => {
       // Mock audit log
       mockSupabase.insert.mockResolvedValue({ error: null });
 
-      await service.revokeToken(tokenId, reason);
+      await service.revokeToken(token, reason);
 
       expect(mockSupabase.update).toHaveBeenCalledWith(
         expect.objectContaining({

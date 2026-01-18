@@ -9,6 +9,7 @@ import { ActivityIndicator, Pressable } from 'react-native';
 import { tv } from 'tailwind-variants';
 
 import { Text, View } from '@/components/ui';
+import { translate } from '@/lib/i18n';
 import { database } from '@/lib/watermelon';
 
 import { getOutboxProcessor } from '../../lib/community/outbox-processor';
@@ -23,7 +24,7 @@ const statusVariants = tv({
   variants: {
     status: {
       pending: {
-        container: 'dark:bg-warning-950 bg-warning-100',
+        container: 'bg-warning-100 dark:bg-warning-950',
         text: 'text-warning-800 dark:text-warning-200',
       },
       failed: {
@@ -75,7 +76,12 @@ export function OutboxStatusIndicator({
       <View className={styles.container({ className })}>
         <ActivityIndicator size="small" />
         <Text className={styles.text()}>
-          {retryCount > 0 ? `Retrying (${retryCount}/5)...` : 'Sending...'}
+          {retryCount > 0
+            ? translate('community.outbox_retrying_with_count', {
+                count: retryCount,
+                max: 5,
+              })
+            : translate('community.outbox_sending')}
         </Text>
       </View>
     );
@@ -84,23 +90,29 @@ export function OutboxStatusIndicator({
   if (status === 'failed') {
     return (
       <View className={styles.container({ className })}>
-        <Text className={styles.text()}>Failed to send</Text>
+        <Text className={styles.text()}>
+          {translate('community.outbox_failed')}
+        </Text>
         <View className="flex-row gap-2">
           <Pressable
             accessibilityRole="button"
             onPress={handleRetry}
             disabled={isRetrying}
+            testID="outbox-retry-button"
             className={styles.button({
               className: 'bg-danger-600 dark:bg-danger-700',
             })}
           >
             <Text className={styles.buttonText({ className: 'text-white' })}>
-              {isRetrying ? 'Retrying...' : 'Retry'}
+              {isRetrying
+                ? translate('community.outbox_retrying')
+                : translate('community.outbox_retry')}
             </Text>
           </Pressable>
           <Pressable
             accessibilityRole="button"
             onPress={handleCancel}
+            testID="outbox-cancel-button"
             className={styles.button({
               className: 'bg-neutral-300 dark:bg-neutral-700',
             })}
@@ -110,7 +122,7 @@ export function OutboxStatusIndicator({
                 className: 'text-neutral-800 dark:text-neutral-200',
               })}
             >
-              Cancel
+              {translate('common.cancel')}
             </Text>
           </Pressable>
         </View>

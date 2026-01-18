@@ -52,7 +52,7 @@ export function HelpfulnessVoting({
         <Pressable
           accessibilityRole="button"
           onPress={() => handleVote('helpful')}
-          className="dark:bg-success-950 flex-1 rounded-lg border border-success-300 bg-success-50 px-4 py-2 active:bg-success-100 dark:border-success-800"
+          className="flex-1 rounded-lg border border-success-300 bg-success-50 px-4 py-2 active:bg-success-100 dark:border-success-800 dark:bg-success-950"
           testID="vote-helpful"
         >
           <Text className="text-center text-success-700 dark:text-success-300">

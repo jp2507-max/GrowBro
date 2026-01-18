@@ -15,7 +15,8 @@ import { type TFunction } from 'i18next';
 import React, { useCallback, useEffect, useState } from 'react';
 import { type Control, type FieldErrors, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { Alert, Pressable } from 'react-native';
+import { Alert, Platform, Pressable, StyleSheet } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { z } from 'zod';
 
@@ -41,6 +42,10 @@ import {
   fetchProfileFromBackend,
   syncProfileToBackend,
 } from '@/lib/sync/profile-sync';
+
+const styles = StyleSheet.create({
+  flex1: { flex: 1 },
+});
 
 // Form validation schema - Requirements: 9.2, 9.3
 const profileSchema = z.object({
@@ -552,66 +557,76 @@ export default function ProfileScreen() {
   return (
     <>
       <FocusAwareStatusBar />
-      <Animated.ScrollView
-        entering={withRM(FadeIn.duration(motion.dur.md))}
-        className="flex-1 bg-neutral-50 dark:bg-charcoal-950"
+      <KeyboardAvoidingView
+        style={styles.flex1}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={0}
       >
-        <View className="p-4">
-          {/* Avatar Section - Requirements: 9.4, 9.5 */}
-          {/*
-            AvatarPicker shows the current avatar, upload status, and progress.
-            - `avatarStatus` controls small UI states (idle, uploading, failed)
-            - `uploadProgress` is used by the picker to render a progress ring or bar
-            - onPress opens a platform action sheet to choose or take a photo
-          */}
-          <AvatarSection
-            avatarUrl={avatarUrl}
-            avatarStatus={avatarStatus}
-            uploadProgress={uploadProgress}
-            onPress={handleAvatarPicker}
-          />
+        <Animated.ScrollView
+          entering={withRM(FadeIn.duration(motion.dur.md))}
+          className="flex-1 bg-neutral-50 dark:bg-charcoal-950"
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={
+            Platform.OS === 'ios' ? 'interactive' : 'on-drag'
+          }
+        >
+          <View className="p-4">
+            {/* Avatar Section - Requirements: 9.4, 9.5 */}
+            {/*
+              AvatarPicker shows the current avatar, upload status, and progress.
+              - `avatarStatus` controls small UI states (idle, uploading, failed)
+              - `uploadProgress` is used by the picker to render a progress ring or bar
+              - onPress opens a platform action sheet to choose or take a photo
+            */}
+            <AvatarSection
+              avatarUrl={avatarUrl}
+              avatarStatus={avatarStatus}
+              uploadProgress={uploadProgress}
+              onPress={handleAvatarPicker}
+            />
 
-          {/* Form Fields - Requirements: 9.1, 9.2, 9.3 */}
-          {/*
-            ControlledInput components are wired to react-hook-form via `control`.
-            Validation is handled by `zodResolver(profileSchema)` and additional
-            runtime checks (profanity) are applied on submit.
-          */}
-          <ProfileFormFields
-            control={control}
-            errors={errors}
-            isProfileLoading={isProfileLoading}
-            t={t}
-            showProfileToCommunity={showProfileToCommunity}
-            setShowProfileToCommunity={setShowProfileToCommunity}
-            allowDirectMessages={allowDirectMessages}
-            setAllowDirectMessages={setAllowDirectMessages}
-          />
+            {/* Form Fields - Requirements: 9.1, 9.2, 9.3 */}
+            {/*
+              ControlledInput components are wired to react-hook-form via `control`.
+              Validation is handled by `zodResolver(profileSchema)` and additional
+              runtime checks (profanity) are applied on submit.
+            */}
+            <ProfileFormFields
+              control={control}
+              errors={errors}
+              isProfileLoading={isProfileLoading}
+              t={t}
+              showProfileToCommunity={showProfileToCommunity}
+              setShowProfileToCommunity={setShowProfileToCommunity}
+              allowDirectMessages={allowDirectMessages}
+              setAllowDirectMessages={setAllowDirectMessages}
+            />
 
-          {/* Statistics Section - Requirements: 10.1, 10.2 */}
-          {/*
-            Read-only user statistics fetched by `useProfileStatistics`.
-            While loading we show an ActivityIndicator. If the user taps the
-            plants/harvests tiles we navigate to the respective screens.
-            `statistics.isSyncing` indicates a background refresh is in progress.
-          */}
-          <StatisticsPanel
-            statistics={statistics}
-            navigateToPlants={navigateToPlants}
-            navigateToHarvests={navigateToHarvests}
-            t={t}
-          />
+            {/* Statistics Section - Requirements: 10.1, 10.2 */}
+            {/*
+              Read-only user statistics fetched by `useProfileStatistics`.
+              While loading we show an ActivityIndicator. If the user taps the
+              plants/harvests tiles we navigate to the respective screens.
+              `statistics.isSyncing` indicates a background refresh is in progress.
+            */}
+            <StatisticsPanel
+              statistics={statistics}
+              navigateToPlants={navigateToPlants}
+              navigateToHarvests={navigateToHarvests}
+              t={t}
+            />
 
-          {/* Save Button */}
-          <Button
-            label={t('profile.save')}
-            onPress={handleSubmit(onSubmit)}
-            className="mt-4"
-            disabled={isProfileLoading}
-            testID="profile-save-button"
-          />
-        </View>
-      </Animated.ScrollView>
+            {/* Save Button */}
+            <Button
+              label={t('profile.save')}
+              onPress={handleSubmit(onSubmit)}
+              className="mt-4"
+              disabled={isProfileLoading}
+              testID="profile-save-button"
+            />
+          </View>
+        </Animated.ScrollView>
+      </KeyboardAvoidingView>
     </>
   );
 }

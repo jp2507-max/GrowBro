@@ -213,7 +213,7 @@ function AssessmentResultLayout({
           </View>
 
           {retakeRecommended && guidance && (
-            <View className="dark:bg-warning-950 mt-6 rounded-xl border border-warning-400 bg-warning-50 p-4 dark:border-warning-500">
+            <View className="mt-6 rounded-xl border border-warning-400 bg-warning-50 p-4 dark:border-warning-500 dark:bg-warning-950">
               <Text className="text-lg font-semibold text-warning-900 dark:text-warning-100">
                 {t('assessment.result.photo_quality_title')}
               </Text>

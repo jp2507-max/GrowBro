@@ -2,11 +2,11 @@
 trigger: always_on
 ---
 
-# 🎬 React Native Reanimated Production Guidelines (4.x, Expo SDK 54)
+# React Native Reanimated Guidelines (4.x, Expo SDK 54)
 
 ---
 
-## 🚀 Worklets in 4.x — What runs on the UI thread
+## Worklets — What runs on the UI thread
 
 - **Auto‑workletization**: callbacks passed to Reanimated APIs (`useAnimatedStyle`, `useDerivedValue`, gesture callbacks, entering/exiting/layout) run on the **UI runtime**.
 - **Add `'worklet'`** when you (1) call imported/external functions, (2) create worklets via expressions/ternaries, (3) define worklet callbacks inside **custom hooks**, or (4) expose reusable top‑level worklet utilities.
@@ -17,16 +17,13 @@ trigger: always_on
 
 ```ts
 // Auto‑workletized (UI thread)
-const animatedStyle = useAnimatedStyle(() => ({
-  transform: [{ scale: scale.value }],
-}));
+const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
-// Imported function as a worklet
+// Imported function as worklet
 export function cardWorklet() {
   'worklet';
   return { opacity: 1 };
 }
-const st = useAnimatedStyle(cardWorklet);
 
 // Expression‑defined worklet
 const makeStyle = isOn
@@ -42,47 +39,11 @@ const makeStyle = isOn
 
 ---
 
-## Reanimated 4 essentials (for agents)
-
-- Prefer **layout/shared transitions** over manual width/height animations. Always chain `.reduceMotion(ReduceMotion.System)`.
-- Use RNGH v2 **`Gesture.*()`** with **`GestureDetector`** (legacy handler components/`useAnimatedGestureHandler` are deprecated in 4.x).
-- **Cross‑thread boundaries**: keep UI‑critical logic in worklets. Use **`runOnJS`** **sparingly** (never per‑frame) for state/side‑effects **after** animations.
-- Measure with `measure`, scroll with `scrollTo`, avoid layout hacks.
-
----
-
-## 🧭 Styling with NativeWind
-
-- Keep `className` **stable**. Static styles in `className`, animated/gesture styles via Reanimated `style`.
-- Always write explicit Light/Dark pairs: `bg-white dark:bg-charcoal-900`. **No CSS vars**.
-- Never toggle Tailwind classes per frame; derive animation values in worklets.
-- Class order: layout → flex → spacing → size → border → bg → text → effects → dark.
-- Custom components must forward/merge `className` via `cn` (tailwind-merge).
-
----
-
-## 🎨 UI & Theming (Obytes-aligned)
-
-- **Tokens (SSOT)**: `src/components/ui/colors.js` → imported into `tailwind.config.js` and reused for navigation colors.
-- **Theme state**: NativeWind `colorScheme` (`system | light | dark`), persisted in MMKV.
-- **Root wiring**: call `loadSelectedTheme()` at startup; compute nav theme via `useThemeConfig()`; apply `className={theme.dark ? 'dark' : undefined}` at the app root.
-- **Use Tailwind `dark:`** for component styling. Use React Navigation `ThemeProvider` only for APIs that require JS theme colors (navigation container, headers).
-
----
-
-## 🧩 GrowBro styling rules
-
-- Prefer explicit utilities over semantic tokens (avoid `bg-card`, `bg-background`, etc.).
-- If you need JS values (native props, charts, navigation options), import `colors` and/or read `useColorScheme()`.
-- Standard pairs: App `bg-neutral-50 dark:bg-charcoal-950`; Surface `bg-white dark:bg-charcoal-900`; Border `border-neutral-200 dark:border-white/10`; Text `text-neutral-900 dark:text-neutral-50`; Subtext `text-neutral-600 dark:text-neutral-400`; Brand `text-primary-800 dark:text-primary-300`.
-
----
-
 ## ✅ Do / Avoid (Quick)
 
-**Do**: Tailwind for static, Reanimated for dynamic; explicit pairs; respect Reduced Motion.
+**Do**: Tailwind for static, Reanimated for dynamic; respect Reduced Motion.
 
-**Avoid**: per-frame class churn; semantic background tokens; per-frame `runOnJS`.
+**Avoid**: per-frame class churn; per-frame `runOnJS`.
 
 ---
 
@@ -103,15 +64,11 @@ runOnUI(() => {
 
 - Capture only **small, serializable** values. Avoid large objects/functions; pass **params** or use **Shared Values**.
 
-### `runOnJS` — DO / DON’T
+### `runOnJS` — DO / DON'T
 
-**DO**
+**DO:** Haptics/toasts, analytics, logging, update React state **after** animation/gesture.
 
-- Haptics/toasts, analytics, logging.
-- Update React state **after** an animation/gesture.
-  **DON’T**
-- Call `runOnJS` **per frame** or inside `onUpdate` loops.
-- Use it for timing‑critical UI logic.
+**DON'T:** Call **per frame** or inside `onUpdate` loops; timing‑critical UI logic.
 
 ### Async & Side‑Effects
 
@@ -129,44 +86,190 @@ runOnUI(() => {
 **Bad** (recomputes classes every frame):
 
 ```tsx
-// ❌ don’t flip Tailwind classes per frame
+// ❌ don't flip classes per frame
 <View className={progress.value > 0.5 ? 'opacity-100' : 'opacity-50'} />
 ```
 
-**Good** (use shared value + animated style):
+**Good:**
 
 ```tsx
 const opacity = useSharedValue(0.5);
-const animatedStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
-return (
-  <Animated.View style={animatedStyle} className="bg-primary rounded-xl" />
-);
+const style = useAnimatedStyle(() => ({ opacity: opacity.value }));
+return <Animated.View style={style} className="bg-primary rounded-xl" />;
 ```
 
 ---
 
-## 🎛️ Animation Choice (Cheat)
+## 🎛️ Animation Strategy & Syntax (Cheat)
 
-- **CSS Animations (keyframes)** — fire‑and‑forget loops/ambient effects; no React state.
-- **CSS Transitions** — state‑triggered one‑offs (toggles, open/close, hover/focus).
-- **Shared Values + `useAnimatedStyle`** — continuous/gesture/sensor‑driven UI; pair with `withTiming`/`withSpring`/`withDecay`.
-- **Layout Animations** — entering/exiting or re‑layout of lists/sections; prefer presets before custom.
+**1. State-Driven Animations (Continuous/Toggle)**
+_Use `useSharedValue` + `useAnimatedStyle` with `withTiming` or `withSpring` for reactive state changes._
 
-**Preset naming rule**: `<Effect><In|Out><Direction>` → `BounceIn`, `ZoomInLeft`, `SlideOutRight`, `FadeOutDown`.
+- **APIs:** `useSharedValue`, `useAnimatedStyle`, `withTiming`, `withSpring`
 
-**Micro‑API reminders**: compose with `withSequence`, `withRepeat`, `withDelay`, `withClamp`; use `LinearTransition` for simple size/position changes.
+```tsx
+import { useEffect } from 'react';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withSpring,
+  interpolateColor,
+  ReduceMotion,
+} from 'react-native-reanimated';
+import { motion } from '@/lib/animations/motion';
 
----
+function ToggleBox({ isActive }: { isActive: boolean }) {
+  const width = useSharedValue(100);
+  const bgProgress = useSharedValue(0);
 
-## 🧩 Reanimated 4 — CSS API & Presets
+  useEffect(() => {
+    width.value = withSpring(isActive ? 200 : 100, {
+      reduceMotion: ReduceMotion.System,
+    });
+    bgProgress.value = withTiming(isActive ? 1 : 0, {
+      duration: motion.dur.md,
+      reduceMotion: ReduceMotion.System,
+    });
+  }, [isActive]);
 
-- **CSS Animations (keyframes)**: ambient/looping effects (skeleton, shimmer, pulse). No React state.
-- **CSS Transitions**: state‑driven one‑offs (width/color/opacity on toggle/press/show‑hide).
-- **Entering/Exiting presets**: attach on mount/unmount; tweak via `.springify()/.duration()/.easing()/.reduceMotion()`.
-- **Layout transitions**: animate re‑layout; start with `LinearTransition`, use `CurvedTransition` for organic motion.
-- **Composition helpers**: prefer `withSequence`, `withRepeat`, `withDelay`, `withClamp` over loops.
-- **Preset naming**: `<Effect><In|Out><Direction>` → `BounceIn`, `SlideOutRight`, etc.
-- Example components live under `src/lib/animations/examples/`.
+  const animatedStyle = useAnimatedStyle(() => ({
+    width: width.value,
+    backgroundColor: interpolateColor(
+      bgProgress.value,
+      [0, 1],
+      ['#0000ff', '#ff0000']
+    ),
+  }));
+
+  return <Animated.View style={animatedStyle} className="h-20 rounded-lg" />;
+}
+```
+
+**2. Looping/Keyframe-Like Animations (Spinners, Skeletons)**
+_Use `withRepeat` and `withSequence` for infinite or multi-step animations. Always use `cancelAnimation` for cleanup._
+
+- **APIs:** `withRepeat`, `withSequence`, `cancelAnimation`
+
+```tsx
+import { useEffect } from 'react';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withSequence,
+  withTiming,
+  cancelAnimation,
+  Easing,
+  ReduceMotion,
+} from 'react-native-reanimated';
+
+function PulsingDot() {
+  const scale = useSharedValue(1);
+  const opacity = useSharedValue(0.5);
+
+  useEffect(() => {
+    scale.value = withRepeat(
+      withSequence(
+        withTiming(1.2, {
+          duration: 500,
+          easing: Easing.inOut(Easing.ease),
+          reduceMotion: ReduceMotion.System,
+        }),
+        withTiming(1, {
+          duration: 500,
+          easing: Easing.inOut(Easing.ease),
+          reduceMotion: ReduceMotion.System,
+        })
+      ),
+      -1,
+      true
+    );
+    opacity.value = withRepeat(
+      withSequence(
+        withTiming(1, { duration: 500, reduceMotion: ReduceMotion.System }),
+        withTiming(0.5, { duration: 500, reduceMotion: ReduceMotion.System })
+      ),
+      -1,
+      true
+    );
+
+    // ⚠️ Cancel on unmount
+    return () => {
+      cancelAnimation(scale);
+      cancelAnimation(opacity);
+    };
+  }, []);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    opacity: opacity.value,
+  }));
+  return (
+    <Animated.View
+      style={animatedStyle}
+      className="size-4 rounded-full bg-primary-500"
+    />
+  );
+}
+```
+
+**3. Layout Animations (Mount/Unmount)**
+_List items, conditional rendering. Always wrap with `withRM` (from `src/lib/animations/motion`)._
+
+- **APIs:** `FadeIn`, `ZoomOut`, `SlideInUp`, `LinearTransition`
+
+```tsx
+<Animated.View
+  entering={withRM(FadeInUp.springify())}
+  exiting={withRM(ZoomOut.duration(200))}
+  layout={LinearTransition}
+/>
+```
+
+**4. Shared Values (Interactive)**
+_Gestures, Scroll, Sensors. The "Heavy Lifting"._
+
+- **APIs:** `useSharedValue`, `useAnimatedStyle`, `Gesture` (RNGH v2), `GestureDetector`
+- **Logic:** Keep math in worklets; avoid `runOnJS` in `onUpdate`
+- **Legacy Warning:** Never use `useAnimatedGestureHandler` (v1). Use `Gesture.Pan().onUpdate(...)` (v2)
+
+```tsx
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+} from 'react-native-reanimated';
+
+function DraggableBox() {
+  const offsetX = useSharedValue(0);
+  const offsetY = useSharedValue(0);
+  const startX = useSharedValue(0);
+  const startY = useSharedValue(0);
+
+  const gesture = Gesture.Pan()
+    .onStart(() => {
+      startX.value = offsetX.value;
+      startY.value = offsetY.value;
+    })
+    .onUpdate((e) => {
+      offsetX.value = startX.value + e.translationX;
+      offsetY.value = startY.value + e.translationY;
+    });
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: offsetX.value }, { translateY: offsetY.value }],
+  }));
+  return (
+    <GestureDetector gesture={gesture}>
+      <Animated.View
+        style={animatedStyle}
+        className="size-20 rounded-lg bg-primary-500"
+      />
+    </GestureDetector>
+  );
+}
+```
 
 ---
 

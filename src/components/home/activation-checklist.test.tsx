@@ -69,7 +69,7 @@ describe('ActivationChecklist', () => {
 
     test('does not render when 2+ actions completed', async () => {
       completeActivationAction('create-task');
-      completeActivationAction('open-playbook');
+      completeActivationAction('try-ai-diagnosis');
 
       setup(<ActivationChecklist />);
 
@@ -80,14 +80,11 @@ describe('ActivationChecklist', () => {
       });
     });
 
-    test('renders all 4 action items', async () => {
+    test('renders all 3 action items', async () => {
       setup(<ActivationChecklist />);
 
       expect(
         await screen.findByTestId('activation-action-create-task')
-      ).toBeOnTheScreen();
-      expect(
-        await screen.findByTestId('activation-action-open-playbook')
       ).toBeOnTheScreen();
       expect(
         await screen.findByTestId('activation-action-try-ai-diagnosis')
@@ -100,7 +97,7 @@ describe('ActivationChecklist', () => {
     test('shows progress count', async () => {
       setup(<ActivationChecklist />);
 
-      expect(await screen.findByText('0 of 4 completed')).toBeOnTheScreen();
+      expect(await screen.findByText('0 of 3 completed')).toBeOnTheScreen();
     });
 
     test('updates progress when action completed', async () => {
@@ -110,7 +107,7 @@ describe('ActivationChecklist', () => {
       rerender(<ActivationChecklist />);
 
       await waitFor(() => {
-        expect(screen.getByText('1 of 4 completed')).toBeOnTheScreen();
+        expect(screen.getByText('1 of 3 completed')).toBeOnTheScreen();
       });
     });
   });
@@ -146,8 +143,10 @@ describe('ActivationChecklist', () => {
 
       const actions = [
         { testId: 'activation-action-create-task', route: '/calendar' },
-        { testId: 'activation-action-open-playbook', route: '/playbooks' },
-        { testId: 'activation-action-try-ai-diagnosis', route: '/assessment' },
+        {
+          testId: 'activation-action-try-ai-diagnosis',
+          route: '/assessment/capture',
+        },
         { testId: 'activation-action-explore-strains', route: '/strains' },
       ];
 

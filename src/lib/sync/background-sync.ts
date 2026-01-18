@@ -4,7 +4,7 @@ import * as TaskManager from 'expo-task-manager';
 import { NoopAnalytics } from '@/lib/analytics';
 import { isMetered, isOnline } from '@/lib/sync/network-manager';
 import { getSyncPrefs } from '@/lib/sync/preferences';
-import { runSyncWithRetry } from '@/lib/sync-engine';
+import { performSync } from '@/lib/sync/sync-coordinator';
 
 const TASK_NAME = 'BACKGROUND_SYNC';
 
@@ -59,23 +59,12 @@ if (process.env.NODE_ENV !== 'test') {
         return BackgroundTask.BackgroundTaskResult.Success;
       }
 
-      const result = await runSyncWithRetry(3, { trigger: 'background' });
-
-      // Process image upload queue after successful sync
-      try {
-        const { processImageQueueOnce } = await import('@/lib/uploads/queue');
-        const uploadResult = await processImageQueueOnce(5);
-        if (uploadResult.processed > 0) {
-          console.log(
-            `[background-sync] Processed ${uploadResult.processed} image uploads`
-          );
-        }
-      } catch (uploadError) {
-        console.warn(
-          '[background-sync] Image queue processing failed:',
-          uploadError
-        );
-      }
+      const result = await performSync({
+        withRetry: true,
+        maxRetries: 3,
+        trackAnalytics: false,
+        trigger: 'background',
+      });
 
       await NoopAnalytics.track('background_worker_metrics', {
         worker: 'sync',

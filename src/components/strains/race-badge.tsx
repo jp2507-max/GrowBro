@@ -13,13 +13,13 @@ type Props = {
 const getRaceStyles = (race: StrainRace): string => {
   switch (race) {
     case 'indica':
-      return 'bg-purple-100 dark:bg-purple-900/40';
+      return 'bg-purple-100 dark:bg-purple-800/50';
     case 'sativa':
-      return 'bg-primary-100 dark:bg-primary-900/40';
+      return 'bg-primary-100 dark:bg-primary-800/50';
     case 'hybrid':
-      return 'bg-sky-100 dark:bg-sky-900/40';
+      return 'bg-sky-100 dark:bg-sky-800/50';
     default:
-      return 'bg-neutral-200 dark:bg-neutral-800';
+      return 'bg-neutral-200 dark:bg-neutral-700';
   }
 };
 
@@ -43,18 +43,20 @@ export const RaceBadge = React.memo<Props>(
       ? 'bg-primary-50 dark:bg-primary-900/30'
       : getRaceStyles(race);
     const textStyles = isPremium
-      ? 'text-primary-800 dark:text-primary-200 font-bold'
-      : `${getRaceTextStyles(race)} font-semibold`;
+      ? 'text-primary-800 dark:text-primary-200'
+      : getRaceTextStyles(race);
 
     return (
       <View
-        className={`rounded-full ${isPremium ? 'px-4 py-2' : 'px-2.5 py-1'} ${containerStyles}`}
+        className={`rounded-full ${isPremium ? 'px-4 py-2' : 'px-3 py-1.5'} ${containerStyles}`}
         testID={testID}
         accessibilityRole="text"
         accessibilityLabel={translate(`strains.race.${race}`)}
         accessibilityHint={translate(`strains.race.${race}`)}
       >
-        <Text className={`text-xs uppercase tracking-wide ${textStyles}`}>
+        <Text
+          className={`text-[11px] font-bold uppercase tracking-wider ${textStyles}`}
+        >
           {translate(`strains.race.${race}`)}
         </Text>
       </View>

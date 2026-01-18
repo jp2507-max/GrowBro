@@ -4,7 +4,8 @@ import { create } from 'zustand';
 
 import { getAnalyticsClient } from '@/lib/analytics-registry';
 import { getItem, removeItem, setItem } from '@/lib/storage';
-import { getPendingChangesCount, runSyncWithRetry } from '@/lib/sync-engine';
+import { performSync } from '@/lib/sync/sync-coordinator';
+import { getPendingChangesCount } from '@/lib/sync-engine';
 import { createSelectors } from '@/lib/utils';
 import { database } from '@/lib/watermelon';
 import { ensureNutrientEngineIndexes } from '@/lib/watermelon-indexes';
@@ -425,7 +426,12 @@ function createMeasurementActions(
     },
     syncNow: async () => {
       const pendingBefore = get().pendingActions.pendingSyncItems;
-      const result = await runSyncWithRetry(5, { trigger: 'manual' });
+      const result = await performSync({
+        withRetry: true,
+        maxRetries: 5,
+        trackAnalytics: true,
+        trigger: 'manual',
+      });
       await get().actions.refreshPendingSyncCount();
       const pendingAfter = get().pendingActions.pendingSyncItems;
       trackNutrientUsage('sync_now', {

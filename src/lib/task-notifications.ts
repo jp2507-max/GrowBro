@@ -813,3 +813,28 @@ function buildCalendarOverdueDeepLink(): string {
 const OVERDUE_DIGEST_STORAGE_KEY = '@growbro/notifications/overdue-digest';
 const PENDING_DOZE_TASKS_STORAGE_KEY =
   '@growbro/notifications/pending-doze-tasks';
+
+const isTestEnvironment =
+  typeof process !== 'undefined' &&
+  process.env &&
+  (process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID !== undefined);
+
+type GlobalWithTaskNotificationService = typeof globalThis & {
+  __gbTaskNotificationService?: TaskNotificationService;
+};
+
+const globalWithTaskNotificationService =
+  globalThis as GlobalWithTaskNotificationService;
+
+export function getTaskNotificationService(): TaskNotificationService {
+  if (isTestEnvironment) {
+    return new TaskNotificationService();
+  }
+
+  if (!globalWithTaskNotificationService.__gbTaskNotificationService) {
+    globalWithTaskNotificationService.__gbTaskNotificationService =
+      new TaskNotificationService();
+  }
+
+  return globalWithTaskNotificationService.__gbTaskNotificationService;
+}

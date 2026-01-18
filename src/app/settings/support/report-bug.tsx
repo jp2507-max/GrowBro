@@ -8,7 +8,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { Alert } from 'react-native';
+import { Alert, Platform, StyleSheet } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { z } from 'zod';
 
 import {
@@ -29,6 +30,10 @@ import {
 } from '@/lib/support/diagnostics';
 import { submitBugReport } from '@/lib/support/submit-bug-report';
 import type { BugDiagnostics } from '@/types/settings';
+
+const styles = StyleSheet.create({
+  flex1: { flex: 1 },
+});
 
 const bugReportSchema = z.object({
   title: z
@@ -74,7 +79,8 @@ export default function ReportBugScreen() {
   useEffect(() => {
     void (async () => {
       const collected = await collectDiagnostics();
-      collected.networkStatus = isInternetReachable ? 'online' : 'offline';
+      collected.networkStatus =
+        isInternetReachable === false ? 'offline' : 'online';
       setDiagnostics(collected);
     })();
   }, [isInternetReachable]);
@@ -143,160 +149,190 @@ export default function ReportBugScreen() {
     <>
       <FocusAwareStatusBar />
 
-      <ScrollView keyboardShouldPersistTaps="handled">
-        <View className="flex-1 px-4 pb-8 pt-4">
-          <Text className="mb-1 text-xl font-bold">
-            {translate('settings.support.report_bug.title')}
-          </Text>
-          <Text className="mb-6 text-sm text-neutral-600 dark:text-neutral-400">
-            {translate('settings.support.report_bug.description')}
-          </Text>
-
-          {/* Title */}
-          <View className="mb-4">
-            <ControlledInput
-              control={control}
-              name="title"
-              label={translate('settings.support.report_bug.title_label')}
-              placeholder={translate(
-                'settings.support.report_bug.title_placeholder'
-              )}
-              error={errors.title?.message}
-              accessibilityLabel={translate(
-                'settings.support.report_bug.title_label'
-              )}
-              accessibilityHint={translate(
-                'settings.support.report_bug.title_hint'
-              )}
-            />
-          </View>
-
-          {/* Category */}
-          <View className="mb-4">
-            <Text className="mb-2 text-sm font-medium text-charcoal-900 dark:text-neutral-100">
-              {translate('settings.support.report_bug.category_label')}
+      <KeyboardAvoidingView
+        style={styles.flex1}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={0}
+      >
+        <ScrollView
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={
+            Platform.OS === 'ios' ? 'interactive' : 'on-drag'
+          }
+        >
+          <View className="flex-1 px-4 pb-8 pt-4">
+            <Text className="mb-1 text-xl font-bold">
+              {translate('settings.support.report_bug.title')}
             </Text>
-            <Controller
-              control={control}
-              name="category"
-              render={({ field: { onChange, value } }) => (
-                <Select
-                  value={value}
-                  onSelect={(selectedValue) => onChange(selectedValue)}
-                  options={[
-                    {
-                      label: translate(
-                        'settings.support.report_bug.category.crash'
-                      ),
-                      value: 'crash',
-                    },
-                    {
-                      label: translate(
-                        'settings.support.report_bug.category.ui'
-                      ),
-                      value: 'ui',
-                    },
-                    {
-                      label: translate(
-                        'settings.support.report_bug.category.sync'
-                      ),
-                      value: 'sync',
-                    },
-                    {
-                      label: translate(
-                        'settings.support.report_bug.category.performance'
-                      ),
-                      value: 'performance',
-                    },
-                    {
-                      label: translate(
-                        'settings.support.report_bug.category.other'
-                      ),
-                      value: 'other',
-                    },
-                  ]}
-                  placeholder={translate(
-                    'settings.support.report_bug.category_placeholder'
-                  )}
-                />
-              )}
-            />
-          </View>
+            <Text className="mb-6 text-sm text-neutral-600 dark:text-neutral-400">
+              {translate('settings.support.report_bug.description')}
+            </Text>
 
-          {/* Description */}
-          <View className="mb-4">
-            <ControlledInput
-              control={control}
-              name="description"
-              label={translate('settings.support.report_bug.description_label')}
-              placeholder={translate(
-                'settings.support.report_bug.description_placeholder'
-              )}
-              multiline
-              numberOfLines={6}
-              error={errors.description?.message}
-              accessibilityLabel={translate(
-                'settings.support.report_bug.description_label'
-              )}
-              accessibilityHint={translate(
-                'settings.support.report_bug.description_hint'
-              )}
-            />
-          </View>
+            {/* Title */}
+            <View className="mb-4">
+              <ControlledInput
+                control={control}
+                name="title"
+                label={translate('settings.support.report_bug.title_label')}
+                placeholder={translate(
+                  'settings.support.report_bug.title_placeholder'
+                )}
+                error={errors.title?.message}
+                testID="report-bug-title-input"
+                accessibilityLabel={translate(
+                  'settings.support.report_bug.title_label'
+                )}
+                accessibilityHint={translate(
+                  'settings.support.report_bug.title_hint'
+                )}
+              />
+            </View>
 
-          {/* Include Diagnostics Toggle */}
-          <View className="mb-4 rounded-lg border border-neutral-200 bg-white p-4 dark:border-charcoal-700 dark:bg-charcoal-900">
-            <View className="mb-2 flex-row items-center justify-between">
-              <Text className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                {translate('settings.support.report_bug.include_diagnostics')}
+            {/* Category */}
+            <View className="mb-4">
+              <Text className="mb-2 text-sm font-medium text-charcoal-900 dark:text-neutral-100">
+                {translate('settings.support.report_bug.category_label')}
               </Text>
               <Controller
                 control={control}
-                name="includeDiagnostics"
+                name="category"
                 render={({ field: { onChange, value } }) => (
-                  <Button
-                    label={
-                      value ? translate('common.on') : translate('common.off')
-                    }
-                    onPress={() => onChange(!value)}
-                    variant={value ? 'default' : 'outline'}
-                    size="sm"
+                  <Select
+                    label={translate(
+                      'settings.support.report_bug.category_label'
+                    )}
+                    value={value}
+                    onSelect={(selectedValue) => onChange(selectedValue)}
+                    testID="report-bug-category-select"
+                    options={[
+                      {
+                        label: translate(
+                          'settings.support.report_bug.category.crash'
+                        ),
+                        value: 'crash',
+                      },
+                      {
+                        label: translate(
+                          'settings.support.report_bug.category.ui'
+                        ),
+                        value: 'ui',
+                      },
+                      {
+                        label: translate(
+                          'settings.support.report_bug.category.sync'
+                        ),
+                        value: 'sync',
+                      },
+                      {
+                        label: translate(
+                          'settings.support.report_bug.category.performance'
+                        ),
+                        value: 'performance',
+                      },
+                      {
+                        label: translate(
+                          'settings.support.report_bug.category.other'
+                        ),
+                        value: 'other',
+                      },
+                    ]}
+                    placeholder={translate(
+                      'settings.support.report_bug.category_placeholder'
+                    )}
                   />
                 )}
               />
             </View>
-            <Text className="text-xs text-neutral-600 dark:text-neutral-400">
-              {translate('settings.support.report_bug.diagnostics_description')}
-            </Text>
 
-            {/* Show diagnostics preview */}
-            {includeDiagnostics && diagnostics && (
-              <View className="mt-3 rounded border border-neutral-200 bg-white p-2 dark:border-white/10 dark:bg-charcoal-900">
-                <Text className="font-mono text-xs text-neutral-500 dark:text-neutral-400">
-                  {`App: ${diagnostics.appVersion}\nBuild: ${diagnostics.buildNumber}\nDevice: ${diagnostics.deviceModel}\nOS: ${diagnostics.osVersion}\nLocale: ${diagnostics.locale}\nStorage: ${diagnostics.freeStorage}MB\nNetwork: ${diagnostics.networkStatus}`}
+            {/* Description */}
+            <View className="mb-4">
+              <ControlledInput
+                control={control}
+                name="description"
+                label={translate(
+                  'settings.support.report_bug.description_label'
+                )}
+                placeholder={translate(
+                  'settings.support.report_bug.description_placeholder'
+                )}
+                multiline
+                numberOfLines={6}
+                error={errors.description?.message}
+                testID="report-bug-description-input"
+                accessibilityLabel={translate(
+                  'settings.support.report_bug.description_label'
+                )}
+                accessibilityHint={translate(
+                  'settings.support.report_bug.description_hint'
+                )}
+              />
+            </View>
+
+            {/* Include Diagnostics Toggle */}
+            <View className="mb-4 rounded-lg border border-neutral-200 bg-white p-4 dark:border-charcoal-700 dark:bg-charcoal-900">
+              <View className="mb-2 flex-row items-center justify-between">
+                <Text className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                  {translate('settings.support.report_bug.include_diagnostics')}
+                </Text>
+                <Controller
+                  control={control}
+                  name="includeDiagnostics"
+                  render={({ field: { onChange, value } }) => (
+                    <Button
+                      label={
+                        value ? translate('common.on') : translate('common.off')
+                      }
+                      onPress={() => onChange(!value)}
+                      variant={value ? 'default' : 'outline'}
+                      size="sm"
+                      accessibilityRole="switch"
+                      accessibilityState={{ checked: value }}
+                      accessibilityLabel={translate(
+                        'settings.support.report_bug.include_diagnostics'
+                      )}
+                      accessibilityHint={translate(
+                        'settings.support.report_bug.diagnostics_description'
+                      )}
+                    />
+                  )}
+                />
+              </View>
+              <Text className="text-xs text-neutral-600 dark:text-neutral-400">
+                {translate(
+                  'settings.support.report_bug.diagnostics_description'
+                )}
+              </Text>
+
+              {/* Show diagnostics preview */}
+              {includeDiagnostics && diagnostics && (
+                <View className="mt-3 rounded border border-neutral-200 bg-neutral-50 p-2 dark:border-white/10 dark:bg-charcoal-800">
+                  <Text className="font-mono text-xs text-neutral-500 dark:text-neutral-400">
+                    {`App: ${diagnostics.appVersion}\nBuild: ${diagnostics.buildNumber}\nDevice: ${diagnostics.deviceModel}\nOS: ${diagnostics.osVersion}\nLocale: ${diagnostics.locale}\nStorage: ${diagnostics.freeStorage}MB\nNetwork: ${diagnostics.networkStatus}`}
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            {/* Offline Warning */}
+            {isInternetReachable === false && (
+              <View className="mb-4 rounded-lg bg-warning-50 p-3 dark:bg-warning-900/20">
+                <Text className="text-sm text-warning-700 dark:text-warning-300">
+                  {translate('settings.support.report_bug.offline_warning')}
                 </Text>
               </View>
             )}
+
+            {/* Submit Button */}
+            <Button
+              label={translate('settings.support.report_bug.submit')}
+              onPress={handleSubmit(onSubmit)}
+              loading={isSubmitting}
+              disabled={isSubmitting}
+              testID="report-bug-submit-button"
+            />
           </View>
-
-          {/* Offline Warning */}
-          {!isInternetReachable && (
-            <View className="mb-4 rounded-lg bg-warning-50 p-3 dark:bg-warning-900/20">
-              <Text className="text-sm text-warning-700 dark:text-warning-300">
-                {translate('settings.support.report_bug.offline_warning')}
-              </Text>
-            </View>
-          )}
-
-          {/* Submit Button */}
-          <Button
-            label={translate('settings.support.report_bug.submit')}
-            onPress={handleSubmit(onSubmit)}
-            loading={isSubmitting}
-            disabled={isSubmitting}
-          />
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </>
   );
 }

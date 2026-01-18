@@ -60,4 +60,5 @@ export type Plant = {
   environment?: PlantEnvironment;
   photoperiodType?: PhotoperiodType;
   geneticLean?: GeneticLean;
+  remoteImagePath?: string;
 };

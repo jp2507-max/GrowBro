@@ -16,17 +16,24 @@ import { translate } from '@/lib/i18n';
 function useTabLayoutRedirects() {
   const status = useAuth.use.status();
   const [isFirstTime] = useIsFirstTime();
+  // Zustand createSelectors pattern: .status() calls ARE hooks, but react-compiler
+  // misinterprets `useX.propertySelector` as referencing hooks as values.
   // eslint-disable-next-line react-compiler/react-compiler
   const ageGateStatus = useAgeGate.status();
 
+  // IMPORTANT: Age gate must be checked BEFORE onboarding to ensure compliance
+  // Users must verify age before seeing any app content, including onboarding
+  if (ageGateStatus !== 'verified') return '/age-gate';
+
+  // After age verification, show onboarding for first-time users
   if (isFirstTime) return '/onboarding';
+
   // Handle auth status:
   // - 'idle': Auth hydration in progress - redirect to login to prevent protected content flash
   //   The splash screen remains visible until hydration completes, then proper redirect occurs
   // - 'signOut': User explicitly signed out - redirect to login
   // - 'signIn': User authenticated - allow access
   if (status === 'idle' || status === 'signOut') return '/login';
-  if (ageGateStatus !== 'verified') return '/age-gate';
   return null;
 }
 
@@ -37,11 +44,15 @@ function useSplashScreenHide() {
   }, []);
 
   React.useEffect(() => {
-    if (status !== 'idle') {
-      setTimeout(() => {
-        hideSplash();
-      }, 1000);
-    }
+    if (status === 'idle') return;
+
+    const timeoutId = setTimeout(() => {
+      void hideSplash();
+    }, 1000);
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
   }, [hideSplash, status]);
 }
 
@@ -53,7 +64,6 @@ const SF_SYMBOLS = {
   home: 'house.fill',
   calendar: 'calendar',
   community: 'bubble.left.and.bubble.right.fill',
-  playbooks: 'book.fill',
   strains: 'leaf.fill',
 } as const;
 
@@ -123,11 +133,6 @@ export default function TabLayout() {
           <NativeTabs.Trigger name="community">
             <Icon sf={SF_SYMBOLS.community} />
             <Label>{translate('tabs.community')}</Label>
-          </NativeTabs.Trigger>
-
-          <NativeTabs.Trigger name="playbooks">
-            <Icon sf={SF_SYMBOLS.playbooks} />
-            <Label>{translate('tabs.playbooks')}</Label>
           </NativeTabs.Trigger>
 
           <NativeTabs.Trigger name="strains">

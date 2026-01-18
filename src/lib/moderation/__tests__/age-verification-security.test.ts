@@ -190,14 +190,12 @@ describe('Age Verification Security Tests', () => {
       );
 
       // First use should succeed
-      const firstUse = await ageVerificationService.validateToken(
-        token.tokenId
-      );
+      const firstUse = await ageVerificationService.validateToken(token.token);
       expect(firstUse.isValid).toBe(true);
 
       // Second use should fail (replay attack)
       const replayAttempt = await ageVerificationService.validateToken(
-        token.tokenId
+        token.token
       );
       expect(replayAttempt.isValid).toBe(false);
       expect(replayAttempt.error).toBe('token_already_used');
@@ -216,7 +214,7 @@ describe('Age Verification Security Tests', () => {
         ageAttribute
       );
 
-      await ageVerificationService.validateToken(token.tokenId);
+      await ageVerificationService.validateToken(token.token);
 
       const { data: tokenRecord } = await supabase
         .from('age_verification_tokens')
@@ -241,10 +239,10 @@ describe('Age Verification Security Tests', () => {
       );
 
       // Use token once
-      await ageVerificationService.validateToken(token.tokenId);
+      await ageVerificationService.validateToken(token.token);
 
       // Attempt replay
-      await ageVerificationService.validateToken(token.tokenId);
+      await ageVerificationService.validateToken(token.token);
 
       // Verify audit log
       const { data: auditLogs } = await supabase
@@ -279,7 +277,7 @@ describe('Age Verification Security Tests', () => {
       jest.setSystemTime(expiryDate);
 
       const validation = await ageVerificationService.validateToken(
-        token.tokenId
+        token.token
       );
 
       expect(validation.isValid).toBe(false);

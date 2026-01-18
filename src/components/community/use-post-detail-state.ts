@@ -50,9 +50,7 @@ export function usePostDetailState({
     }
   }, [createCommentMutation, postId, commentBody, queryClient]);
 
-  // TODO: Implement comment scrolling when CommentList supports it
-  // Requires updating CommentList component to expose scrollToComment via ref
-  // Highlight comment from deep link
+  // Highlight comment from deep link; scrolling is handled by PostDetailContent
   React.useEffect(() => {
     if (!commentId || isLoadingComments) return;
     setHighlightedCommentId(commentId);

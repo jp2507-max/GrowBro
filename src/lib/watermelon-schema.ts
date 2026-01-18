@@ -1,7 +1,7 @@
 import { appSchema as createSchema, tableSchema } from '@nozbe/watermelondb';
 
 export const appSchema = createSchema({
-  version: 38,
+  version: 39,
   tables: [
     tableSchema({
       name: 'series',
@@ -160,6 +160,7 @@ export const appSchema = createSchema({
         { name: 'image_url', type: 'string', isOptional: true },
         { name: 'notes', type: 'string', isOptional: true },
         { name: 'metadata', type: 'string', isOptional: true },
+        { name: 'remote_image_path', type: 'string', isOptional: true },
         { name: 'server_revision', type: 'number', isOptional: true },
         { name: 'server_updated_at_ms', type: 'number', isOptional: true },
         { name: 'created_at', type: 'number' },

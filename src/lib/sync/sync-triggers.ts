@@ -1,11 +1,21 @@
-import { AppState } from 'react-native';
+import { AppState, InteractionManager } from 'react-native';
 
 import { onConnectivityChange } from '@/lib/sync/network-manager';
 import { getSyncPrefs } from '@/lib/sync/preferences';
-import { isSyncInFlight, runSyncWithRetry } from '@/lib/sync-engine';
+import {
+  isSyncPipelineInFlight,
+  performSync,
+} from '@/lib/sync/sync-coordinator';
 
 type SetupSyncTriggersOptions = {
   onSuccess?: () => void;
+};
+
+type SyncState = {
+  disposed: boolean;
+  scheduledToken: number;
+  lastOnline: boolean | null;
+  lastAutoSyncAttemptAt: number;
 };
 
 /**
@@ -34,6 +44,52 @@ async function maybeProcessImageQueue(): Promise<void> {
   }
 }
 
+function createScheduler(
+  state: SyncState,
+  deferMs: number
+): (task: () => void) => void {
+  return (task: () => void) => {
+    const token = (state.scheduledToken += 1);
+    setTimeout(() => {
+      if (state.disposed) return;
+      if (token !== state.scheduledToken) return;
+      InteractionManager.runAfterInteractions(() => {
+        if (state.disposed) return;
+        if (token !== state.scheduledToken) return;
+        task();
+      });
+    }, deferMs);
+  };
+}
+
+function createMaybeRunSync(
+  state: SyncState,
+  opts: SetupSyncTriggersOptions,
+  minInterval: number
+): () => Promise<void> {
+  return async () => {
+    if (state.disposed) return;
+    if (isSyncPipelineInFlight()) return;
+    const prefs = getSyncPrefs();
+    if (!prefs.autoSyncEnabled) return;
+
+    const now = Date.now();
+    if (now - state.lastAutoSyncAttemptAt < minInterval) return;
+    state.lastAutoSyncAttemptAt = now;
+
+    try {
+      await performSync({
+        withRetry: false,
+        trackAnalytics: true,
+        trigger: 'auto',
+      });
+      opts.onSuccess?.();
+    } catch {
+      // noop; retry/backoff is handled inside performSync
+    }
+  };
+}
+
 /**
  * Registers app lifecycle and connectivity triggers that run a sync when:
  * - App starts
@@ -45,25 +101,22 @@ export function setupSyncTriggers(
   opts: SetupSyncTriggersOptions = {}
 ): () => void {
   let lastAppState: string | null = AppState.currentState ?? null;
-  let disposed = false;
+  const state: SyncState = {
+    disposed: false,
+    scheduledToken: 0,
+    lastOnline: null,
+    lastAutoSyncAttemptAt: 0,
+  };
+  const deferMs = 1500;
+  const minAutoSyncIntervalMs = 60_000;
 
-  async function maybeRunSync(): Promise<void> {
-    if (disposed) return;
-    if (isSyncInFlight()) return;
-    const prefs = getSyncPrefs();
-    if (!prefs.autoSyncEnabled) return;
-    try {
-      await runSyncWithRetry(1, { trigger: 'auto' });
-      opts.onSuccess?.();
-      // Process image queue after successful sync
-      void maybeProcessImageQueue();
-    } catch {
-      // noop; retry/backoff is handled inside runSyncWithRetry
-    }
-  }
+  const scheduleAfterInteractions = createScheduler(state, deferMs);
+  const maybeRunSync = createMaybeRunSync(state, opts, minAutoSyncIntervalMs);
 
   // Run once on registration (app start)
-  void maybeRunSync();
+  scheduleAfterInteractions(() => {
+    void maybeRunSync();
+  });
 
   // Foreground trigger
   const appStateSub = AppState.addEventListener('change', (next) => {
@@ -71,27 +124,32 @@ export function setupSyncTriggers(
     const wasBackground = lastAppState && lastAppState !== 'active';
     lastAppState = nextState;
     if (nextState === 'active' && wasBackground) {
-      void maybeRunSync();
+      scheduleAfterInteractions(() => void maybeRunSync());
     }
   });
 
   // Connectivity trigger
-  const removeNet = onConnectivityChange((state) => {
-    if (state.isConnected && state.isInternetReachable) {
-      void maybeRunSync();
-      // Also try to process image queue on connectivity restore
-      // (even if sync is skipped due to prefs, we may still have pending uploads)
-      void maybeProcessImageQueue();
+  const removeNet = onConnectivityChange((netState) => {
+    const isOnline =
+      netState.isConnected && (netState.isInternetReachable ?? true);
+    if (state.lastOnline === null) {
+      state.lastOnline = isOnline;
+      return;
+    }
+    const restoredConnectivity = isOnline && !state.lastOnline;
+    state.lastOnline = isOnline;
+    if (restoredConnectivity) {
+      scheduleAfterInteractions(() => {
+        void maybeRunSync();
+        void maybeProcessImageQueue();
+      });
     }
   });
 
   return () => {
-    disposed = true;
+    state.disposed = true;
     try {
-      // AppState.addEventListener returns an EventSubscription with remove()
-      if (appStateSub && 'remove' in appStateSub) {
-        appStateSub.remove();
-      }
+      if (appStateSub && 'remove' in appStateSub) appStateSub.remove();
     } catch {}
     try {
       removeNet?.();

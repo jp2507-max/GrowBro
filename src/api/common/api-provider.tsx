@@ -53,13 +53,13 @@ export const queryClient = new QueryClient({
 });
 
 // Wire online status so queries auto-refetch on reconnect
-onlineManager.setEventListener((setOnline) =>
-  NetInfo.addEventListener((state) => {
+onlineManager.setEventListener((setOnline) => {
+  return NetInfo.addEventListener((state) => {
     // treat unknown reachability as connected to let Query handle retries
     const isConnected = state.isConnected ?? true;
     setOnline(isConnected);
-  })
-);
+  });
+});
 
 export function APIProvider({ children }: { children: React.ReactNode }) {
   useReactQueryDevTools(queryClient);

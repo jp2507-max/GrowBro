@@ -15,7 +15,10 @@ import {
   unregisterBackgroundTask,
 } from '@/lib/sync/background-sync';
 import { setupSyncTriggers } from '@/lib/sync/sync-triggers';
-import { TaskNotificationService } from '@/lib/task-notifications';
+import {
+  getTaskNotificationService,
+  type TaskNotificationService,
+} from '@/lib/task-notifications';
 
 type LocalizationWithTimeZone = typeof Localization & { timezone?: string };
 
@@ -123,47 +126,54 @@ function useSyncAndMetrics(): void {
   const registrationRef = React.useRef<Promise<void> | null>(null);
 
   React.useEffect(() => {
-    if (authStatus !== 'signIn') return;
     let isMounted = true;
+    let dispose: (() => void) | undefined;
+    let metrics: ReturnType<typeof createMetricsManager> | undefined;
+    let unsubscribe: (() => void) | undefined;
 
-    const registrationPromise = registerBackgroundTask()
-      .then(() => {
-        if (!isMounted) void unregisterBackgroundTask().catch(() => {});
-      })
-      .catch((error) => {
-        console.warn(
-          '[use-root-startup] Background task registration failed:',
-          error
-        );
-      })
-      .finally(() => {
-        if (registrationRef.current === registrationPromise)
-          registrationRef.current = null;
-      });
+    if (authStatus === 'signIn') {
+      const registrationPromise = registerBackgroundTask()
+        .then(() => {
+          if (!isMounted) void unregisterBackgroundTask().catch(() => {});
+        })
+        .catch((error) => {
+          console.warn(
+            '[use-root-startup] Background task registration failed:',
+            error
+          );
+        })
+        .finally(() => {
+          if (registrationRef.current === registrationPromise)
+            registrationRef.current = null;
+        });
 
-    registrationRef.current = registrationPromise;
-    const dispose = setupSyncTriggers();
-    const metrics = createMetricsManager(Date.now());
+      registrationRef.current = registrationPromise;
+      const disposeInstance = setupSyncTriggers();
+      dispose = disposeInstance;
+      const metricsInstance = createMetricsManager(Date.now());
+      metrics = metricsInstance;
 
-    if (consentManager.hasConsented('analytics')) metrics.registerOnce();
+      if (consentManager.hasConsented('analytics'))
+        metricsInstance.registerOnce();
 
-    const unsubscribe = consentManager.onConsentChanged(
-      'analytics',
-      (consented) => {
-        try {
-          if (consented) metrics.registerOnce();
-          else metrics.unregisterAll();
-        } catch {}
-      }
-    );
+      unsubscribe = consentManager.onConsentChanged(
+        'analytics',
+        (consented) => {
+          try {
+            if (consented) metricsInstance.registerOnce();
+            else metricsInstance.unregisterAll();
+          } catch {}
+        }
+      );
+    }
 
     return () => {
       isMounted = false;
       try {
-        unsubscribe();
+        unsubscribe?.();
       } catch {}
-      metrics.unregisterAll();
-      dispose();
+      metrics?.unregisterAll();
+      dispose?.();
       const pending = registrationRef.current;
       if (pending)
         void pending.finally(() => {
@@ -214,7 +224,7 @@ function startRootInitialization(
     // NOTE: There's a race between i18n initialization and showing the
     // permission prompt. Only call requestPermissions when i18n init
     // succeeded so the prompt can show localized strings.
-    svc = new TaskNotificationService();
+    svc = getTaskNotificationService();
     if (i18nInitSucceeded && !isFirstTime) void svc.requestPermissions();
     void svc.rehydrateNotifications();
 
@@ -261,19 +271,17 @@ export function useRootStartup(
   setIsI18nReady: (v: boolean) => void,
   isFirstTime: boolean
 ): void {
-  const hydratePrefs = useSyncPrefs.use.hydrate();
-
   React.useEffect(() => {
     const cleanup = startRootInitialization(
       setIsI18nReady,
       isFirstTime,
-      hydratePrefs
+      useSyncPrefs.getState().hydrate
     );
 
     return () => {
       if (typeof cleanup === 'function') cleanup();
     };
-  }, [isFirstTime, hydratePrefs, setIsI18nReady]);
+  }, [isFirstTime, setIsI18nReady]);
 
   React.useEffect(() => {
     const start = Date.now();

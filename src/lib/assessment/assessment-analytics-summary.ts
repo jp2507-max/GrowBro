@@ -16,14 +16,17 @@ export async function getAssessmentSummary(): Promise<{
 }> {
   // Get status counts using targeted queries
   const [completedResult] = await runSql(
+    'assessments',
     'SELECT COUNT(*) as count FROM assessments WHERE status = ?',
     ['completed']
   );
   const [failedResult] = await runSql(
+    'assessments',
     'SELECT COUNT(*) as count FROM assessments WHERE status = ?',
     ['failed']
   );
   const [pendingResult] = await runSql(
+    'assessments',
     'SELECT COUNT(*) as count FROM assessments WHERE status = ?',
     ['pending']
   );
@@ -33,6 +36,7 @@ export async function getAssessmentSummary(): Promise<{
   const total = completed + failed + pending;
   // Get average confidence for completed assessments
   const [avgResult] = await runSql(
+    'assessments',
     'SELECT AVG(calibrated_confidence) as avg FROM assessments WHERE status = ? AND calibrated_confidence IS NOT NULL',
     ['completed']
   );

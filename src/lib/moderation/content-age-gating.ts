@@ -9,6 +9,7 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { AppState, type AppStateStatus } from 'react-native';
 
 import type {
   AccessResult,
@@ -22,11 +23,89 @@ import type {
   DbUserAgeStatus,
 } from '@/types/database-records';
 
+const USER_AGE_STATUS_CACHE_TTL_MS = 2 * 60 * 1000;
+const MAX_CACHE_SIZE = 1000; // Bound cache growth for multi-user scenarios
+const TRANSIENT_ERROR_CACHE_TTL_MS = 30 * 1000; // Brief cache for DB errors
+
+type UserAgeStatusCacheEntry = {
+  value: UserAgeStatus | null;
+  expiresAt: number;
+};
+
+type TransientErrorCacheEntry = {
+  error: Error;
+  expiresAt: number;
+};
+
+// Shared app state listener (singleton pattern across all instances)
+let appStateSubscription: ReturnType<typeof AppState.addEventListener> | null =
+  null;
+let lastAppState: AppStateStatus = AppState.currentState ?? 'active';
+const instanceCaches = new Set<{
+  userAgeStatus: Map<string, UserAgeStatusCacheEntry>;
+}>();
+
+function handleAppStateChange(nextAppState: AppStateStatus): void {
+  const shouldInvalidate =
+    (lastAppState === 'inactive' || lastAppState === 'background') &&
+    nextAppState === 'active';
+  lastAppState = nextAppState;
+
+  if (shouldInvalidate) {
+    // Clear all instance caches
+    instanceCaches.forEach((cache) => {
+      cache.userAgeStatus.clear();
+    });
+  }
+}
+
+function ensureAppStateListener(): void {
+  if (appStateSubscription) return;
+  appStateSubscription = AppState.addEventListener(
+    'change',
+    handleAppStateChange
+  );
+}
+
+/**
+ * Cleanup method for tests to prevent listener accumulation
+ * Should be called in test teardown
+ */
+export function cleanupAppStateListener(): void {
+  if (appStateSubscription) {
+    appStateSubscription.remove();
+    appStateSubscription = null;
+  }
+  instanceCaches.forEach((cache) => {
+    cache.userAgeStatus.clear();
+  });
+  instanceCaches.clear();
+}
+
 export class ContentAgeGatingEngine {
   private supabase: SupabaseClient;
+  private userAgeStatusCache = new Map<string, UserAgeStatusCacheEntry>();
+  private transientErrorCache = new Map<string, TransientErrorCacheEntry>();
+  private instanceCacheRef: {
+    userAgeStatus: Map<string, UserAgeStatusCacheEntry>;
+  };
 
   constructor(supabase: SupabaseClient) {
     this.supabase = supabase;
+    ensureAppStateListener();
+    this.instanceCacheRef = { userAgeStatus: this.userAgeStatusCache };
+    instanceCaches.add(this.instanceCacheRef);
+  }
+
+  dispose(): void {
+    instanceCaches.delete(this.instanceCacheRef);
+    this.userAgeStatusCache.clear();
+    this.transientErrorCache.clear();
+
+    if (instanceCaches.size === 0 && appStateSubscription) {
+      appStateSubscription.remove();
+      appStateSubscription = null;
+    }
   }
 
   /**
@@ -299,7 +378,7 @@ export class ContentAgeGatingEngine {
    * @param userId - User UUID
    */
   async applySaferDefaults(userId: string): Promise<void> {
-    await this.supabase.from('user_age_status').upsert({
+    const { error } = await this.supabase.from('user_age_status').upsert({
       user_id: userId,
       is_age_verified: false,
       is_minor: true,
@@ -309,25 +388,77 @@ export class ContentAgeGatingEngine {
       DbUserAgeStatus,
       'verified_at' | 'active_token_id' | 'created_at' | 'updated_at'
     >);
+
+    if (error) {
+      throw new Error(`Failed to apply safer defaults: ${error.message}`);
+    }
+
+    this.clearCachedUserAgeStatus(userId);
   }
 
   // ============================================================================
   // Private Helper Methods
   // ============================================================================
 
+  private getCachedUserAgeStatus(
+    userId: string
+  ): UserAgeStatus | null | undefined {
+    const cachedEntry = this.userAgeStatusCache.get(userId);
+    if (!cachedEntry) return undefined;
+
+    if (cachedEntry.expiresAt <= Date.now()) {
+      this.userAgeStatusCache.delete(userId);
+      return undefined;
+    }
+
+    // True LRU: refresh access time by re-inserting (move to end of Map)
+    this.userAgeStatusCache.delete(userId);
+    this.userAgeStatusCache.set(userId, cachedEntry);
+
+    return cachedEntry.value;
+  }
+
+  private setCachedUserAgeStatus(
+    userId: string,
+    status: UserAgeStatus | null
+  ): void {
+    // Ensure LRU behavior: remove existing to refresh position, or evict oldest if full
+    if (this.userAgeStatusCache.has(userId)) {
+      this.userAgeStatusCache.delete(userId);
+    } else if (this.userAgeStatusCache.size >= MAX_CACHE_SIZE) {
+      // True LRU eviction: remove least recently used (first key in Map)
+      const lruKey = this.userAgeStatusCache.keys().next().value;
+      if (lruKey) {
+        this.userAgeStatusCache.delete(lruKey);
+      }
+    }
+
+    this.userAgeStatusCache.set(userId, {
+      value: status,
+      expiresAt: Date.now() + USER_AGE_STATUS_CACHE_TTL_MS,
+    });
+  }
+
+  private clearCachedUserAgeStatus(userId: string): void {
+    this.userAgeStatusCache.delete(userId);
+  }
+
   /**
    * Get content restriction from database
+   * Assumes (content_id, content_type) is unique at DB level
    */
   private async getContentRestriction(
     contentId: string,
     contentType: string
   ): Promise<ContentAgeRestriction | null> {
-    const { data: restriction, error } = await this.supabase
+    const { data, error } = await this.supabase
       .from('content_age_restrictions')
       .select('*')
       .eq('content_id', contentId)
       .eq('content_type', contentType)
-      .single();
+      .limit(1); // Safe due to unique constraint on (content_id, content_type)
+
+    const restriction = (data as DbContentRestriction[] | null)?.[0];
 
     if (error || !restriction) {
       return null;
@@ -338,23 +469,48 @@ export class ContentAgeGatingEngine {
 
   /**
    * Get user age status from database
+   * Caches null on "no row" and transient DB errors briefly
    */
   private async getUserAgeStatus(
     userId: string
   ): Promise<UserAgeStatus | null> {
-    const { data: status, error } = await this.supabase
+    const cachedStatus = this.getCachedUserAgeStatus(userId);
+    if (cachedStatus !== undefined) {
+      return cachedStatus;
+    }
+
+    // Check for cached transient errors
+    const cachedError = this.transientErrorCache.get(userId);
+    if (cachedError && cachedError.expiresAt > Date.now()) {
+      return null; // Return null as if no data found
+    }
+
+    const { data, error } = await this.supabase
       .from('user_age_status')
       .select('*')
       .eq('user_id', userId)
-      .single();
+      .limit(1);
 
-    if (error || !status) {
+    if (error) {
+      // Cache transient DB errors briefly to avoid hot-looping
+      this.transientErrorCache.set(userId, {
+        error,
+        expiresAt: Date.now() + TRANSIENT_ERROR_CACHE_TTL_MS,
+      });
       return null;
     }
 
-    const statusData = status as DbUserAgeStatus;
+    // Clear any cached errors on successful query
+    this.transientErrorCache.delete(userId);
 
-    return {
+    const statusData = (data as DbUserAgeStatus[] | null)?.[0];
+
+    if (!statusData) {
+      this.setCachedUserAgeStatus(userId, null);
+      return null;
+    }
+
+    const status = {
       userId: statusData.user_id,
       isAgeVerified: statusData.is_age_verified,
       verifiedAt: statusData.verified_at
@@ -367,6 +523,9 @@ export class ContentAgeGatingEngine {
       createdAt: new Date(statusData.created_at),
       updatedAt: new Date(statusData.updated_at),
     };
+
+    this.setCachedUserAgeStatus(userId, status);
+    return status;
   }
 
   /**

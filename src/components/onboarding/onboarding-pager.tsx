@@ -6,7 +6,7 @@
  * - Animated.ScrollView with pagingEnabled
  * - SharedValue activeIndex bridged to AnimatedIndexContext
  * - Pagination dots
- * - Skip/Done buttons integrated with onboarding-state
+ * - Skip/Next/Done buttons integrated with onboarding-state
  * - Reduced Motion support
  * - Full a11y with TalkBack/VoiceOver support
  */
@@ -21,12 +21,10 @@ import { useWindowDimensions } from 'react-native';
 import {
   // @ts-ignore - Reanimated 4.x type exports issue
   useAnimatedScrollHandler,
-  useAnimatedStyle,
   useSharedValue,
 } from 'react-native-reanimated';
 
 import { FocusAwareStatusBar, View } from '@/components/ui';
-import { ctaGateToLastIndex } from '@/lib/animations';
 import { AnimatedIndexProvider } from '@/lib/animations/index-context';
 import {
   trackOnboardingComplete,
@@ -35,7 +33,7 @@ import {
 } from '@/lib/compliance/onboarding-telemetry';
 
 import {
-  DoneButton,
+  NavButton,
   OnboardingScrollView,
   SkipButton,
 } from './onboarding-buttons';
@@ -46,6 +44,7 @@ export type OnboardingSlideProps = {
 };
 
 type OnboardingPagerProps = {
+  /** Array of onboarding slide components - must contain at least one slide */
   slides: React.ComponentType<OnboardingSlideProps>[];
   onComplete: () => void;
   showSkip?: boolean;
@@ -80,10 +79,10 @@ export function OnboardingPager({
   showSkip = true,
   testID = 'onboarding-pager',
 }: OnboardingPagerProps): React.ReactElement {
+  // All hooks must be called before any conditional returns
   const { width } = useWindowDimensions();
   const scrollRef = React.useRef<ScrollView | null>(null);
   const activeIndex = useSharedValue(0);
-  const lastIndex = Math.max(slides.length - 1, 0);
   const trackingRef = React.useRef<TrackingState>({
     startTime: Date.now(),
     slideTimes: { 0: Date.now() },
@@ -92,20 +91,17 @@ export function OnboardingPager({
   const [currentIndex, setCurrentIndex] = React.useState(0);
 
   const onScroll = useAnimatedScrollHandler({
-    onScroll: (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    onScroll: (event: {
+      layoutMeasurement: { width: number };
+      contentOffset: { x: number };
+    }) => {
       'worklet';
-      const layoutWidth = event?.nativeEvent?.layoutMeasurement?.width ?? NaN;
-      const offsetX = event?.nativeEvent?.contentOffset?.x ?? 0;
+      const layoutWidth = event?.layoutMeasurement?.width ?? NaN;
+      const offsetX = event?.contentOffset?.x ?? 0;
       if (!isFinite(layoutWidth) || isNaN(layoutWidth) || layoutWidth <= 0)
         return;
       activeIndex.value = offsetX / layoutWidth;
     },
-  });
-
-  const ctaStyle = useAnimatedStyle(() => {
-    'worklet';
-    if (lastIndex === 0) return { opacity: 1 };
-    return { opacity: ctaGateToLastIndex(activeIndex, lastIndex).opacity };
   });
 
   const handleScrollEnd = React.useCallback(
@@ -131,21 +127,39 @@ export function OnboardingPager({
     onComplete();
   }, [onComplete, slides.length]);
 
+  const handleNext = React.useCallback(() => {
+    const nextIndex = Math.min(currentIndex + 1, slides.length - 1);
+    scrollRef.current?.scrollTo({ x: nextIndex * width, animated: true });
+  }, [currentIndex, slides.length, width]);
+
   const handleSkip = React.useCallback(() => {
     const now = Date.now();
     const tracking = trackingRef.current;
     // Track completion of the current slide before marking as skipped
     trackStepIfChanged(tracking.previousIndex, tracking, now);
-    trackOnboardingSkipped(
-      `slide_${Math.round(activeIndex.value)}`,
-      'user_skip'
-    );
+    trackOnboardingSkipped(`slide_${currentIndex}`, 'user_skip');
     onComplete();
-  }, [onComplete, activeIndex]);
+  }, [onComplete, currentIndex]);
+
+  // Runtime guard: slides array must be non-empty
+  if (slides.length === 0) {
+    if (__DEV__) {
+      throw new Error(
+        'OnboardingPager: slides array must contain at least one slide'
+      );
+    }
+    return <></>;
+  }
+
+  const lastIndex = slides.length - 1;
+  const isLastSlide = currentIndex >= lastIndex;
 
   return (
     <AnimatedIndexProvider activeIndex={activeIndex}>
-      <View className="flex-1 bg-white dark:bg-charcoal-950" testID={testID}>
+      <View
+        className="flex-1 bg-neutral-50 dark:bg-charcoal-950"
+        testID={testID}
+      >
         <FocusAwareStatusBar />
         {showSkip && <SkipButton onPress={handleSkip} />}
         <OnboardingScrollView
@@ -156,10 +170,10 @@ export function OnboardingPager({
           onScrollEnd={handleScrollEnd}
         />
         <PaginationDots count={slides.length} activeIndex={activeIndex} />
-        <DoneButton
-          ctaStyle={ctaStyle}
-          ctaEnabled={currentIndex >= lastIndex - 0.001}
-          onPress={handleDone}
+        <NavButton
+          isLastSlide={isLastSlide}
+          onDone={handleDone}
+          onNext={handleNext}
         />
       </View>
     </AnimatedIndexProvider>

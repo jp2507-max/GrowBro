@@ -21,11 +21,12 @@ class AnalyticsService {
     batchSize: 10,
     flushIntervalMs: 30000, // 30 seconds
     persistEvents: true,
+    maxQueueSize: 1000,
   };
 
   private storage: MMKV;
   private eventQueue: AnalyticsEvent[] = [];
-  private flushTimer?: NodeJS.Timeout;
+  private flushTimer?: ReturnType<typeof setInterval>;
   private sessionId: string;
 
   constructor() {
@@ -40,6 +41,7 @@ class AnalyticsService {
    */
   configure(config: Partial<AnalyticsConfig>): void {
     this.config = { ...this.config, ...config };
+    this.trimToQueueCap();
     if (this.config.debug) {
       console.log('[Analytics] Configured:', this.config);
     }
@@ -62,6 +64,7 @@ class AnalyticsService {
     } as unknown as AnalyticsEvent;
 
     this.eventQueue.push(event);
+    this.trimToQueueCap();
 
     if (this.config.debug) {
       console.log('[Analytics] Event tracked:', event);
@@ -110,6 +113,7 @@ class AnalyticsService {
     } catch (error) {
       // Re-queue events on failure
       this.eventQueue.unshift(...events);
+      this.trimToQueueCap();
       console.error('[Analytics] Failed to flush events:', error);
       Sentry.captureException(error);
     }
@@ -143,6 +147,25 @@ class AnalyticsService {
     await this.flush();
   }
 
+  /**
+   * Get current queue size
+   * @internal Exposed for testing
+   */
+  getQueueSize(): number {
+    return this.eventQueue.length;
+  }
+
+  /**
+   * Clear the event queue
+   * @internal Exposed for testing
+   */
+  clearQueue(): void {
+    this.eventQueue = [];
+    if (this.config.persistEvents) {
+      this.storage.delete(STORAGE_KEY);
+    }
+  }
+
   // Private methods
 
   private getOrCreateSessionId(): string {
@@ -164,7 +187,11 @@ class AnalyticsService {
     try {
       const persisted = this.storage.getString(STORAGE_KEY);
       if (persisted) {
-        this.eventQueue = JSON.parse(persisted);
+        const parsed: unknown = JSON.parse(persisted);
+        this.eventQueue = Array.isArray(parsed)
+          ? (parsed as AnalyticsEvent[])
+          : [];
+        this.trimToQueueCap();
         if (this.config.debug) {
           console.log(
             '[Analytics] Loaded persisted events:',
@@ -189,6 +216,18 @@ class AnalyticsService {
     this.flushTimer = setInterval(() => {
       this.flush();
     }, this.config.flushIntervalMs);
+  }
+
+  private trimToQueueCap(): void {
+    const rawMaxQueueSize = this.config.maxQueueSize ?? 1000;
+    const normalizedMaxQueueSize = Number.isFinite(rawMaxQueueSize)
+      ? rawMaxQueueSize
+      : 1000;
+    const maxQueueSize = Math.max(0, Math.floor(normalizedMaxQueueSize));
+
+    if (this.eventQueue.length > maxQueueSize) {
+      this.eventQueue.splice(0, this.eventQueue.length - maxQueueSize);
+    }
   }
 
   private async sendEvents(events: AnalyticsEvent[]): Promise<void> {

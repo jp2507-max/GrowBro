@@ -46,8 +46,8 @@ export class TimeoutHandler {
   private timeoutMs: number;
   private warningThresholdMs: number;
   private state: TimeoutState = 'idle';
-  private intervalId: NodeJS.Timeout | null = null;
-  private timeoutId: NodeJS.Timeout | null = null;
+  private intervalId: ReturnType<typeof setInterval> | null = null;
+  private timeoutId: ReturnType<typeof setTimeout> | null = null;
   private options: TimeoutOptions;
 
   constructor(options: TimeoutOptions = {}) {

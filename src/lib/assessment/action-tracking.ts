@@ -61,6 +61,8 @@ export type PlaybookAdjustmentMetadata = {
  * Logs user actions on assessment results for analytics.
  */
 export class ActionTrackingService {
+  private static readonly MAX_EVENTS = 200;
+
   private events: AssessmentActionEvent[] = [];
 
   /**
@@ -201,6 +203,9 @@ export class ActionTrackingService {
    */
   private logEvent(event: AssessmentActionEvent): void {
     this.events.push(event);
+    if (this.events.length > ActionTrackingService.MAX_EVENTS) {
+      this.events.shift();
+    }
 
     // In production, this would send to analytics service
     // For now, just log to console in development

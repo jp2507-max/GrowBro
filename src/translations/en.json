@@ -89,6 +89,7 @@
       "go_back": "Go back",
       "loading_hint": "Content is loading, please wait",
       "loading_label": "Loading",
+      "opens_screen_hint": "Opens the {{label}} screen.",
       "refresh_hint": "Refreshes the current content.",
       "reset_date_hint": "Clears the selected date.",
       "retry_hint": "Retries the last action.",
@@ -108,6 +109,7 @@
       "delete_post": "Delete post",
       "delete_post_failed": "Failed to delete post",
       "delete_post_hint": "Double-tap to delete this post. You will have 15 seconds to undo.",
+      "dismiss_banner_hint": "Dismisses the offline banner.",
       "error_card_hint": "Informs that the community feed failed to load.",
       "like_button_hint": "Double-tap to toggle like status for this post.",
       "offline_message": "You're offline. Changes will sync when you're back online.",
@@ -129,6 +131,8 @@
       "undo_dismiss_hint": "Dismiss the undo snackbar and cancel the action",
       "undo_expires": "Undo expires in {{seconds}}s",
       "unknown_user": "Unknown",
+      "verified_author": "Verified author",
+      "verified_author_hint": "This author has been verified by GrowBro.",
       "view_author_profile": "View profile of @{{author}}",
       "view_author_profile_hint": "Double-tap to open this user's profile.",
       "view_comments": "{{count}} comments",
@@ -822,6 +826,8 @@
     "age_gate_month": "Month",
     "age_gate_re_verification": "For compliance, you'll be asked to re-verify your age every 12 months.",
     "age_gate_secondary_disclaimer": "By continuing you confirm you are at least 18 years old and understand GrowBro avoids commerce functionality.",
+    "age_gate_show_details": "Learn more →",
+    "age_gate_show_details_hint": "Show legal disclaimer details",
     "age_gate_submit": "Enter GrowBro",
     "age_gate_title": "Confirm you are 18 or older",
     "age_gate_year": "Year",
@@ -872,6 +878,7 @@
     "on": "ON",
     "open_settings": "Open Settings",
     "optional": "Optional",
+    "read_more": "Read more",
     "reconnect": "Reconnect",
     "remove": "Remove",
     "reset": "Reset",
@@ -918,6 +925,8 @@
       "verify_age_button": "Verify Your Age"
     },
     "age_verification": {
+      "error_fetch_failed": "Failed to verify age status",
+      "error_unknown": "An unexpected error occurred",
       "feed_message": "Some content in this feed is age-restricted and requires age verification to view.",
       "feed_title": "Age Verification Required",
       "post_message": "This post contains age-restricted content and requires age verification to view.",
@@ -1006,6 +1015,7 @@
     "outbox_failed": "Failed to send",
     "outbox_retry": "Retry",
     "outbox_retrying": "Retrying...",
+    "outbox_retrying_with_count": "Retrying ({{count}}/{{max}})...",
     "outbox_sending": "Sending...",
     "phases": "Phases",
     "playbooks": {
@@ -1501,6 +1511,13 @@
       "empty_description": "Add your first inventory item to start tracking supplies",
       "empty_title": "No inventory items",
       "error_title": "Failed to load inventory",
+      "errors": {
+        "create_failed": "Failed to create item",
+        "item_not_found": "Item not found",
+        "server_error": "Server error",
+        "unknown_error": "An unknown error occurred",
+        "validation_failed": "Validation failed. Please check your entries."
+      },
       "expired": "Expired",
       "expired_on": "Expired on {{date}}",
       "expires_in": "Expires in {{days}} days",
@@ -1541,6 +1558,11 @@
         "unit_placeholder": "e.g., L, ml, g, kg",
         "validation": {
           "category_required": "Category is required",
+          "duplicate_barcode": "Barcode already exists",
+          "duplicate_sku": "SKU already exists",
+          "invalid_category": "Invalid category",
+          "invalid_number": "Must be a positive number",
+          "invalid_tracking_mode": "Invalid tracking mode",
           "lead_time_positive": "Lead time must be positive",
           "min_stock_positive": "Minimum stock must be positive",
           "min_stock_required": "Minimum stock is required",
@@ -1548,6 +1570,7 @@
           "name_required": "Name is required",
           "reorder_multiple_min": "Reorder multiple must be at least 1",
           "reorder_multiple_required": "Reorder multiple is required",
+          "required_field": "Field is required",
           "tracking_mode_required": "Tracking mode is required",
           "unit_max_length": "Unit must be less than 20 characters",
           "unit_required": "Unit is required"
@@ -1819,35 +1842,6 @@
     "accept_terms_label": "Accept terms and conditions",
     "checkbox_label": "Checkbox",
     "switch_label": "Switch"
-  },
-  "inventory": {
-    "add_item": "Add Item",
-    "form": {
-      "barcode": "Barcode",
-      "barcode_placeholder": "Enter barcode",
-      "category": "Category",
-      "lead_time_days": "Lead Time (Days)",
-      "min_stock": "Minimum Stock",
-      "name": "Name",
-      "name_placeholder": "Enter item name",
-      "reorder_multiple": "Reorder Multiple",
-      "sku": "SKU",
-      "sku_placeholder": "Enter SKU",
-      "submit": "Add Item",
-      "tracking_batched": "Batched",
-      "tracking_mode": "Tracking Mode",
-      "tracking_simple": "Simple",
-      "unit": "Unit of Measure",
-      "unit_placeholder": "e.g., ml, g, pcs",
-      "validation": {
-        "min_stock_positive": "Minimum stock must be 0 or greater",
-        "name_max_length": "Name must be 100 characters or less",
-        "name_required": "Name is required",
-        "reorder_multiple_min": "Reorder multiple must be at least 1",
-        "unit_max_length": "Unit must be 20 characters or less",
-        "unit_required": "Unit is required"
-      }
-    }
   },
   "list": {
     "empty": {
@@ -2367,16 +2361,26 @@
       "title": "Join the Community"
     },
     "continue_button": "Continue",
-    "done": "Get Started",
+    "done": "Start Your Journey",
     "guidance": {
-      "body": "Whether you're a beginner or expert, we've got you covered with step-by-step Growbooks and helpful resources.",
-      "feature_playbooks_body": "Complete Growbooks tailored to your setup and strain",
-      "feature_playbooks_title": "Guided Growbooks",
-      "feature_tasks_body": "Automated schedules that keep your grow on track",
-      "feature_tasks_title": "Smart Task Management",
+      "body": "Whether you're a beginner or expert, we've got you covered with automated schedules and helpful resources.",
+      "feature_schedule_body": "Automatic task schedules tailored to your plant's growth stage",
+      "feature_schedule_title": "Smart Schedules",
+      "feature_tasks_body": "Automated reminders that keep your grow on track",
+      "feature_tasks_title": "Task Management",
       "feature_tips_body": "Contextual advice and educational content when you need it",
-      "feature_tips_title": "Expert Tips & Growbooks",
+      "feature_tips_title": "Expert Tips",
       "title": "Learn & Grow"
+    },
+    "intro": {
+      "body": "Your complete companion for planning, tracking, and optimizing your home grow journey.",
+      "feature_ai_body": "Diagnose plant health issues with AI-powered photo analysis",
+      "feature_ai_title": "AI Photo Assessment",
+      "feature_calendar_body": "Stay organized with task reminders and scheduling",
+      "feature_calendar_title": "Smart Calendar",
+      "feature_tracking_body": "Track everything from harvest to curing and storage",
+      "feature_tracking_title": "Complete Tracking",
+      "title": "Welcome to GrowBro"
     },
     "message": "Welcome to GrowBro app site",
     "notifications_body": "Allow notifications to get timely task reminders.",
@@ -2407,17 +2411,7 @@
       },
       "privacy_note": "You can change these permissions anytime in Settings. The app works without them."
     },
-    "skip": "Skip",
-    "welcome": {
-      "body": "Your complete companion for planning, tracking, and optimizing your home grow journey.",
-      "feature_ai_body": "Diagnose plant health issues with AI-powered photo analysis",
-      "feature_ai_title": "AI Photo Assessment",
-      "feature_calendar_body": "Stay organized with task reminders and scheduling",
-      "feature_calendar_title": "Smart Calendar",
-      "feature_tracking_body": "Track everything from harvest to curing and storage",
-      "feature_tracking_title": "Complete Tracking",
-      "title": "Welcome to GrowBro"
-    }
+    "skip": "Skip"
   },
   "phases": {
     "flower": "Flowering",
@@ -3107,6 +3101,7 @@
       "check_updates_offline": "Connect to internet to check for updates",
       "checking": "Checking...",
       "copyright": "© {{year}} GrowBro",
+      "dev_preview": "Developer Preview",
       "download_progress": "Downloading: {{progress}}%",
       "download_update": "Download Update",
       "downloading": "Downloading...",
@@ -3121,6 +3116,9 @@
       "open_store_error_message": "Failed to open app store. Please try again or check your device settings.",
       "open_store_error_title": "Error",
       "ota_disabled": "Updates managed through app store",
+      "preview_camera_primer": "Preview Camera Primer",
+      "preview_notification_primer": "Preview Notification Primer",
+      "preview_onboarding_slides": "Preview Onboarding Slides",
       "restart_to_apply": "Restart to Apply",
       "retry": "Retry",
       "rewatch_onboarding": "Rewatch Onboarding",
@@ -4005,6 +4003,8 @@
       "description_soil_veg_safe": "Veg nutrients. **Tip: Start with 50% of manufacturer's dosage.**",
       "title": "Feed Plant"
     },
+    "reorder_error": "Failed to reorder tasks. Please try again.",
+    "reordered": "Tasks reordered",
     "start_flushing": {
       "description": "Begin the flush period - use plain pH-balanced water only. This helps remove excess nutrients and improves final taste.",
       "description_rich": "Water only! No more nutrients. Use pH-balanced water to flush excess salts.",
@@ -4018,6 +4018,8 @@
       "description": "Add organic amendments to the soil surface for slow-release nutrients.",
       "title": "Top Dressing"
     },
+    "undo_error": "Failed to undo task reorder. Please try again.",
+    "undo_hint": "Tap to undo within 5 seconds",
     "water_plant": {
       "description_coco": "Water until ~10-20% runoff. Coco dries quickly - check daily.",
       "description_coco_rich": "~{{min}}-{{max}}L to water (when medium is dry). Check runoff EC/pH.",

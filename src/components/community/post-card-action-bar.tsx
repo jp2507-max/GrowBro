@@ -1,6 +1,6 @@
 /**
  * PostCardActionBar - Row 3: Like and Comment buttons
- * Used by PostCard component for the "Instagram Pro" clean design
+ * Premium "Deep Garden" design with better spacing and visual hierarchy
  */
 
 import React from 'react';
@@ -32,7 +32,7 @@ export function PostCardActionBar({
   testID,
 }: PostCardActionBarProps) {
   return (
-    <View className="flex-row items-center gap-6 px-4 py-3">
+    <View className="flex-row items-center gap-5 px-4 py-2.5">
       {/* Like Button */}
       <LikeButton
         postId={postId}
@@ -52,11 +52,12 @@ export function PostCardActionBar({
         )}
         onPress={onCommentPress}
         className="flex-row items-center gap-1.5"
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       >
-        <MessageCircle size={26} color={iconColor} />
+        <MessageCircle size={22} color={iconColor} />
         {commentCount > 0 && (
           <Text
-            className="text-sm text-neutral-600 dark:text-neutral-400"
+            className="text-sm font-medium text-neutral-600 dark:text-neutral-400"
             testID={`${testID}-comment-count`}
           >
             {commentCount}

@@ -148,7 +148,7 @@ function useCommunityData(params: CommunityQueryParams) {
 
 function useSkeletonVisibility(isLoading: boolean, postsLength: number) {
   const [isVisible, setVisible] = React.useState(false);
-  const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   React.useEffect(() => {
     const isInitial = isLoading && postsLength === 0;
@@ -182,6 +182,7 @@ export default function CommunityScreen(): React.ReactElement {
   const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+
   const {
     listRef: sharedListRef,
     scrollHandler,
@@ -611,7 +612,7 @@ export default function CommunityScreen(): React.ReactElement {
 
             <View className="flex-1" testID="community-screen">
               <AnimatedFlashList
-                // @ts-expect-error - AnimatedFlashList ref type mismatch with FlashListRef
+                // @ts-expect-error - AnimatedFlashList ref type incompatible with FlashListRef; onScroll also affected
                 ref={listRef}
                 data={filteredPosts as Post[]}
                 renderItem={renderItem}
@@ -619,7 +620,6 @@ export default function CommunityScreen(): React.ReactElement {
                 keyExtractor={(item: Post) => String(item.id)}
                 onEndReached={onEndReached}
                 onEndReachedThreshold={0.4}
-                // @ts-expect-error - Reanimated scroll handler type is incompatible with FlashList onScroll
                 onScroll={scrollHandler}
                 scrollEventThrottle={flashListConfig.scrollEventThrottle}
                 removeClippedSubviews={flashListConfig.removeClippedSubviews}

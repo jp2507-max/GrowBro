@@ -24,7 +24,7 @@ export function OutboxBanner({
   useFocusEffect(
     React.useCallback(() => {
       let isActive = true;
-      let interval: NodeJS.Timeout | null = null;
+      let interval: ReturnType<typeof setInterval> | null = null;
 
       const poll = async (): Promise<void> => {
         try {
@@ -99,7 +99,7 @@ export function OutboxBanner({
 
   return (
     <View
-      className="dark:bg-warning-950 flex-row items-center gap-2 rounded-lg border border-warning-200 bg-warning-50 px-3 py-2 dark:border-warning-700"
+      className="flex-row items-center gap-2 rounded-lg border border-warning-200 bg-warning-50 px-3 py-2 dark:border-warning-700 dark:bg-warning-950"
       testID={testID}
     >
       <Text className="text-sm font-medium text-warning-800 dark:text-warning-200">

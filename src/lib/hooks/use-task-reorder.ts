@@ -2,6 +2,7 @@ import React from 'react';
 import { showMessage } from 'react-native-flash-message';
 
 import { showErrorMessage } from '@/components/ui/utils';
+import i18n from '@/lib/i18n';
 import { updateTask } from '@/lib/task-manager';
 import type { Task } from '@/types/calendar';
 
@@ -10,7 +11,7 @@ const UNDO_TIMEOUT_MS = 5000; // 5 seconds
 type UndoState = {
   taskIds: string[];
   previousOrder: Record<string, number>;
-  timeoutId: NodeJS.Timeout;
+  timeoutId: ReturnType<typeof setTimeout>;
 };
 
 /**
@@ -31,8 +32,8 @@ function capturePreviousOrder(data: Task[]): Record<string, number> {
  */
 function showUndoToast(onUndo: () => Promise<void>): void {
   showMessage({
-    message: 'Tasks reordered',
-    description: 'Tap to undo within 5 seconds',
+    message: i18n.t('tasks.reordered'),
+    description: i18n.t('tasks.undo_hint'),
     type: 'info',
     duration: UNDO_TIMEOUT_MS,
     onPress: () => {
@@ -90,7 +91,7 @@ export function useTaskReorder() {
       );
     } catch (error) {
       console.error('Failed to undo task reorder:', error);
-      showErrorMessage('Failed to undo task reorder. Please try again.');
+      showErrorMessage(i18n.t('tasks.undo_error'));
     }
   }, []);
 
@@ -121,7 +122,7 @@ export function useTaskReorder() {
         showUndoToast(performUndo);
       } catch (error) {
         console.error('Failed to reorder tasks:', error);
-        showErrorMessage('Failed to reorder tasks. Please try again.');
+        showErrorMessage(i18n.t('tasks.reorder_error'));
       }
     },
     [performUndo]

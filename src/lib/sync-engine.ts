@@ -1,5 +1,5 @@
 import { Env } from '@env';
-import type { Collection, Model } from '@nozbe/watermelondb';
+import { type Collection, type Model, Q } from '@nozbe/watermelondb';
 
 import { queryClient } from '@/api/common/api-provider';
 import { NoopAnalytics } from '@/lib/analytics';
@@ -21,7 +21,7 @@ import {
   type SyncTrigger,
 } from '@/lib/sync/sync-performance-metrics';
 import { getSyncState } from '@/lib/sync/sync-state';
-import { TaskNotificationService } from '@/lib/task-notifications';
+import { getTaskNotificationService } from '@/lib/task-notifications';
 import { database } from '@/lib/watermelon';
 import type { HarvestModel } from '@/lib/watermelon-models/harvest';
 import type { HarvestAuditModel } from '@/lib/watermelon-models/harvest-audit';
@@ -667,8 +667,40 @@ async function collectLocalChanges(
  */
 export async function getPendingChangesCount(): Promise<number> {
   const lastPulledAt = getItem<number>(CHECKPOINT_KEY);
-  const changes = await collectLocalChanges(lastPulledAt ?? null);
-  return countChanges(changes);
+
+  const pendingCounts = await Promise.all(
+    SYNC_TABLES.map((table) =>
+      countPendingChangesForTable(table, lastPulledAt ?? null)
+    )
+  );
+
+  return pendingCounts.reduce((sum, count) => sum + count, 0);
+}
+
+async function countPendingChangesForTable(
+  table: TableName,
+  lastPulledAt: number | null
+): Promise<number> {
+  const collection = database.collections.get(table);
+
+  if (lastPulledAt === null) {
+    return collection.query().fetchCount();
+  }
+
+  const [deletedCount, nonDeletedChangedCount] = await Promise.all([
+    collection.query(Q.where('deleted_at', Q.gt(lastPulledAt))).fetchCount(),
+    collection
+      .query(
+        Q.where('deleted_at', null),
+        Q.or(
+          Q.where('created_at', Q.gt(lastPulledAt)),
+          Q.where('updated_at', Q.gt(lastPulledAt))
+        )
+      )
+      .fetchCount(),
+  ]);
+
+  return deletedCount + nonDeletedChangedCount;
 }
 
 class PushConflictError extends Error {
@@ -1460,7 +1492,7 @@ async function updateNotificationsForChangedTasks(
 ): Promise<void> {
   if (changedTaskIds.length > 0) {
     try {
-      const notifier = new TaskNotificationService();
+      const notifier = getTaskNotificationService();
       await notifier.rehydrateNotifications(
         Array.from(new Set(changedTaskIds))
       );

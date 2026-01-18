@@ -3,7 +3,6 @@ import { DateTime } from 'luxon';
 import { useColorScheme } from 'nativewind';
 import React from 'react';
 import { StyleSheet } from 'react-native';
-import { twMerge } from 'tailwind-merge';
 
 import { Modal, Pressable, Text, useModal, View } from '@/components/ui';
 import colors from '@/components/ui/colors';
@@ -11,6 +10,7 @@ import { Check, Edit, Trash } from '@/components/ui/icons';
 import { BottomSheetView } from '@/components/ui/modal';
 import { haptics } from '@/lib/haptics';
 import { translate } from '@/lib/i18n';
+import { cn } from '@/lib/utils';
 import type { Task } from '@/types/calendar';
 
 type TaskDetailModalProps = {
@@ -81,7 +81,7 @@ function ActionButton({
   return (
     <Pressable
       onPress={handlePress}
-      className={twMerge(
+      className={cn(
         'flex-1 items-center gap-1.5 rounded-2xl py-3',
         variantStyles[variant]
       )}
@@ -93,7 +93,7 @@ function ActionButton({
       testID={testID}
     >
       {icon}
-      <Text className={twMerge('text-sm font-semibold', textStyles[variant])}>
+      <Text className={cn('text-sm font-semibold', textStyles[variant])}>
         {label}
       </Text>
     </Pressable>

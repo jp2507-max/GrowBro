@@ -2,6 +2,9 @@ import { Database } from '@nozbe/watermelondb';
 import SQLiteAdapter from '@nozbe/watermelondb/adapters/sqlite';
 import { toPromise } from '@nozbe/watermelondb/utils/fp/Result';
 
+// NOTE: When adding new model classes to this file, update the VALID_TABLE_NAMES Set in:
+// src/lib/database/unsafe-sql-utils.ts
+// This ensures runSql() validation includes all available tables.
 import { migrations } from './watermelon-migrations';
 import { AiSecondOpinionsQueueModel } from './watermelon-models/ai-second-opinions-queue';
 import { AISuggestionModel } from './watermelon-models/ai-suggestion';

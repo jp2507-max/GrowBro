@@ -162,7 +162,7 @@ export function getListImageProps(strainId: string, imageUrl: string) {
     placeholder: IMAGE_CONFIG.placeholder,
     cachePolicy: IMAGE_CONFIG.cachePolicy,
     recyclingKey: IMAGE_CONFIG.recyclingKey(strainId),
-    transition: IMAGE_CONFIG.transition,
+    transition: 0, // Disabled for scroll performance in recycler views
     priority: IMAGE_CONFIG.priority,
   };
 }

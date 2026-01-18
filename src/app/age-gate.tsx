@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import * as React from 'react';
-import { StyleSheet } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
 
 import { LegalConfirmationModal } from '@/components/legal-confirmation-modal';
@@ -124,6 +124,10 @@ function useAgeGateForm() {
   };
 }
 
+const detailsFadeIn = FadeIn.duration(
+  onboardingMotion.durations.quick
+).reduceMotion(ReduceMotion.System);
+
 export default function AgeGateScreen(): React.ReactElement {
   const {
     birthDay,
@@ -170,11 +174,7 @@ export default function AgeGateScreen(): React.ReactElement {
             onYearChange={setBirthYear}
           />
           {error && (
-            <Animated.View
-              entering={FadeIn.duration(
-                onboardingMotion.durations.quick
-              ).reduceMotion(ReduceMotion.System)}
-            >
+            <Animated.View entering={detailsFadeIn}>
               <Text
                 className="mt-2 text-sm text-danger-500"
                 testID="age-gate-error"
@@ -254,6 +254,8 @@ function BirthDateInputs({
 }
 
 function AgeGateCopy(): React.ReactElement {
+  const [showDetails, setShowDetails] = React.useState(false);
+
   return (
     <View>
       <Animated.View
@@ -270,27 +272,62 @@ function AgeGateCopy(): React.ReactElement {
           {translate('cannabis.age_gate_body')}
         </Text>
       </Animated.View>
-      <Animated.View
-        entering={createStaggeredFadeInUp(2, onboardingMotion.stagger.content)}
-      >
-        <Text className="mt-3 text-sm text-neutral-500 dark:text-neutral-400">
-          {translate('cannabis.age_gate_disclaimer')}
-        </Text>
-      </Animated.View>
-      <Animated.View
-        entering={createStaggeredFadeInUp(3, onboardingMotion.stagger.content)}
-      >
-        <Text className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
-          {translate('cannabis.age_gate_secondary_disclaimer')}
-        </Text>
-      </Animated.View>
-      <Animated.View
-        entering={createStaggeredFadeInUp(4, onboardingMotion.stagger.content)}
-      >
-        <Text className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
-          {translate('cannabis.age_gate_re_verification')}
-        </Text>
-      </Animated.View>
+
+      {/* Collapsible legal details */}
+      {showDetails ? (
+        <>
+          <Animated.View
+            entering={createStaggeredFadeInUp(
+              0,
+              onboardingMotion.stagger.content
+            )}
+          >
+            <Text className="mt-3 text-sm text-neutral-500 dark:text-neutral-400">
+              {translate('cannabis.age_gate_disclaimer')}
+            </Text>
+          </Animated.View>
+          <Animated.View
+            entering={createStaggeredFadeInUp(
+              1,
+              onboardingMotion.stagger.content
+            )}
+          >
+            <Text className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
+              {translate('cannabis.age_gate_secondary_disclaimer')}
+            </Text>
+          </Animated.View>
+          <Animated.View
+            entering={createStaggeredFadeInUp(
+              2,
+              onboardingMotion.stagger.content
+            )}
+          >
+            <Text className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
+              {translate('cannabis.age_gate_re_verification')}
+            </Text>
+          </Animated.View>
+        </>
+      ) : (
+        <Animated.View
+          entering={createStaggeredFadeInUp(
+            2,
+            onboardingMotion.stagger.content
+          )}
+        >
+          <Pressable
+            className="mt-3"
+            onPress={() => setShowDetails(true)}
+            accessibilityRole="button"
+            accessibilityLabel={translate('cannabis.age_gate_show_details')}
+            accessibilityHint={translate('cannabis.age_gate_show_details_hint')}
+            testID="age-gate-show-details"
+          >
+            <Text className="text-sm font-medium text-primary-600 dark:text-primary-400">
+              {translate('cannabis.age_gate_show_details')}
+            </Text>
+          </Pressable>
+        </Animated.View>
+      )}
     </View>
   );
 }

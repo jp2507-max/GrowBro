@@ -54,7 +54,7 @@ export function FeedingEventCard({
       </View>
 
       {event.measurementCheckpoint && (
-        <View className="dark:bg-warning-950 mt-2 rounded-md bg-warning-50 px-2 py-1">
+        <View className="mt-2 rounded-md bg-warning-50 px-2 py-1 dark:bg-warning-950">
           <Text className="text-xs text-warning-700 dark:text-warning-300">
             ⚠️ {t('nutrient.measurementCheckpoint')}
           </Text>

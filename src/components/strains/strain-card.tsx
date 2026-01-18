@@ -13,9 +13,9 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 
-import { OptionalBlurView } from '@/components/shared/optional-blur-view';
 import { DifficultyBadge } from '@/components/strains/difficulty-badge';
 import { FavoriteButtonConnected } from '@/components/strains/favorite-button-connected';
+import { FavoriteButtonDumb } from '@/components/strains/favorite-button-dumb';
 import { RaceBadge } from '@/components/strains/race-badge';
 import { THCBadge } from '@/components/strains/thc-badge';
 import { Image, Pressable, Text, View } from '@/components/ui';
@@ -38,16 +38,30 @@ const glassStyles = StyleSheet.create({
   } as ViewStyle,
 });
 
-type Props = {
+type BaseProps = {
   strain: Strain;
   testID?: string;
   enableSharedTransition?: boolean;
   onStartNavigation?: (strainId: string) => void;
 };
 
+type ConnectedFavoriteProps = BaseProps & {
+  isFavorite?: never;
+  onToggleFavorite?: never;
+};
+
+type DumbFavoriteProps = BaseProps & {
+  /** Renders a "dumb" favorite button instead of the connected one */
+  isFavorite: boolean;
+  /** Handler for toggling favorite state */
+  onToggleFavorite: () => void;
+};
+
+type Props = ConnectedFavoriteProps | DumbFavoriteProps;
+
 // Extracted component for badges
 const StrainBadges = React.memo<{ strain: Strain }>(({ strain }) => (
-  <View className="flex-row flex-wrap gap-1.5">
+  <View className="flex-row gap-1.5">
     <RaceBadge race={strain.race} />
     {strain.thc_display && <THCBadge thc={strain.thc_display} />}
     <DifficultyBadge difficulty={strain.grow.difficulty} />
@@ -63,27 +77,15 @@ type StrainCardOverlayProps = {
 
 const StrainCardOverlay = React.memo<StrainCardOverlayProps>(
   ({ isDark, style, children }) => {
-    if (Platform.OS !== 'ios') {
-      return (
-        <View
-          style={[
-            style,
-            isDark ? styles.blurFallbackDark : styles.blurFallbackLight,
-          ]}
-        >
-          {children}
-        </View>
-      );
-    }
-
     return (
-      <OptionalBlurView
-        intensity={60}
-        tint={isDark ? 'dark' : 'light'}
-        style={style}
+      <View
+        style={[
+          style,
+          isDark ? styles.overlayFallbackDark : styles.overlayFallbackLight,
+        ]}
       >
         {children}
-      </OptionalBlurView>
+      </View>
     );
   }
 );
@@ -123,8 +125,78 @@ StrainCardContent.displayName = 'StrainCardContent';
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const AnimatedImage = Animated.createAnimatedComponent(Image);
 
+// Extracted component for image section with overlays
+type StrainCardImageSectionProps = {
+  strain: Strain;
+  enableSharedTransition: boolean;
+  imageProps: ReturnType<typeof getListImageProps>;
+  isDark: boolean;
+  isFavorite?: boolean;
+  onToggleFavorite?: () => void;
+};
+
+const StrainCardImageSection = React.memo<StrainCardImageSectionProps>(
+  ({
+    strain,
+    enableSharedTransition,
+    imageProps,
+    isDark,
+    isFavorite,
+    onToggleFavorite,
+  }) => (
+    <View className="relative h-52 w-full bg-white">
+      <AnimatedImage
+        className="size-full"
+        contentFit="cover"
+        sharedTransitionTag={
+          enableSharedTransition ? strainImageTag(strain.slug) : undefined
+        }
+        {...imageProps}
+      />
+
+      {/* Favorite Button */}
+      <View className="absolute right-3 top-3">
+        <StrainCardOverlay isDark={isDark} style={glassStyles.favoriteButton}>
+          <View className="p-1.5">
+            {isFavorite !== undefined && onToggleFavorite ? (
+              <FavoriteButtonDumb
+                isFavorite={isFavorite}
+                onToggle={onToggleFavorite}
+                testID={`favorite-btn-${strain.id}`}
+              />
+            ) : (
+              <FavoriteButtonConnected
+                strainId={strain.id}
+                strain={strain}
+                testID={`favorite-btn-${strain.id}`}
+              />
+            )}
+          </View>
+        </StrainCardOverlay>
+      </View>
+
+      {/* Overlay Badges */}
+      <View className="absolute bottom-3 left-3 right-12">
+        <StrainCardOverlay isDark={isDark} style={glassStyles.overlayBadges}>
+          <View className="overflow-hidden rounded-xl px-2 py-1.5">
+            <StrainBadges strain={strain} />
+          </View>
+        </StrainCardOverlay>
+      </View>
+    </View>
+  )
+);
+StrainCardImageSection.displayName = 'StrainCardImageSection';
+
 export const StrainCard = React.memo<Props>(
-  ({ strain, testID, enableSharedTransition = true, onStartNavigation }) => {
+  ({
+    strain,
+    testID,
+    enableSharedTransition = true,
+    onStartNavigation,
+    isFavorite,
+    onToggleFavorite,
+  }) => {
     const { scaledSizes, isLargeTextMode } = useDynamicType();
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
@@ -187,56 +259,26 @@ export const StrainCard = React.memo<Props>(
           onPressOut={onPressOut}
           style={animatedStyle}
         >
-          <View
-            className="overflow-hidden rounded-3xl bg-white shadow-sm dark:bg-charcoal-900"
-            style={styles.card}
-          >
-            <View className="relative h-52 w-full bg-white">
-              <AnimatedImage
-                className="size-full"
-                contentFit="cover"
-                sharedTransitionTag={
-                  enableSharedTransition
-                    ? strainImageTag(strain.slug)
-                    : undefined
-                }
-                {...imageProps}
+          <View className="rounded-3xl" style={styles.cardShadow}>
+            <View
+              className="overflow-hidden rounded-3xl bg-white dark:bg-charcoal-900"
+              style={styles.cardInner}
+            >
+              <StrainCardImageSection
+                strain={strain}
+                enableSharedTransition={enableSharedTransition}
+                imageProps={imageProps}
+                isDark={isDark}
+                isFavorite={isFavorite}
+                onToggleFavorite={onToggleFavorite}
               />
 
-              {/* Favorite Button */}
-              <View className="absolute right-3 top-3">
-                <StrainCardOverlay
-                  isDark={isDark}
-                  style={glassStyles.favoriteButton}
-                >
-                  <View className="p-1.5">
-                    <FavoriteButtonConnected
-                      strainId={strain.id}
-                      strain={strain}
-                      testID={`favorite-btn-${strain.id}`}
-                    />
-                  </View>
-                </StrainCardOverlay>
-              </View>
-
-              {/* Overlay Badges */}
-              <View className="absolute bottom-3 left-3">
-                <StrainCardOverlay
-                  isDark={isDark}
-                  style={glassStyles.overlayBadges}
-                >
-                  <View className="px-2 py-1.5">
-                    <StrainBadges strain={strain} />
-                  </View>
-                </StrainCardOverlay>
-              </View>
+              <StrainCardContent
+                strain={strain}
+                scaledSizes={scaledSizes}
+                isLargeTextMode={isLargeTextMode}
+              />
             </View>
-
-            <StrainCardContent
-              strain={strain}
-              scaledSizes={scaledSizes}
-              isLargeTextMode={isLargeTextMode}
-            />
           </View>
         </AnimatedPressable>
       </Link>
@@ -247,24 +289,26 @@ export const StrainCard = React.memo<Props>(
 StrainCard.displayName = 'StrainCard';
 
 const styles = StyleSheet.create({
-  blurFallbackDark: {
+  overlayFallbackDark: {
     backgroundColor: 'rgba(17, 24, 39, 0.45)',
   },
-  blurFallbackLight: {
+  overlayFallbackLight: {
     backgroundColor: 'rgba(255, 255, 255, 0.75)',
   },
-  card: {
+  cardShadow: {
     ...Platform.select({
       ios: {
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.08,
-        shadowRadius: 16,
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.07,
+        shadowRadius: 14,
       },
       android: {
         elevation: 4,
       },
     }),
+  },
+  cardInner: {
     // @ts-ignore - borderCurve is iOS-only
     borderCurve: 'continuous',
   },

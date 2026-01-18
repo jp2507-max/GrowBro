@@ -73,9 +73,9 @@ export const RetakeGuidanceModal = React.forwardRef<
     if (onRetake) {
       onRetake();
     } else {
-      // Navigate back to camera with plant context
+      // Navigate back to capture with plant context
       router.push({
-        pathname: '/assessment/camera',
+        pathname: '/assessment/capture' as const,
         params: {
           plantId: plantContext?.id,
         },
@@ -99,7 +99,7 @@ export const RetakeGuidanceModal = React.forwardRef<
         </Text>
 
         {/* Primary issue */}
-        <View className="dark:bg-warning-950 mb-4 rounded-lg bg-warning-100 p-4">
+        <View className="mb-4 rounded-lg bg-warning-100 p-4 dark:bg-warning-950">
           <Text className="mb-1 text-sm font-semibold text-warning-900 dark:text-warning-100">
             {t('assessment.retake.primary_issue')}
           </Text>

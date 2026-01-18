@@ -1283,5 +1283,17 @@ export const migrations = schemaMigrations({
         }),
       ],
     },
+    // Migration from version 38 to 39: Add remote_image_path column to plants
+    {
+      toVersion: 39,
+      steps: [
+        addColumns({
+          table: 'plants',
+          columns: [
+            { name: 'remote_image_path', type: 'string', isOptional: true },
+          ],
+        }),
+      ],
+    },
   ],
 });

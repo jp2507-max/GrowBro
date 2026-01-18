@@ -43,7 +43,7 @@ export function SettingsSyncBanner({
   const [retrying, setRetrying] = useState(false);
 
   const isMountedRef = useRef(true);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Load stats on mount and refresh periodically
   useEffect(() => {

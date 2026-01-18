@@ -38,7 +38,7 @@ export class OutboxWorker {
   private baseDelayMs: number;
   private maxDelayMs: number;
   private isRunning = false;
-  private processInterval?: NodeJS.Timeout;
+  private processInterval?: ReturnType<typeof setInterval>;
 
   constructor(options: OutboxWorkerOptions) {
     this.database = options.database;

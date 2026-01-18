@@ -251,7 +251,7 @@ function DisclaimersSection({
   disclaimerKeys: string[];
 }): React.ReactElement {
   return (
-    <View className="dark:bg-warning-950 mb-3 rounded-lg border border-warning-300 bg-warning-50 p-3 dark:border-warning-800">
+    <View className="mb-3 rounded-lg border border-warning-300 bg-warning-50 p-3 dark:border-warning-800 dark:bg-warning-950">
       <Text className="mb-2 text-sm font-semibold text-warning-800 dark:text-warning-200">
         ⚠️ {translate('nutrient.diagnostics.disclaimers.title')}
       </Text>

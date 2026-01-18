@@ -345,7 +345,6 @@ export default function FavoritesScreen(): React.ReactElement {
         renderItem={renderItem}
         keyExtractor={keyExtractor}
         getItemType={() => 'favorite'}
-        estimatedItemSize={280}
         onScroll={scrollHandler}
         scrollEventThrottle={flashListConfig.scrollEventThrottle}
         removeClippedSubviews={flashListConfig.removeClippedSubviews}

@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { type Href, useRouter } from 'expo-router';
 import React from 'react';
 
 import { SignUpForm } from '@/components/auth/sign-up-form';
@@ -12,7 +12,7 @@ export default function SignUp() {
     // After successful signup, redirect to login or check for pending deep link
     const pendingPath = consumePendingDeepLink();
     if (pendingPath) {
-      router.replace(pendingPath);
+      router.replace(pendingPath as Href);
       return;
     }
     // Navigate to login screen

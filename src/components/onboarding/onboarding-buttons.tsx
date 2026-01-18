@@ -37,12 +37,41 @@ export function SkipButton({ onPress }: SkipButtonProps) {
   );
 }
 
+type NavButtonProps = {
+  isLastSlide: boolean;
+  onDone: () => void;
+  onNext: () => void;
+};
+
+export function NavButton({ isLastSlide, onDone, onNext }: NavButtonProps) {
+  // Always visible, just change label and handler based on slide
+  return (
+    <SafeAreaView edges={['bottom', 'left', 'right']}>
+      <View className="px-6 pb-4">
+        <Button
+          label={
+            isLastSlide
+              ? translate('onboarding.done')
+              : translate('onboarding.continue_button')
+          }
+          onPress={isLastSlide ? onDone : onNext}
+          testID={
+            isLastSlide ? 'onboarding-done-button' : 'onboarding-next-button'
+          }
+        />
+      </View>
+    </SafeAreaView>
+  );
+}
+
+/** @deprecated Use NavButton instead */
 type DoneButtonProps = {
   ctaStyle: StyleProp<ViewStyle>;
   ctaEnabled: boolean;
   onPress: () => void;
 };
 
+/** @deprecated Use NavButton instead */
 export function DoneButton({ ctaStyle, ctaEnabled, onPress }: DoneButtonProps) {
   return (
     <SafeAreaView edges={['bottom', 'left', 'right']}>

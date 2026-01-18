@@ -31,23 +31,27 @@ interface PendingDeletionInfo {
 
 export function usePendingDeletion() {
   const { user } = useAuth();
+  const userId = user?.id ?? null;
   const [pendingDeletion, setPendingDeletion] =
     useState<PendingDeletionInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Reset state when user logs out
-    if (!user) {
+    if (!userId) {
       setPendingDeletion(null);
       setIsLoading(false);
       return;
     }
 
+    let isActive = true;
+
     // Check for pending deletion when user is authenticated
     const checkDeletion = async () => {
       try {
         setIsLoading(true);
-        const result = await checkPendingDeletion(user.id);
+        const result = await checkPendingDeletion(userId);
+        if (!isActive) return;
 
         if (result) {
           // Calculate days remaining
@@ -68,14 +72,17 @@ export function usePendingDeletion() {
       } catch (error) {
         console.error('Failed to check pending deletion:', error);
         // Don't set pending deletion on error to avoid false positives
-        setPendingDeletion(null);
+        if (isActive) setPendingDeletion(null);
       } finally {
-        setIsLoading(false);
+        if (isActive) setIsLoading(false);
       }
     };
 
-    checkDeletion();
-  }, [user]);
+    void checkDeletion();
+    return () => {
+      isActive = false;
+    };
+  }, [userId]);
 
   return {
     pendingDeletion,

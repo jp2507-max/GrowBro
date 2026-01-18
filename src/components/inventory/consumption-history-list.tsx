@@ -79,7 +79,7 @@ const ConsumptionHistoryItem = ({
           className={`rounded-full px-2 py-1 ${
             entry.type === 'consumption'
               ? 'bg-primary-100 dark:bg-primary-950'
-              : 'dark:bg-warning-950 bg-warning-100'
+              : 'bg-warning-100 dark:bg-warning-950'
           }`}
         >
           <Text
@@ -96,7 +96,7 @@ const ConsumptionHistoryItem = ({
         </View>
 
         {entry.taskId && (
-          <View className="dark:bg-success-950 rounded-full bg-success-100 px-2 py-1">
+          <View className="rounded-full bg-success-100 px-2 py-1 dark:bg-success-950">
             <Text className="font-inter-medium text-xs text-success-800 dark:text-success-200">
               {t('inventory.history.linkedToTask')}
             </Text>

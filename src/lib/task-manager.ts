@@ -9,7 +9,10 @@ import {
 } from '@/lib/plant-telemetry';
 import type { RRuleParse } from '@/lib/rrule';
 import * as rrule from '@/lib/rrule';
-import { TaskNotificationService } from '@/lib/task-notifications';
+import {
+  getTaskNotificationService,
+  TaskNotificationService,
+} from '@/lib/task-notifications';
 import { database } from '@/lib/watermelon';
 import type { OccurrenceOverrideModel } from '@/lib/watermelon-models/occurrence-override';
 import type { SeriesModel } from '@/lib/watermelon-models/series';
@@ -370,7 +373,7 @@ async function materializeNextOccurrence(
   // This ensures users get reminders for recurring tasks immediately
   if (scheduledTask.dueAtUtc) {
     const task = toTaskFromModel(scheduledTask);
-    const notifier = new TaskNotificationService();
+    const notifier = getTaskNotificationService();
     await notifier.scheduleTaskReminder(toNotificationTaskPayload(task));
   }
 
@@ -413,7 +416,7 @@ export async function createTask(input: CreateTaskInput): Promise<Task> {
   // This ensures users get reminders immediately without waiting for global rehydrate
   if (shouldSchedule && (createdTask.reminderAtUtc || createdTask.dueAtUtc)) {
     const task = toTaskFromModel(createdTask);
-    const notifier = new TaskNotificationService();
+    const notifier = getTaskNotificationService();
     await notifier.scheduleTaskReminder(toNotificationTaskPayload(task));
   }
 
@@ -599,7 +602,7 @@ async function handleNotificationUpdates(params: {
         updatedTask.status === 'pending' &&
         (updatedTask.reminderAtUtc || updatedTask.dueAtUtc)
       ) {
-        const notifier = new TaskNotificationService();
+        const notifier = getTaskNotificationService();
         await notifier.scheduleTaskReminder(
           toNotificationTaskPayload(updatedTask)
         );
@@ -1459,7 +1462,7 @@ async function moveExistingMaterializedTask(params: {
   });
   if (process.env.JEST_WORKER_ID === undefined) {
     const updated = toTaskFromModel(existingTask);
-    const notifier = new TaskNotificationService();
+    const notifier = getTaskNotificationService();
     await notifier.scheduleTaskReminder(toNotificationTaskPayload(updated));
   }
 }

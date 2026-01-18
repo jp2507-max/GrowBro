@@ -4,8 +4,13 @@
 
 import * as React from 'react';
 import type { StyleProp, TextInput, ViewStyle } from 'react-native';
-import { StyleSheet } from 'react-native';
-import { ScrollView } from 'react-native-gesture-handler';
+import { Platform, StyleSheet } from 'react-native';
+import Animated, {
+  // @ts-ignore - Reanimated 4.x type exports issue
+  type AnimatedRef,
+  // @ts-ignore - Reanimated 4.x type exports issue
+  scrollTo,
+} from 'react-native-reanimated';
 
 import { CommentInputFooter } from '@/components/community/comment-input-footer';
 import { PostActionBar } from '@/components/community/post-action-bar';
@@ -42,11 +47,75 @@ type PostDetailContentProps = {
   highlightedCommentId: string | undefined;
   bottomInset: number;
   commentInputRef: React.RefObject<TextInput | null>;
-  scrollViewRef: React.RefObject<ScrollView | null>;
+  // @ts-ignore - Reanimated 4.x type exports issue
+  scrollViewRef: AnimatedRef<Animated.ScrollView>;
   onAuthorPress: () => void;
   onStrainPress: () => void;
   onSharePress: () => void;
 };
+
+const HIGHLIGHT_SCROLL_TOP_PADDING = 24;
+
+type UseScrollToHighlightedCommentParams = {
+  highlightedCommentId: string | undefined;
+  // @ts-ignore - Reanimated 4.x type exports issue
+  scrollViewRef: AnimatedRef<Animated.ScrollView>;
+};
+
+function useScrollToHighlightedComment({
+  highlightedCommentId,
+  scrollViewRef,
+}: UseScrollToHighlightedCommentParams): {
+  handleCommentListLayout: (y: number) => void;
+  handleHighlightedCommentLayout: (y: number) => void;
+} {
+  const [commentListY, setCommentListY] = React.useState<number | null>(null);
+  const [highlightedCommentY, setHighlightedCommentY] = React.useState<
+    number | null
+  >(null);
+  const lastHighlightedScrollKeyRef = React.useRef<string | null>(null);
+
+  const handleCommentListLayout = React.useCallback((y: number) => {
+    setCommentListY(y);
+  }, []);
+
+  const handleHighlightedCommentLayout = React.useCallback((y: number) => {
+    setHighlightedCommentY(y);
+  }, []);
+
+  React.useEffect(() => {
+    if (!highlightedCommentId) return;
+    setHighlightedCommentY(null);
+    lastHighlightedScrollKeyRef.current = null;
+  }, [highlightedCommentId]);
+
+  React.useEffect(() => {
+    if (!highlightedCommentId || !scrollViewRef.current) return;
+    if (commentListY === null || highlightedCommentY === null) return;
+
+    const targetY = Math.max(
+      commentListY + highlightedCommentY - HIGHLIGHT_SCROLL_TOP_PADDING,
+      0
+    );
+    const scrollKey = `${highlightedCommentId}:${Math.round(targetY)}`;
+    if (lastHighlightedScrollKeyRef.current === scrollKey) return;
+    lastHighlightedScrollKeyRef.current = scrollKey;
+
+    const scrollToHighlightedComment = (): void => {
+      scrollTo(scrollViewRef, 0, targetY, true);
+    };
+
+    const raf = requestAnimationFrame(() => {
+      scrollToHighlightedComment();
+    });
+
+    return () => {
+      cancelAnimationFrame(raf);
+    };
+  }, [commentListY, highlightedCommentId, highlightedCommentY, scrollViewRef]);
+
+  return { handleCommentListLayout, handleHighlightedCommentLayout };
+}
 
 export function PostDetailContent({
   post,
@@ -68,16 +137,21 @@ export function PostDetailContent({
   onStrainPress,
   onSharePress,
 }: PostDetailContentProps): React.ReactElement {
+  const { handleCommentListLayout, handleHighlightedCommentLayout } =
+    useScrollToHighlightedComment({ highlightedCommentId, scrollViewRef });
+
   return (
     <View
       className="z-10 -mt-10 flex-1 overflow-hidden rounded-t-[32px] bg-white shadow-2xl dark:bg-charcoal-900"
       style={styles.contentSheet as StyleProp<ViewStyle>}
     >
-      <ScrollView
+      <Animated.ScrollView
         ref={scrollViewRef}
         className="flex-1"
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+        keyboardShouldPersistTaps="handled"
       >
         <View className="px-5 pt-6">
           <PostHeader
@@ -122,9 +196,11 @@ export function PostDetailContent({
             comments={comments}
             isLoading={isLoadingComments}
             highlightedCommentId={highlightedCommentId}
+            onCommentListLayout={handleCommentListLayout}
+            onHighlightedCommentLayout={handleHighlightedCommentLayout}
           />
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
 
       <CommentInputFooter
         value={commentBody}

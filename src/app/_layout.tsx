@@ -40,7 +40,6 @@ import { registerKeyRotationTask } from '@/lib/auth/key-rotation-task';
 import {
   useOfflineModeMonitor,
   useRealtimeSessionRevocation,
-  useSessionAutoRefresh,
 } from '@/lib/auth/session-manager';
 import { updateActivity } from '@/lib/auth/session-timeout';
 import { useDeepLinking } from '@/lib/auth/use-deep-linking';
@@ -357,6 +356,8 @@ function usePhotoJanitorSetup(isI18nReady: boolean): void {
     return () => {
       // Abort first to signal all pending operations to stop
       abortController.abort();
+      // Remove listener to avoid retaining closures unnecessarily
+      abortController.signal.removeEventListener('abort', abortHandler);
       // Cancel the interaction task if it hasn't started yet
       task?.cancel?.();
       // Clear timeout as backup (abort handler should have done this already)
@@ -388,16 +389,7 @@ function RootLayout(): React.ReactElement {
   const router = useRouter();
   const pathname = usePathname();
 
-  if (__DEV__) {
-    console.log('[RootLayout] render', {
-      isI18nReady,
-      isAuthReady,
-      pathname,
-    });
-  }
-
   useRootStartup(setIsI18nReady, isFirstTime);
-  useSessionAutoRefresh();
   useOfflineModeMonitor();
   useDeepLinking();
   useRealtimeSessionRevocation();
@@ -497,6 +489,15 @@ async function initializeAuthAndStates(): Promise<void> {
   if (__DEV__) console.log('[RootLayout] after initAuthStorage');
 
   const abortController = new AbortController();
+  const abortSignal = abortController.signal;
+
+  const attachAbortListener = (listener: () => void): void => {
+    abortSignal.addEventListener('abort', listener);
+  };
+
+  const detachAbortListener = (listener: () => void): void => {
+    abortSignal.removeEventListener('abort', listener);
+  };
 
   // Cleanup helper - clears auth state if not already signed in
   const executeCleanup = async (reason: string): Promise<void> => {
@@ -524,22 +525,37 @@ async function initializeAuthAndStates(): Promise<void> {
 
   // Timeout promise - runs cleanup if hydration takes too long
   const timeoutPromise = new Promise<void>((resolve) => {
-    const timeoutId = setTimeout(async () => {
-      if (abortController.signal.aborted) {
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+    const onAbort = () => {
+      detachAbortListener(onAbort);
+      if (timeoutId !== null) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+      resolve();
+    };
+
+    // Cancel timeout if hydration completes first
+    attachAbortListener(onAbort);
+
+    timeoutId = setTimeout(async () => {
+      // No longer needed once the timeout fires
+      detachAbortListener(onAbort);
+      if (abortSignal.aborted) {
         resolve();
         return;
       }
-      await executeCleanup(
-        `hydrateAuth timeout after ${HYDRATE_AUTH_TIMEOUT_MS}ms`
-      );
-      resolve();
+      try {
+        await executeCleanup(
+          `hydrateAuth timeout after ${HYDRATE_AUTH_TIMEOUT_MS}ms`
+        );
+      } catch (error) {
+        console.error('[RootLayout] executeCleanup failed:', error);
+      } finally {
+        resolve();
+      }
     }, HYDRATE_AUTH_TIMEOUT_MS);
-
-    // Cancel timeout if hydration completes first
-    abortController.signal.addEventListener('abort', () => {
-      clearTimeout(timeoutId);
-      resolve();
-    });
   });
 
   // Race hydration against timeout - unblocks startup on whichever finishes first
@@ -572,6 +588,7 @@ function AppStack(): React.ReactElement {
     <Stack>
       <Stack.Screen name="(app)" options={{ headerShown: false }} />
       <Stack.Screen name="(modals)" options={{ headerShown: false }} />
+      <Stack.Screen name="sync-diagnostics" options={{ headerShown: false }} />
       <Stack.Screen name="plants" options={{ headerShown: false }} />
       <Stack.Screen name="age-gate" options={{ headerShown: false }} />
       <Stack.Screen name="onboarding" options={{ headerShown: false }} />

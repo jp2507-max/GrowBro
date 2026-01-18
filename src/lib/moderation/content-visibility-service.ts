@@ -261,7 +261,7 @@ export class ContentVisibilityService {
       .subscribe();
 
     return () => {
-      subscription.unsubscribe();
+      supabase.removeChannel(subscription);
     };
   }
 }

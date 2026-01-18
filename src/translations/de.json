@@ -89,6 +89,7 @@
       "go_back": "Zurück",
       "loading_hint": "Inhalt wird geladen, bitte warten",
       "loading_label": "Lädt",
+      "opens_screen_hint": "Öffnet den {{label}}-Bildschirm.",
       "refresh_hint": "Aktualisiert den aktuellen Inhalt.",
       "reset_date_hint": "Löscht das ausgewählte Datum.",
       "retry_hint": "Wiederholt die letzte Aktion.",
@@ -108,6 +109,7 @@
       "delete_post": "Beitrag löschen",
       "delete_post_failed": "Beitrag konnte nicht gelöscht werden",
       "delete_post_hint": "Doppeltippen, um diesen Beitrag zu löschen. Du hast 15 Sekunden Zeit zum Rückgängig machen.",
+      "dismiss_banner_hint": "Schließt das Offline-Banner.",
       "error_card_hint": "Informiert, dass der Community-Feed nicht geladen werden konnte.",
       "like_button_hint": "Doppeltippen, um den Gefällt-mir-Status für diesen Beitrag umzuschalten.",
       "offline_message": "Du bist offline. Änderungen werden synchronisiert, sobald du wieder online bist.",
@@ -129,6 +131,8 @@
       "undo_dismiss_hint": "Die Rückgängig-Snackbar schließen und die Aktion abbrechen",
       "undo_expires": "Rückgängigmachen läuft in {{seconds}}s ab",
       "unknown_user": "Unbekannt",
+      "verified_author": "Verifizierter Autor",
+      "verified_author_hint": "Dieser Autor wurde von GrowBro verifiziert.",
       "view_author_profile": "Profil von @{{author}} anzeigen",
       "view_author_profile_hint": "Doppeltippen, um das Profil dieses Benutzers zu öffnen.",
       "view_comments": "{{count}} Kommentare",
@@ -822,6 +826,8 @@
     "age_gate_month": "Monat",
     "age_gate_re_verification": "Aus Compliance-Gruenden wirst du alle 12 Monate gebeten, dein Alter erneut zu bestaetigen.",
     "age_gate_secondary_disclaimer": "Mit dem Fortfahren bestaetigst du, dass du mindestens 18 Jahre alt bist und verstanden hast, dass GrowBro keine Commerce-Funktionen anbietet.",
+    "age_gate_show_details": "Mehr erfahren →",
+    "age_gate_show_details_hint": "Zeigt rechtliche Hinweise an",
     "age_gate_submit": "Weiter zu GrowBro",
     "age_gate_title": "Bestaetige dein Alter (18+)",
     "age_gate_year": "Jahr",
@@ -872,6 +878,7 @@
     "on": "AN",
     "open_settings": "Einstellungen öffnen",
     "optional": "Optional",
+    "read_more": "Mehr lesen",
     "reconnect": "Verbinden",
     "remove": "Entfernen",
     "reset": "Zurücksetzen",
@@ -918,6 +925,8 @@
       "verify_age_button": "Alter verifizieren"
     },
     "age_verification": {
+      "error_fetch_failed": "Altersstatus konnte nicht überprüft werden",
+      "error_unknown": "Ein unerwarteter Fehler ist aufgetreten",
       "feed_message": "Einige Inhalte in diesem Feed sind altersbeschränkt und erfordern eine Altersverifikation.",
       "feed_title": "Altersverifikation erforderlich",
       "post_message": "Dieser Beitrag enthält altersbeschränkte Inhalte und erfordert eine Altersverifikation.",
@@ -1006,6 +1015,7 @@
     "outbox_failed": "Senden fehlgeschlagen",
     "outbox_retry": "Erneut senden",
     "outbox_retrying": "Wird erneut gesendet...",
+    "outbox_retrying_with_count": "Wird erneut gesendet ({{count}}/{{max}})...",
     "outbox_sending": "Wird gesendet...",
     "phases": "Phasen",
     "playbooks": {
@@ -1820,35 +1830,6 @@
     "checkbox_label": "Kontrollkästchen",
     "switch_label": "Schalter"
   },
-  "inventory": {
-    "add_item": "Artikel hinzufügen",
-    "form": {
-      "barcode": "Barcode",
-      "barcode_placeholder": "Barcode eingeben",
-      "category": "Kategorie",
-      "lead_time_days": "Lieferzeit (Tage)",
-      "min_stock": "Mindestbestand",
-      "name": "Name",
-      "name_placeholder": "Artikelname eingeben",
-      "reorder_multiple": "Nachbestellmenge",
-      "sku": "Artikelnummer",
-      "sku_placeholder": "Artikelnummer eingeben",
-      "submit": "Artikel hinzufügen",
-      "tracking_batched": "Chargenweise",
-      "tracking_mode": "Verfolgungsmodus",
-      "tracking_simple": "Einfach",
-      "unit": "Mengeneinheit",
-      "unit_placeholder": "z.B. ml, g, Stk",
-      "validation": {
-        "min_stock_positive": "Mindestbestand muss 0 oder größer sein",
-        "name_max_length": "Name darf maximal 100 Zeichen lang sein",
-        "name_required": "Name ist erforderlich",
-        "reorder_multiple_min": "Nachbestellmenge muss mindestens 1 sein",
-        "unit_max_length": "Einheit darf maximal 20 Zeichen lang sein",
-        "unit_required": "Einheit ist erforderlich"
-      }
-    }
-  },
   "list": {
     "empty": {
       "body": "Wir zeigen hier Inhalte, sobald sie verfügbar sind.",
@@ -2367,16 +2348,26 @@
       "title": "Tritt der Community bei"
     },
     "continue_button": "Weiter",
-    "done": "Los geht's",
+    "done": "Starte deine Reise",
     "guidance": {
-      "body": "Egal ob Anfänger oder Experte, wir haben für dich Schritt-für-Schritt-Growbooks und hilfreiche Ressourcen.",
-      "feature_playbooks_body": "Vollständige Growbooks, angepasst an dein Setup und deine Sorte",
-      "feature_playbooks_title": "Geführte Growbooks",
-      "feature_tasks_body": "Automatisierte Zeitpläne, die deinen Anbau auf Kurs halten",
-      "feature_tasks_title": "Intelligentes Aufgabenmanagement",
+      "body": "Egal ob Anfänger oder Experte, wir haben automatisierte Zeitpläne und hilfreiche Ressourcen für dich.",
+      "feature_schedule_body": "Automatische Aufgabenpläne, angepasst an die Wachstumsphase deiner Pflanze",
+      "feature_schedule_title": "Smarte Zeitpläne",
+      "feature_tasks_body": "Automatisierte Erinnerungen, die deinen Anbau auf Kurs halten",
+      "feature_tasks_title": "Aufgabenmanagement",
       "feature_tips_body": "Kontextbezogene Ratschläge und Bildungsinhalte, wenn du sie brauchst",
-      "feature_tips_title": "Experten-Tipps & Growbooks",
+      "feature_tips_title": "Experten-Tipps",
       "title": "Lernen & Wachsen"
+    },
+    "intro": {
+      "body": "Dein vollständiger Begleiter für die Planung, Verfolgung und Optimierung deiner heimischen Anbau-Reise.",
+      "feature_ai_body": "Diagnostiziere Pflanzengesundheitsprobleme mit KI-gestützter Fotoanalyse",
+      "feature_ai_title": "KI-Foto-Assessment",
+      "feature_calendar_body": "Bleib organisiert mit Aufgabenerinnerungen und Zeitplanung",
+      "feature_calendar_title": "Intelligenter Kalender",
+      "feature_tracking_body": "Verfolge alles von der Ernte bis zum Aushärten und zur Lagerung",
+      "feature_tracking_title": "Vollständige Nachverfolgung",
+      "title": "Willkommen bei GrowBro"
     },
     "message": "Willkommen bei der GrowBro App",
     "notifications_body": "Erlaube Benachrichtigungen, um rechtzeitig an Aufgaben erinnert zu werden.",
@@ -2407,17 +2398,7 @@
       },
       "privacy_note": "Du kannst diese Berechtigungen jederzeit in den Einstellungen ändern. Die App funktioniert auch ohne sie."
     },
-    "skip": "Überspringen",
-    "welcome": {
-      "body": "Dein vollständiger Begleiter für die Planung, Verfolgung und Optimierung deiner heimischen Anbau-Reise.",
-      "feature_ai_body": "Diagnostiziere Pflanzengesundheitsprobleme mit KI-gestützter Fotoanalyse",
-      "feature_ai_title": "KI-Foto-Assessment",
-      "feature_calendar_body": "Bleib organisiert mit Aufgabenerinnerungen und Zeitplanung",
-      "feature_calendar_title": "Intelligenter Kalender",
-      "feature_tracking_body": "Verfolge alles von der Ernte bis zum Aushärten und zur Lagerung",
-      "feature_tracking_title": "Vollständige Nachverfolgung",
-      "title": "Willkommen bei GrowBro"
-    }
+    "skip": "Überspringen"
   },
   "phases": {
     "flower": "Blütenphase",
@@ -3107,6 +3088,7 @@
       "check_updates_offline": "Mit dem Internet verbinden, um nach Updates zu suchen",
       "checking": "Prüfe...",
       "copyright": "© {{year}} GrowBro",
+      "dev_preview": "Entwickler-Vorschau",
       "download_progress": "Lädt herunter: {{progress}}%",
       "download_update": "Update herunterladen",
       "downloading": "Lädt herunter...",
@@ -3121,6 +3103,9 @@
       "open_store_error_message": "Fehler beim Öffnen des App Stores. Bitte versuchen Sie es erneut oder überprüfen Sie Ihre Geräteeinstellungen.",
       "open_store_error_title": "Fehler",
       "ota_disabled": "Updates werden über den App Store verwaltet",
+      "preview_camera_primer": "Kamera-Einführung anzeigen",
+      "preview_notification_primer": "Benachrichtigungs-Einführung anzeigen",
+      "preview_onboarding_slides": "Onboarding-Folien anzeigen",
       "restart_to_apply": "Neu starten zum Anwenden",
       "retry": "Erneut versuchen",
       "rewatch_onboarding": "Onboarding erneut ansehen",
@@ -4005,6 +3990,8 @@
       "description_soil_veg_safe": "Wachstums-Dünger. **Tipp: Starte mit 50% der Hersteller-Dosierung.**",
       "title": "Nährstoffe geben"
     },
+    "reorder_error": "Neuordnung fehlgeschlagen. Bitte erneut versuchen.",
+    "reordered": "Aufgaben neu geordnet",
     "start_flushing": {
       "description": "Spülphase beginnen - nur pH-ausgeglichenes Wasser verwenden. Dies hilft, überschüssige Nährstoffe zu entfernen und verbessert den Endgeschmack.",
       "description_rich": "Nur Wasser! Keinen Dünger mehr. pH-ausgeglichenes Wasser verwenden, um überschüssige Salze auszuspülen.",
@@ -4018,6 +4005,8 @@
       "description": "Organische Zusätze auf die Bodenoberfläche geben für langsam freisetzende Nährstoffe.",
       "title": "Oberflächendüngung"
     },
+    "undo_error": "Rückgängigmachen fehlgeschlagen. Bitte erneut versuchen.",
+    "undo_hint": "Tippen zum Rückgängigmachen (5 Sek.)",
     "water_plant": {
       "description_coco": "Gießen bis ~10-20% Ablauf. Kokos trocknet schnell - täglich prüfen.",
       "description_coco_rich": "Ca. {{min}}-{{max}}L gießen (wenn Medium trocken). Ablauf EC/pH prüfen.",
