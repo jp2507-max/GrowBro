@@ -2357,6 +2357,16 @@
       "feature_tips_title": "Experten-Tipps",
       "title": "Lernen & Wachsen"
     },
+    "intro": {
+      "body": "Dein vollständiger Begleiter für die Planung, Verfolgung und Optimierung deiner heimischen Anbau-Reise.",
+      "feature_ai_body": "Diagnostiziere Pflanzengesundheitsprobleme mit KI-gestützter Fotoanalyse",
+      "feature_ai_title": "KI-Foto-Assessment",
+      "feature_calendar_body": "Bleib organisiert mit Aufgabenerinnerungen und Zeitplanung",
+      "feature_calendar_title": "Intelligenter Kalender",
+      "feature_tracking_body": "Verfolge alles von der Ernte bis zum Aushärten und zur Lagerung",
+      "feature_tracking_title": "Vollständige Nachverfolgung",
+      "title": "Willkommen bei GrowBro"
+    },
     "message": "Willkommen bei der GrowBro App",
     "notifications_body": "Erlaube Benachrichtigungen, um rechtzeitig an Aufgaben erinnert zu werden.",
     "notifications_title": "Aufgaben-Erinnerungen",
@@ -2386,17 +2396,7 @@
       },
       "privacy_note": "Du kannst diese Berechtigungen jederzeit in den Einstellungen ändern. Die App funktioniert auch ohne sie."
     },
-    "skip": "Überspringen",
-    "welcome": {
-      "body": "Dein vollständiger Begleiter für die Planung, Verfolgung und Optimierung deiner heimischen Anbau-Reise.",
-      "feature_ai_body": "Diagnostiziere Pflanzengesundheitsprobleme mit KI-gestützter Fotoanalyse",
-      "feature_ai_title": "KI-Foto-Assessment",
-      "feature_calendar_body": "Bleib organisiert mit Aufgabenerinnerungen und Zeitplanung",
-      "feature_calendar_title": "Intelligenter Kalender",
-      "feature_tracking_body": "Verfolge alles von der Ernte bis zum Aushärten und zur Lagerung",
-      "feature_tracking_title": "Vollständige Nachverfolgung",
-      "title": "Willkommen bei GrowBro"
-    }
+    "skip": "Überspringen"
   },
   "phases": {
     "flower": "Blütenphase",

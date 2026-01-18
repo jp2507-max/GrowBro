@@ -240,7 +240,13 @@ export class AgeTokenService {
       return null;
     }
 
-    return this.mapDbTokenToType(token as DbTokenRecord);
+    const mapped = this.mapDbTokenToType(token as DbTokenRecord);
+
+    if (!isTokenUsable(mapped)) {
+      return null;
+    }
+
+    return mapped;
   }
 
   // ============================================================================

@@ -1,5 +1,5 @@
 /**
- * Welcome Slide Component
+ * Intro Slide Component
  * Calm, serene onboarding slide with large Lottie animation and minimal feature pills
  */
 
@@ -21,7 +21,7 @@ import { FeaturePill, FeaturePillRow } from '../feature-pill';
 import { FloatingParticles } from '../floating-particles';
 import type { OnboardingSlideProps } from '../onboarding-pager';
 
-export function WelcomeSlide({
+export function IntroSlide({
   index: _index,
 }: OnboardingSlideProps): React.ReactElement {
   const { colorScheme } = useColorScheme();
@@ -33,7 +33,7 @@ export function WelcomeSlide({
   const iconColor = isDark ? colors.primary[300] : colors.primary[700];
 
   return (
-    <View testID="welcome-slide" className="flex-1">
+    <View testID="intro-slide" className="flex-1">
       <LinearGradient
         colors={gradientColors}
         start={{ x: 0.5, y: 0 }}
@@ -49,7 +49,7 @@ export function WelcomeSlide({
             className="mb-8"
             entering={withRM(FadeIn.delay(150).duration(500))}
           >
-            <AnimatedLottieHero animation="welcome" testID="welcome-header" />
+            <AnimatedLottieHero animation="intro" testID="intro-header" />
           </Animated.View>
           {/* Title with gentle spring animation */}
           <Animated.View
@@ -59,42 +59,42 @@ export function WelcomeSlide({
             )}
           >
             <Text
-              testID="welcome-title"
+              testID="intro-title"
               className="text-center text-4xl font-bold text-charcoal-950 dark:text-white"
             >
-              {translate('onboarding.welcome.title')}
+              {translate('onboarding.intro.title')}
             </Text>
           </Animated.View>
           {/* Body text - softer */}
           <Animated.View
-            testID="welcome-content"
+            testID="intro-content"
             entering={withRM(FadeIn.delay(350).duration(500))}
             className="mb-12 px-4"
           >
             <Text
-              testID="welcome-body"
+              testID="intro-body"
               className="text-center text-lg leading-relaxed text-neutral-600 dark:text-neutral-400"
             >
-              {translate('onboarding.welcome.body')}
+              {translate('onboarding.intro.body')}
             </Text>
           </Animated.View>
           {/* Minimal feature pills */}
           <FeaturePillRow>
             <FeaturePill
               icon={<Calendar size={18} color={iconColor} />}
-              labelKey="onboarding.welcome.feature_calendar_title"
+              labelKey="onboarding.intro.feature_calendar_title"
               index={0}
               testID="pill-calendar"
             />
             <FeaturePill
               icon={<Leaf size={18} color={iconColor} />}
-              labelKey="onboarding.welcome.feature_tracking_title"
+              labelKey="onboarding.intro.feature_tracking_title"
               index={1}
               testID="pill-tracking"
             />
             <FeaturePill
               icon={<Camera size={18} color={iconColor} />}
-              labelKey="onboarding.welcome.feature_ai_title"
+              labelKey="onboarding.intro.feature_ai_title"
               index={2}
               testID="pill-ai"
             />

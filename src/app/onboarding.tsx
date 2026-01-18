@@ -18,8 +18,8 @@ import React from 'react';
 import {
   CommunitySlide,
   GuidanceSlide,
+  IntroSlide,
   OnboardingPager,
-  WelcomeSlide,
 } from '@/components/onboarding';
 import { useIsFirstTime } from '@/lib/hooks';
 
@@ -33,7 +33,7 @@ export default function Onboarding() {
     router.replace('/notification-primer');
   }, [setIsFirstTime, router]);
 
-  const slides = [WelcomeSlide, CommunitySlide, GuidanceSlide];
+  const slides = [IntroSlide, CommunitySlide, GuidanceSlide];
 
   return (
     <OnboardingPager

@@ -49,15 +49,14 @@ async function fetchAgeVerificationStatusForUser(
     throw error;
   }
 
-  const row = data ?? null;
-  if (!row) {
+  if (!data) {
     return {
       isVerified: false,
       isLoading: false,
     };
   }
 
-  return mapStatusRowToState(row);
+  return mapStatusRowToState(data);
 }
 
 async function resolveAgeVerificationStatus(): Promise<AgeVerificationStatus> {
@@ -108,7 +107,10 @@ export function useAgeVerificationStatus(): AgeVerificationStatus {
           setStatus(nextStatus);
         }
       } catch (error) {
-        console.error('Error in age verification check:', error);
+        console.error(
+          `Error in age verification check [User: ${user?.id ?? 'unknown'}]:`,
+          error
+        );
         if (mounted) {
           setStatus({
             isVerified: false,

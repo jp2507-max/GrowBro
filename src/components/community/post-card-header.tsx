@@ -72,7 +72,7 @@ export function PostCardHeader({
             </Text>
           </View>
           {relativeTime && (
-            <Text className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
+            <Text className="mt-0.5 text-xs text-neutral-600 dark:text-neutral-400">
               {relativeTime}
             </Text>
           )}

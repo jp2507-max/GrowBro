@@ -6,7 +6,6 @@
 import React from 'react';
 
 import { Text, View } from '@/components/ui';
-import colors from '@/components/ui/colors';
 import { translate } from '@/lib/i18n';
 
 export type PostCardContentProps = {
@@ -35,10 +34,7 @@ export function PostCardContent({
       >
         {displayText}
         {shouldTruncate && (
-          <Text
-            className="text-sm font-medium"
-            style={{ color: colors.primary[600] }}
-          >
+          <Text className="text-sm font-medium text-primary-600 dark:text-primary-300">
             {' '}
             {translate('common.read_more')}
           </Text>

@@ -150,8 +150,11 @@ export class AgeVerificationService {
       const { error } = await this.supabase.from('user_age_status').upsert({
         user_id: userId,
         is_age_verified: false,
+        verified_at: null,
+        active_token_id: null,
         is_minor: true, // Safer default
         minor_protections_enabled: true,
+        show_age_restricted_content: false,
       });
 
       if (error) {

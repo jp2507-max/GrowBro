@@ -36,10 +36,24 @@ const styles = StyleSheet.create({
   },
 });
 
-// Gradient colors for light and dark modes
+// Gradient colors for light and dark modes (using centralized color tokens)
 const GRADIENT_COLORS = {
-  light: ['#065F46', '#047857', '#059669'] as const, // primary-800 → primary-700 → primary-600
-  dark: ['#022C22', '#064E3B', '#065F46'] as const, // primary-950 → primary-900 → primary-800
+  light: [
+    colors.primary[800],
+    colors.primary[700],
+    colors.primary[600],
+  ] as const,
+  dark: [
+    colors.primary[950],
+    colors.primary[900],
+    colors.primary[800],
+  ] as const,
+};
+
+const SEGMENT_FONT_STYLE = {
+  color: 'rgba(255, 255, 255, 0.85)',
+  fontWeight: '500' as const,
+  fontSize: 14,
 };
 
 type SearchBarPlaceholderProps = {
@@ -157,12 +171,7 @@ export function CommunityHeader({
             onChange={handleSegmentChange}
             style={styles.segmentedControl}
             backgroundColor="rgba(255, 255, 255, 0.12)"
-            // eslint-disable-next-line react-native/no-inline-styles
-            fontStyle={{
-              color: 'rgba(255, 255, 255, 0.85)',
-              fontWeight: '500',
-              fontSize: 14,
-            }}
+            fontStyle={SEGMENT_FONT_STYLE}
             // eslint-disable-next-line react-native/no-inline-styles
             activeFontStyle={{
               color: isDark ? colors.primary[300] : colors.primary[800],

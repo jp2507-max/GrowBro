@@ -28,7 +28,7 @@ import colors from '@/components/ui/colors';
 
 // Lottie animation sources - plant-themed animations
 const LOTTIE_SOURCES = {
-  welcome: require('../../../assets/lottie/welcome.json'),
+  intro: require('../../../assets/lottie/welcome.json'),
   community: require('../../../assets/lottie/community.json'),
   guidance: require('../../../assets/lottie/guidance.json'),
 } as const;

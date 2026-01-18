@@ -41,6 +41,12 @@ test-output.txt
 !.cursor/plans/**
 !.cursor/rules/**
 
+# Ignore agent-related files (skills, rules, etc.)
+.agent/skills/**
+.gemini/skills/**
+.github/skills/**
+.windsurf/skills/**
+
 # Backup files
 *.bak
 

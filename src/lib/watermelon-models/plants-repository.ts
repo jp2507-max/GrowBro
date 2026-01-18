@@ -264,27 +264,27 @@ async function updatePlantFromRemote(
     if (remoteHasPhoto || !hasValidLocalPhoto) {
       record.imageUrl = remote.image_url ?? null;
     }
-    // Set remote_image_path from the dedicated column if available, otherwise from image_url
+    const incomingMeta = (remote.metadata ?? {}) as Record<string, unknown>;
+    const incomingRemoteImagePath =
+      typeof incomingMeta.remoteImagePath === 'string'
+        ? (incomingMeta.remoteImagePath as string)
+        : null;
     const remoteImagePath =
-      remote.remote_image_path ?? (remoteHasPhoto ? remote.image_url : null);
+      remote.remote_image_path ??
+      incomingRemoteImagePath ??
+      (remoteHasPhoto ? remote.image_url : null);
+
+    const meta = { ...(record.metadata ?? {}), ...incomingMeta };
     if (remoteImagePath) {
-      const meta = (record.metadata ?? {}) as Record<string, unknown>;
       meta.remoteImagePath = remoteImagePath;
-      record.metadata = meta;
       record.remoteImagePath = remoteImagePath;
     } else {
+      delete meta.remoteImagePath;
       record.remoteImagePath = null;
-      if (record.metadata && 'remoteImagePath' in record.metadata) {
-        const meta = { ...(record.metadata as Record<string, unknown>) };
-        delete meta.remoteImagePath;
-        record.metadata = meta;
-      }
     }
+
+    record.metadata = meta;
     record.notes = remote.notes ?? null;
-    if (remote.metadata) {
-      const existingMeta = (record.metadata ?? {}) as Record<string, unknown>;
-      record.metadata = { ...existingMeta, ...remote.metadata };
-    }
     record.updatedAt = toDate(remote.updated_at ?? Date.now());
     record.serverUpdatedAtMs = remoteUpdatedMs || Date.now();
   });

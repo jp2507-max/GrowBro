@@ -2357,6 +2357,16 @@
       "feature_tips_title": "Expert Tips",
       "title": "Learn & Grow"
     },
+    "intro": {
+      "body": "Your complete companion for planning, tracking, and optimizing your home grow journey.",
+      "feature_ai_body": "Diagnose plant health issues with AI-powered photo analysis",
+      "feature_ai_title": "AI Photo Assessment",
+      "feature_calendar_body": "Stay organized with task reminders and scheduling",
+      "feature_calendar_title": "Smart Calendar",
+      "feature_tracking_body": "Track everything from harvest to curing and storage",
+      "feature_tracking_title": "Complete Tracking",
+      "title": "Welcome to GrowBro"
+    },
     "message": "Welcome to GrowBro app site",
     "notifications_body": "Allow notifications to get timely task reminders.",
     "notifications_title": "Task reminders",
@@ -2386,17 +2396,7 @@
       },
       "privacy_note": "You can change these permissions anytime in Settings. The app works without them."
     },
-    "skip": "Skip",
-    "welcome": {
-      "body": "Your complete companion for planning, tracking, and optimizing your home grow journey.",
-      "feature_ai_body": "Diagnose plant health issues with AI-powered photo analysis",
-      "feature_ai_title": "AI Photo Assessment",
-      "feature_calendar_body": "Stay organized with task reminders and scheduling",
-      "feature_calendar_title": "Smart Calendar",
-      "feature_tracking_body": "Track everything from harvest to curing and storage",
-      "feature_tracking_title": "Complete Tracking",
-      "title": "Welcome to GrowBro"
-    }
+    "skip": "Skip"
   },
   "phases": {
     "flower": "Flowering",
