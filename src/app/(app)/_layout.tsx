@@ -44,11 +44,15 @@ function useSplashScreenHide() {
   }, []);
 
   React.useEffect(() => {
-    if (status !== 'idle') {
-      setTimeout(() => {
-        hideSplash();
-      }, 1000);
-    }
+    if (status === 'idle') return;
+
+    const timeoutId = setTimeout(() => {
+      void hideSplash();
+    }, 1000);
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
   }, [hideSplash, status]);
 }
 

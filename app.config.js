@@ -49,6 +49,9 @@ try {
   };
 }
 
+const isReactCompilerEnabled =
+  process.env.EXPO_PUBLIC_EXPERIMENT_REACT_COMPILER === '1';
+
 const appIconBadgeConfig = {
   enabled: Env.APP_ENV !== 'production',
   badges: [
@@ -202,7 +205,7 @@ function createExpoConfig(config) {
     },
     experiments: {
       typedRoutes: true,
-      reactCompiler: true,
+      reactCompiler: isReactCompilerEnabled,
     },
     android: {
       adaptiveIcon: {

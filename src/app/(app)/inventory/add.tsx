@@ -428,6 +428,21 @@ const styles = StyleSheet.create({
   flex1: { flex: 1 },
 });
 
+const SERVER_ERROR_KEYS: Record<string, string> = {
+  'Field is required': 'inventory.form.validation.required_field',
+  'Invalid category': 'inventory.form.validation.invalid_category',
+  'Invalid tracking mode': 'inventory.form.validation.invalid_tracking_mode',
+  'Must be a positive number': 'inventory.form.validation.invalid_number',
+  'Reorder multiple must be greater than 0':
+    'inventory.form.validation.reorder_multiple_min',
+  'SKU already exists': 'inventory.form.validation.duplicate_sku',
+  'Barcode already exists': 'inventory.form.validation.duplicate_barcode',
+  'Item not found': 'inventory.errors.item_not_found',
+  'Validation failed': 'inventory.errors.validation_failed',
+  'Duplicate SKU or barcode': 'inventory.errors.validation_failed',
+  'Failed to create item': 'inventory.errors.create_failed',
+};
+
 type UseAddInventorySubmitResult = {
   isSubmitting: boolean;
   error: string | null;
@@ -441,6 +456,7 @@ function useAddInventorySubmit(
 ): UseAddInventorySubmitResult {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [error, setGlobalError] = React.useState<string | null>(null);
+  const { t } = useTranslation();
   const addItemSchema = useAddItemSchema();
 
   const onSubmit = React.useCallback(
@@ -472,23 +488,31 @@ function useAddInventorySubmit(
           result.validationErrors.forEach((validationError) => {
             const fieldName = validationError.field as keyof AddItemFormData;
             if (fieldName in addItemSchema.shape) {
+              const msgKey =
+                SERVER_ERROR_KEYS[validationError.message] ||
+                'inventory.errors.validation_failed';
               setError(fieldName, {
                 type: 'server',
-                message: validationError.message,
+                message: t(msgKey),
               });
             }
           });
-          if (result.error) setGlobalError(result.error);
+          if (result.error) {
+            console.error('[Inventory] Create validation error:', result.error);
+            setGlobalError(t('inventory.errors.validation_failed'));
+          }
         } else {
-          setGlobalError(result.error || 'Failed to create item');
+          console.error('[Inventory] Create failed:', result.error);
+          setGlobalError(t('inventory.errors.create_failed'));
         }
       } catch (err) {
-        setGlobalError(err instanceof Error ? err.message : 'Unknown error');
+        console.error('[Inventory] Create exception:', err);
+        setGlobalError(t('inventory.errors.create_failed'));
       } finally {
         setIsSubmitting(false);
       }
     },
-    [clearErrors, router, setError, addItemSchema]
+    [clearErrors, router, setError, addItemSchema, t]
   );
 
   return {

@@ -2,7 +2,7 @@
   "expo": {
     "userInterfaceStyle": "automatic",
     "experiments": {
-      "reactCompiler": true
+      "reactCompiler": false
     },
     "extra": {
       "eas": {

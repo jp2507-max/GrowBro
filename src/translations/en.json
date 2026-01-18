@@ -1511,6 +1511,13 @@
       "empty_description": "Add your first inventory item to start tracking supplies",
       "empty_title": "No inventory items",
       "error_title": "Failed to load inventory",
+      "errors": {
+        "create_failed": "Failed to create item",
+        "item_not_found": "Item not found",
+        "server_error": "Server error",
+        "unknown_error": "An unknown error occurred",
+        "validation_failed": "Validation failed. Please check your entries."
+      },
       "expired": "Expired",
       "expired_on": "Expired on {{date}}",
       "expires_in": "Expires in {{days}} days",
@@ -1551,6 +1558,11 @@
         "unit_placeholder": "e.g., L, ml, g, kg",
         "validation": {
           "category_required": "Category is required",
+          "duplicate_barcode": "Barcode already exists",
+          "duplicate_sku": "SKU already exists",
+          "invalid_category": "Invalid category",
+          "invalid_number": "Must be a positive number",
+          "invalid_tracking_mode": "Invalid tracking mode",
           "lead_time_positive": "Lead time must be positive",
           "min_stock_positive": "Minimum stock must be positive",
           "min_stock_required": "Minimum stock is required",
@@ -1558,6 +1570,7 @@
           "name_required": "Name is required",
           "reorder_multiple_min": "Reorder multiple must be at least 1",
           "reorder_multiple_required": "Reorder multiple is required",
+          "required_field": "Field is required",
           "tracking_mode_required": "Tracking mode is required",
           "unit_max_length": "Unit must be less than 20 characters",
           "unit_required": "Unit is required"
