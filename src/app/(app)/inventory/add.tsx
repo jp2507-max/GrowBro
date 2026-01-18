@@ -493,7 +493,7 @@ function useAddInventorySubmit(
                 'inventory.errors.validation_failed';
               setError(fieldName, {
                 type: 'server',
-                message: t(msgKey),
+                message: msgKey,
               });
             }
           });

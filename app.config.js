@@ -4,7 +4,11 @@
 const dotenv = require('dotenv');
 const path = require('path');
 
-if (process.env.EXPO_NO_DOTENV !== '1') {
+// Helper to parse boolean env vars (handles '1', 'true', 'yes')
+const toBoolean = (val) =>
+  ['1', 'true', 'yes'].includes(String(val ?? '').toLowerCase());
+
+if (!toBoolean(process.env.EXPO_NO_DOTENV)) {
   const APP_ENV = process.env.APP_ENV ?? 'development';
   const envPath = path.resolve(__dirname, `.env.${APP_ENV}`);
   dotenv.config({ path: envPath });
@@ -49,8 +53,9 @@ try {
   };
 }
 
-const isReactCompilerEnabled =
-  process.env.EXPO_PUBLIC_EXPERIMENT_REACT_COMPILER === '1';
+const isReactCompilerEnabled = toBoolean(
+  process.env.EXPO_PUBLIC_EXPERIMENT_REACT_COMPILER
+);
 
 const appIconBadgeConfig = {
   enabled: Env.APP_ENV !== 'production',
