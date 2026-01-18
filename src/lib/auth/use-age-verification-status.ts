@@ -107,10 +107,7 @@ export function useAgeVerificationStatus(): AgeVerificationStatus {
           setStatus(nextStatus);
         }
       } catch (error) {
-        console.error(
-          `Error in age verification check [User: ${user?.id ?? 'unknown'}]:`,
-          error
-        );
+        console.error('Error in age verification check:', error);
         if (mounted) {
           setStatus({
             isVerified: false,

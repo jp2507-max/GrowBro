@@ -10,6 +10,7 @@
  */
 
 import React, { useRef } from 'react';
+import type { LayoutChangeEvent } from 'react-native';
 
 import { View } from '@/components/ui';
 import { communityIntegration } from '@/lib/moderation/community-integration';
@@ -26,6 +27,7 @@ interface ModeratedCommentItemProps {
   onRetry?: () => void;
   onCancel?: () => void;
   testID?: string;
+  onLayout?: (event: LayoutChangeEvent) => void;
 }
 
 export function ModeratedCommentItem({
@@ -35,6 +37,7 @@ export function ModeratedCommentItem({
   onRetry,
   onCancel,
   testID = 'moderated-comment-item',
+  onLayout,
 }: ModeratedCommentItemProps): React.ReactElement {
   const reportModalRef = useRef<ReportContentModalRef>(null);
   const [canReport, setCanReport] = React.useState(true);
@@ -76,7 +79,7 @@ export function ModeratedCommentItem({
   );
 
   return (
-    <View testID={testID}>
+    <View testID={testID} onLayout={onLayout}>
       {/* Comment item - long press to report */}
       <CommentItem
         comment={comment}

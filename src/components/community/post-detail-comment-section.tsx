@@ -13,12 +13,16 @@ type PostDetailCommentSectionProps = {
   comments: PostComment[];
   isLoading: boolean;
   highlightedCommentId?: string;
+  onCommentListLayout?: (y: number) => void;
+  onHighlightedCommentLayout?: (y: number) => void;
 };
 
 export function PostDetailCommentSection({
   comments,
   isLoading,
   highlightedCommentId,
+  onCommentListLayout,
+  onHighlightedCommentLayout,
 }: PostDetailCommentSectionProps): React.ReactElement {
   return (
     <>
@@ -33,6 +37,12 @@ export function PostDetailCommentSection({
         comments={comments}
         isLoading={isLoading}
         highlightedCommentId={highlightedCommentId}
+        onHighlightedCommentLayout={onHighlightedCommentLayout}
+        onLayout={
+          onCommentListLayout
+            ? (event) => onCommentListLayout(event.nativeEvent.layout.y)
+            : undefined
+        }
       />
     </>
   );

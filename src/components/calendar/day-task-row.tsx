@@ -7,13 +7,13 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from 'react-native-reanimated';
-import { twMerge } from 'tailwind-merge';
 
 import { Image, Text, View } from '@/components/ui';
 import colors from '@/components/ui/colors';
 import { Check as CheckIcon, Droplet, Leaf } from '@/components/ui/icons';
 import { haptics } from '@/lib/haptics';
 import { translate } from '@/lib/i18n';
+import { cn } from '@/lib/utils';
 import type { Task } from '@/types/calendar';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -118,7 +118,7 @@ function TaskCheckbox({
     <Pressable
       onPress={handlePress}
       disabled={isCompleted}
-      className={twMerge(
+      className={cn(
         'size-7 items-center justify-center rounded-full border-2',
         isCompleted
           ? 'border-success-500 bg-success-500'
@@ -229,7 +229,7 @@ export function DayTaskRowComponent({
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       style={[styles.card, animatedStyle]}
-      className={twMerge(
+      className={cn(
         'flex-row items-center gap-3 rounded-3xl border border-neutral-100 bg-white p-4 dark:border-white/5 dark:bg-charcoal-900',
         isCompleted && 'opacity-60'
       )}
@@ -244,7 +244,7 @@ export function DayTaskRowComponent({
       {/* Task Content */}
       <View className="flex-1 gap-1">
         <Text
-          className={twMerge(
+          className={cn(
             'text-base font-semibold text-neutral-900 dark:text-neutral-100',
             isCompleted && 'line-through'
           )}

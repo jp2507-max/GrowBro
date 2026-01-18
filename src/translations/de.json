@@ -131,6 +131,8 @@
       "undo_dismiss_hint": "Die Rückgängig-Snackbar schließen und die Aktion abbrechen",
       "undo_expires": "Rückgängigmachen läuft in {{seconds}}s ab",
       "unknown_user": "Unbekannt",
+      "verified_author": "Verifizierter Autor",
+      "verified_author_hint": "Dieser Autor wurde von GrowBro verifiziert.",
       "view_author_profile": "Profil von @{{author}} anzeigen",
       "view_author_profile_hint": "Doppeltippen, um das Profil dieses Benutzers zu öffnen.",
       "view_comments": "{{count}} Kommentare",

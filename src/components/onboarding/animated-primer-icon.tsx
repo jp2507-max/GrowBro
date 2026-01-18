@@ -15,7 +15,6 @@ import Animated, {
   type SharedValue,
   useAnimatedStyle,
   useSharedValue,
-  // @ts-expect-error - Reanimated 4.x type exports issue
   withDelay,
   withRepeat,
   withSequence,

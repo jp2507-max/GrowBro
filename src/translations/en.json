@@ -131,6 +131,8 @@
       "undo_dismiss_hint": "Dismiss the undo snackbar and cancel the action",
       "undo_expires": "Undo expires in {{seconds}}s",
       "unknown_user": "Unknown",
+      "verified_author": "Verified author",
+      "verified_author_hint": "This author has been verified by GrowBro.",
       "view_author_profile": "View profile of @{{author}}",
       "view_author_profile_hint": "Double-tap to open this user's profile.",
       "view_comments": "{{count}} comments",

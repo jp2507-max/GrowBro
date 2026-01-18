@@ -17,7 +17,8 @@ import {
   useForm,
 } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { ScrollView } from 'react-native';
+import { Platform, ScrollView, StyleSheet } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { z } from 'zod';
 
 import {
@@ -435,15 +436,90 @@ const CATEGORIES: InventoryCategory[] = [
 
 const TRACKING_MODES = ['simple', 'batched'] as const;
 
-export default function AddInventoryItemScreen(): React.ReactElement {
-  const { t } = useTranslation();
-  const router = useRouter();
+const styles = StyleSheet.create({
+  flex1: { flex: 1 },
+});
+
+type UseAddInventorySubmitResult = {
+  isSubmitting: boolean;
+  error: string | null;
+  serverValidationErrors: Record<string, string>;
+  onSubmit: (data: AddItemFormData) => Promise<void>;
+  clearServerErrors: () => void;
+};
+
+function useAddInventorySubmit(
+  router: ReturnType<typeof useRouter>,
+  clearErrors: () => void
+): UseAddInventorySubmitResult {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [serverValidationErrors, setServerValidationErrors] = React.useState<
     Record<string, string>
   >({});
 
+  const onSubmit = React.useCallback(
+    async (data: AddItemFormData) => {
+      try {
+        setIsSubmitting(true);
+        setError(null);
+        setServerValidationErrors({});
+
+        const result = await createInventoryItem({
+          name: data.name,
+          category: data.category,
+          unitOfMeasure: data.unitOfMeasure,
+          trackingMode: data.trackingMode,
+          isConsumable: data.isConsumable,
+          minStock: data.minStock,
+          reorderMultiple: data.reorderMultiple,
+          leadTimeDays: data.leadTimeDays,
+          sku: data.sku || undefined,
+          barcode: data.barcode || undefined,
+        });
+
+        if (result.success) {
+          router.back();
+        } else if (
+          result.validationErrors &&
+          result.validationErrors.length > 0
+        ) {
+          clearErrors();
+          const fieldErrors: Record<string, string> = {};
+          result.validationErrors.forEach((validationError) => {
+            fieldErrors[validationError.field] = validationError.message;
+          });
+          setServerValidationErrors(fieldErrors);
+          if (result.error) setError(result.error);
+        } else {
+          setError(result.error || 'Failed to create item');
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unknown error');
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [clearErrors, router]
+  );
+
+  const clearServerErrors = React.useCallback(() => {
+    setServerValidationErrors({});
+    setError(null);
+  }, []);
+
+  return {
+    isSubmitting,
+    error,
+    serverValidationErrors,
+    onSubmit,
+    clearServerErrors,
+  };
+}
+
+export default function AddInventoryItemScreen(): React.ReactElement {
+  const { t } = useTranslation();
+  const router = useRouter();
   const addItemSchema = useAddItemSchema();
 
   const {
@@ -467,117 +543,81 @@ export default function AddInventoryItemScreen(): React.ReactElement {
     },
   });
 
-  const onSubmit = async (data: AddItemFormData) => {
-    try {
-      setIsSubmitting(true);
-      setError(null);
-      setServerValidationErrors({});
-
-      const result = await createInventoryItem({
-        name: data.name,
-        category: data.category,
-        unitOfMeasure: data.unitOfMeasure,
-        trackingMode: data.trackingMode,
-        isConsumable: data.isConsumable,
-        minStock: data.minStock,
-        reorderMultiple: data.reorderMultiple,
-        leadTimeDays: data.leadTimeDays,
-        sku: data.sku || undefined,
-        barcode: data.barcode || undefined,
-      });
-
-      if (result.success) {
-        router.back();
-      } else {
-        // Handle validation errors by mapping them to specific form fields
-        if (result.validationErrors && result.validationErrors.length > 0) {
-          // Clear previous field errors
-          clearErrors();
-
-          // Map validation errors to server validation errors state
-          const fieldErrors: Record<string, string> = {};
-          result.validationErrors.forEach((validationError) => {
-            fieldErrors[validationError.field] = validationError.message;
-          });
-
-          setServerValidationErrors(fieldErrors);
-
-          // Only set global error if there are additional non-field errors
-          if (result.error) {
-            setError(result.error);
-          }
-        } else {
-          // No validation errors, set global error
-          setError(result.error || 'Failed to create item');
-        }
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  const { isSubmitting, error, serverValidationErrors, onSubmit } =
+    useAddInventorySubmit(router, clearErrors);
 
   return (
     <View className="flex-1" testID="add-inventory-item-screen">
       <FocusAwareStatusBar />
       <FormHeader onCancel={() => router.back()} />
 
-      <ScrollView className="flex-1 p-4">
-        {/* Error Message */}
-        {error && (
-          <View
-            className="mb-4 rounded-lg bg-danger-50 p-3 dark:bg-danger-900/20"
-            testID="global-error-container"
-          >
-            <Text className="text-sm text-danger-700 dark:text-danger-400">
-              {error}
-            </Text>
-          </View>
-        )}
-
-        <NameField
-          control={control}
-          errors={errors}
-          isSubmitting={isSubmitting}
-          serverValidationErrors={serverValidationErrors}
-        />
-        <CategoryField control={control} />
-        <UnitField
-          control={control}
-          errors={errors}
-          isSubmitting={isSubmitting}
-          serverValidationErrors={serverValidationErrors}
-        />
-        <TrackingModeField control={control} />
-        <MinStockField
-          control={control}
-          errors={errors}
-          isSubmitting={isSubmitting}
-        />
-        <ReorderMultipleField
-          control={control}
-          errors={errors}
-          isSubmitting={isSubmitting}
-        />
-        <LeadTimeField control={control} isSubmitting={isSubmitting} />
-        <SkuField
-          control={control}
-          isSubmitting={isSubmitting}
-          serverValidationErrors={serverValidationErrors}
-        />
-        <BarcodeField control={control} isSubmitting={isSubmitting} />
-
-        {/* Submit Button */}
-        <Button
-          onPress={handleSubmit(onSubmit)}
-          disabled={isSubmitting}
-          className="mt-6"
-          testID="submit-button"
+      <KeyboardAvoidingView
+        style={styles.flex1}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={0}
+      >
+        <ScrollView
+          className="flex-1 p-4"
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={
+            Platform.OS === 'ios' ? 'interactive' : 'on-drag'
+          }
         >
-          {isSubmitting ? t('common.saving') : t('inventory.form.submit')}
-        </Button>
-      </ScrollView>
+          {/* Error Message */}
+          {error && (
+            <View
+              className="mb-4 rounded-lg bg-danger-50 p-3 dark:bg-danger-900/20"
+              testID="global-error-container"
+            >
+              <Text className="text-sm text-danger-700 dark:text-danger-400">
+                {error}
+              </Text>
+            </View>
+          )}
+
+          <NameField
+            control={control}
+            errors={errors}
+            isSubmitting={isSubmitting}
+            serverValidationErrors={serverValidationErrors}
+          />
+          <CategoryField control={control} />
+          <UnitField
+            control={control}
+            errors={errors}
+            isSubmitting={isSubmitting}
+            serverValidationErrors={serverValidationErrors}
+          />
+          <TrackingModeField control={control} />
+          <MinStockField
+            control={control}
+            errors={errors}
+            isSubmitting={isSubmitting}
+          />
+          <ReorderMultipleField
+            control={control}
+            errors={errors}
+            isSubmitting={isSubmitting}
+          />
+          <LeadTimeField control={control} isSubmitting={isSubmitting} />
+          <SkuField
+            control={control}
+            isSubmitting={isSubmitting}
+            serverValidationErrors={serverValidationErrors}
+          />
+          <BarcodeField control={control} isSubmitting={isSubmitting} />
+
+          {/* Submit Button */}
+          <Button
+            onPress={handleSubmit(onSubmit)}
+            disabled={isSubmitting}
+            className="mt-6"
+            testID="submit-button"
+          >
+            {isSubmitting ? t('common.saving') : t('inventory.form.submit')}
+          </Button>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 }

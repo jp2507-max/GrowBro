@@ -2,7 +2,6 @@ import { DateTime } from 'luxon';
 import { useColorScheme } from 'nativewind';
 import React from 'react';
 import { Pressable, StyleSheet } from 'react-native';
-import { twMerge } from 'tailwind-merge';
 
 import { Modal, Text, useModal, View } from '@/components/ui';
 import colors from '@/components/ui/colors';
@@ -10,6 +9,7 @@ import { ArrowLeft, ArrowRight } from '@/components/ui/icons';
 import { BottomSheetView } from '@/components/ui/modal';
 import { haptics } from '@/lib/haptics';
 import { translate } from '@/lib/i18n';
+import { cn } from '@/lib/utils';
 
 type MonthPickerModalProps = {
   modalRef: React.RefObject<
@@ -42,7 +42,7 @@ function MonthButton({
   return (
     <Pressable
       onPress={handlePress}
-      className={twMerge(
+      className={cn(
         'flex-1 items-center justify-center rounded-xl py-3',
         isSelected && 'bg-primary-600',
         isCurrent && !isSelected && 'bg-primary-100 dark:bg-primary-900/30'
@@ -53,7 +53,7 @@ function MonthButton({
       accessibilityState={{ selected: isSelected }}
     >
       <Text
-        className={twMerge(
+        className={cn(
           'text-base font-semibold',
           isSelected
             ? 'text-white'

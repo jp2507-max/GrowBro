@@ -11,12 +11,12 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from 'react-native-reanimated';
-import { twMerge } from 'tailwind-merge';
 
 import { Pressable, Text, View } from '@/components/ui';
 import colors from '@/components/ui/colors';
 import { haptics } from '@/lib/haptics';
 import { translate } from '@/lib/i18n';
+import { cn } from '@/lib/utils';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -146,7 +146,7 @@ function DayPill({
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       style={[pillStyle, animatedStyle]}
-      className={twMerge(
+      className={cn(
         'mx-0.5 min-w-[44px] items-center rounded-[18px] px-2 py-3',
         item.isSelected
           ? 'bg-primary-500'
@@ -164,7 +164,7 @@ function DayPill({
       testID={'week-strip-day-' + item.date.toFormat('yyyy-MM-dd')}
     >
       <Text
-        className={twMerge(
+        className={cn(
           'text-[10px] font-bold uppercase tracking-wider',
           item.isSelected
             ? 'text-white/90'
@@ -176,7 +176,7 @@ function DayPill({
         {item.isToday ? todayLabel : item.dayOfWeek}
       </Text>
       <Text
-        className={twMerge(
+        className={cn(
           'mt-0.5 text-2xl font-black',
           item.isSelected
             ? 'text-white'
@@ -190,7 +190,7 @@ function DayPill({
       {/* Task indicator dot */}
       {item.taskCount > 0 && (
         <View
-          className={twMerge(
+          className={cn(
             'mt-1.5 size-1.5 rounded-full',
             item.isSelected ? 'bg-white' : 'bg-primary-500 dark:bg-primary-400'
           )}

@@ -59,18 +59,25 @@ export function PostCardHeader({
           </View>
           {/* Verified badge */}
           {isVerified && (
-            <View className="absolute -bottom-0.5 -right-0.5 size-5 items-center justify-center rounded-full border-2 border-white bg-primary-500 dark:border-charcoal-900">
-              <Check size={10} color={colors.white} strokeWidth={3} />
+            <View
+              className="absolute -bottom-0.5 -right-0.5 size-5 items-center justify-center rounded-full border-2 border-white bg-primary-500 dark:border-charcoal-900"
+              accessibilityLabel={translate(
+                'accessibility.community.verified_author'
+              )}
+              accessibilityHint={translate(
+                'accessibility.community.verified_author_hint'
+              )}
+              accessibilityRole="image"
+            >
+              <Check size={10} color={colors.white} />
             </View>
           )}
         </View>
         {/* Name + Time */}
         <View className="flex-1">
-          <View className="flex-row items-center gap-1.5">
-            <Text className="text-[15px] font-semibold text-neutral-900 dark:text-neutral-50">
-              {displayUsername}
-            </Text>
-          </View>
+          <Text className="text-[15px] font-semibold text-neutral-900 dark:text-neutral-50">
+            {displayUsername}
+          </Text>
           {relativeTime && (
             <Text className="mt-0.5 text-xs text-neutral-600 dark:text-neutral-400">
               {relativeTime}

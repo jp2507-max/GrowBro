@@ -2,8 +2,9 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert } from 'react-native';
+import { Alert, Platform } from 'react-native';
 import { showMessage } from 'react-native-flash-message';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { type Plant, usePlant } from '@/api/plants';
@@ -36,6 +37,10 @@ import { usePlantTasks } from '@/lib/hooks/use-plant-tasks';
 import { updatePlantFromForm } from '@/lib/plants/plant-service';
 import { syncPlantsToCloud } from '@/lib/plants/plants-sync';
 import { captureExceptionIfConsented } from '@/lib/settings/privacy-runtime';
+
+const styles = StyleSheet.create({
+  flex1: { flex: 1 },
+});
 
 function PlantLoadingView(): React.ReactElement {
   return (
@@ -146,85 +151,95 @@ function PlantContentSheet({
       {/* Handle Bar */}
       <View className="my-4 h-1.5 w-12 self-center rounded-full bg-neutral-200 dark:bg-white/20" />
 
-      <ScrollView
-        className="flex-1"
-        contentContainerClassName="pb-[72px]"
-        showsVerticalScrollIndicator={false}
-        contentInsetAdjustmentBehavior="automatic"
+      <KeyboardAvoidingView
+        style={styles.flex1}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={0}
       >
-        {/* Stats Grid */}
-        <PlantStatsGrid plant={plant} />
+        <ScrollView
+          className="flex-1"
+          contentContainerClassName="pb-[72px]"
+          showsVerticalScrollIndicator={false}
+          contentInsetAdjustmentBehavior="automatic"
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={
+            Platform.OS === 'ios' ? 'interactive' : 'on-drag'
+          }
+        >
+          {/* Stats Grid */}
+          <PlantStatsGrid plant={plant} />
 
-        {/* Action Hub */}
-        <View className="mt-6">
-          <PlantActionHub
+          {/* Action Hub */}
+          <View className="mt-6">
+            <PlantActionHub
+              plantId={plantId}
+              plantStage={plant.stage}
+              tasks={tasks}
+              onTaskPress={handleTaskPress}
+              onHarvestPress={handleHarvestPress}
+            />
+          </View>
+
+          {/* pH/EC Readings Section */}
+          <PlantNutrientSection plantId={plantId} />
+
+          <PlantAssessmentHistorySection
             plantId={plantId}
-            plantStage={plant.stage}
-            tasks={tasks}
-            onTaskPress={handleTaskPress}
-            onHarvestPress={handleHarvestPress}
+            initiallyExpanded={showAssessmentHistory}
+            testID="plant-detail-assessment-history"
+          />
+
+          {/* Strain Profile Link - Subtle text link style */}
+          {linkedStrainSlug ? (
+            <Pressable
+              onPress={handleOpenStrain}
+              className="flex-row items-center justify-center py-4 active:opacity-70"
+              accessibilityLabel={t('plants.form.view_strain_profile')}
+              accessibilityHint={t('plants.form.view_strain_profile_hint')}
+              accessibilityRole="button"
+              testID="view-strain-profile"
+            >
+              <Text className="mr-1 text-sm font-medium text-neutral-500 dark:text-neutral-400">
+                {t('plants.detail.strain_profile_link')}
+              </Text>
+              <ArrowRight color={colors.neutral[400]} width={14} height={14} />
+            </Pressable>
+          ) : null}
+
+          {/* Divider */}
+          <View className="mx-4 my-6 h-px bg-neutral-200 dark:bg-white/10" />
+
+          {/* Form Sections (fragment mode to avoid nested ScrollView) */}
+          <PlantForm
+            key={plantId}
+            defaultValues={defaultValues}
+            onSubmit={handleSubmit}
+            isSubmitting={isSaving}
+            onSubmitReady={handleSubmitReady}
+            onDelete={handleDelete}
+            onPhotoInfo={handlePhotoInfo}
+            renderAsFragment
+            plantId={plantId}
+          />
+        </ScrollView>
+
+        {/* Floating Save Button */}
+        <View
+          className="absolute inset-x-0 bottom-0 bg-white/95 px-4 pt-3 dark:bg-charcoal-900/95"
+          style={{ paddingBottom: insets.bottom + 8 }}
+        >
+          <Button
+            variant="default"
+            className="h-auto w-full rounded-2xl bg-terracotta-500 py-4 active:bg-terracotta-600"
+            textClassName="text-white text-lg font-semibold"
+            onPress={handleHeaderSave}
+            disabled={isSaving}
+            loading={isSaving}
+            label={t('plants.form.save_cta')}
+            testID="plant-save-cta"
           />
         </View>
-
-        {/* pH/EC Readings Section */}
-        <PlantNutrientSection plantId={plantId} />
-
-        <PlantAssessmentHistorySection
-          plantId={plantId}
-          initiallyExpanded={showAssessmentHistory}
-          testID="plant-detail-assessment-history"
-        />
-
-        {/* Strain Profile Link - Subtle text link style */}
-        {linkedStrainSlug ? (
-          <Pressable
-            onPress={handleOpenStrain}
-            className="flex-row items-center justify-center py-4 active:opacity-70"
-            accessibilityLabel={t('plants.form.view_strain_profile')}
-            accessibilityHint={t('plants.form.view_strain_profile_hint')}
-            accessibilityRole="button"
-            testID="view-strain-profile"
-          >
-            <Text className="mr-1 text-sm font-medium text-neutral-500 dark:text-neutral-400">
-              {t('plants.detail.strain_profile_link')}
-            </Text>
-            <ArrowRight color={colors.neutral[400]} width={14} height={14} />
-          </Pressable>
-        ) : null}
-
-        {/* Divider */}
-        <View className="mx-4 my-6 h-px bg-neutral-200 dark:bg-white/10" />
-
-        {/* Form Sections (fragment mode to avoid nested ScrollView) */}
-        <PlantForm
-          key={plantId}
-          defaultValues={defaultValues}
-          onSubmit={handleSubmit}
-          isSubmitting={isSaving}
-          onSubmitReady={handleSubmitReady}
-          onDelete={handleDelete}
-          onPhotoInfo={handlePhotoInfo}
-          renderAsFragment
-          plantId={plantId}
-        />
-      </ScrollView>
-
-      {/* Floating Save Button */}
-      <View
-        className="absolute inset-x-0 bottom-0 bg-white/95 px-4 pt-3 dark:bg-charcoal-900/95"
-        style={{ paddingBottom: insets.bottom + 8 }}
-      >
-        <Button
-          variant="default"
-          className="h-auto w-full rounded-2xl bg-terracotta-500 py-4 active:bg-terracotta-600"
-          textClassName="text-white text-lg font-semibold"
-          onPress={handleHeaderSave}
-          disabled={isSaving}
-          loading={isSaving}
-          label={t('plants.form.save_cta')}
-          testID="plant-save-cta"
-        />
-      </View>
+      </KeyboardAvoidingView>
     </View>
   );
 }

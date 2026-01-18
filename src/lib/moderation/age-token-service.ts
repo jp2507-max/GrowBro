@@ -6,6 +6,7 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
+import HmacSHA256 from 'crypto-js/hmac-sha256';
 import * as Crypto from 'expo-crypto';
 
 import type {
@@ -309,32 +310,12 @@ export class AgeTokenService {
   }
 
   /**
-   * Compute keyed hash of token data using HMAC-like structure.
-   * Note: Expo Crypto only digests strings, so we encode the inner/outer
-   * concatenations as hex before hashing. That makes the digest valid
-   * within this system but non-interoperable with standard HMAC-SHA256
-   * implementations (they expect raw byte input). When a well-tested
-   * React Native HMAC library becomes available, consider replacing this
-   * custom implementation to reduce cryptographic risk.
+   * Generate HMAC-SHA256 hash of token data
+   * Uses crypto-js for standard, production-ready cryptographic operations
    */
   private async generateTokenHash(tokenData: string): Promise<string> {
-    const keyBytes = encodeUtf8(this.tokenSecret);
-    const preparedKey = await getHmacKey(keyBytes);
-    const dataBytes = encodeUtf8(tokenData);
-
-    const inner = xorBytes(preparedKey, IPAD);
-    const outer = xorBytes(preparedKey, OPAD);
-
-    const innerHashHex = await Crypto.digestStringAsync(
-      Crypto.CryptoDigestAlgorithm.SHA256,
-      bytesToHex(concatBytes(inner, dataBytes))
-    );
-    const innerHashBytes = hexToBytes(innerHashHex);
-    const hmacHex = await Crypto.digestStringAsync(
-      Crypto.CryptoDigestAlgorithm.SHA256,
-      bytesToHex(concatBytes(outer, innerHashBytes))
-    );
-    return hmacHex;
+    const hmac = HmacSHA256(tokenData, this.tokenSecret);
+    return hmac.toString();
   }
 
   /**
@@ -381,39 +362,6 @@ export class AgeTokenService {
   }
 }
 
-const IPAD = new Uint8Array(64).fill(0x36);
-const OPAD = new Uint8Array(64).fill(0x5c);
-const textEncoder = new TextEncoder();
-
-function encodeUtf8(value: string): Uint8Array {
-  return textEncoder.encode(value);
-}
-
-function concatBytes(...arrays: Uint8Array[]): Uint8Array {
-  const length = arrays.reduce((total, arr) => total + arr.length, 0);
-  const result = new Uint8Array(length);
-  let offset = 0;
-  for (const arr of arrays) {
-    result.set(arr, offset);
-    offset += arr.length;
-  }
-  return result;
-}
-
-function xorBytes(a: Uint8Array, b: Uint8Array): Uint8Array {
-  const result = new Uint8Array(a.length);
-  for (let i = 0; i < a.length; i += 1) {
-    result[i] = a[i] ^ b[i];
-  }
-  return result;
-}
-
-function bytesToHex(bytes: Uint8Array): string {
-  return Array.from(bytes)
-    .map((value) => value.toString(16).padStart(2, '0'))
-    .join('');
-}
-
 const VALID_VERIFICATION_METHODS = [
   'eudi_wallet',
   'third_party_verifier',
@@ -431,29 +379,4 @@ function isValidVerificationMethod(
     typeof value === 'string' &&
     VALID_VERIFICATION_METHODS.includes(value as VerificationMethodType)
   );
-}
-
-function hexToBytes(hex: string): Uint8Array {
-  const bytes = new Uint8Array(hex.length / 2);
-  for (let i = 0; i < bytes.length; i += 1) {
-    bytes[i] = parseInt(hex.substring(i * 2, i * 2 + 2), 16);
-  }
-  return bytes;
-}
-
-async function getHmacKey(keyBytes: Uint8Array): Promise<Uint8Array> {
-  if (keyBytes.length > 64) {
-    const hashedKey = await Crypto.digestStringAsync(
-      Crypto.CryptoDigestAlgorithm.SHA256,
-      bytesToHex(keyBytes)
-    );
-    const hashedBytes = hexToBytes(hashedKey);
-    return concatBytes(hashedBytes, new Uint8Array(64 - hashedBytes.length));
-  }
-
-  if (keyBytes.length < 64) {
-    return concatBytes(keyBytes, new Uint8Array(64 - keyBytes.length));
-  }
-
-  return keyBytes;
 }

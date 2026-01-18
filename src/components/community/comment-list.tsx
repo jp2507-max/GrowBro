@@ -9,6 +9,7 @@
  */
 
 import React from 'react';
+import type { LayoutChangeEvent } from 'react-native';
 
 import { ActivityIndicator, Text, View } from '@/components/ui';
 import type { PostComment } from '@/types/community';
@@ -20,6 +21,8 @@ interface CommentListProps {
   isLoading?: boolean;
   commentStatuses?: Record<string, 'pending' | 'failed' | 'processed'>;
   highlightedCommentId?: string;
+  onHighlightedCommentLayout?: (y: number) => void;
+  onLayout?: (event: LayoutChangeEvent) => void;
   onRetryComment?: (commentId: string) => void;
   onCancelComment?: (commentId: string) => void;
   testID?: string;
@@ -30,6 +33,8 @@ export function CommentList({
   isLoading = false,
   commentStatuses = {},
   highlightedCommentId,
+  onHighlightedCommentLayout,
+  onLayout,
   onRetryComment,
   onCancelComment,
   testID = 'comment-list',
@@ -58,7 +63,7 @@ export function CommentList({
   }
 
   return (
-    <View testID={testID}>
+    <View testID={testID} onLayout={onLayout}>
       {comments.map((comment) => {
         // Determine status: use provided status map, fallback to temp- check, default to processed
         const status =
@@ -74,6 +79,12 @@ export function CommentList({
             comment={comment}
             status={status}
             isHighlighted={isHighlighted}
+            onLayout={
+              isHighlighted && onHighlightedCommentLayout
+                ? (event) =>
+                    onHighlightedCommentLayout(event.nativeEvent.layout.y)
+                : undefined
+            }
             onRetry={
               isFailed && onRetryComment
                 ? () => onRetryComment(comment.id)

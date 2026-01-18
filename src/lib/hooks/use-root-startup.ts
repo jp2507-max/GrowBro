@@ -264,19 +264,17 @@ export function useRootStartup(
   setIsI18nReady: (v: boolean) => void,
   isFirstTime: boolean
 ): void {
-  const hydratePrefs = useSyncPrefs.use.hydrate();
-
   React.useEffect(() => {
     const cleanup = startRootInitialization(
       setIsI18nReady,
       isFirstTime,
-      hydratePrefs
+      useSyncPrefs.getState().hydrate
     );
 
     return () => {
       if (typeof cleanup === 'function') cleanup();
     };
-  }, [isFirstTime, hydratePrefs, setIsI18nReady]);
+  }, [isFirstTime, setIsI18nReady]);
 
   React.useEffect(() => {
     const start = Date.now();

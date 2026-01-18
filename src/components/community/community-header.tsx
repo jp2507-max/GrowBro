@@ -73,7 +73,7 @@ const SearchBarPlaceholder = React.memo<SearchBarPlaceholderProps>(
       <GlassSurface
         glassEffectStyle="clear"
         style={styles.searchPill}
-        fallbackClassName="bg-white/12"
+        fallbackClassName="bg-white/12 dark:bg-white/12"
       >
         <View className="flex-row items-center gap-3 px-5 py-3.5">
           <Search size={20} color="rgba(255, 255, 255, 0.7)" />
@@ -147,13 +147,13 @@ export function CommunityHeader({
               accessibilityLabel={translate('community.filters_label')}
               accessibilityHint={translate('community.filters_hint')}
               testID="community-filter-button"
-              fallbackClassName="bg-white/15"
+              fallbackClassName="bg-white/15 dark:bg-white/15"
             >
               <Search size={20} color={colors.white} />
             </GlassButton>
             {/* Active indicator dot */}
             {hasActiveFilters && (
-              <View className="absolute -right-0.5 -top-0.5 size-3 rounded-full border-2 border-primary-800 bg-terracotta-500 dark:border-primary-400" />
+              <View className="absolute -right-0.5 -top-0.5 size-3 rounded-full border-2 border-primary-800 bg-terracotta-500 dark:border-primary-400 dark:bg-terracotta-500" />
             )}
           </View>
         </View>
