@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Alert } from 'react-native';
 
 import { Button, Text, View } from '@/components/ui';
+import { haptics } from '@/lib/haptics';
 import { captureAndStore } from '@/lib/media/photo-storage-service';
 import type { PhotoVariants } from '@/types/photo-storage';
 
@@ -34,6 +35,7 @@ async function captureFromCamera(
     throw new Error(t('harvest.photo.errors.camera_permission_denied'));
   }
 
+  haptics.selection();
   const result = await ImagePicker.launchCameraAsync({
     mediaTypes: ['images'],
     quality: 1,
@@ -41,12 +43,12 @@ async function captureFromCamera(
   });
 
   if (result.canceled) {
-    throw new CancellationError(t('harvest.photo.errors.capture_cancelled'));
+    throw new CancellationError(t('harvest.photo.cancel'));
   }
 
   const photoUri = result.assets[0]?.uri;
   if (!photoUri) {
-    throw new Error(t('harvest.photo.errors.no_photo_uri'));
+    throw new Error(t('harvest.photo.errors.no_uri'));
   }
 
   return captureAndStore(photoUri);
@@ -55,6 +57,7 @@ async function captureFromCamera(
 async function selectFromLibrary(
   t: (key: string) => string
 ): Promise<PhotoVariants> {
+  haptics.selection();
   const result = await ImagePicker.launchImageLibraryAsync({
     mediaTypes: ['images'],
     quality: 1,
@@ -62,12 +65,12 @@ async function selectFromLibrary(
   });
 
   if (result.canceled) {
-    throw new CancellationError(t('harvest.photo.errors.selection_cancelled'));
+    throw new CancellationError(t('harvest.photo.cancel'));
   }
 
   const photoUri = result.assets[0]?.uri;
   if (!photoUri) {
-    throw new Error(t('harvest.photo.errors.no_photo_uri'));
+    throw new Error(t('harvest.photo.errors.no_uri'));
   }
 
   return captureAndStore(photoUri);
@@ -88,7 +91,9 @@ function ErrorDisplay({
     <View className="rounded-lg bg-danger-50 p-3">
       <Text className="text-sm text-danger-700">{error}</Text>
       <Button onPress={onDismiss} variant="link" size="sm" className="mt-2">
-        <Text className="text-danger-600">{t('harvest.photo.dismiss')}</Text>
+        <Text className="text-danger-600">
+          {t('harvest.photo.actions.dismiss')}
+        </Text>
       </Button>
     </View>
   );
@@ -115,7 +120,7 @@ function CaptureButton({
       disabled={disabled}
       variant="outline"
       className="min-h-[44px]"
-      accessibilityLabel={t('harvest.photo.addPhoto')}
+      accessibilityLabel={t('harvest.photo.actions.add_photo')}
       accessibilityHint={t('harvest.photo.choose_source')}
       testID="photo-capture-button"
     >
@@ -125,7 +130,9 @@ function CaptureButton({
           <Text>{t('harvest.photo.processing_photo')}</Text>
         </View>
       ) : (
-        <Text>{buttonText ? t(buttonText) : t('harvest.photo.addPhoto')}</Text>
+        <Text>
+          {buttonText ? t(buttonText) : t('harvest.photo.actions.add_photo')}
+        </Text>
       )}
     </Button>
   );
@@ -186,11 +193,11 @@ function createPhotoOptionsHandler(
   return () => {
     Alert.alert(t('harvest.photo.title'), t('harvest.photo.choose_source'), [
       {
-        text: t('harvest.photo.takePhoto'),
+        text: t('harvest.photo.actions.take_photo'),
         onPress: () => handlePhotoCapture(captureFromCamera),
       },
       {
-        text: t('harvest.photo.chooseFromLibrary'),
+        text: t('harvest.photo.actions.choose_from_library'),
         onPress: () => handlePhotoCapture(selectFromLibrary),
       },
       { text: t('harvest.photo.cancel'), style: 'cancel' },

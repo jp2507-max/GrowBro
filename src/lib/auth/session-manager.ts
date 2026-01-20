@@ -394,8 +394,8 @@ export function useOfflineModeMonitor(checkInterval: number = 60 * 1000): void {
     // Validate on mount
     const validateAndUpdate = async () => {
       const mode = await sessionManager.validateSession();
-      const { setOfflineMode } = useAuth.getState();
-      setOfflineMode(mode);
+      const { offlineMode, setOfflineMode } = useAuth.getState();
+      if (offlineMode !== mode) setOfflineMode(mode);
     };
 
     // Initial validation

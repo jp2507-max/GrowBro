@@ -20,6 +20,7 @@ import { useAnimatedScrollList } from '@/lib/animations/animated-scroll-list-pro
 import { motion, withRM } from '@/lib/animations/motion';
 import type { TxKeyPath } from '@/lib/i18n';
 import { useThemeConfig } from '@/lib/use-theme-config';
+import { isEnvFlagEnabled } from '@/lib/utils/env-flags';
 
 type SharedHeaderProps = {
   rightComponent?: React.ReactNode;
@@ -216,6 +217,8 @@ function HeaderPerTabContent({
   const theme = useThemeConfig();
   const isDark = theme.colors.background === colors.charcoal[950];
   const syncSurface = isDark ? colors.charcoal[800] : colors.neutral[100];
+  const shouldRenderSync =
+    showSync && !isEnvFlagEnabled('EXPO_PUBLIC_DISABLE_SYNC_STATUS');
 
   return (
     <View className="gap-2 px-5 pb-4">
@@ -226,7 +229,7 @@ function HeaderPerTabContent({
           testID="shared-header-connectivity-banner"
         />
       ) : null}
-      {showSync ? (
+      {shouldRenderSync ? (
         <View
           className="rounded-xl px-3 py-2"
           style={{ backgroundColor: syncSurface }}

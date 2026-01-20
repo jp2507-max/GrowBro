@@ -3,6 +3,7 @@ import Animated, {
   ReduceMotion,
   useAnimatedStyle,
   useDerivedValue,
+  useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
 
@@ -34,16 +35,25 @@ export function ComposeBtn({
       scrollDirection.value === 'to-bottom'
   );
 
+  const collapseProgress = useSharedValue(0);
+  const collapseTarget = useSharedValue(0);
+
+  useDerivedValue(() => {
+    const nextTarget = isHiddenOrCollapsed.value ? 1 : 0;
+    if (collapseTarget.value !== nextTarget) {
+      collapseTarget.value = nextTarget;
+      collapseProgress.value = withTiming(nextTarget, {
+        duration: DURATION,
+        reduceMotion: ReduceMotion.System,
+      });
+    }
+  });
+
   const rContainerStyle = useAnimatedStyle(() => {
-    const isCollapsed = isHiddenOrCollapsed.value;
-    const scaleX = withTiming(isCollapsed ? COLLAPSED_SCALE_X : 1, {
-      duration: DURATION,
-      reduceMotion: ReduceMotion.System,
-    });
-    const translateX = withTiming(isCollapsed ? COLLAPSED_TRANSLATE_X : 0, {
-      duration: DURATION,
-      reduceMotion: ReduceMotion.System,
-    });
+    const clamped = Math.min(Math.max(collapseProgress.value, 0), 1);
+    const scaleX = 1 - (1 - COLLAPSED_SCALE_X) * clamped;
+    const translateX = COLLAPSED_TRANSLATE_X * clamped;
+    const translateY = netHeight * clamped;
     return {
       width: BTN_WIDTH,
       height: BTN_HEIGHT,
@@ -51,21 +61,16 @@ export function ComposeBtn({
         { scaleX },
         { translateX },
         {
-          translateY: withTiming(isCollapsed ? netHeight : 0, {
-            duration: DURATION,
-            reduceMotion: ReduceMotion.System,
-          }),
+          translateY,
         },
       ],
     };
   }, [netHeight]);
 
   const rTextStyle = useAnimatedStyle(() => {
+    const clamped = Math.min(Math.max(collapseProgress.value, 0), 1);
     return {
-      opacity: withTiming(isHiddenOrCollapsed.value ? 0 : 1, {
-        duration: isHiddenOrCollapsed.value ? DURATION / 2 : DURATION,
-        reduceMotion: ReduceMotion.System,
-      }),
+      opacity: 1 - clamped,
     };
   }, []);
 

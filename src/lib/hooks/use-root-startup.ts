@@ -1,5 +1,10 @@
 import * as Localization from 'expo-localization';
 import React from 'react';
+import {
+  AppState,
+  type AppStateStatus,
+  InteractionManager,
+} from 'react-native';
 
 import { retentionWorker, useAuth, useSyncPrefs } from '@/lib';
 import { NoopAnalytics } from '@/lib/analytics';
@@ -19,6 +24,7 @@ import {
   getTaskNotificationService,
   type TaskNotificationService,
 } from '@/lib/task-notifications';
+import { isEnvFlagEnabled } from '@/lib/utils/env-flags';
 
 type LocalizationWithTimeZone = typeof Localization & { timezone?: string };
 
@@ -74,6 +80,8 @@ type MetricsState = {
   cleanupUiMonitor: (() => void) | undefined;
 };
 
+const STARTUP_NOTIFICATION_REHYDRATE_DELAY_MS = 5000;
+
 function createMetricsManager(start: number) {
   const state: MetricsState = {
     cleanupNotificationMetrics: undefined,
@@ -83,6 +91,7 @@ function createMetricsManager(start: number) {
   };
 
   function registerOnce() {
+    if (isEnvFlagEnabled('EXPO_PUBLIC_DISABLE_OBSERVABILITY')) return;
     if (!state.cleanupNotificationMetrics) {
       state.cleanupNotificationMetrics = registerNotificationMetrics();
     }
@@ -130,41 +139,60 @@ function useSyncAndMetrics(): void {
     let dispose: (() => void) | undefined;
     let metrics: ReturnType<typeof createMetricsManager> | undefined;
     let unsubscribe: (() => void) | undefined;
+    const disableBackgroundTask = isEnvFlagEnabled(
+      'EXPO_PUBLIC_DISABLE_BACKGROUND_SYNC_TASK'
+    );
+    const disableSyncTriggers = isEnvFlagEnabled(
+      'EXPO_PUBLIC_DISABLE_SYNC_TRIGGERS'
+    );
+    const disableObservability = isEnvFlagEnabled(
+      'EXPO_PUBLIC_DISABLE_OBSERVABILITY'
+    );
 
     if (authStatus === 'signIn') {
-      const registrationPromise = registerBackgroundTask()
-        .then(() => {
-          if (!isMounted) void unregisterBackgroundTask().catch(() => {});
-        })
-        .catch((error) => {
-          console.warn(
-            '[use-root-startup] Background task registration failed:',
-            error
-          );
-        })
-        .finally(() => {
-          if (registrationRef.current === registrationPromise)
-            registrationRef.current = null;
-        });
+      if (disableBackgroundTask) {
+        void unregisterBackgroundTask().catch(() => {});
+      } else {
+        const registrationPromise = registerBackgroundTask()
+          .then(() => {
+            if (!isMounted) void unregisterBackgroundTask().catch(() => {});
+          })
+          .catch((error) => {
+            console.warn(
+              '[use-root-startup] Background task registration failed:',
+              error
+            );
+          })
+          .finally(() => {
+            if (registrationRef.current === registrationPromise)
+              registrationRef.current = null;
+          });
 
-      registrationRef.current = registrationPromise;
-      const disposeInstance = setupSyncTriggers();
-      dispose = disposeInstance;
-      const metricsInstance = createMetricsManager(Date.now());
-      metrics = metricsInstance;
+        registrationRef.current = registrationPromise;
+      }
 
-      if (consentManager.hasConsented('analytics'))
-        metricsInstance.registerOnce();
+      if (!disableSyncTriggers) {
+        const disposeInstance = setupSyncTriggers();
+        dispose = disposeInstance;
+      }
 
-      unsubscribe = consentManager.onConsentChanged(
-        'analytics',
-        (consented) => {
-          try {
-            if (consented) metricsInstance.registerOnce();
-            else metricsInstance.unregisterAll();
-          } catch {}
-        }
-      );
+      if (!disableObservability) {
+        const metricsInstance = createMetricsManager(Date.now());
+        metrics = metricsInstance;
+
+        if (consentManager.hasConsented('analytics'))
+          metricsInstance.registerOnce();
+
+        unsubscribe = consentManager.onConsentChanged(
+          'analytics',
+          (consented) => {
+            try {
+              if (consented) metricsInstance.registerOnce();
+              else metricsInstance.unregisterAll();
+            } catch {}
+          }
+        );
+      }
     }
 
     return () => {
@@ -184,6 +212,7 @@ function useSyncAndMetrics(): void {
   }, [authStatus]);
 }
 
+// eslint-disable-next-line max-lines-per-function -- Complex initialization requires sequential setup
 function startRootInitialization(
   setIsI18nReady: (v: boolean) => void,
   isFirstTime: boolean,
@@ -195,7 +224,14 @@ function startRootInitialization(
   // length while keeping behavior identical.
   let isMounted = true;
   let svc: TaskNotificationService | undefined;
-  let interval: ReturnType<typeof setInterval> | undefined;
+  let appStateSubscription:
+    | ReturnType<typeof AppState.addEventListener>
+    | undefined;
+  let notificationRehydrateTimeoutId: ReturnType<typeof setTimeout> | null =
+    null;
+  let notificationRehydrateTask: ReturnType<
+    typeof InteractionManager.runAfterInteractions
+  > | null = null;
 
   const initialize = async (): Promise<void> => {
     let applyRTLIfNeeded: (() => void) | undefined;
@@ -226,31 +262,41 @@ function startRootInitialization(
     // succeeded so the prompt can show localized strings.
     svc = getTaskNotificationService();
     if (i18nInitSucceeded && !isFirstTime) void svc.requestPermissions();
-    void svc.rehydrateNotifications();
+    if (notificationRehydrateTimeoutId)
+      clearTimeout(notificationRehydrateTimeoutId);
+    notificationRehydrateTimeoutId = setTimeout(() => {
+      notificationRehydrateTask?.cancel?.();
+      notificationRehydrateTask = InteractionManager.runAfterInteractions(
+        () => {
+          if (!isMounted) return;
+          void svc?.rehydrateNotifications();
 
-    // Rehydrate harvest notifications (Requirement 14.3)
-    try {
-      const { rehydrateNotifications: rehydrateHarvestNotifications } =
-        await import('@/lib/harvest/harvest-notification-service');
-      void rehydrateHarvestNotifications();
-    } catch {
-      // non-fatal
-    }
+          // Rehydrate harvest notifications (Requirement 14.3)
+          void import('@/lib/harvest/harvest-notification-service')
+            .then(({ rehydrateNotifications }) => rehydrateNotifications())
+            .catch(() => {});
+        }
+      );
+    }, STARTUP_NOTIFICATION_REHYDRATE_DELAY_MS);
 
     if (!isMounted) return;
 
     let lastTz = getCurrentTimeZone();
-    interval = setInterval(() => {
+    const handleAppStateChange = (nextState: AppStateStatus) => {
+      if (nextState !== 'active') return;
       const currentTz = getCurrentTimeZone();
       if (currentTz !== lastTz) {
         lastTz = currentTz;
         void svc?.rehydrateNotifications();
-        // Also rehydrate harvest notifications on timezone change
         void import('@/lib/harvest/harvest-notification-service').then(
           ({ rehydrateNotifications }) => rehydrateNotifications()
         );
       }
-    }, 60 * 1000);
+    };
+    appStateSubscription = AppState.addEventListener(
+      'change',
+      handleAppStateChange
+    );
   };
 
   void initialize();
@@ -263,7 +309,15 @@ function startRootInitialization(
 
   return () => {
     isMounted = false;
-    if (interval) clearInterval(interval);
+    if (notificationRehydrateTimeoutId) {
+      clearTimeout(notificationRehydrateTimeoutId);
+      notificationRehydrateTimeoutId = null;
+    }
+    notificationRehydrateTask?.cancel?.();
+    notificationRehydrateTask = null;
+    try {
+      appStateSubscription?.remove?.();
+    } catch {}
   };
 }
 
@@ -287,6 +341,7 @@ export function useRootStartup(
     const start = Date.now();
     requestAnimationFrame(() => {
       const firstPaintMs = Date.now() - start;
+      if (isEnvFlagEnabled('EXPO_PUBLIC_DISABLE_OBSERVABILITY')) return;
       // Only track performance metrics if user has consented to analytics
       if (consentManager.hasConsented('analytics')) {
         void NoopAnalytics.track('perf_first_paint_ms', { ms: firstPaintMs });

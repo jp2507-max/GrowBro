@@ -9,11 +9,8 @@
 
 import { useColorScheme } from 'nativewind';
 import React from 'react';
-import Animated, {
-  FadeOut,
-  ReduceMotion,
-  runOnJS,
-} from 'react-native-reanimated';
+import Animated, { FadeOut, ReduceMotion } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 
 import { Pressable, Text, View } from '@/components/ui';
 import colors from '@/components/ui/colors';
@@ -54,7 +51,7 @@ export function ComplianceBanner({
         .withCallback((finished: boolean) => {
           'worklet';
           if (finished) {
-            runOnJS(setIsDismissed)(true);
+            scheduleOnRN(setIsDismissed, true);
           }
         })}
       testID={testID}

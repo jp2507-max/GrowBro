@@ -24,6 +24,7 @@ import Animated, {
 
 import { View } from '@/components/ui';
 import colors from '@/components/ui/colors';
+import { useReduceMotionEnabled } from '@/lib/strains/accessibility';
 
 type AnimationValues = {
   translateY: SharedValue<number>;
@@ -32,13 +33,25 @@ type AnimationValues = {
   glowOpacity: SharedValue<number>;
 };
 
-function usePrimerIconAnimation(): AnimationValues {
+function usePrimerIconAnimation(reduceMotion: boolean): AnimationValues {
   const translateY = useSharedValue(0);
   const scale = useSharedValue(0.9);
   const opacity = useSharedValue(0);
   const glowOpacity = useSharedValue(0.2);
 
   React.useEffect(() => {
+    if (reduceMotion) {
+      cancelAnimation(translateY);
+      cancelAnimation(scale);
+      cancelAnimation(opacity);
+      cancelAnimation(glowOpacity);
+      translateY.value = 0;
+      scale.value = 1;
+      opacity.value = 1;
+      glowOpacity.value = 0.2;
+      return;
+    }
+
     opacity.value = withTiming(1, {
       duration: 600,
       easing: Easing.out(Easing.ease),
@@ -95,7 +108,7 @@ function usePrimerIconAnimation(): AnimationValues {
       cancelAnimation(opacity);
       cancelAnimation(glowOpacity);
     };
-  }, [translateY, scale, opacity, glowOpacity]);
+  }, [reduceMotion, translateY, scale, opacity, glowOpacity]);
 
   return { translateY, scale, opacity, glowOpacity };
 }
@@ -113,7 +126,9 @@ export function AnimatedPrimerIcon({
 }: AnimatedPrimerIconProps): React.ReactElement {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
-  const { translateY, scale, opacity, glowOpacity } = usePrimerIconAnimation();
+  const reduceMotion = useReduceMotionEnabled();
+  const { translateY, scale, opacity, glowOpacity } =
+    usePrimerIconAnimation(reduceMotion);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,

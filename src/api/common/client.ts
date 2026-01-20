@@ -11,6 +11,11 @@ interface RetryConfig extends InternalAxiosRequestConfig {
   __maxRetries?: number;
 }
 
+// We intentionally use axios here (instead of raw fetch) because we rely on:
+// - request/response interceptors (auth injection, header sanitization)
+// - certificate pinning (see registerCertificatePinningInterceptor)
+// - consistent retry/backoff and richer error objects
+// - AbortSignal support for cancellation across our API layer
 export const client = axios.create({
   baseURL: Env.API_URL,
   timeout: 30000,
@@ -20,6 +25,9 @@ registerCertificatePinningInterceptor(client);
 
 // Inject auth token from Supabase session
 client.interceptors.request.use(async (config) => {
+  if (config.headers?.Authorization) {
+    return config;
+  }
   try {
     const {
       data: { session },

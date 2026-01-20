@@ -148,6 +148,15 @@ class SDKGateImpl {
               : input instanceof Request
                 ? input.url
                 : '';
+
+        // Dev-only: allow local debug ingest regardless of consent.
+        // Our debugging instrumentation posts to a local server on port 7242 and
+        // uses a path segment named "ingest". The consent safety net registers
+        // "ingest" as a host substring for telemetry SDKs, which would
+        // unintentionally block these local debug logs.
+        if (__DEV__ && /:\/\/[^/]+:7242\/ingest\//.test(url)) {
+          return originalFetch(input, init);
+        }
         for (const item of self.registry.values()) {
           if (!hasConsentForPurpose(item.purpose)) {
             if (item.hosts.some((h) => (h && url.includes(h)) === true)) {

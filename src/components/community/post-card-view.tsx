@@ -48,6 +48,75 @@ export type PostCardViewProps = {
   handleCommentPress: (e: PressEvent) => void;
 };
 
+type PostCardBodyProps = {
+  post: ApiPost;
+  postId: number | string;
+  displayUsername: string;
+  allowSharedTransition: boolean;
+  onCommentPress: (e: PressEvent) => void;
+  iconColor: string;
+  testID: string;
+};
+
+function PostCardBody({
+  post,
+  postId,
+  displayUsername,
+  allowSharedTransition,
+  onCommentPress,
+  iconColor,
+  testID,
+}: PostCardBodyProps): React.ReactElement {
+  const hasImage = Boolean(post.media_uri);
+
+  if (hasImage) {
+    return (
+      <View className="flex-row px-4 pb-4">
+        <View className="mr-3">
+          <PostCardHeroImage
+            postId={String(postId)}
+            mediaUri={post.media_uri!}
+            thumbnailUri={post.media_thumbnail_uri}
+            resizedUri={post.media_resized_uri}
+            blurhash={post.media_blurhash}
+            thumbhash={post.media_thumbhash}
+            displayUsername={displayUsername}
+            enableSharedTransition={allowSharedTransition}
+            testID={testID}
+          />
+          <PostCardActionBar
+            postId={String(postId)}
+            likeCount={post.like_count ?? 0}
+            userHasLiked={post.user_has_liked ?? false}
+            commentCount={post.comment_count ?? 0}
+            onCommentPress={onCommentPress}
+            iconColor={iconColor}
+            testID={testID}
+          />
+        </View>
+        <View className="flex-1 justify-between">
+          <PostCardContent body={post.body} testID={testID} />
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <View className="px-4 pb-4">
+      <PostCardContent body={post.body} testID={testID} />
+      <PostCardActionBar
+        postId={String(postId)}
+        likeCount={post.like_count ?? 0}
+        userHasLiked={post.user_has_liked ?? false}
+        commentCount={post.comment_count ?? 0}
+        onCommentPress={onCommentPress}
+        iconColor={iconColor}
+        testID={testID}
+      />
+    </View>
+  );
+}
+
 export function PostCardView({
   post,
   postId,
@@ -80,7 +149,6 @@ export function PostCardView({
     colorScheme === 'dark' ? colors.neutral[400] : colors.neutral[600];
   const moreIconColor =
     colorScheme === 'dark' ? colors.neutral[500] : colors.neutral[400];
-  const hasImage = Boolean(post.media_uri);
   const relativeTime = formatRelativeTimeTranslated(
     post.created_at,
     'common.time_ago'
@@ -115,29 +183,15 @@ export function PostCardView({
                   moreIconColor={moreIconColor}
                   testID={testID}
                 />
-                {hasImage && (
-                  <PostCardHeroImage
-                    postId={String(postId)}
-                    mediaUri={post.media_uri!}
-                    thumbnailUri={post.media_thumbnail_uri}
-                    resizedUri={post.media_resized_uri}
-                    blurhash={post.media_blurhash}
-                    thumbhash={post.media_thumbhash}
-                    displayUsername={displayUsername}
-                    enableSharedTransition={allowSharedTransition}
-                    testID={testID}
-                  />
-                )}
-                <PostCardActionBar
-                  postId={String(postId)}
-                  likeCount={post.like_count ?? 0}
-                  userHasLiked={post.user_has_liked ?? false}
-                  commentCount={post.comment_count ?? 0}
+                <PostCardBody
+                  post={post}
+                  postId={postId}
+                  displayUsername={displayUsername}
+                  allowSharedTransition={allowSharedTransition}
                   onCommentPress={handleCommentPress}
                   iconColor={iconColor}
                   testID={testID}
                 />
-                <PostCardContent body={post.body} testID={testID} />
               </View>
             </View>
           </Pressable>

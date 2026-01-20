@@ -57,14 +57,17 @@ function useSplashScreenHide() {
 }
 
 /**
- * SF Symbol names for each tab (iOS only).
- * Android will use drawable resources defined in the native project.
+ * SF Symbol names for each tab.
+ * Uses state variants: outline when inactive, filled when active (iOS HIG).
  */
 const SF_SYMBOLS = {
-  home: 'house.fill',
-  calendar: 'calendar',
-  community: 'bubble.left.and.bubble.right.fill',
-  strains: 'leaf.fill',
+  home: { default: 'house', selected: 'house.fill' },
+  calendar: { default: 'calendar', selected: 'calendar' },
+  community: {
+    default: 'bubble.left.and.bubble.right',
+    selected: 'bubble.left.and.bubble.right.fill',
+  },
+  strains: { default: 'leaf', selected: 'leaf.fill' },
 } as const;
 
 export default function TabLayout() {

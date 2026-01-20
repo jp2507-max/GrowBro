@@ -22,6 +22,7 @@ import Animated, {
 
 import { View } from '@/components/ui';
 import colors from '@/components/ui/colors';
+import { useReduceMotionEnabled } from '@/lib/strains/accessibility';
 
 type Particle = {
   id: number;
@@ -50,13 +51,26 @@ function generateParticles(): Particle[] {
 type FloatingParticleProps = {
   particle: Particle;
   particleColor: string;
+  reduceMotion: boolean;
 };
 
-function FloatingParticle({ particle, particleColor }: FloatingParticleProps) {
+function FloatingParticle({
+  particle,
+  particleColor,
+  reduceMotion,
+}: FloatingParticleProps) {
   const translateY = useSharedValue(0);
   const translateX = useSharedValue(0);
 
   React.useEffect(() => {
+    if (reduceMotion) {
+      cancelAnimation(translateY);
+      cancelAnimation(translateX);
+      translateY.value = 0;
+      translateX.value = 0;
+      return;
+    }
+
     // Vertical float animation
     translateY.value = withDelay(
       particle.delay,
@@ -89,7 +103,7 @@ function FloatingParticle({ particle, particleColor }: FloatingParticleProps) {
       cancelAnimation(translateY);
       cancelAnimation(translateX);
     };
-  }, [translateY, translateX, particle]);
+  }, [reduceMotion, translateY, translateX, particle]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [
@@ -120,6 +134,7 @@ export function FloatingParticles(): React.ReactElement {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
   const particles = React.useMemo(() => generateParticles(), []);
+  const reduceMotion = useReduceMotionEnabled();
 
   // Theme-aware particle color
   const particleColor = isDark
@@ -137,6 +152,7 @@ export function FloatingParticles(): React.ReactElement {
           key={particle.id}
           particle={particle}
           particleColor={particleColor}
+          reduceMotion={reduceMotion}
         />
       ))}
     </View>

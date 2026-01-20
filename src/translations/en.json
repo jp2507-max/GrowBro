@@ -208,6 +208,8 @@
       "retry_load_hint": "Retry loading the strain details",
       "search_for_query_label": "Search for {{query}}",
       "search_hint": "Filters strains as you type.",
+      "search_strains_hint": "Enter text to search for strains",
+      "search_strains_label": "Search strains",
       "select_search_query_hint": "Fills search with this query",
       "toggle_effect_hint": "Toggles effect filter.",
       "toggle_flavor_hint": "Toggles flavor filter."
@@ -1058,6 +1060,8 @@
       "help_station": "Help Station",
       "showcase": "Showcase"
     },
+    "share_post_message": "Check out this post on GrowBro: {{url}}",
+    "share_post_title": "Share Post",
     "sort_label": "Sort",
     "sort_newest": "Newest",
     "sort_top_7d": "Top (7d)",

@@ -343,7 +343,8 @@ export function PlantCard({
   const localItemY = useSharedValue(0);
   const effItemY = itemY ?? localItemY;
   const measuredHeight = useSharedValue(0);
-  const reduceMotion = useReduceMotionEnabled();
+  const reduceMotionEnabled = useReduceMotionEnabled();
+  const reduceMotionShared = useSharedValue(reduceMotionEnabled ? 1 : 0);
 
   const enteringAnimation = React.useMemo(
     () =>
@@ -357,10 +358,14 @@ export function PlantCard({
     [enableEnteringAnimation, index]
   );
 
+  React.useEffect(() => {
+    reduceMotionShared.value = reduceMotionEnabled ? 1 : 0;
+  }, [reduceMotionEnabled, reduceMotionShared]);
+
   const containerStyle = useAnimatedStyle(() => {
     'worklet';
 
-    if (reduceMotion) {
+    if (reduceMotionShared.value === 1) {
       return { transform: [{ translateY: 0 }, { scale: 1 }] };
     }
 

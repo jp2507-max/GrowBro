@@ -39,6 +39,13 @@ type AnimatedFlashListProps = Omit<FlashListProps<Strain>, 'onScroll'> & {
 
 const MAX_ENTERING_ANIMATIONS = 8;
 
+// Pre-compute animation configs to avoid recreation on each render
+const STAGGER_ANIMATIONS = Array.from(
+  { length: MAX_ENTERING_ANIMATIONS },
+  (_, i) =>
+    createStaggeredFadeIn(i, { baseDelay: 0, staggerDelay: 60, duration: 300 })
+);
+
 const AnimatedFlashList = Animated.createAnimatedComponent(
   FlashList
 ) as unknown as React.ForwardRefExoticComponent<
@@ -50,6 +57,7 @@ export type StrainsListWithCacheProps = {
   filters?: StrainFilters;
   sortBy?: string;
   sortDirection?: 'asc' | 'desc';
+  enabled?: boolean;
   /** Animated scroll handler from useAnimatedScrollHandler - passed directly to AnimatedFlashList */
   onScroll?: AnimatedScrollHandler;
   listRef?: React.RefObject<FlashListRef<unknown> | null>;
@@ -72,6 +80,7 @@ export function StrainsListWithCache({
   filters = {},
   sortBy,
   sortDirection,
+  enabled = true,
   onScroll,
   listRef,
   contentContainerStyle,
@@ -81,12 +90,17 @@ export function StrainsListWithCache({
   const [activeStrainId, setActiveStrainId] = React.useState<string | null>(
     null
   );
-  const queryKey = JSON.stringify({
-    q: searchQuery,
-    f: filters,
-    s: sortBy,
-    d: sortDirection,
-  });
+  // Memoize queryKey to avoid JSON.stringify on every render
+  const queryKey = useMemo(
+    () =>
+      JSON.stringify({
+        q: searchQuery,
+        f: filters,
+        s: sortBy,
+        d: sortDirection,
+      }),
+    [searchQuery, filters, sortBy, sortDirection]
+  );
 
   const {
     data,
@@ -98,13 +112,16 @@ export function StrainsListWithCache({
     refetch,
     isOffline,
     isUsingCache,
-  } = useOfflineAwareStrains({
-    searchQuery: (searchQuery || '').trim(),
-    filters: filters || {},
-    sortBy,
-    sortDirection,
-    pageSize: 20,
-  });
+  } = useOfflineAwareStrains(
+    {
+      searchQuery: (searchQuery || '').trim(),
+      filters: filters || {},
+      sortBy,
+      sortDirection,
+      pageSize: 20,
+    },
+    enabled
+  );
 
   const { strains, onRetry, onEndReached } = useStrainListState({
     data,
@@ -162,6 +179,17 @@ export function StrainsListWithCache({
   // Map to store stable handlers keyed by strain ID
   const toggleHandlersRef = React.useRef(new Map<string, () => void>());
 
+  // Cleanup stale handlers when strains list changes to prevent memory leak
+  React.useEffect(() => {
+    const currentIds = new Set(strains.map((s) => s.id));
+    const map = toggleHandlersRef.current;
+    for (const id of map.keys()) {
+      if (!currentIds.has(id)) {
+        map.delete(id);
+      }
+    }
+  }, [strains]);
+
   const getStableToggleHandler = React.useCallback((item: Strain) => {
     const map = toggleHandlersRef.current;
     if (!map.has(item.id)) {
@@ -179,11 +207,7 @@ export function StrainsListWithCache({
       <Animated.View
         entering={
           index < MAX_ENTERING_ANIMATIONS
-            ? createStaggeredFadeIn(index, {
-                baseDelay: 0,
-                staggerDelay: 60,
-                duration: 300,
-              })
+            ? STAGGER_ANIMATIONS[index]
             : undefined
         }
       >

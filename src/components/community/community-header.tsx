@@ -16,9 +16,9 @@ import { StyleSheet } from 'react-native';
 import type { EdgeInsets } from 'react-native-safe-area-context';
 
 import { GlassSurface } from '@/components/shared/glass-surface';
-import { GlassButton, Pressable, Text, View } from '@/components/ui';
+import { GlassButton, Text, View } from '@/components/ui';
 import colors from '@/components/ui/colors';
-import { Search } from '@/components/ui/icons';
+import { PlatformIcon, Search, SlidersHorizontal } from '@/components/ui/icons';
 import { haptics } from '@/lib/haptics';
 import { translate } from '@/lib/i18n';
 
@@ -56,35 +56,25 @@ const SEGMENT_FONT_STYLE = {
   fontSize: 14,
 };
 
-type SearchBarPlaceholderProps = {
-  onPress: () => void;
-};
-
-const SearchBarPlaceholder = React.memo<SearchBarPlaceholderProps>(
-  ({ onPress }) => (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={translate('community.filters_label')}
-      accessibilityHint={translate('community.filters_hint')}
-      testID="community-search-bar"
-      className="active:opacity-90"
-    >
-      <GlassSurface
-        glassEffectStyle="clear"
-        style={styles.searchPill}
-        fallbackClassName="bg-white/12 dark:bg-white/12"
-      >
-        <View className="flex-row items-center gap-3 px-5 py-3.5">
-          <Search size={20} color="rgba(255, 255, 255, 0.7)" />
-          <Text className="flex-1 text-base font-medium text-white/60">
-            {translate('community.search_placeholder')}
-          </Text>
-        </View>
-      </GlassSurface>
-    </Pressable>
-  )
-);
+const SearchBarPlaceholder = React.memo(() => (
+  <GlassSurface
+    glassEffectStyle="clear"
+    style={styles.searchPill}
+    fallbackClassName="bg-white/12 dark:bg-white/12"
+  >
+    <View className="flex-row items-center gap-3 px-5 py-3.5">
+      <PlatformIcon
+        iosName="magnifyingglass"
+        size={20}
+        color="rgba(255, 255, 255, 0.7)"
+        fallback={<Search />}
+      />
+      <Text className="flex-1 text-base font-medium text-white/60">
+        {translate('community.search_placeholder')}
+      </Text>
+    </View>
+  </GlassSurface>
+));
 SearchBarPlaceholder.displayName = 'SearchBarPlaceholder';
 
 type CommunityHeaderProps = {
@@ -149,7 +139,12 @@ export function CommunityHeader({
               testID="community-filter-button"
               fallbackClassName="bg-white/15 dark:bg-white/15"
             >
-              <Search size={20} color={colors.white} />
+              <PlatformIcon
+                iosName="line.3.horizontal.decrease.circle"
+                size={20}
+                color={colors.white}
+                fallback={<SlidersHorizontal />}
+              />
             </GlassButton>
             {/* Active indicator dot */}
             {hasActiveFilters && (
@@ -160,7 +155,7 @@ export function CommunityHeader({
 
         {/* Glass Search Bar Placeholder */}
         <View className="mt-5">
-          <SearchBarPlaceholder onPress={handleFilterPress} />
+          <SearchBarPlaceholder />
         </View>
 
         {/* Segmented Control for Showcase / Help Station */}

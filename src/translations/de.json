@@ -208,6 +208,8 @@
       "retry_load_hint": "Sortendetails erneut laden",
       "search_for_query_label": "Nach {{query}} suchen",
       "search_hint": "Filtert die Sortenliste während der Eingabe.",
+      "search_strains_hint": "Text eingeben, um Sorten zu suchen",
+      "search_strains_label": "Sorten durchsuchen",
       "select_search_query_hint": "Füllt die Suche mit dieser Abfrage",
       "toggle_effect_hint": "Schaltet Effektfilter um.",
       "toggle_flavor_hint": "Schaltet Aromenfilter um."
@@ -1058,6 +1060,8 @@
       "help_station": "Hilfe-Station",
       "showcase": "Galerie"
     },
+    "share_post_message": "Schau dir diesen Beitrag auf GrowBro an: {{url}}",
+    "share_post_title": "Beitrag teilen",
     "sort_label": "Sortieren",
     "sort_newest": "Neueste",
     "sort_top_7d": "Top (7 Tage)",
@@ -1511,6 +1515,13 @@
       "empty_description": "Füge deinen ersten Inventarartikel hinzu, um Vorräte zu verfolgen",
       "empty_title": "Keine Inventarartikel",
       "error_title": "Inventar konnte nicht geladen werden",
+      "errors": {
+        "create_failed": "Artikel konnte nicht erstellt werden",
+        "item_not_found": "Artikel nicht gefunden",
+        "server_error": "Serverfehler",
+        "unknown_error": "Ein unbekannter Fehler ist aufgetreten",
+        "validation_failed": "Validierung fehlgeschlagen. Bitte überprüfe deine Eingaben."
+      },
       "expired": "Abgelaufen",
       "expired_on": "Abgelaufen am {{date}}",
       "expires_in": "Läuft in {{days}} Tagen ab",
@@ -1551,6 +1562,11 @@
         "unit_placeholder": "z.B. L, ml, g, kg",
         "validation": {
           "category_required": "Kategorie ist erforderlich",
+          "duplicate_barcode": "Barcode existiert bereits",
+          "duplicate_sku": "Artikelnummer existiert bereits",
+          "invalid_category": "Ungültige Kategorie",
+          "invalid_number": "Muss eine positive Zahl sein",
+          "invalid_tracking_mode": "Ungültiger Verfolgungsmodus",
           "lead_time_positive": "Lieferzeit muss positiv sein",
           "min_stock_positive": "Mindestbestand muss positiv sein",
           "min_stock_required": "Mindestbestand ist erforderlich",
@@ -1558,6 +1574,7 @@
           "name_required": "Name ist erforderlich",
           "reorder_multiple_min": "Nachbestellmenge muss mindestens 1 sein",
           "reorder_multiple_required": "Nachbestellmenge ist erforderlich",
+          "required_field": "Feld ist erforderlich",
           "tracking_mode_required": "Verfolgungsmodus ist erforderlich",
           "unit_max_length": "Maßeinheit muss weniger als 20 Zeichen haben",
           "unit_required": "Maßeinheit ist erforderlich"

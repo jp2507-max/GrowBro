@@ -21,6 +21,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { Text, View } from '@/components/ui';
+import { useReduceMotionEnabled } from '@/lib/strains/accessibility';
 
 type AnimatedHeroProps = {
   emoji: string;
@@ -36,8 +37,19 @@ export function AnimatedHero({
   const translateY = useSharedValue(0);
   const scale = useSharedValue(0.8);
   const glowOpacity = useSharedValue(0.3);
+  const reduceMotion = useReduceMotionEnabled();
 
   React.useEffect(() => {
+    if (reduceMotion) {
+      cancelAnimation(translateY);
+      cancelAnimation(scale);
+      cancelAnimation(glowOpacity);
+      translateY.value = 0;
+      scale.value = 1;
+      glowOpacity.value = 0.3;
+      return;
+    }
+
     // Entrance spring
     scale.value = withSpring(1, {
       damping: 12,
@@ -92,7 +104,7 @@ export function AnimatedHero({
       cancelAnimation(scale);
       cancelAnimation(glowOpacity);
     };
-  }, [translateY, scale, glowOpacity]);
+  }, [reduceMotion, translateY, scale, glowOpacity]);
 
   const iconStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: translateY.value }, { scale: scale.value }],

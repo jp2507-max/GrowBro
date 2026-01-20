@@ -7,9 +7,10 @@
  * Requirements: 2.3, 2.5
  */
 
-import { useCallback, useRef } from 'react';
+import { useCallback } from 'react';
 import type { SharedValue } from 'react-native-reanimated';
-import { runOnJS, useSharedValue } from 'react-native-reanimated';
+import { useSharedValue } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 
 import type { WorkletPerformanceMetrics } from '@/lib/performance/types';
 
@@ -19,6 +20,9 @@ export interface GestureLatencyMetrics {
   latency: number;
   droppedFrames: number;
 }
+
+const MAX_GESTURE_SAMPLES = 100;
+const GESTURE_SAMPLE_STRIDE = 4;
 
 /**
  * Helper to calculate performance metrics from latency data
@@ -47,9 +51,11 @@ function calculatePerformanceMetrics(
  * Monitors input-to-render latency and frame drops during continuous gestures.
  * Target: P95 latency ≤50ms, dropped frames <1%
  */
+// eslint-disable-next-line max-lines-per-function -- Performance monitoring requires detailed worklet logic
 export function useGesturePerformanceTracker() {
   const startTimeShared = useSharedValue<number>(0);
-  const latenciesRef = useRef<number[]>([]);
+  const latenciesShared = useSharedValue<number[]>([]);
+  const latencySampleIndex = useSharedValue(0);
   const frameCountShared = useSharedValue<number>(0);
   const droppedFramesShared = useSharedValue<number>(0);
 
@@ -57,9 +63,17 @@ export function useGesturePerformanceTracker() {
     'worklet';
     const now = performance.now();
     startTimeShared.value = now;
+    latenciesShared.value = [];
+    latencySampleIndex.value = 0;
     frameCountShared.value = 0;
     droppedFramesShared.value = 0;
-  }, [startTimeShared, frameCountShared, droppedFramesShared]);
+  }, [
+    startTimeShared,
+    latenciesShared,
+    latencySampleIndex,
+    frameCountShared,
+    droppedFramesShared,
+  ]);
 
   const trackGestureUpdate = useCallback(() => {
     'worklet';
@@ -75,16 +89,25 @@ export function useGesturePerformanceTracker() {
       droppedFramesShared.value += 1;
     }
 
-    runOnJS((lat: number) => {
-      latenciesRef.current.push(lat);
-      // Keep only last 100 samples to avoid memory growth
-      if (latenciesRef.current.length > 100) {
-        latenciesRef.current.shift();
-      }
-    })(latency);
+    latencySampleIndex.value =
+      (latencySampleIndex.value + 1) % GESTURE_SAMPLE_STRIDE;
+    if (latencySampleIndex.value === 0) {
+      const latencies = latenciesShared.value;
+      const nextLatencies =
+        latencies.length >= MAX_GESTURE_SAMPLES
+          ? [...latencies.slice(1), latency]
+          : [...latencies, latency];
+      latenciesShared.value = nextLatencies;
+    }
 
     startTimeShared.value = now;
-  }, [startTimeShared, frameCountShared, droppedFramesShared]);
+  }, [
+    startTimeShared,
+    latenciesShared,
+    latencySampleIndex,
+    frameCountShared,
+    droppedFramesShared,
+  ]);
 
   const trackGestureEnd = useCallback(() => {
     'worklet';
@@ -92,11 +115,11 @@ export function useGesturePerformanceTracker() {
   }, [startTimeShared]);
 
   const getLatencyMetrics = useCallback((): GestureLatencyMetrics | null => {
-    if (latenciesRef.current.length === 0) {
+    const latencies = latenciesShared.value;
+    if (latencies.length === 0) {
       return null;
     }
 
-    const latencies = [...latenciesRef.current];
     const avgLatency =
       latencies.reduce((sum, lat) => sum + lat, 0) / latencies.length;
 
@@ -106,22 +129,29 @@ export function useGesturePerformanceTracker() {
       latency: avgLatency,
       droppedFrames: droppedFramesShared.value,
     };
-  }, [droppedFramesShared]);
+  }, [latenciesShared, droppedFramesShared]);
 
   const getMetrics = useCallback((): WorkletPerformanceMetrics => {
     return calculatePerformanceMetrics(
-      [...latenciesRef.current],
+      latenciesShared.value,
       frameCountShared.value,
       droppedFramesShared.value
     );
-  }, [frameCountShared, droppedFramesShared]);
+  }, [latenciesShared, frameCountShared, droppedFramesShared]);
 
   const reset = useCallback(() => {
-    latenciesRef.current = [];
+    latenciesShared.value = [];
+    latencySampleIndex.value = 0;
     frameCountShared.value = 0;
     droppedFramesShared.value = 0;
     startTimeShared.value = 0;
-  }, [startTimeShared, frameCountShared, droppedFramesShared]);
+  }, [
+    startTimeShared,
+    latenciesShared,
+    latencySampleIndex,
+    frameCountShared,
+    droppedFramesShared,
+  ]);
 
   return {
     trackGestureStart,
@@ -212,7 +242,7 @@ export function measureWorkletEnd(
     const duration = performance.now() - startTime;
     if (duration > 16.7) {
       // Only log if exceeds frame budget
-      runOnJS(logWorkletPerformance)(duration, label);
+      scheduleOnRN(logWorkletPerformance, duration, label);
     }
   }
 }

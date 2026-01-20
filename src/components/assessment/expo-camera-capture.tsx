@@ -6,8 +6,10 @@ import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, StyleSheet } from 'react-native';
 
+import { GlassSurface } from '@/components/shared/glass-surface';
 import { Button, colors, View } from '@/components/ui';
 import { stripExifData } from '@/lib/assessment/image-processing';
+import { haptics } from '@/lib/haptics';
 import { qualityAssessmentEngine } from '@/lib/quality/engine';
 import type {
   CapturedPhoto,
@@ -40,6 +42,7 @@ export function ExpoCameraCapture({
   const handleCapture = useCallback(async (): Promise<void> => {
     if (!cameraRef.current || isCapturingRef.current) return;
 
+    haptics.selection();
     isCapturingRef.current = true;
     setIsCapturing(true);
     try {
@@ -89,6 +92,7 @@ export function ExpoCameraCapture({
         ref={cameraRef}
         style={StyleSheet.absoluteFill}
         facing="back"
+        mirror
       />
 
       <CaptureGuidance
@@ -97,28 +101,41 @@ export function ExpoCameraCapture({
         maxPhotos={maxPhotos}
       />
 
-      {/* Capture Button */}
+      {/* Capture Button - Liquid Glass on iOS 26+ */}
       <View className="absolute inset-x-0 bottom-0 items-center pb-12">
-        <Button
-          testID="capture-button"
-          accessibilityLabel={t('assessment.camera.actions.capture')}
-          accessibilityHint={t('assessment.camera.actions.capture_hint')}
-          onPress={handleCapture}
-          disabled={isCapturing}
-          className="size-20 rounded-full bg-neutral-100"
+        <GlassSurface
+          isInteractive
+          style={styles.glassButton}
+          fallbackClassName="bg-white/20"
         >
-          {isCapturing ? (
-            <ActivityIndicator
-              size="small"
-              color={colors.charcoal[950]}
-              accessibilityLabel={t('assessment.camera.status.capturing')}
-              accessibilityHint={t('assessment.camera.status.capturing_hint')}
-            />
-          ) : (
-            <View className="size-16 rounded-full border-4 border-charcoal-950 bg-neutral-100" />
-          )}
-        </Button>
+          <Button
+            testID="capture-button"
+            accessibilityLabel={t('assessment.camera.actions.capture')}
+            accessibilityHint={t('assessment.camera.actions.capture_hint')}
+            onPress={handleCapture}
+            disabled={isCapturing}
+            className="size-20 items-center justify-center rounded-full bg-neutral-100"
+          >
+            {isCapturing ? (
+              <ActivityIndicator
+                size="small"
+                color={colors.charcoal[950]}
+                accessibilityLabel={t('assessment.camera.status.capturing')}
+                accessibilityHint={t('assessment.camera.status.capturing_hint')}
+              />
+            ) : (
+              <View className="size-16 rounded-full border-4 border-charcoal-950 bg-neutral-100" />
+            )}
+          </Button>
+        </GlassSurface>
       </View>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  glassButton: {
+    padding: 8,
+    borderRadius: 99,
+  },
+});

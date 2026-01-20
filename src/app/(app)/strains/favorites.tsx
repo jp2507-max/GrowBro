@@ -38,6 +38,16 @@ import type { FavoriteStrain } from '@/types/strains';
 
 const LIST_BOTTOM_EXTRA = 16;
 const MAX_ENTERING_ANIMATIONS = 12;
+const STAGGER_ANIMATIONS = Array.from(
+  { length: MAX_ENTERING_ANIMATIONS },
+  function (_, index): ReturnType<typeof createStaggeredFadeIn> {
+    return createStaggeredFadeIn(index, {
+      baseDelay: 0,
+      staggerDelay: 50,
+      duration: 300,
+    });
+  }
+);
 
 const AnimatedFlashList = Animated.createAnimatedComponent(
   FlashList as React.ComponentType<FlashListProps<FavoriteStrain>>
@@ -288,11 +298,7 @@ export default function FavoritesScreen(): React.ReactElement {
       <Animated.View
         entering={
           index < MAX_ENTERING_ANIMATIONS
-            ? createStaggeredFadeIn(index, {
-                baseDelay: 0,
-                staggerDelay: 50,
-                duration: 300,
-              })
+            ? STAGGER_ANIMATIONS[index]
             : undefined
         }
       >

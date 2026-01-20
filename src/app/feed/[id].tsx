@@ -31,14 +31,9 @@ import { usePostDetailState } from '@/components/community/use-post-detail-state
 import { usePostSharing } from '@/components/community/use-post-sharing';
 import { FocusAwareStatusBar, View } from '@/components/ui';
 import { normalizePostUserId } from '@/lib/community/post-utils';
-import {
-  createOutboxAdapter,
-  useCommunityFeedRealtime,
-} from '@/lib/community/use-community-feed-realtime';
 import { formatRelativeTimeTranslated } from '@/lib/datetime/format-relative-time';
 import { haptics } from '@/lib/haptics';
 import { getHeaderColors } from '@/lib/theme-utils';
-import { database } from '@/lib/watermelon';
 import type { Post } from '@/types/community';
 
 const styles = StyleSheet.create({
@@ -55,8 +50,6 @@ export default function PostDetailScreen(): React.ReactElement {
 
   // @ts-ignore - Reanimated 4.x: Animated.ScrollView type not exposed properly
   const scrollViewRef = useAnimatedRef<Animated.ScrollView>();
-  const outboxAdapter = React.useMemo(() => createOutboxAdapter(database), []);
-  useCommunityFeedRealtime({ outboxAdapter, postId: local.id });
 
   const {
     data: post,

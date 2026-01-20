@@ -1,4 +1,4 @@
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useIsFocused } from '@react-navigation/native';
 import { FlashList, type ListRenderItemInfo } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import React, { useCallback } from 'react';
@@ -30,9 +30,10 @@ const AnimatedFlashList = Animated.createAnimatedComponent(
 const BOTTOM_PADDING_EXTRA = 24;
 const MAX_ENTERING_ANIMATIONS = 6;
 
-function usePlantsData() {
+function usePlantsData(isEnabled: boolean) {
   const { data, isLoading, isError, refetch } = usePlantsInfinite({
     variables: { query: '' },
+    enabled: isEnabled,
   });
 
   const plants = React.useMemo<Plant[]>(() => {
@@ -88,6 +89,7 @@ const HomeListHeader = React.memo(function HomeListHeader({
 export default function Feed() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const isFocused = useIsFocused();
   const { grossHeight } = useBottomTabBarHeight();
   const { resetScrollState, scrollHandler } = useAnimatedScrollList();
   const {
@@ -95,7 +97,7 @@ export default function Feed() {
     isLoading: isPlantsLoading,
     isError: isPlantsError,
     refetch: refetchPlants,
-  } = usePlantsData();
+  } = usePlantsData(isFocused);
 
   // Reset scroll state on focus so tab bar is always visible on home
   useFocusEffect(
@@ -140,7 +142,7 @@ export default function Feed() {
     () => plants.map((plant) => plant.id),
     [plants]
   );
-  const { attentionMap } = usePlantsAttention(plantIds);
+  const { attentionMap } = usePlantsAttention(plantIds, { enabled: isFocused });
 
   const taskCount = React.useMemo(() => {
     return Object.values(attentionMap).reduce(

@@ -16,9 +16,10 @@ const AnimatedImage = Animated.createAnimatedComponent(Image);
 
 const styles = StyleSheet.create({
   image: {
-    // 4:5 aspect ratio for taller, more visual-first design (Instagram-like)
-    aspectRatio: 4 / 5,
-    width: '100%',
+    // Small square image for horizontal card layout
+    width: 120,
+    height: 120,
+    borderRadius: 12,
   },
 });
 
@@ -61,7 +62,6 @@ export function PostCardHeroImage({
 
   return (
     <AnimatedImage
-      className="w-full"
       style={styles.image}
       sharedTransitionTag={
         enableSharedTransition ? communityPostHeroTag(postId) : undefined

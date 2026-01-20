@@ -25,6 +25,7 @@ import Animated, {
 
 import { View } from '@/components/ui';
 import colors from '@/components/ui/colors';
+import { useReduceMotionEnabled } from '@/lib/strains/accessibility';
 
 // Lottie animation sources - plant-themed animations
 const LOTTIE_SOURCES = {
@@ -51,8 +52,21 @@ export function AnimatedLottieHero({
   const scale = useSharedValue(0.9);
   const opacity = useSharedValue(0);
   const glowOpacity = useSharedValue(0.2);
+  const reduceMotion = useReduceMotionEnabled();
 
   React.useEffect(() => {
+    if (reduceMotion) {
+      cancelAnimation(translateY);
+      cancelAnimation(scale);
+      cancelAnimation(opacity);
+      cancelAnimation(glowOpacity);
+      translateY.value = 0;
+      scale.value = 1;
+      opacity.value = 1;
+      glowOpacity.value = 0.2;
+      return;
+    }
+
     // Gentle fade in
     opacity.value = withTiming(1, {
       duration: 600,
@@ -116,7 +130,7 @@ export function AnimatedLottieHero({
       cancelAnimation(opacity);
       cancelAnimation(glowOpacity);
     };
-  }, [translateY, scale, opacity, glowOpacity]);
+  }, [reduceMotion, translateY, scale, opacity, glowOpacity]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
@@ -141,8 +155,8 @@ export function AnimatedLottieHero({
         <LottieView
           source={LOTTIE_SOURCES[animation]}
           style={styles.lottie}
-          autoPlay
-          loop
+          autoPlay={!reduceMotion}
+          loop={!reduceMotion}
         />
       </Animated.View>
     </View>

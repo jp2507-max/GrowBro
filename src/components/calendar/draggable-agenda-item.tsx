@@ -5,11 +5,11 @@ import type { GestureType } from 'react-native-gesture-handler';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import type { AnimatedStyle, SharedValue } from 'react-native-reanimated';
 import Animated, {
-  runOnJS,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
 } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 
 import { AgendaItemRow } from '@/components/calendar/agenda-item';
 import {
@@ -130,6 +130,7 @@ function useCreatePanGesture(options: {
   cancelDrag: () => void;
   completeDrop: (targetDate: Date, scope: DragScope) => Promise<void>;
   onDragUpdate: (y: number) => number | undefined;
+  viewportHeightShared: SharedValue<number>;
   computeTargetDate: (originalDate: Date, translationY: number) => Date;
   updateCurrentOffset: (y: number) => void;
 }): GestureType {
@@ -143,14 +144,16 @@ function useCreatePanGesture(options: {
     cancelDrag,
     completeDrop,
     onDragUpdate,
+    viewportHeightShared,
     computeTargetDate,
     updateCurrentOffset,
   } = options;
 
   const lastAutoScrollMs = useSharedValue(0);
   const autoScrollThrottleMs = 32;
+  const autoScrollEdgeThreshold = 60;
 
-  // JS-thread handlers for runOnJS
+  // JS-thread handlers for scheduleOnRN
   const onDragUpdateJS = React.useCallback(
     (y: number): void => {
       const newOffset = onDragUpdate(y);
@@ -181,7 +184,7 @@ function useCreatePanGesture(options: {
           ty.value = 0;
           originTimeAtDragStart.value = originTime.value;
           lastAutoScrollMs.value = 0;
-          runOnJS(startDrag)(task);
+          scheduleOnRN(startDrag, task);
         })
         .onUpdate((e) => {
           tx.value = e.translationX;
@@ -189,20 +192,29 @@ function useCreatePanGesture(options: {
           ty.value = e.translationY;
 
           const now = performance.now();
-          if (now - lastAutoScrollMs.value >= autoScrollThrottleMs) {
+          const viewportHeight = viewportHeightShared.value;
+          const isNearEdge =
+            viewportHeight > 0 &&
+            (e.absoluteY < autoScrollEdgeThreshold ||
+              e.absoluteY > viewportHeight - autoScrollEdgeThreshold);
+          if (
+            isNearEdge &&
+            now - lastAutoScrollMs.value >= autoScrollThrottleMs
+          ) {
             lastAutoScrollMs.value = now;
-            runOnJS(onDragUpdateJS)(e.absoluteY);
+            scheduleOnRN(onDragUpdateJS, e.absoluteY);
           }
         })
         .onEnd(() => {
-          runOnJS(onDropJS)(originTimeAtDragStart.value, ty.value);
+          scheduleOnRN(onDropJS, originTimeAtDragStart.value, ty.value);
           tx.value = withSpring(0);
           ty.value = withSpring(0);
         })
         .onFinalize(() => {
-          runOnJS(cancelDrag)();
+          scheduleOnRN(cancelDrag);
         }),
     [
+      autoScrollEdgeThreshold,
       autoScrollThrottleMs,
       cancelDrag,
       lastAutoScrollMs,
@@ -214,6 +226,7 @@ function useCreatePanGesture(options: {
       ty,
       originTime,
       originTimeAtDragStart,
+      viewportHeightShared,
     ]
   );
 }
@@ -225,6 +238,7 @@ function useDragGesture(options: {
   cancelDrag: () => void;
   completeDrop: (targetDate: Date, scope: DragScope) => Promise<void>;
   onDragUpdate: (y: number) => number | undefined;
+  viewportHeightShared: SharedValue<number>;
   computeTargetDate: (originalDate: Date, translationY: number) => Date;
   updateCurrentOffset: (y: number) => void;
 }) {
@@ -234,6 +248,7 @@ function useDragGesture(options: {
     cancelDrag,
     completeDrop,
     onDragUpdate,
+    viewportHeightShared,
     computeTargetDate,
     updateCurrentOffset,
   } = options;
@@ -264,6 +279,7 @@ function useDragGesture(options: {
     cancelDrag,
     completeDrop,
     onDragUpdate,
+    viewportHeightShared,
     computeTargetDate,
     updateCurrentOffset,
   });
@@ -282,6 +298,7 @@ export function DraggableAgendaItem({
     onDragUpdate,
     computeTargetDate,
     updateCurrentOffset,
+    viewportHeightShared,
   } = useDragDrop();
 
   const { pan, animatedStyle } = useDragGesture({
@@ -290,6 +307,7 @@ export function DraggableAgendaItem({
     cancelDrag,
     completeDrop,
     onDragUpdate,
+    viewportHeightShared,
     computeTargetDate,
     updateCurrentOffset,
   });

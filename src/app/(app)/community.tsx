@@ -9,7 +9,11 @@
  * - Terracotta FAB for creating posts
  */
 
-import { useFocusEffect, useScrollToTop } from '@react-navigation/native';
+import {
+  useFocusEffect,
+  useIsFocused,
+  useScrollToTop,
+} from '@react-navigation/native';
 import type { FlashListProps, FlashListRef } from '@shopify/flash-list';
 import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
@@ -91,7 +95,7 @@ const DEFAULT_FILTER_BUNDLE: FilterBundle = {
   mineOnly: false,
 };
 
-function useCommunityData(params: CommunityQueryParams) {
+function useCommunityData(params: CommunityQueryParams, enabled: boolean) {
   const {
     data,
     isLoading,
@@ -111,6 +115,7 @@ function useCommunityData(params: CommunityQueryParams) {
       limit: params.limit,
       category: params.category,
     },
+    enabled,
   });
 
   const [isRefreshing, setIsRefreshing] = React.useState(false);
@@ -182,6 +187,7 @@ export default function CommunityScreen(): React.ReactElement {
   const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const isFocused = useIsFocused();
 
   const {
     listRef: sharedListRef,
@@ -211,7 +217,7 @@ export default function CommunityScreen(): React.ReactElement {
   const analytics = useAnalytics();
   const undoMutation = useUndoDeletePost();
   const outboxAdapter = React.useMemo(() => createOutboxAdapter(database), []);
-  useCommunityFeedRealtime({ outboxAdapter });
+  useCommunityFeedRealtime({ outboxAdapter, enabled: isFocused });
   const filterSheetRef = React.useRef<ModalRef>(null);
 
   // Segment state: 0 = Showcase, 1 = Help Station
@@ -282,14 +288,17 @@ export default function CommunityScreen(): React.ReactElement {
     refetch,
     isRefreshing,
     handleRefresh,
-  } = useCommunityData({
-    query: debouncedSearchText.length > 0 ? debouncedSearchText : undefined,
-    sort: activeFilters.sort,
-    photosOnly: activeFilters.photosOnly,
-    mineOnly: activeFilters.mineOnly,
-    limit: 20,
-    category,
-  });
+  } = useCommunityData(
+    {
+      query: debouncedSearchText.length > 0 ? debouncedSearchText : undefined,
+      sort: activeFilters.sort,
+      photosOnly: activeFilters.photosOnly,
+      mineOnly: activeFilters.mineOnly,
+      limit: 20,
+      category,
+    },
+    isFocused
+  );
 
   const {
     filterPosts,
@@ -297,7 +306,7 @@ export default function CommunityScreen(): React.ReactElement {
     isLoading: isAgeCheckLoading,
     requiresVerification,
   } = useAgeGatedFeed({
-    enabled: true,
+    enabled: isFocused,
     onVerificationRequired: () => setShowAgePrompt(true),
   });
 
@@ -336,7 +345,7 @@ export default function CommunityScreen(): React.ReactElement {
 
   const { data: userProfiles } = useUserProfiles({
     variables: { userIds: missingProfileIds },
-    enabled: missingProfileIds.length > 0,
+    enabled: isFocused && missingProfileIds.length > 0,
     staleTime: 1000 * 60 * 30,
     gcTime: 1000 * 60 * 60,
     refetchOnMount: false,

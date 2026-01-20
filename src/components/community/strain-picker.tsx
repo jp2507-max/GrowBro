@@ -208,8 +208,12 @@ function StrainSearchInput({
       >
         <Search size={18} className="mr-3 text-neutral-400" />
         <TextInput
-          accessibilityLabel="Search strains"
-          accessibilityHint="Enter text to search for strains"
+          accessibilityLabel={translate(
+            'accessibility.strains.search_strains_label'
+          )}
+          accessibilityHint={translate(
+            'accessibility.strains.search_strains_hint'
+          )}
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
@@ -241,10 +245,13 @@ type StrainPickerModalProps = {
   onClear: () => void;
   onEndReached: () => void;
   renderItem: ({ item }: { item: Strain }) => React.ReactElement;
-  backgroundStyle: {
-    backgroundColor: string;
-    borderTopLeftRadius: number;
-    borderTopRightRadius: number;
+  glassSurfaceProps: {
+    glassEffectStyle: 'regular';
+    style: {
+      borderTopLeftRadius: number;
+      borderTopRightRadius: number;
+    };
+    fallbackClassName: string;
   };
   handleStyle: {
     backgroundColor: string;
@@ -266,7 +273,7 @@ function StrainPickerModal({
   onClear,
   onEndReached,
   renderItem,
-  backgroundStyle,
+  glassSurfaceProps,
   handleStyle,
   testID,
 }: StrainPickerModalProps) {
@@ -281,8 +288,9 @@ function StrainPickerModal({
       ref={modal.ref}
       index={0}
       snapPoints={['70%']}
-      backgroundStyle={backgroundStyle}
       handleIndicatorStyle={handleStyle}
+      useGlassSurface
+      glassSurfaceProps={glassSurfaceProps}
       animationConfigs={animationConfigs}
       enablePanDownToClose
       onDismiss={() => {
@@ -390,13 +398,16 @@ function StrainPickerTrigger({
 }
 
 function useStrainPickerStyles(isDark: boolean) {
-  const backgroundStyle = React.useMemo(
+  const glassSurfaceProps = React.useMemo(
     () => ({
-      backgroundColor: isDark ? colors.darkSurface.card : colors.white,
-      borderTopLeftRadius: 35,
-      borderTopRightRadius: 35,
+      glassEffectStyle: 'regular' as const,
+      style: {
+        borderTopLeftRadius: 35,
+        borderTopRightRadius: 35,
+      },
+      fallbackClassName: 'bg-white dark:bg-charcoal-900',
     }),
-    [isDark]
+    []
   );
 
   const handleStyle = React.useMemo(
@@ -409,7 +420,7 @@ function useStrainPickerStyles(isDark: boolean) {
     [isDark]
   );
 
-  return { backgroundStyle, handleStyle };
+  return { glassSurfaceProps, handleStyle };
 }
 
 export function StrainPicker({
@@ -439,7 +450,7 @@ export function StrainPicker({
     () => data?.pages.flatMap((page) => page.data) ?? [],
     [data]
   );
-  const { backgroundStyle, handleStyle } = useStrainPickerStyles(isDark);
+  const { glassSurfaceProps, handleStyle } = useStrainPickerStyles(isDark);
 
   const handleOpen = React.useCallback(() => {
     setIsOpen(true);
@@ -499,7 +510,7 @@ export function StrainPicker({
         onClear={handleClear}
         onEndReached={handleEndReached}
         renderItem={renderItem}
-        backgroundStyle={backgroundStyle}
+        glassSurfaceProps={glassSurfaceProps}
         handleStyle={handleStyle}
         testID={testID}
       />

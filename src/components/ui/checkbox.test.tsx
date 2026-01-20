@@ -4,7 +4,7 @@ import React from 'react';
 
 import { cleanup, screen, setup } from '@/lib/test-utils';
 
-import { Checkbox, Radio, Switch } from './checkbox';
+import { Checkbox, Radio } from './checkbox';
 
 afterEach(cleanup);
 
@@ -145,71 +145,6 @@ describe('Checkbox, Radio & Switch components ', () => {
     expect(screen.getByTestId('radio')).toBeOnTheScreen();
     expect(screen.getByTestId('radio')).toBeDisabled();
     await user.press(screen.getByTestId('radio'));
-    expect(mockOnChange).toHaveBeenCalledTimes(0);
-  });
-
-  it('<Switch /> renders correctly and call on change on Press', async () => {
-    const mockOnChange = jest.fn((checked) => checked);
-    const { user } = setup(
-      <Switch
-        testID="switch"
-        onChange={mockOnChange}
-        accessibilityLabel="agree"
-        accessibilityHint="toggle Agree"
-      />
-    );
-    expect(screen.getByTestId('switch')).toBeOnTheScreen();
-    expect(screen.queryByTestId('switch-label')).not.toBeOnTheScreen();
-    expect(screen.getByTestId('switch')).toBeEnabled();
-    expect(screen.getByTestId('switch').props.accessibilityState.checked).toBe(
-      false
-    );
-    expect(screen.getByTestId('switch').props.accessibilityRole).toBe('switch');
-    expect(screen.getByTestId('switch').props.accessibilityLabel).toBe('agree');
-    await user.press(screen.getByTestId('switch'));
-    expect(mockOnChange).toHaveBeenCalledTimes(1);
-    expect(mockOnChange).toHaveBeenCalledWith(true);
-  });
-
-  it('<Switch /> should render the correct label', async () => {
-    const mockOnChange = jest.fn((checked) => checked);
-    const { user } = setup(
-      <Switch
-        testID="switch"
-        onChange={mockOnChange}
-        accessibilityLabel="agree"
-        label="I agree to terms and conditions"
-        accessibilityHint="toggle Agree"
-      />
-    );
-    expect(screen.getByTestId('switch')).toBeOnTheScreen();
-    expect(screen.getByTestId('switch-label')).toBeOnTheScreen();
-    expect(screen.getByTestId('switch-label')).toHaveTextContent(
-      'I agree to terms and conditions'
-    );
-    expect(screen.getByTestId('switch').props.accessibilityState.checked).toBe(
-      false
-    );
-    expect(screen.getByTestId('switch').props.accessibilityRole).toBe('switch');
-    expect(screen.getByTestId('switch').props.accessibilityLabel).toBe('agree');
-    await user.press(screen.getByTestId('switch-label'));
-    expect(mockOnChange).toHaveBeenCalledTimes(1);
-    expect(mockOnChange).toHaveBeenCalledWith(true);
-  });
-
-  it("<Switch/> shouldn't change value while disabled", async () => {
-    const mockOnChange = jest.fn((checked) => checked);
-    const { user } = setup(
-      <Switch
-        disabled={true}
-        testID="switch"
-        onChange={mockOnChange}
-        accessibilityLabel="agree"
-        accessibilityHint="toggle Agree"
-      />
-    );
-    expect(screen.getByTestId('switch')).toBeOnTheScreen();
-    await user.press(screen.getByTestId('switch'));
     expect(mockOnChange).toHaveBeenCalledTimes(0);
   });
 });

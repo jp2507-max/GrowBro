@@ -2,6 +2,8 @@ import React from 'react';
 import type { NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 import { Vibration } from 'react-native';
 import { showMessage } from 'react-native-flash-message';
+import type { SharedValue } from 'react-native-reanimated';
+import { useSharedValue } from 'react-native-reanimated';
 
 import { showErrorMessage } from '@/components/ui/utils';
 import { rescheduleRecurringInstance, updateTask } from '@/lib/task-manager';
@@ -27,6 +29,7 @@ type DragContextValue = {
   onDragUpdate: (y: number) => number | undefined;
   registerListRef: (ref: React.RefObject<ScrollableListRef>) => void;
   registerViewportHeight: (height: number) => void;
+  viewportHeightShared: SharedValue<number>;
   computeTargetDate: (originalDate: Date, translationY: number) => Date;
   updateCurrentOffset: (y: number) => void;
   undo: () => Promise<void>;
@@ -105,23 +108,36 @@ function useDragState() {
   };
 }
 
-function useListRefs() {
+function useListRefs(): {
+  listRef: React.RefObject<ScrollableListRef>;
+  currentScrollOffsetRef: React.RefObject<number>;
+  viewportHeightRef: React.RefObject<number>;
+  viewportHeightShared: SharedValue<number>;
+  registerListRef: (ref: React.RefObject<ScrollableListRef>) => void;
+  registerViewportHeight: (height: number) => void;
+  updateCurrentOffset: (y: number) => void;
+} {
   const listRef = React.useRef<ScrollableListRef>(null);
   const currentScrollOffsetRef = React.useRef<number>(0);
   const viewportHeightRef = React.useRef<number>(0);
+  const viewportHeightShared = useSharedValue(0);
 
   const registerListRef = React.useCallback(
-    (ref: React.RefObject<ScrollableListRef>) => {
+    (ref: React.RefObject<ScrollableListRef>): void => {
       listRef.current = ref.current;
     },
     []
   );
 
-  const registerViewportHeight = React.useCallback((height: number) => {
-    viewportHeightRef.current = height;
-  }, []);
+  const registerViewportHeight = React.useCallback(
+    (height: number): void => {
+      viewportHeightRef.current = height;
+      viewportHeightShared.value = height;
+    },
+    [viewportHeightShared]
+  );
 
-  const updateCurrentOffset = React.useCallback((y: number) => {
+  const updateCurrentOffset = React.useCallback((y: number): void => {
     currentScrollOffsetRef.current = y;
   }, []);
 
@@ -129,6 +145,7 @@ function useListRefs() {
     listRef,
     currentScrollOffsetRef,
     viewportHeightRef,
+    viewportHeightShared,
     registerListRef,
     registerViewportHeight,
     updateCurrentOffset,
@@ -403,6 +420,7 @@ function useContextValue(options: {
   onDragUpdate: (y: number) => number | undefined;
   registerListRef: (ref: React.RefObject<ScrollableListRef>) => void;
   registerViewportHeight: (height: number) => void;
+  viewportHeightShared: SharedValue<number>;
   computeTargetDate: (originalDate: Date, translationY: number) => Date;
   updateCurrentOffset: (y: number) => void;
   performUndo: () => Promise<void>;
@@ -416,6 +434,7 @@ function useContextValue(options: {
     onDragUpdate,
     registerListRef,
     registerViewportHeight,
+    viewportHeightShared,
     computeTargetDate,
     updateCurrentOffset,
     performUndo,
@@ -431,6 +450,7 @@ function useContextValue(options: {
       onDragUpdate,
       registerListRef,
       registerViewportHeight,
+      viewportHeightShared,
       computeTargetDate,
       updateCurrentOffset,
       undo: performUndo,
@@ -444,6 +464,7 @@ function useContextValue(options: {
       onDragUpdate,
       registerListRef,
       registerViewportHeight,
+      viewportHeightShared,
       computeTargetDate,
       updateCurrentOffset,
       performUndo,
@@ -460,6 +481,7 @@ function useDragDropContextValue(): DragContextValue {
     viewportHeightRef,
     registerListRef,
     registerViewportHeight,
+    viewportHeightShared,
     updateCurrentOffset,
   } = useListRefs();
   const { undoRef, performUndo } = useUndoState();
@@ -495,6 +517,7 @@ function useDragDropContextValue(): DragContextValue {
     onDragUpdate,
     registerListRef,
     registerViewportHeight,
+    viewportHeightShared,
     computeTargetDate,
     updateCurrentOffset,
     performUndo,
@@ -521,6 +544,7 @@ export function useDragDrop(): DragContextValue {
         onDragUpdate: () => undefined,
         registerListRef: () => {},
         registerViewportHeight: () => {},
+        viewportHeightShared: { value: 0 },
         computeTargetDate: (d: Date) => d,
         updateCurrentOffset: () => {},
         undo: async () => {},

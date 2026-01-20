@@ -1,9 +1,10 @@
 import * as React from 'react';
 
-import type { CommunityPostSort } from '@/api/community/types';
+import { type CommunityPostSort } from '@/api/community';
 import { Button, Text, View } from '@/components/ui';
-import { Radio, Switch } from '@/components/ui/checkbox';
+import { Radio } from '@/components/ui/checkbox';
 import { BottomSheetScrollView } from '@/components/ui/modal';
+import { Switch } from '@/components/ui/switch';
 import { translate } from '@/lib/i18n';
 
 type CommunityDiscoveryFiltersProps = {
@@ -57,19 +58,17 @@ export function CommunityDiscoveryFilters({
         </Text>
         <View className="gap-4">
           <Switch
-            checked={photosOnly}
-            onChange={onPhotosOnlyChange}
+            value={photosOnly}
+            onValueChange={onPhotosOnlyChange}
             accessibilityLabel={translate('community.filter_photos_only')}
             accessibilityHint={translate('accessibility.common.toggle_hint')}
-            label={translate('community.filter_photos_only')}
             testID={`${testID}-photos-only`}
           />
           <Switch
-            checked={mineOnly}
-            onChange={onMineOnlyChange}
+            value={mineOnly}
+            onValueChange={onMineOnlyChange}
             accessibilityLabel={translate('community.filter_my_posts')}
             accessibilityHint={translate('accessibility.common.toggle_hint')}
-            label={translate('community.filter_my_posts')}
             testID={`${testID}-mine-only`}
           />
         </View>

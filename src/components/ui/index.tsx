@@ -18,6 +18,7 @@ export * from './optimized-image';
 export * from './progress-bar';
 export * from './select';
 export * from './skeleton';
+export * from './switch';
 export * from './text';
 export * from './utils';
 

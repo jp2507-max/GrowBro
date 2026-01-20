@@ -9,8 +9,10 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import React, { useEffect, useMemo } from 'react';
+import { InteractionManager } from 'react-native';
 
 import { useNetworkStatus } from '@/lib/hooks/use-network-status';
+import { isEnvFlagEnabled } from '@/lib/utils/env-flags';
 import { database } from '@/lib/watermelon';
 import { CachedStrainsRepository } from '@/lib/watermelon-models/cached-strains-repository';
 
@@ -33,6 +35,79 @@ function getCacheRepository(): CachedStrainsRepository {
     cacheRepo = new CachedStrainsRepository(database);
   }
   return cacheRepo;
+}
+
+type CacheWriteParams = {
+  searchQuery?: string;
+  filters?: StrainFilters;
+  sortBy?: string;
+  sortDirection?: 'asc' | 'desc';
+};
+
+type CacheWriteTask = {
+  repo: CachedStrainsRepository;
+  params: CacheWriteParams;
+  pageNumber: number;
+  strains: StrainsResponse['data'];
+};
+
+type CacheWriteQueueState = {
+  scheduled: ReturnType<typeof InteractionManager.runAfterInteractions> | null;
+  queued: Map<string, CacheWriteTask>;
+};
+
+const CACHE_WRITE_QUEUE_MAX_SIZE = 4;
+
+const CACHE_WRITE_QUEUE: CacheWriteQueueState = {
+  scheduled: null,
+  queued: new Map<string, CacheWriteTask>(),
+};
+
+function trimCacheQueueToMaxSize(): void {
+  while (CACHE_WRITE_QUEUE.queued.size > CACHE_WRITE_QUEUE_MAX_SIZE) {
+    const firstKey = CACHE_WRITE_QUEUE.queued.keys().next().value as
+      | string
+      | undefined;
+    if (!firstKey) break;
+    CACHE_WRITE_QUEUE.queued.delete(firstKey);
+  }
+}
+
+function createCacheWriteKey(task: CacheWriteTask): string {
+  return JSON.stringify({ ...task.params, pageNumber: task.pageNumber });
+}
+
+async function flushCacheQueueOnce(): Promise<void> {
+  const first = CACHE_WRITE_QUEUE.queued.entries().next().value as
+    | [string, CacheWriteTask]
+    | undefined;
+  if (!first) return;
+
+  const [key, task] = first;
+  CACHE_WRITE_QUEUE.queued.delete(key);
+
+  try {
+    await task.repo.cachePage(task.params, task.pageNumber, task.strains);
+  } catch (error) {
+    console.warn('[strains-cache] Cache write failed:', error);
+  }
+
+  if (CACHE_WRITE_QUEUE.queued.size > 0) scheduleCacheFlush();
+}
+
+function scheduleCacheFlush(): void {
+  if (CACHE_WRITE_QUEUE.scheduled) return;
+
+  CACHE_WRITE_QUEUE.scheduled = InteractionManager.runAfterInteractions(() => {
+    CACHE_WRITE_QUEUE.scheduled = null;
+    void flushCacheQueueOnce();
+  });
+}
+
+function enqueueCacheWrite(task: CacheWriteTask): void {
+  CACHE_WRITE_QUEUE.queued.set(createCacheWriteKey(task), task);
+  trimCacheQueueToMaxSize();
+  scheduleCacheFlush();
 }
 
 type PageParamShape = { index: number; cursor?: string };
@@ -76,7 +151,11 @@ async function fetchAndCache(params: {
     signal,
   });
 
-  if (response.data && response.data.length > 0) {
+  if (
+    !isEnvFlagEnabled('EXPO_PUBLIC_DISABLE_STRAINS_CACHE_WRITES') &&
+    response.data &&
+    response.data.length > 0
+  ) {
     const cacheParams = {
       searchQuery: vars?.searchQuery,
       filters: vars?.filters,
@@ -85,9 +164,11 @@ async function fetchAndCache(params: {
     };
 
     const pageIndex = pageParam?.index ?? 0;
-
-    await repo.cachePage(cacheParams, pageIndex, response.data).catch((err) => {
-      console.warn('[fetchAndCache] Cache write failed:', err);
+    enqueueCacheWrite({
+      repo,
+      params: cacheParams,
+      pageNumber: pageIndex,
+      strains: response.data,
     });
   }
 
@@ -116,6 +197,7 @@ export function useStrainsInfiniteWithCache({
       const client = getStrainsApiClient();
       const repo = getCacheRepository();
       const pageIndex = pageParam?.index ?? 0;
+      const pageSize = variables?.pageSize ?? 20;
 
       const cacheParams = {
         searchQuery: variables?.searchQuery,
@@ -128,24 +210,24 @@ export function useStrainsInfiniteWithCache({
         const supabasePage = await fetchStrainsFromSupabase({
           searchQuery: variables?.searchQuery,
           filters: variables?.filters,
-          pageSize: variables?.pageSize ?? 20,
+          pageSize,
           page: pageIndex,
           sortBy: variables?.sortBy as GetStrainsParams['sortBy'] | undefined,
           sortDirection: variables?.sortDirection,
           signal,
         });
 
-        if (supabasePage.data?.length) {
-          await repo
-            .cachePage(cacheParams, pageIndex, supabasePage.data)
-            .catch((err) =>
-              console.warn(
-                '[useStrainsInfiniteWithCache] Cache write failed:',
-                err
-              )
-            );
+        if (
+          !isEnvFlagEnabled('EXPO_PUBLIC_DISABLE_STRAINS_CACHE_WRITES') &&
+          supabasePage.data?.length
+        ) {
+          enqueueCacheWrite({
+            repo,
+            params: cacheParams,
+            pageNumber: pageIndex,
+            strains: supabasePage.data,
+          });
         }
-
         return { ...supabasePage, fromCache: false };
       } catch (error) {
         console.info(
@@ -155,13 +237,14 @@ export function useStrainsInfiniteWithCache({
       }
 
       try {
-        return await fetchAndCache({
+        const result = await fetchAndCache({
           client,
           repo,
           vars: variables,
           pageParam, // Now a PageParamShape | undefined; fetchAndCache handles index/cursor
           signal,
         });
+        return result;
       } catch (error) {
         const cached = await tryGetCachedData(repo, cacheParams, pageParam);
         if (cached) {

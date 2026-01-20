@@ -154,6 +154,8 @@ const SYNC_TABLES: TableName[] = [
 ];
 const MAX_PUSH_CHUNK_PER_TABLE = 1000; // per-batch limit (Req 6.2)
 const CHECKPOINT_KEY = 'sync.lastPulledAt';
+const SYNC_DISABLED_UNTIL_KEY = 'sync.disabledUntilMs';
+const SYNC_DISABLED_REASON_KEY = 'sync.disabledReason';
 const API_BASE =
   (typeof Env?.API_URL === 'string' && Env.API_URL) ||
   (typeof Env?.EXPO_PUBLIC_API_BASE_URL === 'string' &&
@@ -174,6 +176,26 @@ const REQUEST_TIMEOUT_MS = 30000; // 30 second timeout
 
 function nowMs(): number {
   return Date.now();
+}
+
+let syncDisabledUntilCache: number | null = null;
+
+function getSyncDisabledUntilMs(): number | null {
+  if (syncDisabledUntilCache !== null) return syncDisabledUntilCache;
+  const v = getItem<number>(SYNC_DISABLED_UNTIL_KEY);
+  if (typeof v === 'number') {
+    syncDisabledUntilCache = v;
+    return v;
+  }
+  return null;
+}
+
+function setSyncDisabled(untilMs: number, reason: string): void {
+  syncDisabledUntilCache = untilMs;
+  try {
+    void setItem(SYNC_DISABLED_UNTIL_KEY, untilMs);
+    void setItem(SYNC_DISABLED_REASON_KEY, reason);
+  } catch {}
 }
 
 // Exposed UI flags - backed by Zustand store
@@ -558,7 +580,8 @@ function addUserIdToChanges(changes: ChangesByTable, userId: string): void {
 }
 
 async function fetchAllRepositoryData(
-  repos: CollectionsMap
+  repos: CollectionsMap,
+  lastPulledAt: number | null
 ): Promise<
   [
     TaskModel[],
@@ -572,16 +595,63 @@ async function fetchAllRepositoryData(
     InventoryMovementModel[],
   ]
 > {
+  if (lastPulledAt === null) {
+    return Promise.all([
+      repos.tasks.query().fetch(),
+      repos.series.query().fetch(),
+      repos.occurrence_overrides.query().fetch(),
+      repos.harvests.query().fetch(),
+      repos.inventory.query().fetch(),
+      repos['harvest_audits'].query().fetch(),
+      repos['inventory_items'].query().fetch(),
+      repos['inventory_batches'].query().fetch(),
+      repos['inventory_movements'].query().fetch(),
+    ]) as Promise<
+      [
+        TaskModel[],
+        SeriesModel[],
+        OccurrenceOverrideModel[],
+        HarvestModel[],
+        InventoryModel[],
+        HarvestAuditModel[],
+        InventoryItemModel[],
+        InventoryBatchModel[],
+        InventoryMovementModel[],
+      ]
+    >;
+  }
+
+  const checkpointMs = lastPulledAt;
+
+  async function fetchChangedRows<T extends Model>(
+    collection: Collection<T>
+  ): Promise<T[]> {
+    const [deletedRows, nonDeletedChangedRows] = await Promise.all([
+      collection.query(Q.where('deleted_at', Q.gt(checkpointMs))).fetch(),
+      collection
+        .query(
+          Q.where('deleted_at', null),
+          Q.or(
+            Q.where('created_at', Q.gt(checkpointMs)),
+            Q.where('updated_at', Q.gt(checkpointMs))
+          )
+        )
+        .fetch(),
+    ]);
+
+    return [...deletedRows, ...nonDeletedChangedRows];
+  }
+
   return Promise.all([
-    repos.tasks.query().fetch(),
-    repos.series.query().fetch(),
-    repos.occurrence_overrides.query().fetch(),
-    repos.harvests.query().fetch(),
-    repos.inventory.query().fetch(),
-    repos['harvest_audits'].query().fetch(),
-    repos['inventory_items'].query().fetch(),
-    repos['inventory_batches'].query().fetch(),
-    repos['inventory_movements'].query().fetch(),
+    fetchChangedRows(repos.tasks),
+    fetchChangedRows(repos.series),
+    fetchChangedRows(repos.occurrence_overrides),
+    fetchChangedRows(repos.harvests),
+    fetchChangedRows(repos.inventory),
+    fetchChangedRows(repos['harvest_audits']),
+    fetchChangedRows(repos['inventory_items']),
+    fetchChangedRows(repos['inventory_batches']),
+    fetchChangedRows(repos['inventory_movements']),
   ]) as Promise<
     [
       TaskModel[],
@@ -613,7 +683,7 @@ async function collectLocalChanges(
     inventoryItemRows,
     inventoryBatchRows,
     inventoryMovementRows,
-  ] = await fetchAllRepositoryData(repos);
+  ] = await fetchAllRepositoryData(repos, lastPulledAt);
 
   for (const r of seriesRows)
     bucketRowIntoChanges({ table: 'series', row: r, lastPulledAt, changes });
@@ -665,16 +735,41 @@ async function collectLocalChanges(
  * Returns a count of locally pending changes (created+updated+deleted across all tables)
  * since the last successful checkpoint. Used for UI badges and summaries.
  */
+const PENDING_CHANGES_COUNT_CACHE_MS = 2000;
+let pendingChangesCountCache: { value: number; computedAt: number } | null =
+  null;
+let pendingChangesCountPromise: Promise<number> | null = null;
+
 export async function getPendingChangesCount(): Promise<number> {
-  const lastPulledAt = getItem<number>(CHECKPOINT_KEY);
+  const now = Date.now();
+  if (
+    pendingChangesCountCache &&
+    now - pendingChangesCountCache.computedAt < PENDING_CHANGES_COUNT_CACHE_MS
+  ) {
+    return pendingChangesCountCache.value;
+  }
 
-  const pendingCounts = await Promise.all(
-    SYNC_TABLES.map((table) =>
-      countPendingChangesForTable(table, lastPulledAt ?? null)
-    )
-  );
+  if (pendingChangesCountPromise) return pendingChangesCountPromise;
 
-  return pendingCounts.reduce((sum, count) => sum + count, 0);
+  pendingChangesCountPromise = (async () => {
+    const lastPulledAt = getItem<number>(CHECKPOINT_KEY);
+
+    const pendingCounts = await Promise.all(
+      SYNC_TABLES.map((table) =>
+        countPendingChangesForTable(table, lastPulledAt ?? null)
+      )
+    );
+
+    const value = pendingCounts.reduce((sum, count) => sum + count, 0);
+    pendingChangesCountCache = { value, computedAt: Date.now() };
+    return value;
+  })();
+
+  try {
+    return await pendingChangesCountPromise;
+  } finally {
+    pendingChangesCountPromise = null;
+  }
 }
 
 async function countPendingChangesForTable(
@@ -1349,6 +1444,11 @@ async function pullChangesOnce(req: SyncRequest): Promise<SyncResponse> {
     clearTimeout(timeoutId);
 
     if (!res.ok) {
+      if (res.status === 404) {
+        const cooldownMs = 24 * 60 * 60 * 1000;
+        const untilMs = nowMs() + cooldownMs;
+        setSyncDisabled(untilMs, 'pull_endpoint_404');
+      }
       try {
         await NoopAnalytics.track('sync_error', {
           stage: 'pull',
@@ -1540,6 +1640,12 @@ export async function runSyncWithRetry(
 
   const trigger: SyncTrigger = options.trigger ?? 'auto';
   let lastError: unknown = null;
+
+  const disabledUntilMs = getSyncDisabledUntilMs();
+  if (disabledUntilMs !== null && disabledUntilMs > nowMs()) {
+    throw new Error('sync disabled (cooldown active)');
+  }
+
   getSyncState().setSyncInFlight(true);
   try {
     for (let attempt = 0; attempt < maxAttempts; attempt++) {

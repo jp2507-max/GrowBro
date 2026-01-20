@@ -1,5 +1,4 @@
-import { Env } from '@env';
-
+import { client } from '@/api/common';
 import { supabase } from '@/lib/supabase';
 import type {
   RedactedSoR,
@@ -22,8 +21,8 @@ export async function generateSoRPreview(
     throw new Error('Authentication required to fetch SoR preview');
   }
 
-  const response = await fetch(
-    `${Env.API_URL}/api/moderation/decisions/${decisionId}/sor-preview`,
+  const response = await client.get<SoRPreview>(
+    `/moderation/decisions/${decisionId}/sor-preview`,
     {
       headers: {
         Authorization: `Bearer ${session.access_token}`,
@@ -32,11 +31,7 @@ export async function generateSoRPreview(
     }
   );
 
-  if (!response.ok) {
-    throw new Error(`Failed to fetch SoR preview: ${response.statusText}`);
-  }
-
-  return response.json();
+  return response.data;
 }
 
 /**

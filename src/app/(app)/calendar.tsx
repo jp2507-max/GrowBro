@@ -1,4 +1,5 @@
 import { Q } from '@nozbe/watermelondb';
+import { useIsFocused } from '@react-navigation/native';
 import { DateTime } from 'luxon';
 import React, {
   useCallback,
@@ -132,7 +133,10 @@ function buildTaskCounts(tasks: Task[]): Map<string, number> {
  * @param selectedDate - The currently selected date
  * @returns Object containing pending/completed tasks, task counts, plant map, loading state, and refetch function
  */
-function useCalendarData(selectedDate: DateTime): {
+function useCalendarData(
+  selectedDate: DateTime,
+  isEnabled: boolean
+): {
   dayPendingTasks: Task[];
   dayCompletedTasks: Task[];
   taskCounts: Map<string, number>;
@@ -216,6 +220,7 @@ function useCalendarData(selectedDate: DateTime): {
   const debouncedLoadData = useMemo(() => debounce(loadData, 300), [loadData]);
 
   useEffect(() => {
+    if (!isEnabled) return;
     let cancelled = false;
     const requestIdAtMount = requestIdRef.current;
 
@@ -233,7 +238,7 @@ function useCalendarData(selectedDate: DateTime): {
       // increment the stored request ID to invalidate in-flight calls
       requestIdRef.current = requestIdAtMount + 1;
     };
-  }, [debouncedLoadData]);
+  }, [debouncedLoadData, isEnabled]);
 
   // Memoize task counts separately from day filtering to avoid rebuilding on every selectedDay change
   const taskCounts = useMemo(
@@ -267,6 +272,7 @@ function useCalendarData(selectedDate: DateTime): {
 
 export default function CalendarScreen(): React.ReactElement {
   const insets = useSafeAreaInsets();
+  const isFocused = useIsFocused();
   const { grossHeight } = useBottomTabBarHeight();
   const [selectedDate, setSelectedDate] = useState<DateTime>(
     DateTime.now().startOf('day')
@@ -279,7 +285,7 @@ export default function CalendarScreen(): React.ReactElement {
     plantMap,
     isLoading,
     refetch,
-  } = useCalendarData(selectedDate);
+  } = useCalendarData(selectedDate, isFocused);
 
   // Task detail modal state
   const { ref: taskDetailModalRef, present: presentTaskDetail } =

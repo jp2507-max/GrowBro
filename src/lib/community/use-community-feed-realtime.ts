@@ -3,6 +3,7 @@ import { Q } from '@nozbe/watermelondb';
 import type { InfiniteData } from '@tanstack/react-query';
 import { useQueryClient } from '@tanstack/react-query';
 import * as React from 'react';
+import { InteractionManager } from 'react-native';
 
 import type { PaginateQuery } from '@/api/types';
 import {
@@ -444,7 +445,6 @@ function createRealtimeHandlers(
         table: 'posts',
         cache: postsCache,
         outbox,
-        onInvalidate: () => invalidatePostsQueries(queryClient),
       } as EventHandlerOptions<Post>);
     },
     onCommentChange: async (event: RealtimeEvent<PostComment>) => {
@@ -452,8 +452,6 @@ function createRealtimeHandlers(
         table: 'post_comments',
         cache: commentsCache,
         outbox,
-        onInvalidate: () =>
-          queryClient.invalidateQueries({ queryKey: ['community-comments'] }),
       } as EventHandlerOptions<PostComment>);
     },
     onLikeChange: async (event: RealtimeEvent<PostLike>) => {
@@ -462,7 +460,6 @@ function createRealtimeHandlers(
         getKey: getLikeKey,
         cache: likesCache,
         outbox,
-        onInvalidate: () => invalidatePostsQueries(queryClient),
       } as EventHandlerOptions<PostLike>);
     },
   };
@@ -473,11 +470,12 @@ function createRealtimeHandlers(
  */
 function setupPollingMonitor(
   manager: RealtimeConnectionManager,
-  setIsPolling: (polling: boolean) => void
+  setIsPolling: React.Dispatch<React.SetStateAction<boolean>>
 ): ReturnType<typeof setInterval> {
   const pollingCheckInterval = setInterval(() => {
-    setIsPolling(manager.isPollingActive());
-  }, 1000);
+    const next = manager.isPollingActive();
+    setIsPolling((prev) => (prev === next ? prev : next));
+  }, 5000);
   return pollingCheckInterval;
 }
 
@@ -515,17 +513,10 @@ function setupPollingMonitor(
  * }
  * ```
  */
-function useReconciliationTimer(
-  queryClient: ReturnType<typeof useQueryClient>
-) {
+function useReconciliationTimer(reconcile: () => void) {
   const reconciliationTimerRef = React.useRef<ReturnType<
     typeof setInterval
   > | null>(null);
-
-  const reconcile = React.useCallback(() => {
-    console.log('Reconciling counters with server...');
-    invalidateCommunityFeedQueries(queryClient);
-  }, [queryClient]);
 
   const startReconciliation = React.useCallback(() => {
     if (reconciliationTimerRef.current)
@@ -551,10 +542,7 @@ function useReconciliationTimer(
   return { startReconciliation, stopReconciliation };
 }
 
-function usePollingEffect(
-  isPolling: boolean,
-  queryClient: ReturnType<typeof useQueryClient>
-) {
+function usePollingEffect(isPolling: boolean, invalidate: () => void) {
   const pollingIntervalRef = React.useRef<ReturnType<
     typeof setInterval
   > | null>(null);
@@ -568,8 +556,7 @@ function usePollingEffect(
 
       // Start new 30s polling interval
       pollingIntervalRef.current = setInterval(() => {
-        console.log('Polling: Invalidating queries...');
-        invalidateCommunityFeedQueries(queryClient);
+        invalidate();
       }, 30000);
     } else {
       // Clear polling interval when not polling
@@ -586,7 +573,34 @@ function usePollingEffect(
         pollingIntervalRef.current = null;
       }
     };
-  }, [isPolling, queryClient]);
+  }, [isPolling, invalidate]);
+}
+
+function useDeferredCommunityFeedInvalidation(
+  queryClient: ReturnType<typeof useQueryClient>
+): { invalidate: () => void; cancel: () => void } {
+  const invalidateTaskRef = React.useRef<ReturnType<
+    typeof InteractionManager.runAfterInteractions
+  > | null>(null);
+
+  const cancel = React.useCallback(() => {
+    invalidateTaskRef.current?.cancel?.();
+    invalidateTaskRef.current = null;
+  }, []);
+
+  const invalidate = React.useCallback(() => {
+    if (invalidateTaskRef.current) {
+      return;
+    }
+    invalidateTaskRef.current = InteractionManager.runAfterInteractions(() => {
+      invalidateTaskRef.current = null;
+      invalidateCommunityFeedQueries(queryClient);
+    });
+  }, [queryClient]);
+
+  React.useEffect(() => cancel, [cancel]);
+
+  return { invalidate, cancel };
 }
 
 export function useCommunityFeedRealtime(options: RealtimeOptions) {
@@ -600,6 +614,8 @@ export function useCommunityFeedRealtime(options: RealtimeOptions) {
   const queryClient = useQueryClient();
   const managerRef = React.useRef<RealtimeConnectionManager | null>(null);
   const outboxRef = React.useRef<OutboxAdapter>(outboxAdapter);
+  const { invalidate: invalidateCommunityFeed, cancel: cancelInvalidation } =
+    useDeferredCommunityFeedInvalidation(queryClient);
 
   React.useEffect(() => {
     outboxRef.current = outboxAdapter;
@@ -610,15 +626,17 @@ export function useCommunityFeedRealtime(options: RealtimeOptions) {
   >('disconnected');
   const [isPolling, setIsPolling] = React.useState(false);
 
-  const { startReconciliation, stopReconciliation } =
-    useReconciliationTimer(queryClient);
-  usePollingEffect(enabled && isPolling, queryClient);
+  const { startReconciliation, stopReconciliation } = useReconciliationTimer(
+    invalidateCommunityFeed
+  );
+  usePollingEffect(enabled && isPolling, invalidateCommunityFeed);
 
   React.useEffect(() => {
     if (enabled) return;
     setConnectionState('disconnected');
     setIsPolling(false);
-  }, [enabled]);
+    cancelInvalidation();
+  }, [enabled, cancelInvalidation]);
 
   React.useEffect(() => {
     if (!enabled) return;
@@ -641,10 +659,7 @@ export function useCommunityFeedRealtime(options: RealtimeOptions) {
           }
         },
         onPollRefresh: () => {
-          console.log(
-            'Poll refresh triggered, invalidating community feed queries...'
-          );
-          invalidateCommunityFeedQueries(queryClient);
+          invalidateCommunityFeed();
         },
       },
       postId
@@ -666,6 +681,7 @@ export function useCommunityFeedRealtime(options: RealtimeOptions) {
     startReconciliation,
     stopReconciliation,
     outboxAdapter,
+    invalidateCommunityFeed,
   ]);
 
   return {

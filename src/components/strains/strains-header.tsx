@@ -11,14 +11,13 @@ import {
 import { GlassSurface } from '@/components/shared/glass-surface';
 import { Input, Text, View } from '@/components/ui';
 import colors from '@/components/ui/colors';
-import { Rate, Settings } from '@/components/ui/icons';
+import { PlatformIcon, Rate, Settings } from '@/components/ui/icons';
 import { haptics } from '@/lib/haptics';
 import { translate } from '@/lib/i18n';
 
 const styles = StyleSheet.create({
   searchPill: {
     borderRadius: 16,
-    overflow: 'hidden',
   },
 });
 
@@ -68,11 +67,11 @@ export function StrainsHeader({
         <View className="flex-row items-center gap-1">
           <HeaderIconButton
             icon={
-              <Rate
+              <PlatformIcon
+                iosName="star"
+                size={20}
                 color={iconColor}
-                width={20}
-                height={20}
-                className="text-neutral-900 dark:text-white"
+                fallback={<Rate />}
               />
             }
             onPress={handleFavoritesPress}
@@ -84,15 +83,11 @@ export function StrainsHeader({
           />
           <HeaderIconButton
             icon={
-              <Settings
+              <PlatformIcon
+                iosName="line.3.horizontal.decrease.circle"
+                size={20}
                 color={hasActiveFilters ? colors.primary[600] : iconColor}
-                width={20}
-                height={20}
-                className={
-                  hasActiveFilters
-                    ? 'text-primary-600 dark:text-primary-400'
-                    : 'text-neutral-900 dark:text-white'
-                }
+                fallback={<Settings />}
               />
             }
             onPress={handleFiltersPress}

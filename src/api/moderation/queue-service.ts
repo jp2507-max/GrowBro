@@ -4,6 +4,7 @@
  * Requirements: 2.1, 2.2, 2.3
  */
 
+import { client } from '@/api/common';
 import { checkConflictOfInterest } from '@/lib/moderation/conflict-of-interest';
 import {
   calculateSLAStatus,
@@ -50,20 +51,14 @@ export async function getModeratorQueue(
   // TODO: Replace with actual Supabase query
   // This is a stub implementation for now
 
-  const response = await fetch('/api/moderation/queue', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ moderator_id: moderatorId, filters }),
+  const response = await client.post<ModerationQueue>('/moderation/queue', {
+    moderator_id: moderatorId,
+    filters,
   });
 
-  if (!response.ok) {
-    throw new Error(`Failed to fetch queue: ${response.statusText}`);
-  }
-
-  return response.json();
+  return response.data;
 }
 
-// CRITICAL: Replace fetch with Axios client (violates API guidelines)
 // TODO: Implement actual Supabase mutation instead of stub endpoint
 // TODO: Normalize Date fields (created_at, sla_deadline) to Date objects for type safety
 /**
@@ -85,37 +80,44 @@ export async function claimReport(
     };
   }
 
-  // TODO: Replace with actual Supabase mutation
-  const response = await fetch(`/api/moderation/reports/${reportId}/claim`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ moderator_id: moderatorId }),
-  });
+  try {
+    const response = await client.post<{
+      claimed_by: string;
+      claim_expires_at: string;
+    }>(`/moderation/reports/${reportId}/claim`, {
+      moderator_id: moderatorId,
+    });
 
-  if (!response.ok) {
-    let errorMessage = 'Failed to claim report';
-    try {
-      const error = await response.json();
-      errorMessage = error.message || errorMessage;
-    } catch {
-      const textBody = await response.text();
-      errorMessage = textBody || errorMessage;
-    }
+    return {
+      success: true,
+      report_id: reportId,
+      claimed_by: response.data.claimed_by,
+      claim_expires_at: new Date(response.data.claim_expires_at),
+    };
+  } catch (error) {
+    const message =
+      error &&
+      typeof error === 'object' &&
+      'response' in error &&
+      (error as { response?: { data?: unknown } }).response?.data &&
+      typeof (error as { response: { data: unknown } }).response.data ===
+        'object' &&
+      (error as { response: { data: Record<string, unknown> } }).response.data
+        ?.message
+        ? String(
+            (error as { response: { data: Record<string, unknown> } }).response
+              .data.message
+          )
+        : error instanceof Error
+          ? error.message
+          : 'Failed to claim report';
+
     return {
       success: false,
       report_id: reportId,
-      error: errorMessage,
+      error: message,
     };
   }
-
-  const data = await response.json();
-
-  return {
-    success: true,
-    report_id: reportId,
-    claimed_by: data.claimed_by,
-    claim_expires_at: new Date(data.claim_expires_at),
-  };
 }
 
 /**
@@ -125,29 +127,30 @@ export async function releaseReport(
   reportId: string,
   moderatorId: string
 ): Promise<{ success: boolean; error?: string }> {
-  // TODO: Replace with actual Supabase mutation
-  const response = await fetch(`/api/moderation/reports/${reportId}/release`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ moderator_id: moderatorId }),
-  });
-
-  if (!response.ok) {
-    let errorMessage = 'Failed to release report';
-    try {
-      const error = await response.json();
-      errorMessage = error.message || errorMessage;
-    } catch {
-      const textBody = await response.text();
-      errorMessage = textBody || errorMessage;
-    }
-    return {
-      success: false,
-      error: errorMessage,
-    };
+  try {
+    await client.post(`/moderation/reports/${reportId}/release`, {
+      moderator_id: moderatorId,
+    });
+    return { success: true };
+  } catch (error) {
+    const message =
+      error &&
+      typeof error === 'object' &&
+      'response' in error &&
+      (error as { response?: { data?: unknown } }).response?.data &&
+      typeof (error as { response: { data: unknown } }).response.data ===
+        'object' &&
+      (error as { response: { data: Record<string, unknown> } }).response.data
+        ?.message
+        ? String(
+            (error as { response: { data: Record<string, unknown> } }).response
+              .data.message
+          )
+        : error instanceof Error
+          ? error.message
+          : 'Failed to release report';
+    return { success: false, error: message };
   }
-
-  return { success: true };
 }
 
 // Removed: use shared implementation from @/lib/moderation/conflict-of-interest

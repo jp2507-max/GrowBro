@@ -13,6 +13,8 @@ import { communityMetrics } from './metrics-tracker';
 
 type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'error';
 
+let gbrRealtimeManagerId = 0;
+
 type SupabaseRealtimePayload = {
   eventType: 'INSERT' | 'UPDATE' | 'DELETE';
   new: Record<string, unknown> | null;
@@ -39,6 +41,7 @@ type RealtimeCallbacks = {
  * Requirements: 3.1, 3.2, 3.7
  */
 export class RealtimeConnectionManager {
+  private readonly debugId = (gbrRealtimeManagerId += 1);
   private channel: RealtimeChannel | null = null;
   private connectionState: ConnectionState = 'disconnected';
   private callbacks: RealtimeCallbacks = {};

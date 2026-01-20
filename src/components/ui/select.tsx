@@ -19,7 +19,6 @@ import type { SvgProps } from 'react-native-svg';
 import Svg, { Path } from 'react-native-svg';
 import { tv } from 'tailwind-variants';
 
-import colors from '@/components/ui/colors';
 import { CaretDown } from '@/components/ui/icons';
 
 import type { InputControllerType } from './input';
@@ -102,13 +101,16 @@ export const Options = React.forwardRef<BottomSheetModal, OptionsProps>(
     const isDark = colorScheme === 'dark';
     const { t } = useTranslation();
 
-    const backgroundStyle = React.useMemo(
+    const glassSurfaceProps = React.useMemo(
       () => ({
-        backgroundColor: isDark ? colors.darkSurface.card : colors.white,
-        borderTopLeftRadius: 35,
-        borderTopRightRadius: 35,
+        glassEffectStyle: 'regular' as const,
+        style: {
+          borderTopLeftRadius: 35,
+          borderTopRightRadius: 35,
+        },
+        fallbackClassName: 'bg-white dark:bg-charcoal-900',
       }),
-      [isDark]
+      []
     );
 
     const handleStyle = React.useMemo(
@@ -145,8 +147,9 @@ export const Options = React.forwardRef<BottomSheetModal, OptionsProps>(
         index={0}
         snapPoints={snapPoints}
         onDismiss={onDismiss}
-        backgroundStyle={backgroundStyle}
         handleIndicatorStyle={handleStyle}
+        useGlassSurface
+        glassSurfaceProps={glassSurfaceProps}
       >
         {title && (
           <View className="px-5 pb-3 pt-1">

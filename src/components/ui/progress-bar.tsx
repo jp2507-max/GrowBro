@@ -37,9 +37,9 @@ export const ProgressBar = forwardRef<ProgressBarRef, Props>(
             {
               duration: 250,
               easing: Easing.inOut(Easing.quad),
+              reduceMotion: ReduceMotion.System,
             },
-            undefined,
-            ReduceMotion.System
+            undefined
           );
         },
       };

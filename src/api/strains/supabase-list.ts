@@ -91,7 +91,7 @@ export async function fetchStrainsFromSupabase(
 
   let query = supabase
     .from('strain_cache')
-    .select('id, slug, name, race, data', { count: 'exact' });
+    .select('id, slug, name, race, data');
 
   if (searchQuery && searchQuery.length > 0) {
     const pattern = `%${searchQuery}%`;
@@ -102,15 +102,18 @@ export async function fetchStrainsFromSupabase(
   query = applySort(query, params.sortBy, params.sortDirection);
   query = query.range(offset, offset + pageSize - 1);
 
-  const { data, error, count } = await query;
+  const { data, error } = await query;
 
   if (error) {
     throw error;
   }
 
-  const strains = (data ?? []).map(mapSupabaseRowToStrain);
-  const totalCount = count ?? strains.length;
-  const hasMore = offset + strains.length < totalCount;
+  const rows = (data ?? []) as SupabaseStrainRow[];
+  const strains = rows.map(mapSupabaseRowToStrain);
+
+  // Avoid expensive COUNT queries on every page.
+  // If the page is full, assume there might be more; if it's short, we're done.
+  const hasMore = strains.length === pageSize;
 
   return {
     data: strains,
