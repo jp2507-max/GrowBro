@@ -20,6 +20,7 @@ export function Switch({
   trackColor,
   thumbColor,
   ios_backgroundColor,
+  className,
   ...props
 }: SwitchProps) {
   const { colorScheme } = useColorScheme();
@@ -82,5 +83,5 @@ export function Switch({
     }
   }
 
-  return <NativeSwitch {...nativeProps} />;
+  return <NativeSwitch className={className} {...nativeProps} />;
 }

@@ -3,6 +3,7 @@ import type { StyleProp, ViewStyle } from 'react-native';
 import { StyleSheet, View } from 'react-native';
 
 import { GlassSurface } from '@/components/shared/glass-surface';
+import { SHEET_BORDER_RADIUS } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 
 type GlassSheetContainerProps = {
@@ -14,7 +15,7 @@ type GlassSheetContainerProps = {
 
 const styles = StyleSheet.create({
   surface: {
-    borderRadius: 24,
+    borderRadius: SHEET_BORDER_RADIUS,
   },
 });
 

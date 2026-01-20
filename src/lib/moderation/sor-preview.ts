@@ -22,13 +22,7 @@ export async function generateSoRPreview(
   }
 
   const response = await client.get<SoRPreview>(
-    `/moderation/decisions/${decisionId}/sor-preview`,
-    {
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      },
-    }
+    `/moderation/decisions/${decisionId}/sor-preview`
   );
 
   return response.data;

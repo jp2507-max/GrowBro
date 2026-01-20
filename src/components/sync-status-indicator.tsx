@@ -5,6 +5,8 @@
 
 import * as React from 'react';
 import Animated, {
+  // @ts-ignore - Reanimated 4.x type exports issue
+  cancelAnimation,
   ReduceMotion,
   useAnimatedStyle,
   useSharedValue,
@@ -64,6 +66,7 @@ export function SyncStatusIndicator({
   const reduceMotion = useReduceMotionEnabled();
 
   React.useEffect(() => {
+    cancelAnimation(opacity);
     if (reduceMotion) {
       opacity.value = 1;
       return;
@@ -91,6 +94,9 @@ export function SyncStatusIndicator({
         reduceMotion: ReduceMotion.System,
       });
     }
+    return () => {
+      cancelAnimation(opacity);
+    };
   }, [state, opacity, reduceMotion]);
 
   const animatedStyle = useAnimatedStyle(() => ({

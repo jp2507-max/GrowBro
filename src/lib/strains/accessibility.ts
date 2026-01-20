@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { AccessibilityInfo, Platform } from 'react-native';
+import { AccessibilityInfo, AppState, Platform } from 'react-native';
 
 import { getMinTouchTargetSize } from '../accessibility/constants';
 
@@ -35,22 +35,37 @@ export function useScreenReaderEnabled(): boolean {
 /**
  * Hook to detect if reduce motion is enabled
  */
+
 export function useReduceMotionEnabled(): boolean {
   const [isEnabled, setIsEnabled] = useState(false);
 
   useEffect(() => {
-    if (Platform.OS === 'ios') {
-      AccessibilityInfo.isReduceMotionEnabled().then(setIsEnabled);
+    // Check initial state
+    AccessibilityInfo.isReduceMotionEnabled().then(setIsEnabled);
 
-      const subscription = AccessibilityInfo.addEventListener(
-        'reduceMotionChanged',
-        setIsEnabled
-      );
+    // iOS: Listen for real-time changes
+    const subscription =
+      Platform.OS === 'ios'
+        ? AccessibilityInfo.addEventListener(
+            'reduceMotionChanged',
+            setIsEnabled
+          )
+        : undefined;
 
-      return () => {
-        subscription.remove();
-      };
-    }
+    // Android/All: Check when app returns to foreground since Android doesn't emit reduceMotionChanged
+    const appStateSubscription = AppState.addEventListener(
+      'change',
+      (nextAppState) => {
+        if (nextAppState === 'active') {
+          AccessibilityInfo.isReduceMotionEnabled().then(setIsEnabled);
+        }
+      }
+    );
+
+    return () => {
+      subscription?.remove();
+      appStateSubscription.remove();
+    };
   }, []);
 
   return isEnabled;

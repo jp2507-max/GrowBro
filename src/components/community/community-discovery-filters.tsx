@@ -57,20 +57,30 @@ export function CommunityDiscoveryFilters({
           {translate('community.filters_label')}
         </Text>
         <View className="gap-4">
-          <Switch
-            value={photosOnly}
-            onValueChange={onPhotosOnlyChange}
-            accessibilityLabel={translate('community.filter_photos_only')}
-            accessibilityHint={translate('accessibility.common.toggle_hint')}
-            testID={`${testID}-photos-only`}
-          />
-          <Switch
-            value={mineOnly}
-            onValueChange={onMineOnlyChange}
-            accessibilityLabel={translate('community.filter_my_posts')}
-            accessibilityHint={translate('accessibility.common.toggle_hint')}
-            testID={`${testID}-mine-only`}
-          />
+          <View className="flex-row items-center justify-between">
+            <Text className="text-base text-neutral-900 dark:text-neutral-50">
+              {translate('community.filter_photos_only')}
+            </Text>
+            <Switch
+              value={photosOnly}
+              onValueChange={onPhotosOnlyChange}
+              accessibilityLabel={translate('community.filter_photos_only')}
+              accessibilityHint={translate('accessibility.common.toggle_hint')}
+              testID={`${testID}-photos-only`}
+            />
+          </View>
+          <View className="flex-row items-center justify-between">
+            <Text className="text-base text-neutral-900 dark:text-neutral-50">
+              {translate('community.filter_my_posts')}
+            </Text>
+            <Switch
+              value={mineOnly}
+              onValueChange={onMineOnlyChange}
+              accessibilityLabel={translate('community.filter_my_posts')}
+              accessibilityHint={translate('accessibility.common.toggle_hint')}
+              testID={`${testID}-mine-only`}
+            />
+          </View>
         </View>
 
         <View className="mt-6">

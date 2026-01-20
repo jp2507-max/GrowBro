@@ -7,6 +7,8 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import Animated, {
+  // @ts-ignore - Reanimated 4.x type exports issue
+  cancelAnimation,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
@@ -23,6 +25,7 @@ import {
   shouldAnimateIndicator,
   SLA_COLORS,
 } from '@/lib/moderation/sla-indicators';
+import { useReduceMotionEnabled } from '@/lib/strains/accessibility';
 import type { SLAStatus } from '@/types/moderation';
 
 type Props = {
@@ -40,9 +43,11 @@ export function SLABadge({ status, deadline, testID = 'sla-badge' }: Props) {
   const isOverdue = rawDelta <= 0;
   const shouldAnimate = shouldAnimateIndicator(status);
   const opacity = useSharedValue(1);
+  const reduceMotion = useReduceMotionEnabled();
 
   React.useEffect(() => {
-    if (!shouldAnimate) {
+    if (reduceMotion || !shouldAnimate) {
+      cancelAnimation(opacity);
       opacity.value = 1;
       return;
     }
@@ -55,7 +60,10 @@ export function SLABadge({ status, deadline, testID = 'sla-badge' }: Props) {
       -1,
       true
     );
-  }, [shouldAnimate]);
+    return () => {
+      cancelAnimation(opacity);
+    };
+  }, [reduceMotion, shouldAnimate, opacity]);
 
   const animatedStyle = useAnimatedStyle(() => {
     return { opacity: opacity.value };

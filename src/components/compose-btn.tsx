@@ -1,6 +1,7 @@
 import React from 'react';
 import Animated, {
   ReduceMotion,
+  useAnimatedReaction,
   useAnimatedStyle,
   useDerivedValue,
   useSharedValue,
@@ -36,21 +37,25 @@ export function ComposeBtn({
   );
 
   const collapseProgress = useSharedValue(0);
-  const collapseTarget = useSharedValue(0);
 
-  useDerivedValue(() => {
-    const nextTarget = isHiddenOrCollapsed.value ? 1 : 0;
-    if (collapseTarget.value !== nextTarget) {
-      collapseTarget.value = nextTarget;
-      collapseProgress.value = withTiming(nextTarget, {
-        duration: DURATION,
-        reduceMotion: ReduceMotion.System,
-      });
+  useAnimatedReaction(
+    () => isHiddenOrCollapsed.value,
+    (current: boolean, previous: boolean) => {
+      if (current !== previous) {
+        collapseProgress.value = withTiming(current ? 1 : 0, {
+          duration: DURATION,
+          reduceMotion: ReduceMotion.System,
+        });
+      }
     }
-  });
+  );
+
+  const clampedProgress = useDerivedValue(() =>
+    Math.min(Math.max(collapseProgress.value, 0), 1)
+  );
 
   const rContainerStyle = useAnimatedStyle(() => {
-    const clamped = Math.min(Math.max(collapseProgress.value, 0), 1);
+    const clamped = clampedProgress.value;
     const scaleX = 1 - (1 - COLLAPSED_SCALE_X) * clamped;
     const translateX = COLLAPSED_TRANSLATE_X * clamped;
     const translateY = netHeight * clamped;
@@ -68,7 +73,7 @@ export function ComposeBtn({
   }, [netHeight]);
 
   const rTextStyle = useAnimatedStyle(() => {
-    const clamped = Math.min(Math.max(collapseProgress.value, 0), 1);
+    const clamped = clampedProgress.value;
     return {
       opacity: 1 - clamped,
     };
@@ -87,6 +92,7 @@ export function ComposeBtn({
       accessibilityLabel={translate('community.create_post')}
       accessibilityHint={translate('accessibility.community.compose_hint')}
       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      testID="compose-btn"
     >
       <AnimatedText className="text-base text-primary-300" style={rTextStyle}>
         {translate('community.create_post')}

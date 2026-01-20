@@ -100,6 +100,26 @@ jest.mock('react-native-reanimated', () => {
   return mockReanimated;
 });
 
+// mock: react-native-worklets to avoid JSI dependencies in tests
+jest.mock('react-native-worklets', () => {
+  const scheduleOnRN = <Args extends unknown[], ReturnValue>(
+    fun: (...args: Args) => ReturnValue,
+    ...args: Args
+  ): ReturnValue => {
+    return fun(...args);
+  };
+  const scheduleOnUI = <Args extends unknown[], ReturnValue>(
+    fun: (...args: Args) => ReturnValue,
+    ...args: Args
+  ): ReturnValue => {
+    return fun(...args);
+  };
+  return {
+    scheduleOnRN: jest.fn(scheduleOnRN),
+    scheduleOnUI: jest.fn(scheduleOnUI),
+  };
+});
+
 // mock: animated-scroll-list-provider to avoid context dependency in tests
 jest.mock('@/lib/animations/animated-scroll-list-provider', () => ({
   useAnimatedScrollList: () => ({

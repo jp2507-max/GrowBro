@@ -93,7 +93,7 @@ export const Modal = React.forwardRef(
       detached = false,
       handleComponent: customHandleComponent,
       handleIndicatorStyle,
-      useGlassSurface = true,
+      useGlassSurface = false,
       glassSurfaceProps,
       ...props
     }: ModalProps,

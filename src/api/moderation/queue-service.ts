@@ -20,6 +20,28 @@ import type {
 } from '@/types/moderation';
 
 /**
+ * Extract error message from API response or fallback
+ */
+function extractErrorMessage(error: unknown, fallback: string): string {
+  if (
+    error &&
+    typeof error === 'object' &&
+    'response' in error &&
+    (error as { response?: { data?: unknown } }).response?.data &&
+    typeof (error as { response: { data: unknown } }).response.data ===
+      'object' &&
+    (error as { response: { data: Record<string, unknown> } }).response.data
+      ?.message
+  ) {
+    return String(
+      (error as { response: { data: Record<string, unknown> } }).response.data
+        .message
+    );
+  }
+  return error instanceof Error ? error.message : fallback;
+}
+
+/**
  * Transform ModerationQueueItem to QueuedReport for UI consumption
  */
 export function transformQueueItem(item: ModerationQueueItem): QueuedReport {
@@ -95,22 +117,7 @@ export async function claimReport(
       claim_expires_at: new Date(response.data.claim_expires_at),
     };
   } catch (error) {
-    const message =
-      error &&
-      typeof error === 'object' &&
-      'response' in error &&
-      (error as { response?: { data?: unknown } }).response?.data &&
-      typeof (error as { response: { data: unknown } }).response.data ===
-        'object' &&
-      (error as { response: { data: Record<string, unknown> } }).response.data
-        ?.message
-        ? String(
-            (error as { response: { data: Record<string, unknown> } }).response
-              .data.message
-          )
-        : error instanceof Error
-          ? error.message
-          : 'Failed to claim report';
+    const message = extractErrorMessage(error, 'Failed to claim report');
 
     return {
       success: false,
@@ -133,22 +140,7 @@ export async function releaseReport(
     });
     return { success: true };
   } catch (error) {
-    const message =
-      error &&
-      typeof error === 'object' &&
-      'response' in error &&
-      (error as { response?: { data?: unknown } }).response?.data &&
-      typeof (error as { response: { data: unknown } }).response.data ===
-        'object' &&
-      (error as { response: { data: Record<string, unknown> } }).response.data
-        ?.message
-        ? String(
-            (error as { response: { data: Record<string, unknown> } }).response
-              .data.message
-          )
-        : error instanceof Error
-          ? error.message
-          : 'Failed to release report';
+    const message = extractErrorMessage(error, 'Failed to release report');
     return { success: false, error: message };
   }
 }

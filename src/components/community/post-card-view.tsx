@@ -46,6 +46,7 @@ export type PostCardViewProps = {
   testID: string;
   handleAuthorPress: (e: PressEvent) => void;
   handleCommentPress: (e: PressEvent) => void;
+  onSharePress: (e: PressEvent) => void;
 };
 
 type PostCardBodyProps = {
@@ -54,16 +55,18 @@ type PostCardBodyProps = {
   displayUsername: string;
   allowSharedTransition: boolean;
   onCommentPress: (e: PressEvent) => void;
+  onSharePress: (e: PressEvent) => void;
   iconColor: string;
   testID: string;
 };
 
-function PostCardBody({
+const PostCardBody = React.memo(function PostCardBody({
   post,
   postId,
   displayUsername,
   allowSharedTransition,
   onCommentPress,
+  onSharePress,
   iconColor,
   testID,
 }: PostCardBodyProps): React.ReactElement {
@@ -90,6 +93,7 @@ function PostCardBody({
             userHasLiked={post.user_has_liked ?? false}
             commentCount={post.comment_count ?? 0}
             onCommentPress={onCommentPress}
+            onSharePress={onSharePress}
             iconColor={iconColor}
             testID={testID}
           />
@@ -110,12 +114,13 @@ function PostCardBody({
         userHasLiked={post.user_has_liked ?? false}
         commentCount={post.comment_count ?? 0}
         onCommentPress={onCommentPress}
+        onSharePress={onSharePress}
         iconColor={iconColor}
         testID={testID}
       />
     </View>
   );
-}
+});
 
 export function PostCardView({
   post,
@@ -128,6 +133,7 @@ export function PostCardView({
   testID,
   handleAuthorPress,
   handleCommentPress,
+  onSharePress,
 }: PostCardViewProps): React.ReactElement {
   const { colorScheme } = useColorScheme();
   const deleteMutation = useDeletePost();
@@ -189,6 +195,7 @@ export function PostCardView({
                   displayUsername={displayUsername}
                   allowSharedTransition={allowSharedTransition}
                   onCommentPress={handleCommentPress}
+                  onSharePress={onSharePress}
                   iconColor={iconColor}
                   testID={testID}
                 />

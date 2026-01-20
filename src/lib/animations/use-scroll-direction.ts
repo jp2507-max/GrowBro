@@ -21,31 +21,30 @@ export function useScrollDirection(param?: 'include-negative'): {
   const prevOffsetY = useSharedValue(0);
   const offsetYAnchorOnBeginDrag = useSharedValue(0);
   const offsetYAnchorOnChangeDirection = useSharedValue(0);
+  const includeNegative = param === 'include-negative';
 
-  const onBeginDrag = (e: ReanimatedScrollEvent) => {
+  const onBeginDrag = (e: ReanimatedScrollEvent): void => {
     'worklet';
     offsetYAnchorOnBeginDrag.value = e.contentOffset.y;
   };
 
-  const onScroll = (e: ReanimatedScrollEvent) => {
+  const onScroll = (e: ReanimatedScrollEvent): void => {
     'worklet';
     const offsetY = e.contentOffset.y;
-    const positiveOffsetY =
-      param === 'include-negative' ? offsetY : Math.max(offsetY, 0);
-    const positivePrevOffsetY =
-      param === 'include-negative'
-        ? prevOffsetY.value
-        : Math.max(prevOffsetY.value, 0);
+    const positiveOffsetY = includeNegative ? offsetY : Math.max(offsetY, 0);
+    const positivePrevOffsetY = includeNegative
+      ? prevOffsetY.value
+      : Math.max(prevOffsetY.value, 0);
+    const delta = positivePrevOffsetY - positiveOffsetY;
 
     if (
-      positivePrevOffsetY - positiveOffsetY < 0 &&
+      delta < 0 &&
       (scrollDirection.value === 'idle' || scrollDirection.value === 'to-top')
     ) {
       scrollDirection.value = 'to-bottom';
       offsetYAnchorOnChangeDirection.value = offsetY;
-    }
-    if (
-      positivePrevOffsetY - positiveOffsetY > 0 &&
+    } else if (
+      delta > 0 &&
       (scrollDirection.value === 'idle' ||
         scrollDirection.value === 'to-bottom')
     ) {
@@ -55,12 +54,12 @@ export function useScrollDirection(param?: 'include-negative'): {
     prevOffsetY.value = offsetY;
   };
 
-  const onEndDrag = () => {
+  const onEndDrag = (): void => {
     'worklet';
     prevOffsetY.value = 0;
   };
 
-  const reset = () => {
+  const reset = (): void => {
     'worklet';
     scrollDirection.value = 'idle';
     prevOffsetY.value = 0;
@@ -69,7 +68,7 @@ export function useScrollDirection(param?: 'include-negative'): {
   };
 
   // JS thread version - shared value assignments are thread-safe
-  const resetFromJS = () => {
+  const resetFromJS = (): void => {
     scrollDirection.value = 'idle';
     prevOffsetY.value = 0;
     offsetYAnchorOnBeginDrag.value = 0;

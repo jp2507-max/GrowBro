@@ -6,7 +6,7 @@ import type { EdgeInsets } from 'react-native-safe-area-context';
 
 import { GlassSurface } from '@/components/shared/glass-surface';
 import { GlassButton, Text, View } from '@/components/ui';
-import colors from '@/components/ui/colors';
+import uiColors from '@/components/ui/colors';
 import { PlatformIcon, Settings as SettingsIcon } from '@/components/ui/icons';
 import { translate } from '@/lib/i18n';
 import type { TxKeyPath } from '@/lib/i18n/utils';
@@ -153,7 +153,7 @@ export function HeaderSettingsButton(): React.ReactElement {
       <PlatformIcon
         iosName="gearshape"
         size={20}
-        color={colors.white}
+        color={uiColors.white}
         className="text-white"
         fallback={<SettingsIcon />}
       />

@@ -19,7 +19,7 @@ export type PhotoCaptureProps = {
   onPhotoCaptured?: (photoVariant: PhotoVariants) => void;
   onError?: (error: Error) => void;
   disabled?: boolean;
-  buttonText?: string;
+  buttonTextKey?: string;
 };
 
 type PhotoCaptureState = {
@@ -103,7 +103,7 @@ type CaptureButtonProps = {
   onPress: () => void;
   disabled: boolean;
   isProcessing: boolean;
-  buttonText?: string;
+  buttonTextKey?: string;
   t: (key: string) => string;
 };
 
@@ -111,7 +111,7 @@ function CaptureButton({
   onPress,
   disabled,
   isProcessing,
-  buttonText,
+  buttonTextKey,
   t,
 }: CaptureButtonProps): React.ReactElement {
   return (
@@ -131,7 +131,9 @@ function CaptureButton({
         </View>
       ) : (
         <Text>
-          {buttonText ? t(buttonText) : t('harvest.photo.actions.add_photo')}
+          {buttonTextKey
+            ? t(buttonTextKey)
+            : t('harvest.photo.actions.add_photo')}
         </Text>
       )}
     </Button>
@@ -209,7 +211,7 @@ export function PhotoCapture({
   onPhotoCaptured,
   onError,
   disabled = false,
-  buttonText,
+  buttonTextKey,
 }: PhotoCaptureProps): React.ReactElement {
   const { t } = useTranslation();
   const [state, setState] = usePhotoCaptureState();
@@ -229,7 +231,7 @@ export function PhotoCapture({
         onPress={showPhotoOptions}
         disabled={disabled || state.isProcessing}
         isProcessing={state.isProcessing}
-        buttonText={buttonText}
+        buttonTextKey={buttonTextKey}
         t={t}
       />
       {state.error && (

@@ -63,7 +63,9 @@ function resolveResource(
   // Handle i18next plural forms (one/other structure)
   if (cur && typeof cur === 'object' && 'one' in cur && 'other' in cur) {
     const pluralObj = cur as { one: string; other: string };
-    const count = (opts as Record<string, unknown>)?.count;
+    const rawCount = (opts as Record<string, unknown>)?.count;
+    let count = Number(rawCount);
+    if (Number.isNaN(count)) count = 0;
     // Use 'one' for count === 1, 'other' for all other values
     return count === 1 ? pluralObj.one : pluralObj.other;
   }

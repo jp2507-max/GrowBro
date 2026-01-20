@@ -4,6 +4,7 @@ import Animated, {
   ReduceMotion,
   useAnimatedStyle,
   useSharedValue,
+  withSequence,
   withSpring,
 } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
@@ -94,17 +95,17 @@ export const FavoriteButton = React.memo<Props>(
 
     const handlePress = React.useCallback((): void => {
       // Animation
-      scale.value = withSpring(
-        0.8,
-        { damping: 10, stiffness: 400, reduceMotion: ReduceMotion.System },
-        () => {
-          'worklet';
-          scale.value = withSpring(1, {
-            damping: 10,
-            stiffness: 400,
-            reduceMotion: ReduceMotion.System,
-          });
-        }
+      scale.value = withSequence(
+        withSpring(0.8, {
+          damping: 10,
+          stiffness: 400,
+          reduceMotion: ReduceMotion.System,
+        }),
+        withSpring(1, {
+          damping: 10,
+          stiffness: 400,
+          reduceMotion: ReduceMotion.System,
+        })
       );
 
       // Trigger parent callback

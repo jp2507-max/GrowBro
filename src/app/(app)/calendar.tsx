@@ -171,6 +171,7 @@ function useCalendarData(
   const rangeEndMillis = range.end.toMillis();
 
   const loadData = useCallback(async () => {
+    if (!isEnabled) return;
     // Increment request ID for this new call
     const currentRequestId = ++requestIdRef.current;
     setIsLoading(true);
@@ -214,7 +215,7 @@ function useCalendarData(
         setIsLoading(false);
       }
     }
-  }, [rangeStartMillis, rangeEndMillis, selectedDayMillis]);
+  }, [isEnabled, rangeStartMillis, rangeEndMillis, selectedDayMillis]);
 
   // Debounced version of loadData to prevent redundant fetches during rapid date changes
   const debouncedLoadData = useMemo(() => debounce(loadData, 300), [loadData]);

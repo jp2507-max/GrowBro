@@ -48,8 +48,7 @@ export function ComplianceBanner({
     <Animated.View
       exiting={FadeOut.duration(200)
         .reduceMotion(ReduceMotion.System)
-        .withCallback((finished: boolean) => {
-          'worklet';
+        .withCallback((finished: boolean): void => {
           if (finished) {
             scheduleOnRN(setIsDismissed, true);
           }

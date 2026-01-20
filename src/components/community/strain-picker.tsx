@@ -37,11 +37,6 @@ function hexToRgb(hex: string): RgbColor {
   return { r, g, b };
 }
 
-function rgbaFromRgb(rgb: RgbColor, alpha: number): string {
-  'worklet';
-  return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`;
-}
-
 const listContentStyle = { gap: 8, paddingBottom: 20 };
 const PRIMARY_500 = colors.primary[500];
 const PRIMARY_500_RGB = hexToRgb(PRIMARY_500);
@@ -105,7 +100,7 @@ function StrainOption({
   }));
 
   const animatedBgStyle = useAnimatedStyle(() => ({
-    backgroundColor: rgbaFromRgb(PRIMARY_500_RGB, bgOpacity.value),
+    backgroundColor: `rgba(${PRIMARY_500_RGB.r}, ${PRIMARY_500_RGB.g}, ${PRIMARY_500_RGB.b}, ${bgOpacity.value})`,
   }));
 
   React.useEffect(() => {

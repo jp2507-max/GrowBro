@@ -11,6 +11,7 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from 'react-native-reanimated';
+import { scheduleOnUI } from 'react-native-worklets';
 
 import { Pressable, Text, View } from '@/components/ui';
 import colors from '@/components/ui/colors';
@@ -212,6 +213,12 @@ export function WeekStrip({
   const { width: screenWidth } = useWindowDimensions();
   const hasScrolledRef = React.useRef(false);
   const [isLayoutReady, setIsLayoutReady] = React.useState(false);
+  const scrollToWeek = React.useCallback(
+    (x: number, animated: boolean): void => {
+      scrollTo(scrollViewRef, x, 0, animated);
+    },
+    [scrollViewRef]
+  );
 
   // Anchor week is stable - only shifts when selected date goes outside buffer range
   const [anchorWeekStart, setAnchorWeekStart] = React.useState(() =>
@@ -255,10 +262,16 @@ export function WeekStrip({
         Math.min(targetWeekIndex, TOTAL_WEEKS - 1)
       );
       const scrollX = clampedIndex * screenWidth;
-      scrollTo(scrollViewRef, scrollX, 0, hasScrolledRef.current);
+      scheduleOnUI(scrollToWeek, scrollX, hasScrolledRef.current);
       hasScrolledRef.current = true;
     }
-  }, [selectedWeekOffset, screenWidth, isLayoutReady, scrollViewRef]);
+  }, [
+    selectedWeekOffset,
+    screenWidth,
+    isLayoutReady,
+    scrollToWeek,
+    scrollViewRef,
+  ]);
 
   return (
     <Animated.ScrollView

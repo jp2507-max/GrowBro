@@ -740,6 +740,10 @@ let pendingChangesCountCache: { value: number; computedAt: number } | null =
   null;
 let pendingChangesCountPromise: Promise<number> | null = null;
 
+export function invalidatePendingChangesCountCache(): void {
+  pendingChangesCountCache = null;
+}
+
 export async function getPendingChangesCount(): Promise<number> {
   const now = Date.now();
   if (
@@ -1626,6 +1630,9 @@ export async function synchronize(): Promise<SyncResult> {
   // 4) Differentially re-plan notifications if tasks changed
   await updateNotificationsForChangedTasks(changedTaskIds);
 
+  // 5) Invalidate pending changes count cache after successful sync
+  invalidatePendingChangesCountCache();
+
   return { pushed, applied, serverTimestamp };
 }
 
@@ -1641,14 +1648,13 @@ export async function runSyncWithRetry(
   const trigger: SyncTrigger = options.trigger ?? 'auto';
   let lastError: unknown = null;
 
-  const disabledUntilMs = getSyncDisabledUntilMs();
-  if (disabledUntilMs !== null && disabledUntilMs > nowMs()) {
-    throw new Error('sync disabled (cooldown active)');
-  }
-
   getSyncState().setSyncInFlight(true);
   try {
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const disabledUntilMs = getSyncDisabledUntilMs();
+      if (disabledUntilMs !== null && disabledUntilMs > nowMs()) {
+        throw new Error('sync disabled (cooldown active)');
+      }
       const attemptStart = nowMs();
       try {
         const result = await synchronize();

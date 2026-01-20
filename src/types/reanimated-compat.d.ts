@@ -15,6 +15,7 @@ declare module 'react-native-reanimated' {
   export const useAnimatedStyle: (...args: any[]) => any;
   export const useDerivedValue: (...args: any[]) => any;
   export const useSharedValue: <T>(v: T) => { value: T };
+  export const useAnimatedReaction: (...args: any[]) => any;
   export const useAnimatedScrollHandler: (...args: any[]) => any;
   export const useComposedEventHandler: (...args: any[]) => any;
   export const withSpring: (...args: any[]) => any;

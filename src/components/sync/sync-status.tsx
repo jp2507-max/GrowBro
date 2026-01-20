@@ -40,6 +40,7 @@ export function SyncStatus({
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
     let appStateSub: ReturnType<typeof AppState.addEventListener> | null = null;
     let pollToken = 0;
+    let refreshAfterInteractionsTask: { cancel: () => void } | null = null;
 
     const refresh = async (): Promise<void> => {
       const token = pollToken;
@@ -57,9 +58,11 @@ export function SyncStatus({
 
     const refreshAfterInteractions = async (): Promise<void> => {
       await new Promise<void>((resolve) => {
-        InteractionManager.runAfterInteractions(() => {
-          void refresh().finally(resolve);
-        });
+        refreshAfterInteractionsTask = InteractionManager.runAfterInteractions(
+          () => {
+            void refresh().finally(resolve);
+          }
+        );
       });
     };
 
@@ -97,6 +100,7 @@ export function SyncStatus({
     return () => {
       isMounted = false;
       pollToken += 1;
+      refreshAfterInteractionsTask?.cancel?.();
       if (timeoutId) {
         clearTimeout(timeoutId);
         timeoutId = null;

@@ -445,6 +445,7 @@ function createRealtimeHandlers(
         table: 'posts',
         cache: postsCache,
         outbox,
+        onInvalidate: () => invalidatePostsQueries(queryClient),
       } as EventHandlerOptions<Post>);
     },
     onCommentChange: async (event: RealtimeEvent<PostComment>) => {
@@ -513,7 +514,10 @@ function setupPollingMonitor(
  * }
  * ```
  */
-function useReconciliationTimer(reconcile: () => void) {
+function useReconciliationTimer(reconcile: () => void): {
+  startReconciliation: () => void;
+  stopReconciliation: () => void;
+} {
   const reconciliationTimerRef = React.useRef<ReturnType<
     typeof setInterval
   > | null>(null);
@@ -540,40 +544,6 @@ function useReconciliationTimer(reconcile: () => void) {
   }, []);
 
   return { startReconciliation, stopReconciliation };
-}
-
-function usePollingEffect(isPolling: boolean, invalidate: () => void) {
-  const pollingIntervalRef = React.useRef<ReturnType<
-    typeof setInterval
-  > | null>(null);
-
-  React.useEffect(() => {
-    if (isPolling) {
-      // Clear any existing polling interval before creating a new one
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
-      }
-
-      // Start new 30s polling interval
-      pollingIntervalRef.current = setInterval(() => {
-        invalidate();
-      }, 30000);
-    } else {
-      // Clear polling interval when not polling
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
-        pollingIntervalRef.current = null;
-      }
-    }
-
-    // Cleanup on unmount or when isPolling changes
-    return () => {
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
-        pollingIntervalRef.current = null;
-      }
-    };
-  }, [isPolling, invalidate]);
 }
 
 function useDeferredCommunityFeedInvalidation(
@@ -629,7 +599,6 @@ export function useCommunityFeedRealtime(options: RealtimeOptions) {
   const { startReconciliation, stopReconciliation } = useReconciliationTimer(
     invalidateCommunityFeed
   );
-  usePollingEffect(enabled && isPolling, invalidateCommunityFeed);
 
   React.useEffect(() => {
     if (enabled) return;

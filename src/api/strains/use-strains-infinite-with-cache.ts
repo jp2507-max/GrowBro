@@ -63,8 +63,9 @@ const CACHE_WRITE_QUEUE: CacheWriteQueueState = {
   queued: new Map<string, CacheWriteTask>(),
 };
 
-function trimCacheQueueToMaxSize(): void {
-  while (CACHE_WRITE_QUEUE.queued.size > CACHE_WRITE_QUEUE_MAX_SIZE) {
+function ensureCacheQueueHasSpaceFor(key: string): void {
+  if (CACHE_WRITE_QUEUE.queued.has(key)) return;
+  while (CACHE_WRITE_QUEUE.queued.size >= CACHE_WRITE_QUEUE_MAX_SIZE) {
     const firstKey = CACHE_WRITE_QUEUE.queued.keys().next().value as
       | string
       | undefined;
@@ -105,9 +106,24 @@ function scheduleCacheFlush(): void {
 }
 
 function enqueueCacheWrite(task: CacheWriteTask): void {
-  CACHE_WRITE_QUEUE.queued.set(createCacheWriteKey(task), task);
-  trimCacheQueueToMaxSize();
+  const key = createCacheWriteKey(task);
+  ensureCacheQueueHasSpaceFor(key);
+  CACHE_WRITE_QUEUE.queued.set(key, task);
   scheduleCacheFlush();
+}
+
+function cancelScheduledCacheFlush(): void {
+  const scheduled = CACHE_WRITE_QUEUE.scheduled;
+  if (!scheduled) return;
+  if ('cancel' in scheduled) {
+    scheduled.cancel();
+  }
+  CACHE_WRITE_QUEUE.scheduled = null;
+}
+
+function resetCacheWriteQueue(): void {
+  cancelScheduledCacheFlush();
+  CACHE_WRITE_QUEUE.queued.clear();
 }
 
 type PageParamShape = { index: number; cursor?: string };
@@ -302,6 +318,7 @@ export function useClearExpiredCache() {
   return async () => {
     const repo = getCacheRepository();
     const cleared = await repo.clearExpiredCache();
+    resetCacheWriteQueue();
     console.info(`[useClearExpiredCache] Cleared ${cleared} expired entries`);
     await queryClient.invalidateQueries({ queryKey: ['strains-with-cache'] });
     return cleared;
@@ -314,6 +331,7 @@ export function useClearAllCache() {
   return async () => {
     const repo = getCacheRepository();
     const cleared = await repo.clearAllCache();
+    resetCacheWriteQueue();
     console.info(`[useClearAllCache] Cleared ${cleared} cache entries`);
     await queryClient.invalidateQueries({ queryKey: ['strains-with-cache'] });
     return cleared;
@@ -337,4 +355,10 @@ export function useOfflineAwareStrains(
     isOffline,
     isUsingCache,
   };
+}
+
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    resetCacheWriteQueue();
+  });
 }

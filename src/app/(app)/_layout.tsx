@@ -62,7 +62,7 @@ function useSplashScreenHide() {
  */
 const SF_SYMBOLS = {
   home: { default: 'house', selected: 'house.fill' },
-  calendar: { default: 'calendar', selected: 'calendar' },
+  calendar: { default: 'calendar', selected: 'calendar.circle.fill' },
   community: {
     default: 'bubble.left.and.bubble.right',
     selected: 'bubble.left.and.bubble.right.fill',

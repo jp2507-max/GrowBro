@@ -80,6 +80,11 @@ type MetricsState = {
   cleanupUiMonitor: (() => void) | undefined;
 };
 
+/**
+ * Delay used to defer non-critical work (like notification rehydration) until after
+ * the initial UI render and critical startup tasks are complete.
+ * Default is 5 seconds.
+ */
 const STARTUP_NOTIFICATION_REHYDRATE_DELAY_MS = 5000;
 
 function createMetricsManager(start: number) {
@@ -262,10 +267,15 @@ function startRootInitialization(
     // succeeded so the prompt can show localized strings.
     svc = getTaskNotificationService();
     if (i18nInitSucceeded && !isFirstTime) void svc.requestPermissions();
-    if (notificationRehydrateTimeoutId)
+    // Clear any pending rehydration
+    if (notificationRehydrateTimeoutId) {
       clearTimeout(notificationRehydrateTimeoutId);
+    }
+    if (notificationRehydrateTask) {
+      notificationRehydrateTask.cancel?.();
+      notificationRehydrateTask = null;
+    }
     notificationRehydrateTimeoutId = setTimeout(() => {
-      notificationRehydrateTask?.cancel?.();
       notificationRehydrateTask = InteractionManager.runAfterInteractions(
         () => {
           if (!isMounted) return;

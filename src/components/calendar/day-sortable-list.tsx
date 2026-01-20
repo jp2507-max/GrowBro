@@ -4,7 +4,6 @@ import { StyleSheet } from 'react-native';
 import Animated from 'react-native-reanimated';
 import type { SortableGridRenderItem } from 'react-native-sortables';
 import Sortable from 'react-native-sortables';
-import { scheduleOnRN } from 'react-native-worklets';
 
 import type { Task } from '@/types/calendar';
 
@@ -81,11 +80,10 @@ export function DaySortableList({
       indexToKey: string[];
       keyToIndex: Record<string, number>;
       data: Task[];
-    }) => {
-      'worklet';
+    }): void => {
       // Call the provided onDragEnd handler if present
       if (onDragEnd) {
-        scheduleOnRN(onDragEnd, {
+        onDragEnd({
           key: params.key,
           fromIndex: params.fromIndex,
           toIndex: params.toIndex,

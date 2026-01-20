@@ -516,7 +516,6 @@ export default function StrainDetailsScreen(): React.ReactElement {
   });
 
   const navButtonsStyle = useAnimatedStyle(() => {
-    'worklet';
     // Clamp scroll value to [0, 200] range for opacity calculation
     const clampedScroll = Math.min(Math.max(scrollY.value, 0), 200);
     // Map 0-200 scroll to 1-0 opacity

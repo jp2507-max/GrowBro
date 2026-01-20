@@ -129,8 +129,8 @@ Source of truth for practices: `.codex/skills/animation-performance/SKILL.md`, `
 
 ## “Done” checklist
 
-- [ ] No `runOnJS` usage in app code (or justified exceptions).
-- [ ] No cross-thread scheduling from per-frame callbacks unless gated + throttled and strictly necessary.
-- [ ] Scroll-driven animations don’t construct timing/spring animations inside per-frame style worklets.
-- [ ] ESLint worklet rule correctly detects `scheduleOnUI` + RNGH gesture callbacks.
-- [ ] Reduced motion reliably disables infinite-loop animations.
+- [x] No `runOnJS` usage in app code (or justified exceptions).
+- [x] No cross-thread scheduling from per-frame callbacks unless gated + throttled and strictly necessary.
+- [x] Scroll-driven animations don’t construct timing/spring animations inside per-frame style worklets.
+- [x] ESLint worklet rule correctly detects `scheduleOnUI` + RNGH gesture callbacks.
+- [x] Reduced motion reliably disables infinite-loop animations.

@@ -18,6 +18,7 @@ export type PostCardActionBarProps = {
   userHasLiked: boolean;
   commentCount: number;
   onCommentPress: (e: PressEvent) => void;
+  onSharePress: (e: PressEvent) => void;
   iconColor: string;
   testID: string;
 };
@@ -28,6 +29,7 @@ export function PostCardActionBar({
   userHasLiked,
   commentCount,
   onCommentPress,
+  onSharePress,
   iconColor,
   testID,
 }: PostCardActionBarProps) {
@@ -70,8 +72,10 @@ export function PostCardActionBar({
         accessibilityRole="button"
         accessibilityLabel={translate('accessibility.community.share')}
         accessibilityHint={translate('accessibility.community.share_hint')}
+        onPress={onSharePress}
         className="p-1"
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        testID={`${testID}-share-button`}
       >
         <Share size={18} color={iconColor} />
       </Pressable>

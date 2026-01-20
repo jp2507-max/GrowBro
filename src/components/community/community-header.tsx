@@ -67,7 +67,7 @@ const SearchBarPlaceholder = React.memo(() => (
         iosName="magnifyingglass"
         size={20}
         color="rgba(255, 255, 255, 0.7)"
-        fallback={<Search />}
+        fallback={<Search color="rgba(255, 255, 255, 0.7)" />}
       />
       <Text className="flex-1 text-base font-medium text-white/60">
         {translate('community.search_placeholder')}
@@ -143,7 +143,7 @@ export function CommunityHeader({
                 iosName="line.3.horizontal.decrease.circle"
                 size={20}
                 color={colors.white}
-                fallback={<SlidersHorizontal />}
+                fallback={<SlidersHorizontal color={colors.white} />}
               />
             </GlassButton>
             {/* Active indicator dot */}

@@ -4,6 +4,7 @@ import {
   interpolate,
   // @ts-expect-error - Reanimated 4.x type exports issue
   interpolateColor,
+  ReduceMotion,
   type SharedValue,
   withSpring,
 } from 'react-native-reanimated';
@@ -47,7 +48,14 @@ function applySpring(value: number, opts?: SpringifyOptions): number {
   'worklet';
   const spring = opts?.spring ?? true;
   if (!spring || opts?.reduceMotion) return value;
-  return withSpring(value, opts?.springConfig ?? SPRING);
+  const springConfig = opts?.springConfig ?? SPRING;
+  if (springConfig.reduceMotion != null) {
+    return withSpring(value, springConfig);
+  }
+  return withSpring(value, {
+    ...springConfig,
+    reduceMotion: ReduceMotion.System,
+  });
 }
 
 export function indexInterpolate(params: InterpolateParams): number {

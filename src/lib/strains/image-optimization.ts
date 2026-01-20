@@ -29,7 +29,7 @@ function trimQueueToMaxSize(): void {
   }
 }
 
-function scheduleFlush(size: keyof typeof IMAGE_SIZES): void {
+function scheduleFlush(): void {
   if (PREFETCH_QUEUE.scheduled) return;
 
   PREFETCH_QUEUE.scheduled = InteractionManager.runAfterInteractions(() => {
@@ -48,7 +48,7 @@ function scheduleFlush(size: keyof typeof IMAGE_SIZES): void {
     }
 
     // If more remain, schedule another idle flush.
-    if (PREFETCH_QUEUE.queued.size > 0) scheduleFlush(size);
+    if (PREFETCH_QUEUE.queued.size > 0) scheduleFlush();
   });
 }
 
@@ -132,7 +132,7 @@ export async function prefetchStrainImages(
     for (const uri of optimizedUris) PREFETCH_QUEUE.queued.add(uri);
     trimQueueToMaxSize();
 
-    scheduleFlush(size);
+    scheduleFlush();
   } catch (error) {
     console.debug('[prefetchStrainImages] Prefetch failed:', error);
   }

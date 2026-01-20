@@ -41,8 +41,6 @@ type DotProps = {
 
 function Dot({ index, activeIndex }: DotProps): React.ReactElement {
   const rStyle = useAnimatedStyle(() => {
-    'worklet';
-
     const distance = Math.abs(activeIndex.value - index);
 
     // Width: morphs from circle (8px) to pill (24px) when active

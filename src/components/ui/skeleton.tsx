@@ -10,6 +10,8 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 import Animated, {
+  // @ts-ignore - Reanimated 4.x type exports issue
+  cancelAnimation,
   ReduceMotion,
   useAnimatedStyle,
   useSharedValue,
@@ -49,6 +51,7 @@ export function Skeleton({
   const reduceMotion = useReduceMotionEnabled();
 
   React.useEffect(() => {
+    cancelAnimation(opacity);
     if (reduceMotion) {
       opacity.value = 1;
       return;
@@ -69,6 +72,9 @@ export function Skeleton({
       -1, // Infinite repeat
       false
     );
+    return () => {
+      cancelAnimation(opacity);
+    };
   }, [opacity, reduceMotion]);
 
   const animatedStyle = useAnimatedStyle(() => ({

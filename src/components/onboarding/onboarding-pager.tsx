@@ -95,7 +95,6 @@ export function OnboardingPager({
       layoutMeasurement: { width: number };
       contentOffset: { x: number };
     }) => {
-      'worklet';
       const layoutWidth = event?.layoutMeasurement?.width ?? NaN;
       const offsetX = event?.contentOffset?.x ?? 0;
       if (!isFinite(layoutWidth) || isNaN(layoutWidth) || layoutWidth <= 0)

@@ -152,14 +152,7 @@ function useLoadConsents(
     return () => {
       mounted = false;
     };
-  }, [
-    isVisible,
-    setters,
-    setters.setTelemetry,
-    setters.setExperiments,
-    setters.setAiTraining,
-    setters.setCrashDiagnostics,
-  ]);
+  }, [isVisible, setters]);
 
   return loaded;
 }

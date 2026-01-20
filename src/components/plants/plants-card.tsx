@@ -363,8 +363,6 @@ export function PlantCard({
   }, [reduceMotionEnabled, reduceMotionShared]);
 
   const containerStyle = useAnimatedStyle(() => {
-    'worklet';
-
     if (reduceMotionShared.value === 1) {
       return { transform: [{ translateY: 0 }, { scale: 1 }] };
     }
