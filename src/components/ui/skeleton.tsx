@@ -10,7 +10,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 import Animated, {
-  // @ts-ignore - Reanimated 4.x type exports issue
+  // @ts-expect-error - Reanimated 4.x type exports issue
   cancelAnimation,
   ReduceMotion,
   useAnimatedStyle,
@@ -53,24 +53,26 @@ export function Skeleton({
   React.useEffect(() => {
     cancelAnimation(opacity);
     if (reduceMotion) {
-      opacity.value = 1;
+      opacity.set(1);
       return;
     }
 
     // Shimmer animation with Reduced Motion support
-    opacity.value = withRepeat(
-      withSequence(
-        withTiming(0.5, {
-          duration: motion.dur.lg,
-          reduceMotion: ReduceMotion.System,
-        }),
-        withTiming(1, {
-          duration: motion.dur.lg,
-          reduceMotion: ReduceMotion.System,
-        })
-      ),
-      -1, // Infinite repeat
-      false
+    opacity.set(
+      withRepeat(
+        withSequence(
+          withTiming(0.5, {
+            duration: motion.dur.lg,
+            reduceMotion: ReduceMotion.System,
+          }),
+          withTiming(1, {
+            duration: motion.dur.lg,
+            reduceMotion: ReduceMotion.System,
+          })
+        ),
+        -1, // Infinite repeat
+        false
+      )
     );
     return () => {
       cancelAnimation(opacity);
@@ -78,7 +80,7 @@ export function Skeleton({
   }, [opacity, reduceMotion]);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
+    opacity: opacity.get(),
   }));
 
   return (

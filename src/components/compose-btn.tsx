@@ -32,30 +32,32 @@ export function ComposeBtn({
 
   const isHiddenOrCollapsed = useDerivedValue(
     () =>
-      listOffsetY.value >= offsetYAnchorOnBeginDrag.value &&
-      scrollDirection.value === 'to-bottom'
+      listOffsetY.get() >= offsetYAnchorOnBeginDrag.get() &&
+      scrollDirection.get() === 'to-bottom'
   );
 
   const collapseProgress = useSharedValue(0);
 
   useAnimatedReaction(
-    () => isHiddenOrCollapsed.value,
-    (current: boolean, previous: boolean) => {
+    () => isHiddenOrCollapsed.get(),
+    (current: boolean, previous: boolean | null) => {
       if (current !== previous) {
-        collapseProgress.value = withTiming(current ? 1 : 0, {
-          duration: DURATION,
-          reduceMotion: ReduceMotion.System,
-        });
+        collapseProgress.set(
+          withTiming(current ? 1 : 0, {
+            duration: DURATION,
+            reduceMotion: ReduceMotion.System,
+          })
+        );
       }
     }
   );
 
   const clampedProgress = useDerivedValue(() =>
-    Math.min(Math.max(collapseProgress.value, 0), 1)
+    Math.min(Math.max(collapseProgress.get(), 0), 1)
   );
 
   const rContainerStyle = useAnimatedStyle(() => {
-    const clamped = clampedProgress.value;
+    const clamped = clampedProgress.get();
     const scaleX = 1 - (1 - COLLAPSED_SCALE_X) * clamped;
     const translateX = COLLAPSED_TRANSLATE_X * clamped;
     const translateY = netHeight * clamped;
@@ -73,7 +75,7 @@ export function ComposeBtn({
   }, [netHeight]);
 
   const rTextStyle = useAnimatedStyle(() => {
-    const clamped = clampedProgress.value;
+    const clamped = clampedProgress.get();
     return {
       opacity: 1 - clamped,
     };

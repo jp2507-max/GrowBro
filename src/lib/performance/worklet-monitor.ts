@@ -62,11 +62,11 @@ export function useGesturePerformanceTracker() {
   const trackGestureStart = useCallback(() => {
     'worklet';
     const now = performance.now();
-    startTimeShared.value = now;
-    latenciesShared.value = [];
-    latencySampleIndex.value = 0;
-    frameCountShared.value = 0;
-    droppedFramesShared.value = 0;
+    startTimeShared.set(now);
+    latenciesShared.set([]);
+    latencySampleIndex.set(0);
+    frameCountShared.set(0);
+    droppedFramesShared.set(0);
   }, [
     startTimeShared,
     latenciesShared,
@@ -77,30 +77,32 @@ export function useGesturePerformanceTracker() {
 
   const trackGestureUpdate = useCallback(() => {
     'worklet';
-    if (startTimeShared.value === 0) return;
+    const startTime = startTimeShared.get();
+    if (startTime === 0) return;
 
     const now = performance.now();
-    const latency = now - startTimeShared.value;
+    const latency = now - startTime;
 
-    frameCountShared.value += 1;
+    frameCountShared.set((value) => value + 1);
 
     // Frame budget is 16.7ms (60 FPS)
     if (latency > 16.7) {
-      droppedFramesShared.value += 1;
+      droppedFramesShared.set((value) => value + 1);
     }
 
-    latencySampleIndex.value =
-      (latencySampleIndex.value + 1) % GESTURE_SAMPLE_STRIDE;
-    if (latencySampleIndex.value === 0) {
-      const latencies = latenciesShared.value;
+    const nextSampleIndex =
+      (latencySampleIndex.get() + 1) % GESTURE_SAMPLE_STRIDE;
+    latencySampleIndex.set(nextSampleIndex);
+    if (nextSampleIndex === 0) {
+      const latencies = latenciesShared.get();
       const nextLatencies =
         latencies.length >= MAX_GESTURE_SAMPLES
           ? [...latencies.slice(1), latency]
           : [...latencies, latency];
-      latenciesShared.value = nextLatencies;
+      latenciesShared.set(nextLatencies);
     }
 
-    startTimeShared.value = now;
+    startTimeShared.set(now);
   }, [
     startTimeShared,
     latenciesShared,
@@ -111,11 +113,11 @@ export function useGesturePerformanceTracker() {
 
   const trackGestureEnd = useCallback(() => {
     'worklet';
-    startTimeShared.value = 0;
+    startTimeShared.set(0);
   }, [startTimeShared]);
 
   const getLatencyMetrics = useCallback((): GestureLatencyMetrics | null => {
-    const latencies = latenciesShared.value;
+    const latencies = latenciesShared.get();
     if (latencies.length === 0) {
       return null;
     }
@@ -127,24 +129,24 @@ export function useGesturePerformanceTracker() {
       startTime: 0,
       endTime: 0,
       latency: avgLatency,
-      droppedFrames: droppedFramesShared.value,
+      droppedFrames: droppedFramesShared.get(),
     };
   }, [latenciesShared, droppedFramesShared]);
 
   const getMetrics = useCallback((): WorkletPerformanceMetrics => {
     return calculatePerformanceMetrics(
-      latenciesShared.value,
-      frameCountShared.value,
-      droppedFramesShared.value
+      latenciesShared.get(),
+      frameCountShared.get(),
+      droppedFramesShared.get()
     );
   }, [latenciesShared, frameCountShared, droppedFramesShared]);
 
   const reset = useCallback(() => {
-    latenciesShared.value = [];
-    latencySampleIndex.value = 0;
-    frameCountShared.value = 0;
-    droppedFramesShared.value = 0;
-    startTimeShared.value = 0;
+    latenciesShared.set([]);
+    latencySampleIndex.set(0);
+    frameCountShared.set(0);
+    droppedFramesShared.set(0);
+    startTimeShared.set(0);
   }, [
     startTimeShared,
     latenciesShared,
@@ -175,20 +177,21 @@ export function useWorkletExecutionMonitor() {
 
   const startMeasurement = useCallback(() => {
     'worklet';
-    startTime.value = performance.now();
+    startTime.set(performance.now());
   }, [startTime]);
 
   const endMeasurement = useCallback(() => {
     'worklet';
-    if (startTime.value === 0) return;
+    const startedAt = startTime.get();
+    if (startedAt === 0) return;
 
-    const duration = performance.now() - startTime.value;
-    executionTimes.value = [...executionTimes.value, duration].slice(-50);
-    startTime.value = 0;
+    const duration = performance.now() - startedAt;
+    executionTimes.set([...executionTimes.get(), duration].slice(-50));
+    startTime.set(0);
   }, [executionTimes, startTime]);
 
   const getExecutionMetrics = useCallback(() => {
-    const times = executionTimes.value;
+    const times = executionTimes.get();
     if (times.length === 0) {
       return {
         average: 0,
@@ -274,28 +277,30 @@ export function useFrameDropTracker(): {
     'worklet';
     const now = performance.now();
 
-    if (lastFrameTime.value > 0) {
-      const frameDuration = now - lastFrameTime.value;
-      totalFrames.value += 1;
+    const previousFrameTime = lastFrameTime.get();
+    if (previousFrameTime > 0) {
+      const frameDuration = now - previousFrameTime;
+      totalFrames.set((value) => value + 1);
 
       // Frame budget is 16.7ms (60 FPS)
       if (frameDuration > 16.7) {
-        frameDropCount.value += 1;
+        frameDropCount.set((value) => value + 1);
       }
     }
 
-    lastFrameTime.value = now;
+    lastFrameTime.set(now);
   }, [frameDropCount, totalFrames, lastFrameTime]);
 
   const getDropPercentage = useCallback((): number => {
-    if (totalFrames.value === 0) return 0;
-    return (frameDropCount.value / totalFrames.value) * 100;
+    const frames = totalFrames.get();
+    if (frames === 0) return 0;
+    return (frameDropCount.get() / frames) * 100;
   }, [frameDropCount, totalFrames]);
 
   const reset = useCallback(() => {
-    frameDropCount.value = 0;
-    totalFrames.value = 0;
-    lastFrameTime.value = 0;
+    frameDropCount.set(0);
+    totalFrames.set(0);
+    lastFrameTime.set(0);
   }, [frameDropCount, totalFrames, lastFrameTime]);
 
   return {

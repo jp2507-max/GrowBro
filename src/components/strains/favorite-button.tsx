@@ -75,6 +75,12 @@ const HeartIconSimple = ({ filled }: { filled: boolean }) => (
   </Svg>
 );
 
+const PRESS_SPRING_CONFIG = {
+  damping: 10,
+  stiffness: 400,
+  reduceMotion: ReduceMotion.System,
+};
+
 export const FavoriteButton = React.memo<Props>(
   ({
     isFavorite,
@@ -88,24 +94,18 @@ export const FavoriteButton = React.memo<Props>(
 
     const animatedStyle = useAnimatedStyle(
       () => ({
-        transform: [{ scale: scale.value }],
+        transform: [{ scale: scale.get() }],
       }),
       []
     );
 
     const handlePress = React.useCallback((): void => {
       // Animation
-      scale.value = withSequence(
-        withSpring(0.8, {
-          damping: 10,
-          stiffness: 400,
-          reduceMotion: ReduceMotion.System,
-        }),
-        withSpring(1, {
-          damping: 10,
-          stiffness: 400,
-          reduceMotion: ReduceMotion.System,
-        })
+      scale.set(
+        withSequence(
+          withSpring(0.8, PRESS_SPRING_CONFIG),
+          withSpring(1, PRESS_SPRING_CONFIG)
+        )
       );
 
       // Trigger parent callback

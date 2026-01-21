@@ -24,17 +24,19 @@ export const ExpandableSection = React.memo<Props>(
     const toggleExpanded = React.useCallback((): void => {
       setIsExpanded((prev) => {
         const next = !prev;
-        rotation.value = withTiming(next ? 180 : 0, {
-          duration: 200,
-          reduceMotion: ReduceMotion.System,
-        });
+        rotation.set(
+          withTiming(next ? 180 : 0, {
+            duration: 200,
+            reduceMotion: ReduceMotion.System,
+          })
+        );
         return next;
       });
     }, [rotation]);
 
     const chevronStyle = useAnimatedStyle(
       () => ({
-        transform: [{ rotate: `${rotation.value}deg` }],
+        transform: [{ rotate: `${rotation.get()}deg` }],
       }),
       []
     );

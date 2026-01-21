@@ -14,7 +14,7 @@ declare module 'react-native-reanimated' {
   export const runOnJS: (...args: any[]) => any;
   export const useAnimatedStyle: (...args: any[]) => any;
   export const useDerivedValue: (...args: any[]) => any;
-  export const useSharedValue: <T>(v: T) => { value: T };
+  export const useSharedValue: <T>(v: T) => SharedValue<T>;
   export const useAnimatedReaction: (...args: any[]) => any;
   export const useAnimatedScrollHandler: (...args: any[]) => any;
   export const useComposedEventHandler: (...args: any[]) => any;
@@ -37,7 +37,11 @@ declare module 'react-native-reanimated' {
   };
 
   // Minimal type aliases used by the codebase
-  export type SharedValue<T> = { value: T };
+  export type SharedValue<T> = {
+    value: T;
+    get: () => T;
+    set: (value: T | ((value: T) => T)) => void;
+  };
   export type AnimatedStyle = any;
 
   export function createAnimatedComponent<P>(

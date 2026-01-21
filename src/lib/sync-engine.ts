@@ -195,7 +195,9 @@ function setSyncDisabled(untilMs: number, reason: string): void {
   try {
     void setItem(SYNC_DISABLED_UNTIL_KEY, untilMs);
     void setItem(SYNC_DISABLED_REASON_KEY, reason);
-  } catch {}
+  } catch (err) {
+    console.warn('[Sync] Failed to persist sync disabled state:', err);
+  }
 }
 
 // Exposed UI flags - backed by Zustand store

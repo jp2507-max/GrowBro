@@ -189,21 +189,25 @@ const Option = React.memo(
     const scale = useSharedValue(1);
 
     const animatedStyle = useAnimatedStyle(() => ({
-      transform: [{ scale: scale.value }],
+      transform: [{ scale: scale.get() }],
     }));
 
     const handlePressIn = React.useCallback((): void => {
-      scale.value = withTiming(0.97, {
-        duration: 100,
-        reduceMotion: ReduceMotion.System,
-      });
+      scale.set(
+        withTiming(0.97, {
+          duration: 100,
+          reduceMotion: ReduceMotion.System,
+        })
+      );
     }, [scale]);
 
     const handlePressOut = React.useCallback((): void => {
-      scale.value = withTiming(1, {
-        duration: 150,
-        reduceMotion: ReduceMotion.System,
-      });
+      scale.set(
+        withTiming(1, {
+          duration: 150,
+          reduceMotion: ReduceMotion.System,
+        })
+      );
     }, [scale]);
 
     return (

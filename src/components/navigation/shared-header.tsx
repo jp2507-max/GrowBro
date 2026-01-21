@@ -141,24 +141,26 @@ function useSharedHeaderAnimation({
     const baseHeight =
       SHARED_TAB_HEIGHTS[routeKey] ?? SHARED_TAB_HEIGHTS[DEFAULT_ROUTE_KEY];
     const target = baseHeight + insetsTop + HEADER_TOP_SPACING;
-    height.value = withSpring(target, motion.spring.header);
+    height.set(withSpring(target, motion.spring.header));
   }, [height, insetsTop, routeKey]);
 
   // Update header position based on scroll
   useDerivedValue(() => {
     if (!isCollapsible) {
-      translateY.value = 0;
+      translateY.set(0);
       return;
     }
     const currentHeight =
       SHARED_TAB_HEIGHTS[routeKey] ?? SHARED_TAB_HEIGHTS[DEFAULT_ROUTE_KEY];
     const maxOffset = currentHeight + HEADER_TOP_SPACING + insetsTop;
-    const anchor = Math.max(offsetYAnchorOnBeginDrag.value, 0);
-    const delta = Math.max(listOffsetY.value - anchor, 0);
-    translateY.value =
-      scrollDirection.value === 'to-bottom'
+    const anchor = Math.max(offsetYAnchorOnBeginDrag.get(), 0);
+    const offset = listOffsetY.get();
+    const delta = Math.max(offset - anchor, 0);
+    translateY.set(
+      scrollDirection.get() === 'to-bottom'
         ? -Math.min(delta, maxOffset)
-        : -Math.max(maxOffset - listOffsetY.value, 0);
+        : -Math.max(maxOffset - offset, 0)
+    );
   }, [
     insetsTop,
     isCollapsible,
@@ -170,9 +172,9 @@ function useSharedHeaderAnimation({
 
   const animatedContainerStyle = useAnimatedStyle(
     () => ({
-      height: height.value,
-      transform: [{ translateY: translateY.value }],
-      opacity: isCollapsible ? 1 + translateY.value / (height.value || 1) : 1,
+      height: height.get(),
+      transform: [{ translateY: translateY.get() }],
+      opacity: isCollapsible ? 1 + translateY.get() / (height.get() || 1) : 1,
     }),
     [isCollapsible]
   );

@@ -46,10 +46,10 @@ export function AnimatedScrollListProvider({
 
   const enableAutoScrollLock = React.useCallback(
     (durationMs = 300) => {
-      listPointerEvents.value = false;
+      listPointerEvents.set(false);
       if (pointerLockTimeout.current) clearTimeout(pointerLockTimeout.current);
       pointerLockTimeout.current = setTimeout(() => {
-        listPointerEvents.value = true;
+        listPointerEvents.set(true);
         pointerLockTimeout.current = null;
       }, durationMs);
     },
@@ -65,10 +65,10 @@ export function AnimatedScrollListProvider({
 
   // Reset scroll state - shared value assignments are thread-safe from JS
   const resetScrollState = React.useCallback(() => {
-    listOffsetY.value = 0;
-    isDragging.value = false;
-    velocityOnEndDrag.value = 0;
-    listPointerEvents.value = true;
+    listOffsetY.set(0);
+    isDragging.set(false);
+    velocityOnEndDrag.set(0);
+    listPointerEvents.set(true);
     scrollDir.resetFromJS();
   }, [
     listOffsetY,
@@ -80,23 +80,23 @@ export function AnimatedScrollListProvider({
 
   const scrollHandler = useAnimatedScrollHandler({
     onBeginDrag: (e: ReanimatedScrollEvent) => {
-      isDragging.value = true;
-      listPointerEvents.value = true;
-      velocityOnEndDrag.value = 0;
+      isDragging.set(true);
+      listPointerEvents.set(true);
+      velocityOnEndDrag.set(0);
       scrollDir.onBeginDrag(e);
     },
     onScroll: (e: ReanimatedScrollEvent) => {
-      listOffsetY.value = e.contentOffset.y;
+      listOffsetY.set(e.contentOffset.y);
       scrollDir.onScroll(e);
     },
     onEndDrag: (e: ReanimatedScrollEvent) => {
-      isDragging.value = false;
-      velocityOnEndDrag.value = e.velocity?.y ?? 0;
+      isDragging.set(false);
+      velocityOnEndDrag.set(e.velocity?.y ?? 0);
       scrollDir.onEndDrag();
     },
     onMomentumEnd: () => {
-      velocityOnEndDrag.value = 0;
-      listPointerEvents.value = true;
+      velocityOnEndDrag.set(0);
+      listPointerEvents.set(true);
     },
   });
 

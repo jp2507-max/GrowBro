@@ -188,24 +188,28 @@ export function DayTaskRowComponent({
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
+    transform: [{ scale: scale.get() }],
   }));
 
   const handlePressIn = React.useCallback(() => {
     haptics.selection();
-    scale.value = withSpring(0.97, {
-      damping: 10,
-      stiffness: 300,
-      reduceMotion: ReduceMotion.System,
-    });
+    scale.set(
+      withSpring(0.97, {
+        damping: 10,
+        stiffness: 300,
+        reduceMotion: ReduceMotion.System,
+      })
+    );
   }, [scale]);
 
   const handlePressOut = React.useCallback(() => {
-    scale.value = withSpring(1, {
-      damping: 10,
-      stiffness: 300,
-      reduceMotion: ReduceMotion.System,
-    });
+    scale.set(
+      withSpring(1, {
+        damping: 10,
+        stiffness: 300,
+        reduceMotion: ReduceMotion.System,
+      })
+    );
   }, [scale]);
 
   const handlePress = React.useCallback(() => {

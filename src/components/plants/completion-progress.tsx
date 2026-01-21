@@ -27,15 +27,17 @@ export function CompletionProgress({
   const progressValue = useSharedValue(0);
 
   React.useEffect(() => {
-    progressValue.value = withTiming(Math.min(100, Math.max(0, progress)), {
-      duration: 400,
-      reduceMotion: ReduceMotion.System,
-    });
+    progressValue.set(
+      withTiming(Math.min(100, Math.max(0, progress)), {
+        duration: 400,
+        reduceMotion: ReduceMotion.System,
+      })
+    );
   }, [progress, progressValue]);
 
   const progressStyle = useAnimatedStyle(() => {
     // Direct calculation: (progressValue / 100) * PROGRESS_BAR_WIDTH
-    const widthValue = (progressValue.value / 100) * PROGRESS_BAR_WIDTH;
+    const widthValue = (progressValue.get() / 100) * PROGRESS_BAR_WIDTH;
     return {
       width: widthValue,
     };

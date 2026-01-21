@@ -27,16 +27,16 @@ function extractErrorMessage(error: unknown, fallback: string): string {
     error &&
     typeof error === 'object' &&
     'response' in error &&
-    (error as { response?: { data?: unknown } }).response?.data &&
-    typeof (error as { response: { data: unknown } }).response.data ===
-      'object' &&
-    (error as { response: { data: Record<string, unknown> } }).response.data
-      ?.message
+    (error as { response?: { data?: unknown } }).response?.data
   ) {
-    return String(
-      (error as { response: { data: Record<string, unknown> } }).response.data
-        .message
-    );
+    const data = (error as { response: { data: unknown } }).response.data;
+    if (typeof data === 'string') return data;
+    if (data && typeof data === 'object') {
+      const message =
+        (data as { message?: unknown }).message ??
+        (data as { error?: { message?: unknown } }).error?.message;
+      if (message) return String(message);
+    }
   }
   return error instanceof Error ? error.message : fallback;
 }

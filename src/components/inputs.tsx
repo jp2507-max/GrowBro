@@ -75,17 +75,16 @@ const RadioExample = () => {
 const SwitchExample = () => {
   const [active, setActive] = React.useState(false);
   return (
-    <Switch.Root
-      checked={active}
-      onChange={setActive}
-      accessibilityLabel={translate('inputs.switch_label' as TxKeyPath)}
-      accessibilityHint={translate(
-        'accessibility.common.toggle_hint' as TxKeyPath
-      )}
-      className="pb-2"
-    >
-      <Switch.Icon checked={active} />
-      <Switch.Label text={translate('inputs.switch_label' as TxKeyPath)} />
-    </Switch.Root>
+    <View className="flex-row items-center justify-between pb-2">
+      <Title text={translate('inputs.switch_label' as TxKeyPath)} />
+      <Switch
+        value={active}
+        onValueChange={setActive}
+        accessibilityLabel={translate('inputs.switch_label' as TxKeyPath)}
+        accessibilityHint={translate(
+          'accessibility.common.toggle_hint' as TxKeyPath
+        )}
+      />
+    </View>
   );
 };

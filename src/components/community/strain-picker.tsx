@@ -96,38 +96,46 @@ function StrainOption({
   const bgOpacity = useSharedValue(0);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
+    transform: [{ scale: scale.get() }],
   }));
 
   const animatedBgStyle = useAnimatedStyle(() => ({
-    backgroundColor: `rgba(${PRIMARY_500_RGB.r}, ${PRIMARY_500_RGB.g}, ${PRIMARY_500_RGB.b}, ${bgOpacity.value})`,
+    backgroundColor: `rgba(${PRIMARY_500_RGB.r}, ${PRIMARY_500_RGB.g}, ${PRIMARY_500_RGB.b}, ${bgOpacity.get()})`,
   }));
 
   React.useEffect(() => {
-    scale.value = 1;
-    bgOpacity.value = 0;
+    scale.set(1);
+    bgOpacity.set(0);
   }, [bgOpacity, scale, strain.id]);
 
   const handlePressIn = React.useCallback((): void => {
-    scale.value = withTiming(0.97, {
-      duration: 100,
-      reduceMotion: ReduceMotion.System,
-    });
-    bgOpacity.value = withTiming(0.08, {
-      duration: 100,
-      reduceMotion: ReduceMotion.System,
-    });
+    scale.set(
+      withTiming(0.97, {
+        duration: 100,
+        reduceMotion: ReduceMotion.System,
+      })
+    );
+    bgOpacity.set(
+      withTiming(0.08, {
+        duration: 100,
+        reduceMotion: ReduceMotion.System,
+      })
+    );
   }, [scale, bgOpacity]);
 
   const handlePressOut = React.useCallback((): void => {
-    scale.value = withTiming(1, {
-      duration: 150,
-      reduceMotion: ReduceMotion.System,
-    });
-    bgOpacity.value = withTiming(0, {
-      duration: 150,
-      reduceMotion: ReduceMotion.System,
-    });
+    scale.set(
+      withTiming(1, {
+        duration: 150,
+        reduceMotion: ReduceMotion.System,
+      })
+    );
+    bgOpacity.set(
+      withTiming(0, {
+        duration: 150,
+        reduceMotion: ReduceMotion.System,
+      })
+    );
   }, [scale, bgOpacity]);
 
   const handlePress = React.useCallback(() => {

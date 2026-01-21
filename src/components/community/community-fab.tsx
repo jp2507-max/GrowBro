@@ -72,31 +72,35 @@ export function CommunityFab({
   const isHelpMode = mode === 'help';
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
+    transform: [{ scale: scale.get() }],
   }));
 
   const handlePressIn = React.useCallback(() => {
-    scale.value = withSpring(0.85, {
-      damping: 12,
-      stiffness: 450,
-      reduceMotion: ReduceMotion.System,
-    });
+    scale.set(
+      withSpring(0.85, {
+        damping: 12,
+        stiffness: 450,
+        reduceMotion: ReduceMotion.System,
+      })
+    );
   }, [scale]);
 
   const handlePressOut = React.useCallback(() => {
-    scale.value = withSequence(
-      withSpring(1.08, {
-        damping: 8,
-        stiffness: 350,
-        reduceMotion: ReduceMotion.System,
-      }),
-      withDelay(
-        80,
-        withSpring(1, {
-          damping: 10,
-          stiffness: 300,
+    scale.set(
+      withSequence(
+        withSpring(1.08, {
+          damping: 8,
+          stiffness: 350,
           reduceMotion: ReduceMotion.System,
-        })
+        }),
+        withDelay(
+          80,
+          withSpring(1, {
+            damping: 10,
+            stiffness: 300,
+            reduceMotion: ReduceMotion.System,
+          })
+        )
       )
     );
   }, [scale]);

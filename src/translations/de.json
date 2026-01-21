@@ -92,6 +92,7 @@
       "opens_screen_hint": "Öffnet den {{label}}-Bildschirm.",
       "refresh_hint": "Aktualisiert den aktuellen Inhalt.",
       "reset_date_hint": "Löscht das ausgewählte Datum.",
+      "retry": "Wiederholen",
       "retry_hint": "Wiederholt die letzte Aktion.",
       "return_to_previous": "Kehrt zum vorherigen Bildschirm zurück",
       "saves_changes": "Speichert deine Änderungen",
@@ -229,6 +230,13 @@
         "syncing_title": "Einstellungen werden synchronisiert..."
       },
       "clear_logs_hint": "Löscht das Sync-Diagnoseprotokoll.",
+      "status": {
+        "error": "Synchronisierungsfehler",
+        "offline": "Offline",
+        "offline_pending": "Offline ({{count}})",
+        "retry_button_label": "Synchronisation wiederholen",
+        "syncing": "Synchronisiert..."
+      },
       "sync_failed": "Synchronisierung fehlgeschlagen",
       "sync_now_hint": "Startet sofort eine manuelle Synchronisierung.",
       "syncing": "Synchronisiert..."
@@ -1985,6 +1993,7 @@
     },
     "reports_per_month": "Meldungen/Monat",
     "sla": {
+      "accessibilityHint": "Status der Service-Level-Vereinbarung",
       "status": {
         "critical": "ÜBERFÄLLIG",
         "green": "Im Zeitplan",
@@ -3929,8 +3938,12 @@
     "status": {
       "active": "Aktuell",
       "completed": "✓ Abgeschlossen",
+      "error": "Sync Fehler",
+      "offline": "Offline",
+      "offline_pending": "Offline ({{count}})",
       "overdue": "Überfällig",
       "pending": "Ausstehend",
+      "retry_button_label": "Sync wiederholen",
       "syncing": "Synchronisiert...",
       "upcoming": "Bevorstehend"
     },

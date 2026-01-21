@@ -20,7 +20,7 @@ export type InterpolateOptions = {
 export type SpringifyOptions = {
   spring?: boolean;
   springConfig?: WithSpringConfig;
-  reduceMotion?: boolean;
+  skipAnimation?: boolean;
 };
 
 type InterpolateParams = {
@@ -47,7 +47,7 @@ type CrossfadeParams = {
 function applySpring(value: number, opts?: SpringifyOptions): number {
   'worklet';
   const spring = opts?.spring ?? true;
-  if (!spring || opts?.reduceMotion) return value;
+  if (!spring || opts?.skipAnimation) return value;
   const springConfig = opts?.springConfig ?? SPRING;
   if (springConfig.reduceMotion != null) {
     return withSpring(value, springConfig);

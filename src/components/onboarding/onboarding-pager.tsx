@@ -99,7 +99,7 @@ export function OnboardingPager({
       const offsetX = event?.contentOffset?.x ?? 0;
       if (!isFinite(layoutWidth) || isNaN(layoutWidth) || layoutWidth <= 0)
         return;
-      activeIndex.value = offsetX / layoutWidth;
+      activeIndex.set(offsetX / layoutWidth);
     },
   });
 

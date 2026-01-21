@@ -16,7 +16,7 @@ const CustomCellRendererComponent = memo(({ children, ...props }: Props) => {
       {...props}
       onLayout={(e) => {
         // Capture this cell's top Y relative to the list content
-        itemY.value = e.nativeEvent.layout.y;
+        itemY.set(e.nativeEvent.layout.y);
         props.onLayout?.(e);
       }}
     >

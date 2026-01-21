@@ -171,7 +171,10 @@ function useCalendarData(
   const rangeEndMillis = range.end.toMillis();
 
   const loadData = useCallback(async () => {
-    if (!isEnabled) return;
+    if (!isEnabled) {
+      setIsLoading(false);
+      return;
+    }
     // Increment request ID for this new call
     const currentRequestId = ++requestIdRef.current;
     setIsLoading(true);

@@ -511,13 +511,13 @@ export default function StrainDetailsScreen(): React.ReactElement {
 
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event: { contentOffset: { y: number } }) => {
-      scrollY.value = event.contentOffset.y;
+      scrollY.set(event.contentOffset.y);
     },
   });
 
   const navButtonsStyle = useAnimatedStyle(() => {
     // Clamp scroll value to [0, 200] range for opacity calculation
-    const clampedScroll = Math.min(Math.max(scrollY.value, 0), 200);
+    const clampedScroll = Math.min(Math.max(scrollY.get(), 0), 200);
     // Map 0-200 scroll to 1-0 opacity
     const opacity = 1 - clampedScroll / 200;
     return { opacity };

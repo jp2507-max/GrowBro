@@ -154,7 +154,6 @@ export function HeaderSettingsButton(): React.ReactElement {
         iosName="gearshape"
         size={20}
         color={uiColors.white}
-        className="text-white"
         fallback={<SettingsIcon />}
       />
     </GlassButton>

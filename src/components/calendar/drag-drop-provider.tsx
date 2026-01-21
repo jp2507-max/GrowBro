@@ -132,7 +132,7 @@ function useListRefs(): {
   const registerViewportHeight = React.useCallback(
     (height: number): void => {
       viewportHeightRef.current = height;
-      viewportHeightShared.value = height;
+      viewportHeightShared.set(height);
     },
     [viewportHeightShared]
   );
@@ -544,7 +544,7 @@ export function useDragDrop(): DragContextValue {
         onDragUpdate: () => undefined,
         registerListRef: () => {},
         registerViewportHeight: () => {},
-        viewportHeightShared: { value: 0 },
+        viewportHeightShared: { value: 0, get: () => 0, set: () => {} },
         computeTargetDate: (d: Date) => d,
         updateCurrentOffset: () => {},
         undo: async () => {},

@@ -1,21 +1,22 @@
 import * as React from 'react';
-import type { StyleProp, ViewStyle } from 'react-native';
 import { StyleSheet, View } from 'react-native';
 
-import { GlassSurface } from '@/components/shared/glass-surface';
+import {
+  GlassSurface,
+  type GlassSurfaceProps,
+} from '@/components/shared/glass-surface';
 import { SHEET_BORDER_RADIUS } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 
-type GlassSheetContainerProps = {
+type GlassSheetContainerProps = Omit<GlassSurfaceProps, 'children'> & {
   children: React.ReactNode;
   className?: string;
-  style?: StyleProp<ViewStyle>;
-  testID?: string;
 };
 
 const styles = StyleSheet.create({
   surface: {
     borderRadius: SHEET_BORDER_RADIUS,
+    overflow: 'hidden',
   },
 });
 
@@ -24,6 +25,7 @@ export function GlassSheetContainer({
   className,
   style,
   testID,
+  ...surfaceProps
 }: GlassSheetContainerProps): React.ReactElement {
   return (
     <GlassSurface
@@ -31,6 +33,7 @@ export function GlassSheetContainer({
       style={[styles.surface, style]}
       fallbackClassName="bg-white dark:bg-charcoal-900"
       testID={testID}
+      {...surfaceProps}
     >
       <View className={cn('flex-1 px-4 pb-6', className)}>{children}</View>
     </GlassSurface>

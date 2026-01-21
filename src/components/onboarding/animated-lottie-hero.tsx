@@ -60,67 +60,75 @@ export function AnimatedLottieHero({
       cancelAnimation(scale);
       cancelAnimation(opacity);
       cancelAnimation(glowOpacity);
-      translateY.value = 0;
-      scale.value = 1;
-      opacity.value = 1;
-      glowOpacity.value = 0.2;
+      translateY.set(0);
+      scale.set(1);
+      opacity.set(1);
+      glowOpacity.set(0.2);
       return;
     }
 
     // Gentle fade in
-    opacity.value = withTiming(1, {
-      duration: 600,
-      easing: Easing.out(Easing.ease),
-      reduceMotion: ReduceMotion.System,
-    });
+    opacity.set(
+      withTiming(1, {
+        duration: 600,
+        easing: Easing.out(Easing.ease),
+        reduceMotion: ReduceMotion.System,
+      })
+    );
 
     // Soft entrance scale
-    scale.value = withSpring(1, {
-      damping: 20,
-      stiffness: 80,
-      mass: 1,
-      reduceMotion: ReduceMotion.System,
-    });
+    scale.set(
+      withSpring(1, {
+        damping: 20,
+        stiffness: 80,
+        mass: 1,
+        reduceMotion: ReduceMotion.System,
+      })
+    );
 
     // Gentle continuous float animation
-    translateY.value = withDelay(
-      400,
-      withRepeat(
-        withSequence(
-          withTiming(-6, {
-            duration: 2500,
-            easing: Easing.inOut(Easing.sin),
-            reduceMotion: ReduceMotion.System,
-          }),
-          withTiming(0, {
-            duration: 2500,
-            easing: Easing.inOut(Easing.sin),
-            reduceMotion: ReduceMotion.System,
-          })
-        ),
-        -1,
-        false
+    translateY.set(
+      withDelay(
+        400,
+        withRepeat(
+          withSequence(
+            withTiming(-6, {
+              duration: 2500,
+              easing: Easing.inOut(Easing.sin),
+              reduceMotion: ReduceMotion.System,
+            }),
+            withTiming(0, {
+              duration: 2500,
+              easing: Easing.inOut(Easing.sin),
+              reduceMotion: ReduceMotion.System,
+            })
+          ),
+          -1,
+          false
+        )
       )
     );
 
     // Pulsing glow
-    glowOpacity.value = withDelay(
-      500,
-      withRepeat(
-        withSequence(
-          withTiming(0.4, {
-            duration: 2000,
-            easing: Easing.inOut(Easing.ease),
-            reduceMotion: ReduceMotion.System,
-          }),
-          withTiming(0.2, {
-            duration: 2000,
-            easing: Easing.inOut(Easing.ease),
-            reduceMotion: ReduceMotion.System,
-          })
-        ),
-        -1,
-        false
+    glowOpacity.set(
+      withDelay(
+        500,
+        withRepeat(
+          withSequence(
+            withTiming(0.4, {
+              duration: 2000,
+              easing: Easing.inOut(Easing.ease),
+              reduceMotion: ReduceMotion.System,
+            }),
+            withTiming(0.2, {
+              duration: 2000,
+              easing: Easing.inOut(Easing.ease),
+              reduceMotion: ReduceMotion.System,
+            })
+          ),
+          -1,
+          false
+        )
       )
     );
 
@@ -133,12 +141,12 @@ export function AnimatedLottieHero({
   }, [reduceMotion, translateY, scale, opacity, glowOpacity]);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-    transform: [{ translateY: translateY.value }, { scale: scale.value }],
+    opacity: opacity.get(),
+    transform: [{ translateY: translateY.get() }, { scale: scale.get() }],
   }));
 
   const glowStyle = useAnimatedStyle(() => ({
-    opacity: glowOpacity.value,
+    opacity: glowOpacity.get(),
   }));
 
   // Theme-aware glow color

@@ -48,17 +48,19 @@ export function SLABadge({ status, deadline, testID = 'sla-badge' }: Props) {
   React.useEffect(() => {
     if (reduceMotion || !shouldAnimate) {
       cancelAnimation(opacity);
-      opacity.value = 1;
+      opacity.set(1);
       return;
     }
 
-    opacity.value = withRepeat(
-      withSequence(
-        withTiming(1, withRM({ duration: 500 })),
-        withTiming(0.6, withRM({ duration: 500 }))
-      ),
-      -1,
-      true
+    opacity.set(
+      withRepeat(
+        withSequence(
+          withTiming(1, withRM({ duration: 500 })),
+          withTiming(0.6, withRM({ duration: 500 }))
+        ),
+        -1,
+        true
+      )
     );
     return () => {
       cancelAnimation(opacity);
@@ -66,14 +68,14 @@ export function SLABadge({ status, deadline, testID = 'sla-badge' }: Props) {
   }, [reduceMotion, shouldAnimate, opacity]);
 
   const animatedStyle = useAnimatedStyle(() => {
-    return { opacity: opacity.value };
+    return { opacity: opacity.get() };
   });
 
   return (
     <Animated.View
       style={animatedStyle}
       accessibilityLabel={getSLAAccessibilityLabel(status, timeRemaining, t)}
-      accessibilityHint="Service level agreement status"
+      accessibilityHint={t('moderation.sla.accessibilityHint')}
       testID={testID}
     >
       <View

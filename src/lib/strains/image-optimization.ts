@@ -53,6 +53,16 @@ function scheduleFlush(): void {
 }
 
 /**
+ * Cancel all pending prefetches
+ * Call this when the strains screen unmounts or during rapid navigation
+ */
+export function cancelPendingPrefetches(): void {
+  PREFETCH_QUEUE.scheduled?.cancel();
+  PREFETCH_QUEUE.scheduled = null;
+  PREFETCH_QUEUE.queued.clear();
+}
+
+/**
  * BlurHash placeholder for strain images
  * Generic cannabis leaf pattern
  */
@@ -113,14 +123,15 @@ export function getOptimizedImageUri(
  * Prefetch images for visible-next items
  * Call this when items are about to become visible
  *
- * Optimized for fast scrolling:
- * - Larger batch size (6) for parallel prefetching
- * - No awaiting between batches for faster throughput
+ * Optimized for fast scrolling via idle-time queue:
+ * - Coalesces requests to avoid concurrent native prefetches
+ * - Processes batches after interactions complete
+ * - Returns immediately; prefetching happens asynchronously
  */
-export async function prefetchStrainImages(
+export function prefetchStrainImages(
   imageUris: string[],
   size: keyof typeof IMAGE_SIZES = 'thumbnail'
-): Promise<void> {
+): void {
   try {
     // Coalesce prefetch requests to avoid creating many concurrent native prefetches
     // during fast scrolling. Run after interactions to keep scrolling responsive.

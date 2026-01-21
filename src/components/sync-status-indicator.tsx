@@ -5,7 +5,7 @@
 
 import * as React from 'react';
 import Animated, {
-  // @ts-ignore - Reanimated 4.x type exports issue
+  // @ts-expect-error - Reanimated 4.x type exports issue
   cancelAnimation,
   ReduceMotion,
   useAnimatedStyle,
@@ -16,6 +16,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { Text, View } from '@/components/ui';
+import { translate, type TxKeyPath } from '@/lib/i18n/utils';
 import { useReduceMotionEnabled } from '@/lib/strains/accessibility';
 import type { SyncState } from '@/lib/sync/types';
 
@@ -30,21 +31,26 @@ const getStateConfig = (state: SyncState, pendingChanges: number) => {
     case 'syncing':
       return {
         icon: '⟳',
-        text: 'Syncing...',
+        text: translate('sync.status.syncing'),
         color: 'text-primary-600',
         bgColor: 'bg-primary-50',
       };
     case 'offline':
       return {
         icon: '⚠',
-        text: `Offline${pendingChanges > 0 ? ` (${pendingChanges})` : ''}`,
+        text:
+          pendingChanges > 0
+            ? translate('sync.status.offline_pending', {
+                count: pendingChanges,
+              })
+            : translate('sync.status.offline'),
         color: 'text-warning-600',
         bgColor: 'bg-warning-50',
       };
     case 'error':
       return {
         icon: '✕',
-        text: 'Sync Error',
+        text: translate('sync.status.error'),
         color: 'text-danger-600',
         bgColor: 'bg-danger-50',
       };
@@ -68,31 +74,35 @@ export function SyncStatusIndicator({
   React.useEffect(() => {
     cancelAnimation(opacity);
     if (reduceMotion) {
-      opacity.value = 1;
+      opacity.set(1);
       return;
     }
 
     if (state === 'syncing') {
       // Pulse animation when syncing
-      opacity.value = withRepeat(
-        withSequence(
-          withTiming(0.5, {
-            duration: 600,
-            reduceMotion: ReduceMotion.System,
-          }),
-          withTiming(1, {
-            duration: 600,
-            reduceMotion: ReduceMotion.System,
-          })
-        ),
-        -1,
-        true
+      opacity.set(
+        withRepeat(
+          withSequence(
+            withTiming(0.5, {
+              duration: 600,
+              reduceMotion: ReduceMotion.System,
+            }),
+            withTiming(1, {
+              duration: 600,
+              reduceMotion: ReduceMotion.System,
+            })
+          ),
+          -1,
+          true
+        )
       );
     } else {
-      opacity.value = withTiming(1, {
-        duration: 300,
-        reduceMotion: ReduceMotion.System,
-      });
+      opacity.set(
+        withTiming(1, {
+          duration: 300,
+          reduceMotion: ReduceMotion.System,
+        })
+      );
     }
     return () => {
       cancelAnimation(opacity);
@@ -100,7 +110,7 @@ export function SyncStatusIndicator({
   }, [state, opacity, reduceMotion]);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
+    opacity: opacity.get(),
   }));
 
   const config = getStateConfig(state, pendingChanges);
@@ -167,7 +177,9 @@ export function SyncStatusBanner({
         return {
           message:
             pendingChanges > 0
-              ? `You're offline. ${pendingChanges} change${pendingChanges > 1 ? 's' : ''} will sync when online.`
+              ? `You're offline. ${pendingChanges} change${
+                  pendingChanges > 1 ? 's' : ''
+                } will sync when online.`
               : "You're offline. Changes will sync when online.",
           bgColor: 'bg-warning-50',
           textColor: 'text-warning-900',
@@ -193,9 +205,11 @@ export function SyncStatusBanner({
           <Text
             className="ml-2 text-sm font-medium text-primary-600"
             onPress={onRetry}
-          >
-            Retry
-          </Text>
+            accessibilityRole="button"
+            accessibilityLabel={translate('sync.status.retry_button_label')}
+            accessibilityHint={translate('common.retry_hint' as TxKeyPath)}
+            tx="common.retry"
+          />
         )}
       </View>
     </View>

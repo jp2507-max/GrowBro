@@ -72,7 +72,10 @@ export function PostCardActionBar({
         accessibilityRole="button"
         accessibilityLabel={translate('accessibility.community.share')}
         accessibilityHint={translate('accessibility.community.share_hint')}
-        onPress={onSharePress}
+        onPress={(e) => {
+          e.stopPropagation();
+          onSharePress(e);
+        }}
         className="p-1"
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         testID={`${testID}-share-button`}

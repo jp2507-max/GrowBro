@@ -28,12 +28,12 @@ export function CaptureButton({
       <GlassSurface
         isInteractive
         style={styles.glassButton}
-        fallbackClassName="bg-white/20"
+        fallbackClassName="bg-white/20 dark:bg-charcoal-900/20"
       >
         <Button
           onPress={onPress}
           disabled={isCapturing}
-          className="size-20 items-center justify-center rounded-full bg-neutral-100"
+          className="size-20 items-center justify-center rounded-full bg-neutral-100 dark:bg-charcoal-900"
           testID="capture-button"
           accessibilityRole="button"
           accessibilityLabel={t('assessment.camera.actions.capture')}
@@ -49,7 +49,7 @@ export function CaptureButton({
               <ActivityIndicator size="small" color={colors.black} />
             </View>
           ) : (
-            <View className="size-16 rounded-full border-4 border-charcoal-950 bg-neutral-100" />
+            <View className="size-16 rounded-full border-4 border-charcoal-950 bg-neutral-100 dark:border-neutral-100 dark:bg-charcoal-900" />
           )}
         </Button>
       </GlassSurface>

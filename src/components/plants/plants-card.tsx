@@ -359,19 +359,20 @@ export function PlantCard({
   );
 
   React.useEffect(() => {
-    reduceMotionShared.value = reduceMotionEnabled ? 1 : 0;
+    reduceMotionShared.set(reduceMotionEnabled ? 1 : 0);
   }, [reduceMotionEnabled, reduceMotionShared]);
 
   const containerStyle = useAnimatedStyle(() => {
-    if (reduceMotionShared.value === 1) {
+    if (reduceMotionShared.get() === 1) {
       return { transform: [{ translateY: 0 }, { scale: 1 }] };
     }
 
-    const h = Math.max(measuredHeight.value, 1);
-    const start = effItemY.value - 1;
-    const mid = effItemY.value;
-    const end = effItemY.value + h;
-    const offset = listOffsetY.value;
+    const h = Math.max(measuredHeight.get(), 1);
+    const itemY = effItemY.get();
+    const start = itemY - 1;
+    const mid = itemY;
+    const end = itemY + h;
+    const offset = listOffsetY.get();
     const scaleProgress = Math.min(
       Math.max((offset - mid) / (end - mid), 0),
       1
@@ -385,11 +386,11 @@ export function PlantCard({
     (e: LayoutChangeEvent) => {
       const h = e.nativeEvent.layout.height;
       const y = e.nativeEvent.layout.y;
-      if (h && Math.abs(h - measuredHeight.value) > 0.5) {
-        measuredHeight.value = h;
+      if (h && Math.abs(h - measuredHeight.get()) > 0.5) {
+        measuredHeight.set(h);
       }
-      if (y !== localItemY.value) {
-        localItemY.value = y;
+      if (y !== localItemY.get()) {
+        localItemY.set(y);
       }
     },
     [measuredHeight, localItemY]

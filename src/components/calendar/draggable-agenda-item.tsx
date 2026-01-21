@@ -130,16 +130,17 @@ function useAutoScrollTrigger(viewportHeightShared: SharedValue<number>) {
 
   const maybeTriggerAutoScroll = React.useCallback(
     (absoluteY: number) => {
+      'worklet';
       const now = performance.now();
-      const viewportHeight = viewportHeightShared.value;
+      const viewportHeight = viewportHeightShared.get();
       const isNearEdge =
         viewportHeight > 0 &&
         (absoluteY < autoScrollEdgeThreshold ||
           absoluteY > viewportHeight - autoScrollEdgeThreshold);
-      if (isNearEdge && now - lastAutoScrollMs.value >= autoScrollThrottleMs) {
-        lastAutoScrollMs.value = now;
-        shouldTriggerAutoScrollShared.value = true;
-        lastAutoScrollYShared.value = absoluteY;
+      if (isNearEdge && now - lastAutoScrollMs.get() >= autoScrollThrottleMs) {
+        lastAutoScrollMs.set(now);
+        shouldTriggerAutoScrollShared.set(true);
+        lastAutoScrollYShared.set(absoluteY);
       }
     },
     [
@@ -169,12 +170,11 @@ function useAutoScrollReaction(params: {
     onDragUpdateJS,
   } = params;
   useAnimatedReaction(
-    () => shouldTriggerAutoScrollShared.value,
+    () => shouldTriggerAutoScrollShared.get(),
     (shouldTrigger: boolean) => {
       if (!shouldTrigger) return;
-      scheduleOnRN(onDragUpdateJS, lastAutoScrollYShared.value);
-      // eslint-disable-next-line react-compiler/react-compiler -- Reanimated shared values are mutable by design
-      shouldTriggerAutoScrollShared.value = false;
+      scheduleOnRN(onDragUpdateJS, lastAutoScrollYShared.get());
+      shouldTriggerAutoScrollShared.set(false);
     },
     [lastAutoScrollYShared, onDragUpdateJS, shouldTriggerAutoScrollShared]
   );
@@ -248,22 +248,21 @@ function useCreatePanGesture(options: {
         .activateAfterLongPress(180)
         .minDistance(1)
         .onStart(() => {
-          // eslint-disable-next-line react-compiler/react-compiler -- Reanimated shared values are mutable by design
-          tx.value = 0;
-          ty.value = 0;
-          originTimeAtDragStart.value = originTime.value;
-          lastAutoScrollMs.value = 0;
+          tx.set(0);
+          ty.set(0);
+          originTimeAtDragStart.set(originTime.get());
+          lastAutoScrollMs.set(0);
           scheduleOnRN(startDrag, task);
         })
         .onUpdate((e) => {
-          tx.value = e.translationX;
-          ty.value = e.translationY;
+          tx.set(e.translationX);
+          ty.set(e.translationY);
           maybeTriggerAutoScroll(e.absoluteY);
         })
         .onEnd(() => {
-          scheduleOnRN(onDropJS, originTimeAtDragStart.value, ty.value);
-          tx.value = withSpring(0);
-          ty.value = withSpring(0);
+          scheduleOnRN(onDropJS, originTimeAtDragStart.get(), ty.get());
+          tx.set(withSpring(0));
+          ty.set(withSpring(0));
         })
         .onFinalize(() => {
           scheduleOnRN(cancelDrag);
@@ -307,16 +306,17 @@ function useDragGesture(options: {
 
   const tx = useSharedValue(0);
   const ty = useSharedValue(0);
-  const originTime = useSharedValue(new Date(task.dueAtLocal).getTime());
-  const originTimeAtDragStart = useSharedValue(originTime.value);
+  const initialOriginTime = new Date(task.dueAtLocal).getTime();
+  const originTime = useSharedValue(initialOriginTime);
+  const originTimeAtDragStart = useSharedValue(initialOriginTime);
 
   React.useEffect(() => {
-    originTime.value = new Date(task.dueAtLocal).getTime();
+    originTime.set(new Date(task.dueAtLocal).getTime());
   }, [originTime, task.dueAtLocal]);
 
   const animatedStyle = useAnimatedStyle(
     () => ({
-      transform: [{ translateX: tx.value }, { translateY: ty.value }],
+      transform: [{ translateX: tx.get() }, { translateY: ty.get() }],
     }),
     []
   );

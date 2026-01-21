@@ -92,6 +92,7 @@
       "opens_screen_hint": "Opens the {{label}} screen.",
       "refresh_hint": "Refreshes the current content.",
       "reset_date_hint": "Clears the selected date.",
+      "retry": "Retry",
       "retry_hint": "Retries the last action.",
       "return_to_previous": "Returns to the previous screen",
       "saves_changes": "Saves your changes",
@@ -229,6 +230,13 @@
         "syncing_title": "Syncing your settings..."
       },
       "clear_logs_hint": "Clears the sync diagnostics log.",
+      "status": {
+        "error": "Sync Error",
+        "offline": "Offline",
+        "offline_pending": "Offline ({{count}})",
+        "retry_button_label": "Retry sync",
+        "syncing": "Syncing..."
+      },
       "sync_failed": "Sync failed",
       "sync_now_hint": "Starts a manual sync immediately.",
       "syncing": "Syncing..."
@@ -1985,6 +1993,7 @@
     },
     "reports_per_month": "Reports/Month",
     "sla": {
+      "accessibilityHint": "Service level agreement status",
       "status": {
         "critical": "OVERDUE",
         "green": "On Track",
@@ -3929,8 +3938,12 @@
     "status": {
       "active": "Current",
       "completed": "✓ Completed",
+      "error": "Sync Error",
+      "offline": "Offline",
+      "offline_pending": "Offline ({{count}})",
       "overdue": "Overdue",
       "pending": "Pending",
+      "retry_button_label": "Retry sync",
       "syncing": "Syncing...",
       "upcoming": "Upcoming"
     },

@@ -106,32 +106,38 @@ function DayPill({
   const selectedScale = useSharedValue(item.isSelected ? 1.08 : 1);
 
   React.useEffect(() => {
-    selectedScale.value = withSpring(item.isSelected ? 1.08 : 1, {
-      damping: 12,
-      stiffness: 180,
-      reduceMotion: ReduceMotion.System,
-    });
+    selectedScale.set(
+      withSpring(item.isSelected ? 1.08 : 1, {
+        damping: 12,
+        stiffness: 180,
+        reduceMotion: ReduceMotion.System,
+      })
+    );
   }, [item.isSelected, selectedScale]);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value * selectedScale.value }],
+    transform: [{ scale: scale.get() * selectedScale.get() }],
   }));
 
   const handlePressIn = React.useCallback(() => {
     haptics.selection();
-    scale.value = withSpring(0.92, {
-      damping: 10,
-      stiffness: 350,
-      reduceMotion: ReduceMotion.System,
-    });
+    scale.set(
+      withSpring(0.92, {
+        damping: 10,
+        stiffness: 350,
+        reduceMotion: ReduceMotion.System,
+      })
+    );
   }, [scale]);
 
   const handlePressOut = React.useCallback(() => {
-    scale.value = withSpring(1, {
-      damping: 10,
-      stiffness: 350,
-      reduceMotion: ReduceMotion.System,
-    });
+    scale.set(
+      withSpring(1, {
+        damping: 10,
+        stiffness: 350,
+        reduceMotion: ReduceMotion.System,
+      })
+    );
   }, [scale]);
 
   // Determine pill style based on state

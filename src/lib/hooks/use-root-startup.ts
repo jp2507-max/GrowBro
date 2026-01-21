@@ -298,9 +298,9 @@ function startRootInitialization(
       if (currentTz !== lastTz) {
         lastTz = currentTz;
         void svc?.rehydrateNotifications();
-        void import('@/lib/harvest/harvest-notification-service').then(
-          ({ rehydrateNotifications }) => rehydrateNotifications()
-        );
+        void import('@/lib/harvest/harvest-notification-service')
+          .then(({ rehydrateNotifications }) => rehydrateNotifications())
+          .catch(() => {});
       }
     };
     appStateSubscription = AppState.addEventListener(

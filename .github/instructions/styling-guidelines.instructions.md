@@ -8,33 +8,36 @@ applyTo: '**'
 
 ## Worklets — What runs on the UI thread
 
-- **Auto‑workletization**: callbacks passed to Reanimated APIs (`useAnimatedStyle`, `useDerivedValue`, gesture callbacks, entering/exiting/layout) run on the **UI runtime**.
-- **Avoid `'worklet'`** unless explicitly required; prefer auto‑workletization or `scheduleOnUI` (worklets plugin handles conversion). Use `'worklet'` only for imported/external functions or top‑level worklet utilities.
-- **`scheduleOnUI`**: inline callbacks are workletized automatically; external references still need `'worklet'` if they run on UI.
+- **Auto‑workletization**: callbacks passed to Reanimated APIs (`useAnimatedStyle`, `useDerivedValue`, `useAnimatedReaction`, gesture callbacks, entering/exiting/layout) run on the **UI runtime**. No `'worklet'` directive needed.
+- **Avoid `'worklet'`** in 99.9% of cases. The worklets plugin handles conversion automatically for Reanimated APIs and scheduling functions.
+- **`scheduleOnUI`/`scheduleOnRN`**: automatically convert function references to worklets. Define with `useCallback` and pass by reference—**no `'worklet'` directive needed**.
+- **When `'worklet'` IS needed**: Only when a function defined outside Reanimated APIs (e.g., with `useCallback`) is called **directly** inside a worklet context (gesture `.onUpdate()`, inside `useAnimatedStyle`, etc.), not through `scheduleOnUI`/`scheduleOnRN`.
 - **Never read** `.value` in React render; **derive inside worklets**. Assign to shared values; avoid deep object mutations.
-- **One write per frame**: don’t set the same shared value multiple times in a single tick.
+- **One write per frame**: don't set the same shared value multiple times in a single tick.
 - **No hooks in worklets**.
 
 ```ts
-// Auto‑workletized (UI thread)
+// ✅ Auto‑workletized - no 'worklet' needed
 const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
-// Imported function as worklet
-export function cardWorklet() {
-  'worklet';
-  return { opacity: 1 };
-}
+// ✅ scheduleOnUI - no 'worklet' needed
+const updateScale = useCallback(() => {
+  scale.set(withSpring(1.2));
+}, []);
+scheduleOnUI(updateScale);
 
-// Expression‑defined worklet
-const makeStyle = isOn
-  ? () => {
-      'worklet';
-      return { opacity: 1 };
-    }
-  : () => {
-      'worklet';
-      return { opacity: 0.5 };
-    };
+// ✅ 'worklet' IS needed - called directly in gesture context
+const checkThreshold = useCallback((y: number) => {
+  'worklet';
+  return y > 100;
+}, []);
+
+const gesture = Gesture.Pan().onUpdate((e) => {
+  if (checkThreshold(e.absoluteY)) {
+    // direct call in worklet
+    scale.set(1.2);
+  }
+});
 ```
 
 ---

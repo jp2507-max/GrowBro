@@ -120,7 +120,7 @@ function CaptureButton({
       disabled={disabled}
       variant="outline"
       className="min-h-[44px]"
-      accessibilityLabel={t('harvest.photo.actions.add_photo')}
+      accessibilityLabel={t(buttonTextKey ?? 'harvest.photo.actions.add_photo')}
       accessibilityHint={t('harvest.photo.choose_source')}
       testID="photo-capture-button"
     >
