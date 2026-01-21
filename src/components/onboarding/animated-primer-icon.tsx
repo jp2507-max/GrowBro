@@ -8,7 +8,6 @@ import { useColorScheme } from 'nativewind';
 import React from 'react';
 import { StyleSheet, type ViewStyle } from 'react-native';
 import Animated, {
-  // @ts-expect-error - Reanimated 4.x type exports issue
   cancelAnimation,
   Easing,
   ReduceMotion,

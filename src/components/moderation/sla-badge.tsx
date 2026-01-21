@@ -7,7 +7,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import Animated, {
-  // @ts-ignore - Reanimated 4.x type exports issue
   cancelAnimation,
   useAnimatedStyle,
   useSharedValue,

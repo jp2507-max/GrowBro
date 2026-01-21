@@ -1,6 +1,6 @@
 import type { JSX } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, StyleSheet } from 'react-native';
+import { ActivityIndicator, StyleSheet, useColorScheme } from 'react-native';
 
 import { GlassSurface } from '@/components/shared/glass-surface';
 import { Button, View } from '@/components/ui';
@@ -23,6 +23,9 @@ export function CaptureButton({
   isCapturing,
 }: CaptureButtonProps): JSX.Element {
   const { t } = useTranslation();
+  const colorScheme = useColorScheme();
+  const spinnerColor = colorScheme === 'dark' ? colors.white : colors.black;
+
   return (
     <View className="absolute inset-x-0 bottom-0 items-center pb-12">
       <GlassSurface
@@ -46,7 +49,7 @@ export function CaptureButton({
               accessibilityHint={t('assessment.camera.status.capturing_hint')}
               accessibilityRole="progressbar"
             >
-              <ActivityIndicator size="small" color={colors.black} />
+              <ActivityIndicator size="small" color={spinnerColor} />
             </View>
           ) : (
             <View className="size-16 rounded-full border-4 border-charcoal-950 bg-neutral-100 dark:border-neutral-100 dark:bg-charcoal-900" />

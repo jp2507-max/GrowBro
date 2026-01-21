@@ -50,8 +50,8 @@ function debounce<T extends (...args: unknown[]) => unknown>(
       clearTimeout(timeout);
       timeout = setTimeout(async () => {
         try {
-          const result = (await func(...args)) as ReturnType<T>;
-          resolve(result);
+          const result = await func(...args);
+          resolve(result as ReturnType<T>);
         } catch (error) {
           reject(error);
         }
@@ -142,7 +142,7 @@ function useCalendarData(
   taskCounts: Map<string, number>;
   plantMap: Map<string, PlantInfo>;
   isLoading: boolean;
-  refetch: () => Promise<void | Promise<void>>;
+  refetch: () => Promise<void>;
 } {
   const [tasks, setTasks] = useState<{ pending: Task[]; completed: Task[] }>({
     pending: [],
@@ -266,7 +266,7 @@ function useCalendarData(
     taskCounts,
     plantMap,
     isLoading,
-    refetch: debouncedLoadData,
+    refetch: loadData,
   };
 }
 

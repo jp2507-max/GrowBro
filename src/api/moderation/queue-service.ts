@@ -73,12 +73,20 @@ export async function getModeratorQueue(
   // TODO: Replace with actual Supabase query
   // This is a stub implementation for now
 
-  const response = await client.post<ModerationQueue>('/moderation/queue', {
-    moderator_id: moderatorId,
-    filters,
-  });
-
-  return response.data;
+  try {
+    const response = await client.post<ModerationQueue>('/moderation/queue', {
+      moderator_id: moderatorId,
+      filters,
+    });
+    return response.data;
+  } catch (error) {
+    const message = extractErrorMessage(
+      error,
+      'Failed to fetch moderation queue'
+    );
+    console.error('[getModeratorQueue] Error:', error);
+    throw new Error(message);
+  }
 }
 
 // TODO: Implement actual Supabase mutation instead of stub endpoint
@@ -118,6 +126,7 @@ export async function claimReport(
     };
   } catch (error) {
     const message = extractErrorMessage(error, 'Failed to claim report');
+    console.error('[claimReport] Error:', error);
 
     return {
       success: false,
@@ -220,11 +229,9 @@ export function getAggregatedReport(reports: QueuedReport[]): QueuedReport {
   );
 
   // TODO: Aggregate reporter count and store in metadata
+  // TODO: Store all reporter IDs in metadata if needed for aggregation
 
   return {
     ...primary,
-    // Override reporter count with aggregated value
-    reporter_id: primary.reporter_id,
-    // Store all reporter IDs in metadata if needed
   };
 }

@@ -276,6 +276,7 @@ function startRootInitialization(
       notificationRehydrateTask = null;
     }
     notificationRehydrateTimeoutId = setTimeout(() => {
+      if (!isMounted) return;
       notificationRehydrateTask = InteractionManager.runAfterInteractions(
         () => {
           if (!isMounted) return;

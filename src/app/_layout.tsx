@@ -5,11 +5,17 @@ import { Env } from '@env';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { DatabaseProvider } from '@nozbe/watermelondb/react';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import type { NavigationContainerRef } from '@react-navigation/native';
 import { ThemeProvider } from '@react-navigation/native';
 import * as Sentry from '@sentry/react-native';
 // Setup Buffer polyfill for React Native
 import { Buffer } from 'buffer';
-import { Stack, usePathname, useRouter } from 'expo-router';
+import {
+  Stack,
+  useNavigationContainerRef,
+  usePathname,
+  useRouter,
+} from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import React, { useEffect } from 'react';
 import { InteractionManager, StyleSheet, View } from 'react-native';
@@ -65,6 +71,7 @@ import { getReferencedPhotoUris } from '@/lib/media/photo-storage-helpers';
 import {
   initializeSentryPerformance,
   isSentryPerformanceInitialized,
+  registerNavigationContainer,
 } from '@/lib/performance';
 import {
   initializePrivacyConsent,
@@ -386,8 +393,10 @@ function RootLayout(): React.ReactElement {
   const [isAuthReady, setIsAuthReady] = React.useState(false);
   const [showConsent, setShowConsent] = React.useState(false);
   const hasHiddenSplashRef = React.useRef(false);
+  const hasRegisteredNavigationRef = React.useRef(false);
   const router = useRouter();
   const pathname = usePathname();
+  const navigationRef = useNavigationContainerRef();
 
   useRootStartup(setIsI18nReady, isFirstTime);
   useOfflineModeMonitor();
@@ -408,6 +417,22 @@ function RootLayout(): React.ReactElement {
   useAgeGateSession(ageGateStatus, sessionId);
   useConsentCheck(setShowConsent);
   usePhotoJanitorSetup(isI18nReady);
+
+  React.useEffect(() => {
+    if (
+      !isSentryPerformanceInitialized() ||
+      hasRegisteredNavigationRef.current
+    ) {
+      return;
+    }
+
+    if (!navigationRef) return;
+
+    registerNavigationContainer(
+      navigationRef as NavigationContainerRef<Record<string, unknown>>
+    );
+    hasRegisteredNavigationRef.current = true;
+  }, [navigationRef]);
 
   React.useEffect(() => {
     if (!isI18nReady || !isAuthReady || hasHiddenSplashRef.current) return;
@@ -589,6 +614,7 @@ function AppStack(): React.ReactElement {
       <Stack.Screen name="(app)" options={{ headerShown: false }} />
       <Stack.Screen name="(modals)" options={{ headerShown: false }} />
       <Stack.Screen name="sync-diagnostics" options={{ headerShown: false }} />
+      <Stack.Screen name="sentry-test" options={{ headerShown: false }} />
       <Stack.Screen name="plants" options={{ headerShown: false }} />
       <Stack.Screen name="age-gate" options={{ headerShown: false }} />
       <Stack.Screen name="onboarding" options={{ headerShown: false }} />

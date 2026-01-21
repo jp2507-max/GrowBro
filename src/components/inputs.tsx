@@ -1,7 +1,15 @@
 import React from 'react';
 
 import type { OptionType } from '@/components/ui';
-import { Checkbox, Input, Radio, Select, Switch, View } from '@/components/ui';
+import {
+  Checkbox,
+  Input,
+  Radio,
+  Select,
+  Switch,
+  Text,
+  View,
+} from '@/components/ui';
 import { translate, type TxKeyPath } from '@/lib';
 
 import { Title } from './title';
@@ -18,7 +26,7 @@ export const Inputs = () => {
     <>
       <Title text="Form" />
       <View>
-        <Input label="Default" placeholder="Lorem ipsum dolor sit amet" />
+        <Input label="Default" />
         <Input label="Error" error="This is a message error" />
         <Input label="Focused" />
         <Select
@@ -76,7 +84,7 @@ const SwitchExample = () => {
   const [active, setActive] = React.useState(false);
   return (
     <View className="flex-row items-center justify-between pb-2">
-      <Title text={translate('inputs.switch_label' as TxKeyPath)} />
+      <Text tx="inputs.switch_label" className="text-lg font-medium" />
       <Switch
         value={active}
         onValueChange={setActive}
@@ -84,6 +92,7 @@ const SwitchExample = () => {
         accessibilityHint={translate(
           'accessibility.common.toggle_hint' as TxKeyPath
         )}
+        testID="switch-example"
       />
     </View>
   );

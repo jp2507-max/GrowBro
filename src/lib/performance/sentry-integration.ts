@@ -5,6 +5,8 @@
 
 import { Env } from '@env';
 import * as Sentry from '@sentry/react-native';
+import { isRunningInExpoGo } from 'expo';
+import { Platform } from 'react-native';
 
 import { hasConsent } from '@/lib/privacy-consent';
 import { beforeBreadcrumbHook, beforeSendHook } from '@/lib/sentry-utils';
@@ -50,6 +52,7 @@ export function initializeSentryPerformance(): boolean {
   if (
     !disableObservability &&
     Env.SENTRY_ENABLE_REPLAY &&
+    Platform.OS !== 'ios' &&
     hasConsent('sessionReplay')
   ) {
     integrations.push(Sentry.mobileReplayIntegration());
@@ -61,8 +64,16 @@ export function initializeSentryPerformance(): boolean {
     ? 0
     : __DEV__
       ? SENTRY_PERFORMANCE_CONFIG.TRACES_SAMPLE_RATE_DEVELOPMENT
-      : SENTRY_PERFORMANCE_CONFIG.TRACES_SAMPLE_RATE_PRODUCTION;
-  const profilesSampleRate = disableObservability ? 0 : __DEV__ ? 1.0 : 0.1;
+      : Env.APP_ENV === 'staging'
+        ? SENTRY_PERFORMANCE_CONFIG.TRACES_SAMPLE_RATE_STAGING
+        : SENTRY_PERFORMANCE_CONFIG.TRACES_SAMPLE_RATE_PRODUCTION;
+  const profilesSampleRate = disableObservability
+    ? 0
+    : __DEV__
+      ? 1.0
+      : Env.APP_ENV === 'staging'
+        ? 0.25
+        : 0.1;
 
   Sentry.init({
     dsn: Env.SENTRY_DSN,
@@ -90,7 +101,7 @@ export function initializeSentryPerformance(): boolean {
     enableAutoSessionTracking: disableObservability
       ? false
       : SENTRY_PERFORMANCE_CONFIG.ENABLE_AUTO_INSTRUMENTATION,
-    enableNativeFramesTracking: true,
+    enableNativeFramesTracking: !isRunningInExpoGo(),
     enableStallTracking: disableObservability
       ? false
       : SENTRY_PERFORMANCE_CONFIG.ENABLE_STALL_TRACKING,

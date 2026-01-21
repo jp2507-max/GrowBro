@@ -87,6 +87,8 @@
       "confirm_date_hint": "Bestätigt das ausgewählte Datum.",
       "expand_section_hint": "Doppeltippen, um den Abschnitt zu erweitern",
       "go_back": "Zurück",
+      "loading": "Lädt...",
+      "loadingHint": "Inhalt lädt, bitte warten",
       "loading_hint": "Inhalt wird geladen, bitte warten",
       "loading_label": "Lädt",
       "opens_screen_hint": "Öffnet den {{label}}-Bildschirm.",
@@ -3092,6 +3094,19 @@
       "syncing": "Statistiken werden synchronisiert...",
       "title": "Kontostatistiken"
     }
+  },
+  "sentry_test": {
+    "crash_consent_off": "Einwilligung Crash-Reporting: aus",
+    "crash_consent_on": "Einwilligung Crash-Reporting: an",
+    "dsn_missing": "DSN: fehlt (SENTRY_DSN setzen, um Sentry zu aktivieren)",
+    "dsn_set": "DSN: gesetzt",
+    "initialized_off": "Sentry SDK: nicht initialisiert",
+    "initialized_on": "Sentry SDK: initialisiert",
+    "last_event_id": "Letzte Event-ID: {{id}}",
+    "send_error": "Testfehler senden",
+    "send_error_hint": "Sendet einen Testfehler an Sentry",
+    "subtitle": "Sende ein Test-Event, um die Zustellung zu prüfen.",
+    "title": "Sentry-Test"
   },
   "settings": {
     "a11y": {

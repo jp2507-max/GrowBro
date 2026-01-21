@@ -58,7 +58,7 @@ function FloatingParticle({
   particle,
   particleColor,
   reduceMotion,
-}: FloatingParticleProps) {
+}: FloatingParticleProps): React.ReactElement {
   const translateY = useSharedValue(0);
   const translateX = useSharedValue(0);
 

@@ -87,6 +87,8 @@
       "confirm_date_hint": "Confirms the selected date.",
       "expand_section_hint": "Double-tap to expand section",
       "go_back": "Go back",
+      "loading": "Loading",
+      "loadingHint": "Content is loading, please wait",
       "loading_hint": "Content is loading, please wait",
       "loading_label": "Loading",
       "opens_screen_hint": "Opens the {{label}} screen.",
@@ -3092,6 +3094,19 @@
       "syncing": "Syncing statistics...",
       "title": "Account Statistics"
     }
+  },
+  "sentry_test": {
+    "crash_consent_off": "Crash reporting consent: off",
+    "crash_consent_on": "Crash reporting consent: on",
+    "dsn_missing": "DSN: missing (set SENTRY_DSN to enable Sentry)",
+    "dsn_set": "DSN: set",
+    "initialized_off": "Sentry SDK: not initialized",
+    "initialized_on": "Sentry SDK: initialized",
+    "last_event_id": "Last event id: {{id}}",
+    "send_error": "Send test error",
+    "send_error_hint": "Sends a test error event to Sentry",
+    "subtitle": "Send a test event to verify Sentry delivery.",
+    "title": "Sentry Test"
   },
   "settings": {
     "a11y": {

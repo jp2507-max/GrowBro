@@ -181,11 +181,15 @@ function nowMs(): number {
 let syncDisabledUntilCache: number | null = null;
 
 function getSyncDisabledUntilMs(): number | null {
-  if (syncDisabledUntilCache !== null) return syncDisabledUntilCache;
-  const v = getItem<number>(SYNC_DISABLED_UNTIL_KEY);
-  if (typeof v === 'number') {
-    syncDisabledUntilCache = v;
-    return v;
+  const cached =
+    syncDisabledUntilCache ?? getItem<number>(SYNC_DISABLED_UNTIL_KEY);
+  if (typeof cached === 'number') {
+    if (cached <= nowMs()) {
+      syncDisabledUntilCache = null;
+      return null;
+    }
+    syncDisabledUntilCache = cached;
+    return cached;
   }
   return null;
 }

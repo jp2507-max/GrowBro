@@ -6,11 +6,8 @@
 
 import React from 'react';
 import Reanimated, {
-  // @ts-expect-error - Reanimated 4.x type exports issue
   Extrapolation,
-  // @ts-expect-error - Reanimated 4.x type exports issue
   interpolate,
-  // @ts-expect-error - Reanimated 4.x type exports issue
   interpolateColor,
   type SharedValue,
   useAnimatedStyle,

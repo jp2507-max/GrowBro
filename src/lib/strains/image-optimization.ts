@@ -36,10 +36,15 @@ function scheduleFlush(): void {
     PREFETCH_QUEUE.scheduled = null;
 
     const batch: string[] = [];
-    for (const uri of PREFETCH_QUEUE.queued) {
-      batch.push(uri);
+    const iter = PREFETCH_QUEUE.queued.values();
+    for (let i = 0; i < FLUSH_COUNT_PER_TICK; i++) {
+      const { value, done } = iter.next();
+      if (done) break;
+      batch.push(value);
+    }
+
+    for (const uri of batch) {
       PREFETCH_QUEUE.queued.delete(uri);
-      if (batch.length >= FLUSH_COUNT_PER_TICK) break;
     }
 
     // Fire-and-forget (avoid Promise.allSettled microtask storms)
@@ -130,16 +135,12 @@ export function getOptimizedImageUri(
  */
 export function prefetchStrainImages(
   imageUris: string[],
-  size: keyof typeof IMAGE_SIZES = 'thumbnail'
+  _size: keyof typeof IMAGE_SIZES = 'thumbnail'
 ): void {
   try {
     // Coalesce prefetch requests to avoid creating many concurrent native prefetches
     // during fast scrolling. Run after interactions to keep scrolling responsive.
-    const optimizedUris = imageUris
-      .filter((uri) => uri && uri.length > 0)
-      .map((uri) => getOptimizedImageUri(uri, size))
-      .filter(Boolean);
-
+    const optimizedUris = imageUris.filter((uri) => uri && uri.length > 0); // Note: size param reserved for future CDN/resize support
     for (const uri of optimizedUris) PREFETCH_QUEUE.queued.add(uri);
     trimQueueToMaxSize();
 

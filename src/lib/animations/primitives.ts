@@ -1,8 +1,6 @@
 import type { ColorValue } from 'react-native';
 import {
-  // @ts-expect-error - Reanimated 4.x type exports issue
   interpolate,
-  // @ts-expect-error - Reanimated 4.x type exports issue
   interpolateColor,
   ReduceMotion,
   type SharedValue,

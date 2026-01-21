@@ -25,33 +25,36 @@ export function useScrollDirection(param?: 'include-negative'): {
 
   const onBeginDrag = (e: ReanimatedScrollEvent): void => {
     'worklet';
-    offsetYAnchorOnBeginDrag.set(e.contentOffset.y);
+    const normalizedOffsetY = includeNegative
+      ? e.contentOffset.y
+      : Math.max(e.contentOffset.y, 0);
+    offsetYAnchorOnBeginDrag.set(normalizedOffsetY);
   };
 
   const onScroll = (e: ReanimatedScrollEvent): void => {
     'worklet';
     const offsetY = e.contentOffset.y;
-    const positiveOffsetY = includeNegative ? offsetY : Math.max(offsetY, 0);
-    const positivePrevOffsetY = includeNegative
+    const normalizedOffsetY = includeNegative ? offsetY : Math.max(offsetY, 0);
+    const normalizedPrevOffsetY = includeNegative
       ? prevOffsetY.get()
       : Math.max(prevOffsetY.get(), 0);
-    const delta = positivePrevOffsetY - positiveOffsetY;
+    const delta = normalizedPrevOffsetY - normalizedOffsetY;
 
     if (
       delta < 0 &&
       (scrollDirection.get() === 'idle' || scrollDirection.get() === 'to-top')
     ) {
       scrollDirection.set('to-bottom');
-      offsetYAnchorOnChangeDirection.set(offsetY);
+      offsetYAnchorOnChangeDirection.set(normalizedOffsetY);
     } else if (
       delta > 0 &&
       (scrollDirection.get() === 'idle' ||
         scrollDirection.get() === 'to-bottom')
     ) {
       scrollDirection.set('to-top');
-      offsetYAnchorOnChangeDirection.set(offsetY);
+      offsetYAnchorOnChangeDirection.set(normalizedOffsetY);
     }
-    prevOffsetY.set(offsetY);
+    prevOffsetY.set(normalizedOffsetY);
   };
 
   const onEndDrag = (): void => {

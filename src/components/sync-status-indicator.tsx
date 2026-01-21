@@ -5,7 +5,6 @@
 
 import * as React from 'react';
 import Animated, {
-  // @ts-expect-error - Reanimated 4.x type exports issue
   cancelAnimation,
   ReduceMotion,
   useAnimatedStyle,

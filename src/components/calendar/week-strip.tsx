@@ -271,13 +271,7 @@ export function WeekStrip({
       scheduleOnUI(scrollToWeek, scrollX, hasScrolledRef.current);
       hasScrolledRef.current = true;
     }
-  }, [
-    selectedWeekOffset,
-    screenWidth,
-    isLayoutReady,
-    scrollToWeek,
-    scrollViewRef,
-  ]);
+  }, [selectedWeekOffset, screenWidth, isLayoutReady, scrollToWeek]);
 
   return (
     <Animated.ScrollView

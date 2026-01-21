@@ -10,7 +10,6 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 import Animated, {
-  // @ts-expect-error - Reanimated 4.x type exports issue
   cancelAnimation,
   ReduceMotion,
   useAnimatedStyle,
@@ -23,6 +22,7 @@ import Animated, {
 import { motion } from '@/lib/animations/motion';
 import type { TxKeyPath } from '@/lib/i18n';
 import { useReduceMotionEnabled } from '@/lib/strains/accessibility';
+import { cn } from '@/lib/utils';
 
 type SkeletonProps = {
   width?: number | string;
@@ -93,10 +93,10 @@ export function Skeleton({
           borderRadius,
         },
       ]}
-      className={`bg-neutral-200 dark:bg-neutral-800 ${className ?? ''}`}
+      className={cn('bg-neutral-200 dark:bg-neutral-800', className)}
       testID={testID}
-      accessibilityLabel={txLabel ? t(txLabel) : 'Loading'}
-      accessibilityHint={txHint ? t(txHint) : 'Content is loading, please wait'}
+      accessibilityLabel={txLabel ? t(txLabel) : t('common.loading')}
+      accessibilityHint={txHint ? t(txHint) : t('common.loadingHint')}
       accessibilityRole="progressbar"
     />
   );

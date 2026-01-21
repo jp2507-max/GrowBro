@@ -5,6 +5,7 @@
 
 import type { NavigationContainerRef } from '@react-navigation/native';
 import * as Sentry from '@sentry/react-native';
+import { isRunningInExpoGo } from 'expo';
 
 import { PERFORMANCE_OPERATIONS, PERFORMANCE_TRANSACTIONS } from './constants';
 
@@ -24,7 +25,7 @@ export function createNavigationInstrumentation(): ReturnType<
   }
 
   navigationInstrumentationInstance = Sentry.reactNavigationIntegration({
-    enableTimeToInitialDisplay: true,
+    enableTimeToInitialDisplay: !isRunningInExpoGo(),
   });
 
   return navigationInstrumentationInstance;
