@@ -186,6 +186,8 @@ function getSyncDisabledUntilMs(): number | null {
   if (typeof cached === 'number') {
     if (cached <= nowMs()) {
       syncDisabledUntilCache = null;
+      // Clear stale persisted value
+      setItem(SYNC_DISABLED_UNTIL_KEY, null);
       return null;
     }
     syncDisabledUntilCache = cached;
@@ -196,12 +198,12 @@ function getSyncDisabledUntilMs(): number | null {
 
 function setSyncDisabled(untilMs: number, reason: string): void {
   syncDisabledUntilCache = untilMs;
-  try {
-    void setItem(SYNC_DISABLED_UNTIL_KEY, untilMs);
-    void setItem(SYNC_DISABLED_REASON_KEY, reason);
-  } catch (err) {
-    console.warn('[Sync] Failed to persist sync disabled state:', err);
-  }
+  setItem(SYNC_DISABLED_UNTIL_KEY, untilMs);
+  setItem(SYNC_DISABLED_REASON_KEY, reason);
+}
+
+function getSyncDisabledReason(): string | null {
+  return getItem<string>(SYNC_DISABLED_REASON_KEY) ?? null;
 }
 
 // Exposed UI flags - backed by Zustand store
@@ -1659,7 +1661,11 @@ export async function runSyncWithRetry(
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       const disabledUntilMs = getSyncDisabledUntilMs();
       if (disabledUntilMs !== null && disabledUntilMs > nowMs()) {
-        throw new Error('sync disabled (cooldown active)');
+        const reason = getSyncDisabledReason();
+        const message = reason
+          ? `sync disabled (cooldown active: ${reason})`
+          : 'sync disabled (cooldown active)';
+        throw new Error(message);
       }
       const attemptStart = nowMs();
       try {

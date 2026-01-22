@@ -8,7 +8,7 @@
 - **Avoid `'worklet'`** in 99.9% of cases. The worklets plugin handles conversion automatically for Reanimated APIs and scheduling functions.
 - **`scheduleOnUI`/`scheduleOnRN`**: automatically convert function references to worklets. Define with `useCallback` and pass by reference—**no `'worklet'` directive needed**.
 - **When `'worklet'` IS needed**: Only when a function defined outside Reanimated APIs (e.g., with `useCallback`) is called **directly** inside a worklet context (gesture `.onUpdate()`, inside `useAnimatedStyle`, etc.), not through `scheduleOnUI`/`scheduleOnRN`.
-- **React Compiler**: Use `.get()/.set()`, not `.value` (everywhere).
+- **React Compiler**: Use `.get()/.set()` in React render contexts and JS-thread code to avoid Compiler capture issues. `.value` remains valid inside genuine worklets (useAnimatedStyle, gesture callbacks, etc.).
 - **One write per frame**: don't set the same shared value multiple times in a single tick.
 - **No hooks in worklets**.
 

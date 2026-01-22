@@ -78,9 +78,6 @@ importers:
       axios:
         specifier: ^1.12.2
         version: 1.12.2
-      babel-plugin-react-compiler:
-        specifier: ^1.0.0
-        version: 1.0.0
       base64-arraybuffer:
         specifier: ^1.0.2
         version: 1.0.2
@@ -409,6 +406,9 @@ importers:
       babel-plugin-module-resolver:
         specifier: ^5.0.2
         version: 5.0.2
+      babel-plugin-react-compiler:
+        specifier: ^1.0.0
+        version: 1.0.0
       baseline-browser-mapping:
         specifier: ^2.9.15
         version: 2.9.15

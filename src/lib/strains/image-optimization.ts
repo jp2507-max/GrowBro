@@ -49,7 +49,9 @@ function scheduleFlush(): void {
 
     // Fire-and-forget (avoid Promise.allSettled microtask storms)
     for (const uri of batch) {
-      Image.prefetch(uri).catch(() => {});
+      Image.prefetch(uri).catch((err) => {
+        console.debug('[scheduleFlush] Prefetch failed:', uri, err);
+      });
     }
 
     // If more remain, schedule another idle flush.

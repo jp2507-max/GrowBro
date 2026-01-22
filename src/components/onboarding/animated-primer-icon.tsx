@@ -10,7 +10,6 @@ import { StyleSheet, type ViewStyle } from 'react-native';
 import Animated, {
   cancelAnimation,
   Easing,
-  ReduceMotion,
   type SharedValue,
   useAnimatedStyle,
   useSharedValue,
@@ -55,7 +54,6 @@ function usePrimerIconAnimation(reduceMotion: boolean): AnimationValues {
       withTiming(1, {
         duration: 600,
         easing: Easing.out(Easing.ease),
-        reduceMotion: ReduceMotion.System,
       })
     );
     scale.set(
@@ -63,7 +61,6 @@ function usePrimerIconAnimation(reduceMotion: boolean): AnimationValues {
         damping: 20,
         stiffness: 80,
         mass: 1,
-        reduceMotion: ReduceMotion.System,
       })
     );
     translateY.set(
@@ -74,12 +71,10 @@ function usePrimerIconAnimation(reduceMotion: boolean): AnimationValues {
             withTiming(-6, {
               duration: 2500,
               easing: Easing.inOut(Easing.sin),
-              reduceMotion: ReduceMotion.System,
             }),
             withTiming(0, {
               duration: 2500,
               easing: Easing.inOut(Easing.sin),
-              reduceMotion: ReduceMotion.System,
             })
           ),
           -1,
@@ -95,12 +90,10 @@ function usePrimerIconAnimation(reduceMotion: boolean): AnimationValues {
             withTiming(0.4, {
               duration: 2000,
               easing: Easing.inOut(Easing.ease),
-              reduceMotion: ReduceMotion.System,
             }),
             withTiming(0.2, {
               duration: 2000,
               easing: Easing.inOut(Easing.ease),
-              reduceMotion: ReduceMotion.System,
             })
           ),
           -1,

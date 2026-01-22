@@ -879,6 +879,7 @@
     "edit": "Bearbeiten",
     "error": "Fehler",
     "go_back": "Zurück",
+    "go_home": "Zur Startseite",
     "loading": "Lädt...",
     "na": "k.A.",
     "no": "Nein",
@@ -1855,6 +1856,7 @@
   "inputs": {
     "accept_terms_label": "Nutzungsbedingungen akzeptieren",
     "checkbox_label": "Kontrollkästchen",
+    "radio_label": "Radio-Button",
     "switch_label": "Schalter"
   },
   "list": {

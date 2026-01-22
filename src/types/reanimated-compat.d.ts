@@ -39,7 +39,7 @@ declare module 'react-native-reanimated' {
     inputRange: readonly number[],
     outputRange: readonly (string | number | ColorValue)[],
     colorSpace?: 'RGB' | 'HSV'
-  ): number;
+  ): ColorValue;
 
   // Extrapolation constants
   export const Extrapolation: {

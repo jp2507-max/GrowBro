@@ -879,6 +879,7 @@
     "edit": "Edit",
     "error": "Error",
     "go_back": "Go back",
+    "go_home": "Go to Home",
     "loading": "Loading...",
     "na": "N/A",
     "no": "No",
@@ -1855,6 +1856,7 @@
   "inputs": {
     "accept_terms_label": "Accept terms and conditions",
     "checkbox_label": "Checkbox",
+    "radio_label": "Radio button",
     "switch_label": "Switch"
   },
   "list": {

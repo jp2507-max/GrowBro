@@ -168,7 +168,7 @@ export function SyncStatusBanner({
     switch (state) {
       case 'syncing':
         return {
-          message: 'Syncing your data...',
+          message: translate('accessibility.sync.banner.syncing_title'),
           bgColor: 'bg-primary-50',
           textColor: 'text-primary-900',
         };
@@ -176,16 +176,18 @@ export function SyncStatusBanner({
         return {
           message:
             pendingChanges > 0
-              ? `You're offline. ${pendingChanges} change${
-                  pendingChanges > 1 ? 's' : ''
-                } will sync when online.`
-              : "You're offline. Changes will sync when online.",
+              ? translate('accessibility.sync.banner.offline_message_other', {
+                  count: pendingChanges,
+                })
+              : translate('accessibility.sync.banner.offline_title'),
           bgColor: 'bg-warning-50',
           textColor: 'text-warning-900',
         };
       case 'error':
         return {
-          message: 'Sync failed. Your changes are saved locally.',
+          message: translate('accessibility.sync.banner.error_message_other', {
+            count: 1,
+          }),
           bgColor: 'bg-danger-50',
           textColor: 'text-danger-900',
         };

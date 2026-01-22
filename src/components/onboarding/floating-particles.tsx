@@ -8,13 +8,11 @@ import { useColorScheme } from 'nativewind';
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import Animated, {
-  // @ts-ignore - Reanimated 4.x type exports issue
   cancelAnimation,
   Easing,
   ReduceMotion,
   useAnimatedStyle,
   useSharedValue,
-  // @ts-ignore - Reanimated 4.x type exports issue
   withDelay,
   withRepeat,
   withTiming,
@@ -22,7 +20,6 @@ import Animated, {
 
 import { View } from '@/components/ui';
 import colors from '@/components/ui/colors';
-import { useReduceMotionEnabled } from '@/lib/strains/accessibility';
 
 type Particle = {
   id: number;
@@ -51,26 +48,16 @@ function generateParticles(): Particle[] {
 type FloatingParticleProps = {
   particle: Particle;
   particleColor: string;
-  reduceMotion: boolean;
 };
 
 function FloatingParticle({
   particle,
   particleColor,
-  reduceMotion,
 }: FloatingParticleProps): React.ReactElement {
   const translateY = useSharedValue(0);
   const translateX = useSharedValue(0);
 
   React.useEffect(() => {
-    if (reduceMotion) {
-      cancelAnimation(translateY);
-      cancelAnimation(translateX);
-      translateY.set(0);
-      translateX.set(0);
-      return;
-    }
-
     // Vertical float animation
     translateY.set(
       withDelay(
@@ -107,7 +94,7 @@ function FloatingParticle({
       cancelAnimation(translateY);
       cancelAnimation(translateX);
     };
-  }, [reduceMotion, translateY, translateX, particle]);
+  }, [translateY, translateX, particle.delay, particle.duration]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [
@@ -138,7 +125,6 @@ export function FloatingParticles(): React.ReactElement {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
   const particles = React.useMemo(() => generateParticles(), []);
-  const reduceMotion = useReduceMotionEnabled();
 
   // Theme-aware particle color
   const particleColor = isDark
@@ -156,7 +142,6 @@ export function FloatingParticles(): React.ReactElement {
           key={particle.id}
           particle={particle}
           particleColor={particleColor}
-          reduceMotion={reduceMotion}
         />
       ))}
     </View>

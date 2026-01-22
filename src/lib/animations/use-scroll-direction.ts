@@ -40,16 +40,17 @@ export function useScrollDirection(param?: 'include-negative'): {
       : Math.max(prevOffsetY.get(), 0);
     const delta = normalizedPrevOffsetY - normalizedOffsetY;
 
+    const currentDirection = scrollDirection.get();
+
     if (
       delta < 0 &&
-      (scrollDirection.get() === 'idle' || scrollDirection.get() === 'to-top')
+      (currentDirection === 'idle' || currentDirection === 'to-top')
     ) {
       scrollDirection.set('to-bottom');
       offsetYAnchorOnChangeDirection.set(normalizedOffsetY);
     } else if (
       delta > 0 &&
-      (scrollDirection.get() === 'idle' ||
-        scrollDirection.get() === 'to-bottom')
+      (currentDirection === 'idle' || currentDirection === 'to-bottom')
     ) {
       scrollDirection.set('to-top');
       offsetYAnchorOnChangeDirection.set(normalizedOffsetY);

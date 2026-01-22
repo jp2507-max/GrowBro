@@ -26,9 +26,13 @@ export const Inputs = () => {
     <>
       <Title text="Form" />
       <View>
-        <Input label="Default" />
-        <Input label="Error" error="This is a message error" />
-        <Input label="Focused" />
+        <Input label="Default" testID="input-default" />
+        <Input
+          label="Error"
+          error="This is a message error"
+          testID="input-error"
+        />
+        <Input label="Focused" testID="input-focused" />
         <Select
           label="Select"
           options={options}
@@ -68,14 +72,15 @@ const RadioExample = () => {
     <Radio.Root
       checked={selected}
       onChange={setSelected}
-      accessibilityLabel="radio button"
+      accessibilityLabel={translate('inputs.radio_label' as TxKeyPath)}
       accessibilityHint={translate(
         'accessibility.common.toggle_hint' as TxKeyPath
       )}
       className="pb-2"
+      testID="radio-example"
     >
       <Radio.Icon checked={selected} />
-      <Radio.Label text="radio button" />
+      <Radio.Label text={translate('inputs.radio_label' as TxKeyPath)} />
     </Radio.Root>
   );
 };

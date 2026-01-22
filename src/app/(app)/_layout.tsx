@@ -123,22 +123,22 @@ export default function TabLayout() {
         <NativeTabs
           minimizeBehavior={Platform.OS === 'ios' ? 'onScrollDown' : undefined}
         >
-          <NativeTabs.Trigger name="index">
+          <NativeTabs.Trigger name="(index)">
             <Icon sf={SF_SYMBOLS.home} />
             <Label>{translate('tabs.home')}</Label>
           </NativeTabs.Trigger>
 
-          <NativeTabs.Trigger name="calendar">
+          <NativeTabs.Trigger name="(calendar)">
             <Icon sf={SF_SYMBOLS.calendar} />
             <Label>{translate('tabs.calendar')}</Label>
           </NativeTabs.Trigger>
 
-          <NativeTabs.Trigger name="community">
+          <NativeTabs.Trigger name="(community)">
             <Icon sf={SF_SYMBOLS.community} />
             <Label>{translate('tabs.community')}</Label>
           </NativeTabs.Trigger>
 
-          <NativeTabs.Trigger name="strains">
+          <NativeTabs.Trigger name="(strains)">
             <Icon sf={SF_SYMBOLS.strains} />
             <Label>{translate('tabs.strains')}</Label>
           </NativeTabs.Trigger>

@@ -11,7 +11,6 @@ import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 import Animated, {
   cancelAnimation,
-  ReduceMotion,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
@@ -63,11 +62,9 @@ export function Skeleton({
         withSequence(
           withTiming(0.5, {
             duration: motion.dur.lg,
-            reduceMotion: ReduceMotion.System,
           }),
           withTiming(1, {
             duration: motion.dur.lg,
-            reduceMotion: ReduceMotion.System,
           })
         ),
         -1, // Infinite repeat

@@ -263,6 +263,7 @@ class NotificationManager {
             ensureAuthenticated: options.ensureAuthenticated,
             stashRedirect: options.stashRedirect,
             onInvalid: options.onDeepLinkFailure,
+            source: 'notifications',
           });
           if (!result.ok && options.onDeepLinkFailure) {
             options.onDeepLinkFailure(result.reason);

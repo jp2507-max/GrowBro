@@ -614,8 +614,9 @@ function AppStack(): React.ReactElement {
       <Stack.Screen name="(app)" options={{ headerShown: false }} />
       <Stack.Screen name="(modals)" options={{ headerShown: false }} />
       <Stack.Screen name="sync-diagnostics" options={{ headerShown: false }} />
-      <Stack.Screen name="sentry-test" options={{ headerShown: false }} />
-      <Stack.Screen name="plants" options={{ headerShown: false }} />
+      {__DEV__ && (
+        <Stack.Screen name="sentry-test" options={{ headerShown: false }} />
+      )}
       <Stack.Screen name="age-gate" options={{ headerShown: false }} />
       <Stack.Screen name="onboarding" options={{ headerShown: false }} />
       <Stack.Screen

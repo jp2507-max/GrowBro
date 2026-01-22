@@ -1,5 +1,5 @@
 import { FlashList } from '@shopify/flash-list';
-import { useRouter } from 'expo-router';
+import { type Href, useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
 import { RefreshControl, StyleSheet } from 'react-native';
 
@@ -442,6 +442,8 @@ function NotificationListView({
 
 function useNotificationInbox(): NotificationInboxViewModel {
   const router = useRouter();
+  const { redirect } = useLocalSearchParams<{ redirect?: string }>();
+  const hasHandledRedirect = React.useRef(false);
   const [filter, setFilter] = React.useState<FilterKey>('all');
 
   const selectors = useNotificationCenterSelectors();
@@ -466,6 +468,20 @@ function useNotificationInbox(): NotificationInboxViewModel {
       void initialize();
     }
   }, [initialize, status]);
+
+  React.useEffect(() => {
+    if (!redirect || hasHandledRedirect.current) return;
+    hasHandledRedirect.current = true;
+    let target = String(redirect);
+    try {
+      target = decodeURIComponent(target);
+    } catch {
+      target = String(redirect);
+    }
+    if (!target.startsWith('/')) return;
+    router.replace('/notifications');
+    router.push(target as Href);
+  }, [redirect, router]);
 
   const derived = useNotificationDerivedState({
     filter,
