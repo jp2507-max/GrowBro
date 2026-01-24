@@ -20,26 +20,26 @@ import {
  * Storage adapter for Supabase Auth that wraps the centralized secure storage
  * Implements the Storage interface required by @supabase/supabase-js
  */
+async function ensureAuthStorageReady(): Promise<void> {
+  if (!isSecureStorageInitialized()) {
+    await initializeSecureStorage();
+  }
+}
+
 export const mmkvAuthStorage = {
   getItem: async (key: string): Promise<string | null> => {
-    if (!isSecureStorageInitialized()) {
-      await initializeSecureStorage();
-    }
+    await ensureAuthStorageReady();
     const value = authStorage.get(key);
     return typeof value === 'string' ? value : null;
   },
 
   setItem: async (key: string, value: string): Promise<void> => {
-    if (!isSecureStorageInitialized()) {
-      await initializeSecureStorage();
-    }
+    await ensureAuthStorageReady();
     authStorage.set(key, value);
   },
 
   removeItem: async (key: string): Promise<void> => {
-    if (!isSecureStorageInitialized()) {
-      await initializeSecureStorage();
-    }
+    await ensureAuthStorageReady();
     authStorage.delete(key);
   },
 };
@@ -85,9 +85,7 @@ export const mmkvAuthStorageSync = {
  * Clear all auth storage data
  */
 export async function clearAuthStorage(): Promise<void> {
-  if (!isSecureStorageInitialized()) {
-    await initializeSecureStorage();
-  }
+  await ensureAuthStorageReady();
   const keys = authStorage.getAllKeys();
   for (const key of keys) {
     authStorage.delete(key);

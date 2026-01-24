@@ -79,7 +79,7 @@ export function PostCardHeader({
             {displayUsername}
           </Text>
           {relativeTime && (
-            <Text className="mt-0.5 text-[11px] font-medium text-neutral-500 dark:text-neutral-500">
+            <Text className="mt-0.5 text-[11px] font-medium text-neutral-600 dark:text-neutral-400">
               {relativeTime}
             </Text>
           )}

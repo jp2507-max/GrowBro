@@ -75,7 +75,14 @@ function ensureCacheQueueHasSpaceFor(key: string): void {
 }
 
 function createCacheWriteKey(task: CacheWriteTask): string {
-  return JSON.stringify({ ...task.params, pageNumber: task.pageNumber });
+  const { searchQuery, filters, sortBy, sortDirection } = task.params;
+  return JSON.stringify({
+    searchQuery: searchQuery ?? null,
+    filters: filters ?? null,
+    sortBy: sortBy ?? null,
+    sortDirection: sortDirection ?? null,
+    pageNumber: task.pageNumber,
+  });
 }
 
 async function flushCacheQueueOnce(): Promise<void> {

@@ -3,6 +3,7 @@
 
 DO $$
 BEGIN
+  PERFORM set_config('lock_timeout', '5s', true);
   IF to_regclass('public.diagnostic_results_v2') IS NOT NULL THEN
     EXECUTE 'CREATE INDEX IF NOT EXISTS idx_diagnostic_results_v2_water_profile_id ON public.diagnostic_results_v2 (water_profile_id);';
   END IF;

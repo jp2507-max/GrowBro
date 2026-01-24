@@ -4,6 +4,8 @@
 
 export interface NotificationRequestEntry {
   id: string;
+  claim_id?: string | null;
+  attempt_count?: number | null;
   user_id: string;
   created_by: string;
   type: string;

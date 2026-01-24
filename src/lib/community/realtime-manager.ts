@@ -269,10 +269,13 @@ export class RealtimeConnectionManager {
   private connect(): void {
     if (!this.isActive) return;
     if (this.channel) {
-      console.warn('Already connected or connecting to realtime');
+      console.warn(
+        `[Realtime #${this.debugId}] Already connected or connecting`
+      );
       return;
     }
 
+    console.log(`[Realtime #${this.debugId}] Connecting...`);
     this.setConnectionState('connecting');
 
     // Create channel with unique name based on filter
@@ -392,7 +395,11 @@ export class RealtimeConnectionManager {
         const latency = Date.now() - commitTime;
         communityMetrics.addLatencySample(latency);
       }
-      await this.callbacks.onPostChange(event);
+      try {
+        await this.callbacks.onPostChange(event);
+      } catch (err) {
+        console.error('[Realtime] onPostChange callback failed:', err);
+      }
     }
   }
 
@@ -410,7 +417,11 @@ export class RealtimeConnectionManager {
         const latency = Date.now() - commitTime;
         communityMetrics.addLatencySample(latency);
       }
-      await this.callbacks.onCommentChange(event);
+      try {
+        await this.callbacks.onCommentChange(event);
+      } catch (err) {
+        console.error('[Realtime] onCommentChange callback failed:', err);
+      }
     }
   }
 
@@ -428,7 +439,11 @@ export class RealtimeConnectionManager {
         const latency = Date.now() - commitTime;
         communityMetrics.addLatencySample(latency);
       }
-      await this.callbacks.onLikeChange(event);
+      try {
+        await this.callbacks.onLikeChange(event);
+      } catch (err) {
+        console.error('[Realtime] onLikeChange callback failed:', err);
+      }
     }
   }
 

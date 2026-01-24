@@ -96,6 +96,10 @@ DO $$
 BEGIN
   IF to_regclass('public.post_likes') IS NOT NULL THEN
     EXECUTE 'DROP POLICY IF EXISTS post_likes_access ON public.post_likes;';
+    EXECUTE 'DROP POLICY IF EXISTS post_likes_select_own ON public.post_likes;';
+    EXECUTE 'DROP POLICY IF EXISTS post_likes_insert_own ON public.post_likes;';
+    EXECUTE 'DROP POLICY IF EXISTS post_likes_update_own ON public.post_likes;';
+    EXECUTE 'DROP POLICY IF EXISTS post_likes_delete_own ON public.post_likes;';
 
     EXECUTE $p$
       CREATE POLICY post_likes_select_own
@@ -154,8 +158,9 @@ BEGIN
     JOIN pg_namespace n ON n.oid = c.relnamespace
     WHERE n.nspname = 'public'
       AND c.relname LIKE 'audit_events%'
+      AND c.relkind IN ('r', 'p')
   LOOP
-    EXECUTE format('DROP POLICY IF EXISTS audit_events_insert_authenticated ON public.%I;', r.relname);
+    EXECUTE format('DROP POLICY IF EXISTS audit_events_insert_system_only ON public.%I;', r.relname);
   END LOOP;
 END
 $$;

@@ -45,14 +45,22 @@ function debounce<T extends (...args: unknown[]) => unknown>(
   wait: number
 ): (...args: Parameters<T>) => Promise<Awaited<ReturnType<T>>> {
   let timeout: ReturnType<typeof setTimeout>;
+  let pendingReject: ((reason?: unknown) => void) | null = null;
   return (...args: Parameters<T>) => {
     return new Promise<Awaited<ReturnType<T>>>((resolve, reject) => {
+      if (pendingReject) {
+        pendingReject(new Error('Debounced'));
+        pendingReject = null;
+      }
+      pendingReject = reject;
       clearTimeout(timeout);
       timeout = setTimeout(async () => {
         try {
           const result = (await func(...args)) as Awaited<ReturnType<T>>;
+          pendingReject = null;
           resolve(result);
         } catch (error) {
+          pendingReject = null;
           reject(error);
         }
       }, wait);
@@ -127,6 +135,45 @@ function buildTaskCounts(tasks: Task[]): Map<string, number> {
   return counts;
 }
 
+function useCalendarRange(selectedDate: DateTime) {
+  const selectedWeekMillis = selectedDate.startOf('week').toMillis();
+  const selectedDayMillis = selectedDate.startOf('day').toMillis();
+
+  const range = useMemo(() => {
+    const weekStart = DateTime.fromMillis(selectedWeekMillis);
+    return {
+      start: weekStart.minus({ weeks: 2 }).startOf('day'),
+      end: weekStart.plus({ weeks: 2 }).endOf('week').endOf('day'),
+    };
+  }, [selectedWeekMillis]);
+
+  return {
+    rangeStartMillis: range.start.toMillis(),
+    rangeEndMillis: range.end.toMillis(),
+    selectedDayMillis,
+  };
+}
+
+function useTaskDerivations(
+  tasks: { pending: Task[]; completed: Task[] },
+  selectedDayMillis: number
+) {
+  const taskCounts = useMemo(
+    () => buildTaskCounts([...tasks.pending, ...tasks.completed]),
+    [tasks]
+  );
+
+  const { dayPendingTasks, dayCompletedTasks } = useMemo(() => {
+    const dayStart = DateTime.fromMillis(selectedDayMillis);
+    return {
+      dayPendingTasks: filterTasksForDay(tasks.pending, dayStart),
+      dayCompletedTasks: filterTasksForDay(tasks.completed, dayStart),
+    };
+  }, [tasks.pending, tasks.completed, selectedDayMillis]);
+
+  return { taskCounts, dayPendingTasks, dayCompletedTasks };
+}
+
 /**
  * Hook to manage calendar data for a range of weeks and the selected day.
  * Fetches tasks for a 5-week range (indicator visibility) and plant info for the selected day.
@@ -158,23 +205,12 @@ function useCalendarData(
   useEffect(() => {
     isEnabledRef.current = isEnabled;
     if (!isEnabled) setIsLoading(false);
+    if (!isEnabled) requestIdRef.current += 1;
   }, [isEnabled]);
 
-  // Derive primitive values for stable dependencies
-  const selectedWeekMillis = selectedDate.startOf('week').toMillis();
-  const selectedDayMillis = selectedDate.startOf('day').toMillis();
-
-  // Range for indicators: 5 weeks (centered on selectedDate's week)
-  const range = useMemo(() => {
-    const weekStart = DateTime.fromMillis(selectedWeekMillis);
-    return {
-      start: weekStart.minus({ weeks: 2 }).startOf('day'),
-      end: weekStart.plus({ weeks: 2 }).endOf('week').endOf('day'),
-    };
-  }, [selectedWeekMillis]);
-
-  const rangeStartMillis = range.start.toMillis();
-  const rangeEndMillis = range.end.toMillis();
+  // Derive range and day millis
+  const { rangeStartMillis, rangeEndMillis, selectedDayMillis } =
+    useCalendarRange(selectedDate);
 
   const loadData = useCallback(async () => {
     if (!isEnabledRef.current) {
@@ -196,7 +232,8 @@ function useCalendarData(
       );
 
       // If a newer request has started, ignore this result
-      if (currentRequestId !== requestIdRef.current) return;
+      if (currentRequestId !== requestIdRef.current || !isEnabledRef.current)
+        return;
 
       setTasks({ pending, completed });
 
@@ -212,7 +249,8 @@ function useCalendarData(
       const newPlantMap = await loadPlantMap(plantIds);
 
       // Check again before setting secondary state
-      if (currentRequestId !== requestIdRef.current) return;
+      if (currentRequestId !== requestIdRef.current || !isEnabledRef.current)
+        return;
 
       setPlantMap(newPlantMap);
     } catch (error) {
@@ -220,7 +258,7 @@ function useCalendarData(
         console.warn('[CalendarScreen] Failed to load calendar data:', error);
       }
     } finally {
-      if (currentRequestId === requestIdRef.current) {
+      if (currentRequestId === requestIdRef.current && isEnabledRef.current) {
         setIsLoading(false);
       }
     }
@@ -258,21 +296,11 @@ function useCalendarData(
     };
   }, [debouncedLoadData, isEnabled]);
 
-  // Memoize task counts separately from day filtering to avoid rebuilding on every selectedDay change
-  const taskCounts = useMemo(
-    () => buildTaskCounts([...tasks.pending, ...tasks.completed]),
-    [tasks]
+  // Derive task counts and day-specific tasks
+  const { taskCounts, dayPendingTasks, dayCompletedTasks } = useTaskDerivations(
+    tasks,
+    selectedDayMillis
   );
-
-  // Derive day-specific tasks
-  const { dayPendingTasks, dayCompletedTasks } = useMemo(() => {
-    const dayStart = DateTime.fromMillis(selectedDayMillis);
-
-    return {
-      dayPendingTasks: filterTasksForDay(tasks.pending, dayStart),
-      dayCompletedTasks: filterTasksForDay(tasks.completed, dayStart),
-    };
-  }, [tasks.pending, tasks.completed, selectedDayMillis]);
 
   return {
     dayPendingTasks,

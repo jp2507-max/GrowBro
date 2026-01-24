@@ -129,7 +129,14 @@ export function StrainsListWithCache({
 
   useFocusEffect(
     useCallback(() => {
-      refetch();
+      const queryState = queryClient.getQueryState(strainsQueryKey);
+      const isStale =
+        !queryState?.dataUpdatedAt ||
+        Date.now() - queryState.dataUpdatedAt > 30_000; // 30s stale time
+
+      if (isStale) {
+        refetch();
+      }
       return () => {
         // Cancel pending requests when screen loses focus
         queryClient.cancelQueries({ queryKey: strainsQueryKey });

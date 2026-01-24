@@ -69,7 +69,7 @@ function isProxyEnabled(): boolean {
 }
 
 /** Fire-and-forget background cache to Supabase (dev fallback only) */
-function cacheStrainToSupabase(strain: Strain) {
+function cacheStrainToSupabase(strain: Strain): void {
   if (isProxyEnabled()) {
     return;
   }
@@ -103,7 +103,7 @@ function cacheStrainToSupabase(strain: Strain) {
 }
 
 /** Share strain via native share sheet */
-async function shareStrain(strain: Strain) {
+async function shareStrain(strain: Strain): Promise<void> {
   haptics.selection();
 
   const shareUrl = strain.link || `https://growbro.app/strains/${strain.slug}`;

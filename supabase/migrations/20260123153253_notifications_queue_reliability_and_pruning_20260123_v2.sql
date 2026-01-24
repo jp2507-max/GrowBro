@@ -30,6 +30,8 @@ end$$;
 do $$
 begin
   if to_regclass('public.notification_requests') is not null then
+    execute 'alter table public.notification_requests add column if not exists claimed_at timestamptz';
+
     execute $sql$
       create or replace function public.claim_notification_requests(batch_size int default 100)
       returns setof public.notification_requests
@@ -42,14 +44,14 @@ begin
           select nr.id
           from public.notification_requests nr
           where nr.processed is not true
+            and (nr.claimed_at is null or nr.claimed_at < now() - interval '5 minutes')
           order by nr.created_at
           limit greatest(1, batch_size)
           for update skip locked
         ),
         updated as (
           update public.notification_requests nr
-          set processed = true,
-              processed_at = now()
+          set claimed_at = now()
           from picked p
           where nr.id = p.id
           returning nr.*
@@ -57,10 +59,26 @@ begin
         select * from updated;
       end;
       $function$;
+
+      create or replace function public.mark_notification_processed(request_id uuid)
+      returns void
+      language plpgsql
+      set search_path to ''
+      as $function$
+      begin
+        update public.notification_requests
+        set processed = true,
+            processed_at = now()
+        where id = request_id;
+      end;
+      $function$;
     $sql$;
 
     execute 'revoke execute on function public.claim_notification_requests(int) from public, anon, authenticated';
     execute 'grant execute on function public.claim_notification_requests(int) to service_role';
+
+    execute 'revoke execute on function public.mark_notification_processed(uuid) from public, anon, authenticated';
+    execute 'grant execute on function public.mark_notification_processed(uuid) to service_role';
   end if;
 end$$;
 

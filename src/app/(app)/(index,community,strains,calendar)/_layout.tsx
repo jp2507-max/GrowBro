@@ -1,7 +1,7 @@
 import { Stack } from 'expo-router';
 import React from 'react';
 
-import { useFavorites } from '@/lib/strains/use-favorites';
+import { hydrateFavorites } from '@/lib/strains/use-favorites';
 import { useFavoritesAutoSync } from '@/lib/strains/use-favorites-auto-sync';
 
 export const unstable_settings = {
@@ -32,17 +32,14 @@ export default function SharedTabsLayout({
 }: SharedLayoutProps): React.ReactElement {
   const screen = getAnchorSegment(segment);
   const isStrainsStack = screen === 'strains';
-  const hydrateFavorites = useFavorites.use.hydrate();
   const routeName = ROUTE_MAP[screen] ?? 'index';
-  const hasHydratedRef = React.useRef(false);
 
   useFavoritesAutoSync({ enabled: isStrainsStack });
 
   React.useEffect(() => {
-    if (!isStrainsStack || hasHydratedRef.current) return;
-    hasHydratedRef.current = true;
+    if (!isStrainsStack) return;
     void hydrateFavorites();
-  }, [hydrateFavorites, isStrainsStack]);
+  }, [isStrainsStack]);
 
   return (
     <Stack screenOptions={{ headerShown: false }}>

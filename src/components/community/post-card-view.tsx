@@ -181,7 +181,7 @@ export function PostCardView({
               className="mx-4 mb-5 rounded-[28px]"
               style={cardStyles.shadow}
             >
-              <View className="dark:border-white/8 overflow-hidden rounded-[28px] border border-neutral-100 bg-white dark:bg-charcoal-900">
+              <View className="overflow-hidden rounded-[28px] border border-neutral-200 bg-white dark:border-white/10 dark:bg-charcoal-900">
                 <PostCardHeader
                   displayUsername={displayUsername}
                   relativeTime={relativeTime}

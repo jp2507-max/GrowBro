@@ -84,8 +84,11 @@ async function performCloudSync(userId: string): Promise<number> {
   }
 
   // Hard-delete favorites in Supabase (do not keep deleted tombstones).
-  const toDelete = favoritesNeedingSync.filter((f) => f.deletedAt);
   const toUpsert = favoritesNeedingSync.filter((f) => !f.deletedAt);
+  const toUpsertIds = new Set(toUpsert.map((f) => f.strainId));
+  const toDelete = favoritesNeedingSync.filter(
+    (f) => f.deletedAt && !toUpsertIds.has(f.strainId)
+  );
 
   if (toUpsert.length > 0) {
     const upsertData = toUpsert.map((favorite) => ({

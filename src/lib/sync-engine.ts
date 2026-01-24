@@ -188,6 +188,7 @@ function getSyncDisabledUntilMs(): number | null {
       syncDisabledUntilCache = null;
       // Clear stale persisted value
       setItem(SYNC_DISABLED_UNTIL_KEY, null);
+      setItem(SYNC_DISABLED_REASON_KEY, null);
       return null;
     }
     syncDisabledUntilCache = cached;
@@ -751,6 +752,7 @@ let pendingChangesCountGeneration = 0;
 
 export function invalidatePendingChangesCountCache(): void {
   pendingChangesCountCache = null;
+  pendingChangesCountPromise = null;
   pendingChangesCountGeneration++;
 }
 
@@ -1462,7 +1464,7 @@ async function pullChangesOnce(req: SyncRequest): Promise<SyncResponse> {
 
     if (!res.ok) {
       if (res.status === 404) {
-        const cooldownMs = 24 * 60 * 60 * 1000;
+        const cooldownMs = 5 * 60 * 1000; // 5 minutes instead of 24 hours
         const untilMs = nowMs() + cooldownMs;
         setSyncDisabled(untilMs, 'pull_endpoint_404');
       }

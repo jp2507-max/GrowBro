@@ -19,31 +19,14 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
 
-function decodeJwtPayload(token: string): Record<string, unknown> | null {
-  try {
-    const parts = token.split('.');
-    if (parts.length < 2) return null;
-
-    const payload = parts[1];
-    const padded = payload.padEnd(
-      payload.length + ((4 - (payload.length % 4)) % 4),
-      '='
-    );
-    const decoded = atob(padded.replace(/-/g, '+').replace(/_/g, '/'));
-    return JSON.parse(decoded) as Record<string, unknown>;
-  } catch {
-    return null;
-  }
-}
-
 function isServiceRoleRequest(req: Request): boolean {
   const authHeader = req.headers.get('authorization') ?? '';
   const match = authHeader.match(/^Bearer\\s+(.+)$/i);
   if (!match) return false;
 
-  const payload = decodeJwtPayload(match[1]);
-  const role = typeof payload?.role === 'string' ? payload.role : null;
-  return role === 'service_role' || role === 'supabase_admin';
+  const token = match[1];
+  const expected = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+  return Boolean(expected) && token === expected;
 }
 
 /**

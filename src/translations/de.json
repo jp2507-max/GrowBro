@@ -3954,7 +3954,7 @@
     "status": {
       "active": "Aktuell",
       "completed": "✓ Abgeschlossen",
-      "error": "Sync Fehler",
+      "error": "Sync-Fehler",
       "offline": "Offline",
       "offline_pending": "Offline ({{count}})",
       "overdue": "Überfällig",

@@ -37,26 +37,28 @@ function scheduleFlush(): void {
     isFlushing = true;
     PREFETCH_QUEUE.scheduled = null;
 
-    const batch: string[] = [];
-    const iter = PREFETCH_QUEUE.queued.values();
-    for (let i = 0; i < FLUSH_COUNT_PER_TICK; i++) {
-      const { value, done } = iter.next();
-      if (done) break;
-      batch.push(value);
-    }
+    try {
+      const batch: string[] = [];
+      const iter = PREFETCH_QUEUE.queued.values();
+      for (let i = 0; i < FLUSH_COUNT_PER_TICK; i++) {
+        const { value, done } = iter.next();
+        if (done) break;
+        batch.push(value);
+      }
 
-    for (const uri of batch) {
-      PREFETCH_QUEUE.queued.delete(uri);
-    }
+      for (const uri of batch) {
+        PREFETCH_QUEUE.queued.delete(uri);
+      }
 
-    // Fire-and-forget (avoid Promise.allSettled microtask storms)
-    for (const uri of batch) {
-      Image.prefetch(uri).catch((err) => {
-        console.debug('[scheduleFlush] Prefetch failed:', uri, err);
-      });
+      // Fire-and-forget (avoid Promise.allSettled microtask storms)
+      for (const uri of batch) {
+        Image.prefetch(uri).catch((err) => {
+          console.debug('[scheduleFlush] Prefetch failed:', uri, err);
+        });
+      }
+    } finally {
+      isFlushing = false;
     }
-
-    isFlushing = false;
     // If more remain, schedule another idle flush.
     if (PREFETCH_QUEUE.queued.size > 0) scheduleFlush();
   });
@@ -140,13 +142,13 @@ export function getOptimizedImageUri(
  */
 export function prefetchStrainImages(
   imageUris: string[],
-  _size: keyof typeof IMAGE_SIZES = 'thumbnail'
+  _size: keyof typeof IMAGE_SIZES = 'thumbnail' // Reserved for future CDN/resize support
 ): void {
   try {
     // Coalesce prefetch requests to avoid creating many concurrent native prefetches
     // during fast scrolling. Run after interactions to keep scrolling responsive.
     for (const uri of imageUris) {
-      if (!uri || uri.length === 0) continue; // Note: size param reserved for future CDN/resize support
+      if (!uri || uri.length === 0) continue;
       PREFETCH_QUEUE.queued.add(uri);
       if (PREFETCH_QUEUE.queued.size >= MAX_QUEUE_SIZE) break;
     }

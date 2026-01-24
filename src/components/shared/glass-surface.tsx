@@ -66,7 +66,7 @@ export type GlassSurfaceProps = {
 const glassAvailable = isLiquidGlassAvailable();
 const DEFAULT_BLUR_INTENSITY = 80;
 const DEFAULT_BLUR_TINT: BlurTint = 'systemMaterial';
-const DEFAULT_FALLBACK_CLASS = 'bg-white/15 dark:bg-black/20';
+const DEFAULT_FALLBACK_CLASS = 'bg-white/15 dark:bg-charcoal-900/20';
 const DEFAULT_RADIUS = 16;
 
 export function GlassSurface({

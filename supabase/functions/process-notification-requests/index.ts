@@ -11,31 +11,14 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
 
-function decodeJwtPayload(token: string): Record<string, unknown> | null {
-  try {
-    const parts = token.split('.');
-    if (parts.length < 2) return null;
-
-    const payload = parts[1];
-    const padded = payload.padEnd(
-      payload.length + ((4 - (payload.length % 4)) % 4),
-      '='
-    );
-    const decoded = atob(padded.replace(/-/g, '+').replace(/_/g, '/'));
-    return JSON.parse(decoded) as Record<string, unknown>;
-  } catch {
-    return null;
-  }
-}
-
 function isServiceRoleRequest(req: Request): boolean {
   const authHeader = req.headers.get('authorization') ?? '';
   const match = authHeader.match(/^Bearer\\s+(.+)$/i);
   if (!match) return false;
 
-  const payload = decodeJwtPayload(match[1]);
-  const role = typeof payload?.role === 'string' ? payload.role : null;
-  return role === 'service_role' || role === 'supabase_admin';
+  const token = match[1];
+  const expected = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+  return Boolean(expected) && token === expected;
 }
 
 /**
@@ -151,6 +134,26 @@ async function sendWithRetry(
   return { success: false, error: lastError };
 }
 
+function computeRetryDelaySeconds(attemptCount: number): number {
+  // attemptCount is the number of times this request has been claimed (i.e., outer retries).
+  // Exponential backoff with cap: 10s, 20s, 40s, ... up to 1 hour.
+  const baseSeconds = 10;
+  const maxSeconds = 60 * 60;
+  const exponent = Math.max(0, attemptCount - 1);
+  const delay = Math.min(maxSeconds, baseSeconds * Math.pow(2, exponent));
+
+  // Small deterministic jitter to avoid thundering herds on retries (0-3s).
+  const jitter = (attemptCount * 37) % 4;
+  return delay + jitter;
+}
+
+function isNonRetriableError(message: string): boolean {
+  return (
+    message.includes('User opted out') ||
+    message.includes('No active push tokens')
+  );
+}
+
 Deno.serve(async (req: Request) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -189,6 +192,7 @@ Deno.serve(async (req: Request) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Atomically claim pending requests to avoid duplicate processing if cron overlaps.
+    // NOTE: claim_notification_requests marks rows as in-flight (claimed_at/claim_id) but does NOT mark them processed.
     const { data: requests, error: fetchError } = await supabase.rpc(
       'claim_notification_requests',
       { batch_size: 100 }
@@ -223,9 +227,22 @@ Deno.serve(async (req: Request) => {
       errors: [],
     };
 
-    // Process each request (already marked processed by claim_notification_requests)
+    const maxAttempts = 5;
+
+    // Process each claimed request. We ACK (processed=true) only after a definitive outcome.
     for (const request of requests as NotificationRequestEntry[]) {
       stats.processed++;
+
+      const claimId = request.claim_id;
+      if (!claimId) {
+        stats.failed++;
+        const errorMessage = 'Missing claim_id on claimed request (unexpected)';
+        stats.errors.push({ requestId: request.id, error: errorMessage });
+        console.error(`[process-notification-requests] ${errorMessage}`, {
+          requestId: request.id,
+        });
+        continue;
+      }
 
       // Send notification with retry logic
       const result = await sendWithRetry(
@@ -236,14 +253,84 @@ Deno.serve(async (req: Request) => {
 
       if (result.success) {
         stats.succeeded++;
+
+        const { error: ackError } = await supabase
+          .from('notification_requests')
+          .update({
+            processed: true,
+            processed_at: new Date().toISOString(),
+            claimed_at: null,
+            claim_id: null,
+            next_attempt_at: null,
+            last_error: null,
+          })
+          .eq('id', request.id)
+          .eq('claim_id', claimId);
+
+        if (ackError) {
+          console.error(
+            `Failed to ACK notification request ${request.id}:`,
+            ackError
+          );
+        }
       } else {
         stats.failed++;
+        const errorMessage = result.error || 'Unknown error';
         stats.errors.push({
           requestId: request.id,
-          error: result.error || 'Unknown error',
+          error: errorMessage,
         });
 
-        console.error(`Failed to process request ${request.id}:`, result.error);
+        console.error(`Failed to process request ${request.id}:`, errorMessage);
+
+        const attemptCount = Number(request.attempt_count ?? 1);
+        const isTerminal =
+          isNonRetriableError(errorMessage) || attemptCount >= maxAttempts;
+
+        if (isTerminal) {
+          const { error: terminalError } = await supabase
+            .from('notification_requests')
+            .update({
+              processed: true,
+              processed_at: new Date().toISOString(),
+              claimed_at: null,
+              claim_id: null,
+              next_attempt_at: null,
+              last_error: errorMessage,
+            })
+            .eq('id', request.id)
+            .eq('claim_id', claimId);
+
+          if (terminalError) {
+            console.error(
+              `Failed to mark notification request terminal ${request.id}:`,
+              terminalError
+            );
+          }
+        } else {
+          const retryDelaySeconds = computeRetryDelaySeconds(attemptCount);
+          const nextAttemptAt = new Date(
+            Date.now() + retryDelaySeconds * 1000
+          ).toISOString();
+
+          const { error: releaseError } = await supabase
+            .from('notification_requests')
+            .update({
+              claimed_at: null,
+              claim_id: null,
+              next_attempt_at: nextAttemptAt,
+              last_error: errorMessage,
+            })
+            .eq('id', request.id)
+            .eq('claim_id', claimId);
+
+          if (releaseError) {
+            console.error(
+              `Failed to schedule retry for notification request ${request.id}:`,
+              releaseError
+            );
+          }
+        }
       }
     }
 

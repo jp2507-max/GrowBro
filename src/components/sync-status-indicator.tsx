@@ -185,9 +185,7 @@ export function SyncStatusBanner({
         };
       case 'error':
         return {
-          message: translate('accessibility.sync.banner.error_message_other', {
-            count: 1,
-          }),
+          message: translate('accessibility.sync.banner.error_title'),
           bgColor: 'bg-danger-50',
           textColor: 'text-danger-900',
         };

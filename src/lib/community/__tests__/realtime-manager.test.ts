@@ -138,6 +138,9 @@ describe('RealtimeConnectionManager', () => {
     });
 
     it('should track polling state', async () => {
+      // Make polling start immediately on the first connection error
+      (manager as any).maxReconnectAttempts = 0;
+
       // Mock a failed connection that triggers polling
       const mockSupabase = require('@/lib/supabase').supabase;
       mockSupabase.channel.mockReturnValueOnce({
@@ -146,12 +149,6 @@ describe('RealtimeConnectionManager', () => {
           // Simulate connection failure leading to polling
           setTimeout(() => {
             callback('CHANNEL_ERROR');
-            // After max retries, should start polling
-            setTimeout(() => {
-              if (manager.isPollingActive()) {
-                expect(manager.isPollingActive()).toBe(true);
-              }
-            }, 100);
           }, 10);
           return { unsubscribe: jest.fn() };
         }),
@@ -163,8 +160,7 @@ describe('RealtimeConnectionManager', () => {
       // Wait for polling to start
       await new Promise((resolve) => setTimeout(resolve, 200));
 
-      // Note: In a real test environment, we'd need to mock timers properly
-      // This test demonstrates the polling state tracking capability
+      expect(manager.isPollingActive()).toBe(true);
     });
   });
 

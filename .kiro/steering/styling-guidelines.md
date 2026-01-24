@@ -32,7 +32,7 @@ const checkThreshold = useCallback((y: number) => {
 const gesture = Gesture.Pan().onUpdate((e) => {
   if (checkThreshold(e.absoluteY)) {
     // direct call in worklet
-    scale.set(1.2);
+    scale.value = 1.2;
   }
 });
 ```
@@ -87,8 +87,8 @@ scheduleOnUI(doUiWork);
 **Bad** (recomputes classes every frame):
 
 ```tsx
-// ❌ don't flip classes per frame
-<View className={progress.value > 0.5 ? 'opacity-100' : 'opacity-50'} />
+// ❌ don't flip classes per frame or read .value in render
+<View className={progress.get() > 0.5 ? 'opacity-100' : 'opacity-50'} />
 ```
 
 **Good:**
@@ -125,13 +125,17 @@ function ToggleBox({ isActive }: { isActive: boolean }) {
   const bgProgress = useSharedValue(0);
 
   useEffect(() => {
-    width.value = withSpring(isActive ? 200 : 100, {
-      reduceMotion: ReduceMotion.System,
-    });
-    bgProgress.value = withTiming(isActive ? 1 : 0, {
-      duration: motion.dur.md,
-      reduceMotion: ReduceMotion.System,
-    });
+    width.set(
+      withSpring(isActive ? 200 : 100, {
+        reduceMotion: ReduceMotion.System,
+      })
+    );
+    bgProgress.set(
+      withTiming(isActive ? 1 : 0, {
+        duration: motion.dur.md,
+        reduceMotion: ReduceMotion.System,
+      })
+    );
   }, [isActive]);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -170,29 +174,33 @@ function PulsingDot() {
   const opacity = useSharedValue(0.5);
 
   useEffect(() => {
-    scale.value = withRepeat(
-      withSequence(
-        withTiming(1.2, {
-          duration: 500,
-          easing: Easing.inOut(Easing.ease),
-          reduceMotion: ReduceMotion.System,
-        }),
-        withTiming(1, {
-          duration: 500,
-          easing: Easing.inOut(Easing.ease),
-          reduceMotion: ReduceMotion.System,
-        })
-      ),
-      -1,
-      true
+    scale.set(
+      withRepeat(
+        withSequence(
+          withTiming(1.2, {
+            duration: 500,
+            easing: Easing.inOut(Easing.ease),
+            reduceMotion: ReduceMotion.System,
+          }),
+          withTiming(1, {
+            duration: 500,
+            easing: Easing.inOut(Easing.ease),
+            reduceMotion: ReduceMotion.System,
+          })
+        ),
+        -1,
+        true
+      )
     );
-    opacity.value = withRepeat(
-      withSequence(
-        withTiming(1, { duration: 500, reduceMotion: ReduceMotion.System }),
-        withTiming(0.5, { duration: 500, reduceMotion: ReduceMotion.System })
-      ),
-      -1,
-      true
+    opacity.set(
+      withRepeat(
+        withSequence(
+          withTiming(1, { duration: 500, reduceMotion: ReduceMotion.System }),
+          withTiming(0.5, { duration: 500, reduceMotion: ReduceMotion.System })
+        ),
+        -1,
+        true
+      )
     );
 
     // ⚠️ Cancel on unmount

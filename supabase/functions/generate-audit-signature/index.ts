@@ -19,12 +19,37 @@ interface AuditPayload {
   timestamp: string;
 }
 
+function isServiceRoleRequest(req: Request, expected: string): boolean {
+  const authHeader = req.headers.get('authorization') ?? '';
+  const match = authHeader.match(/^Bearer\s+(.+)$/i);
+  if (!match) return false;
+  return Boolean(expected) && match[1] === expected;
+}
+
 Deno.serve(async (req: Request) => {
   try {
     // Only allow POST requests
     if (req.method !== 'POST') {
       return new Response(JSON.stringify({ error: 'Method not allowed' }), {
         status: 405,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    if (!serviceRoleKey) {
+      return new Response(
+        JSON.stringify({ error: 'Server configuration error' }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    if (!isServiceRoleRequest(req, serviceRoleKey)) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
         headers: { 'Content-Type': 'application/json' },
       });
     }
