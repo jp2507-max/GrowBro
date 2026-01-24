@@ -50,6 +50,7 @@ module.exports = function (api) {
                 '/src/app/(app)/strains/_layout.tsx',
                 '/src/app/(app)/community.tsx',
                 '/src/components/community/post-card.tsx',
+                '/src/components/strains/favorite-button-connected.tsx',
                 '/src/components/calendar/calendar-list-items.tsx',
                 '/src/components/ui/text.tsx',
                 '/src/lib/hooks/use-network-status.ts',

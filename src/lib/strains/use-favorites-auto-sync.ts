@@ -42,6 +42,11 @@ export function useFavoritesAutoSync(
   const isMountedRef = useRef(true);
   const lastSyncAttemptRef = useRef(0);
   const [lastSyncAttempt, setLastSyncAttempt] = useState(0);
+  const enabledRef = useRef(enabled);
+
+  useEffect(() => {
+    enabledRef.current = enabled;
+  }, [enabled]);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -80,6 +85,10 @@ export function useFavoritesAutoSync(
 
       InteractionManager.runAfterInteractions(() => {
         if (!isMountedRef.current) return;
+        if (!enabledRef.current) {
+          isSyncScheduledRef.current = false;
+          return;
+        }
         void fullSync()
           .catch((error: Error) => {
             console.error('[useFavoritesAutoSync] Auto-sync failed:', error);

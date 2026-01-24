@@ -34,11 +34,13 @@ export default function SharedTabsLayout({
   const isStrainsStack = screen === 'strains';
   const hydrateFavorites = useFavorites.use.hydrate();
   const routeName = ROUTE_MAP[screen] ?? 'index';
+  const hasHydratedRef = React.useRef(false);
 
   useFavoritesAutoSync({ enabled: isStrainsStack });
 
   React.useEffect(() => {
-    if (!isStrainsStack) return;
+    if (!isStrainsStack || hasHydratedRef.current) return;
+    hasHydratedRef.current = true;
     void hydrateFavorites();
   }, [hydrateFavorites, isStrainsStack]);
 

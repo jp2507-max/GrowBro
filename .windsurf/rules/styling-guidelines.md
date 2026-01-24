@@ -10,7 +10,8 @@ trigger: always_on
 
 - **Auto‑workletization**: callbacks passed to Reanimated APIs (`useAnimatedStyle`, `useDerivedValue`, `useAnimatedReaction`, gesture callbacks, entering/exiting/layout) run on the **UI runtime**. No `'worklet'` directive needed.
 - **Avoid `'worklet'`** in 99.9% of cases. The worklets plugin handles conversion automatically for Reanimated APIs and scheduling functions.
-- **`scheduleOnUI`/`scheduleOnRN`**: automatically convert function references to worklets. Define with `useCallback` and pass by reference—**no `'worklet'` directive needed**.
+- **`scheduleOnUI`**: workletizes the callback and schedules it on the UI runtime (define with `useCallback` and pass by reference).
+- **`scheduleOnRN`**: schedules a JS callback from a worklet—does **not** workletize. Use for side-effects like state updates or async work.
 - **When `'worklet'` IS needed**: Only when a function defined outside Reanimated APIs (e.g., with `useCallback`) is called **directly** inside a worklet context (gesture `.onUpdate()`, inside `useAnimatedStyle`, etc.), not through `scheduleOnUI`/`scheduleOnRN`.
 - **React Compiler**: Use `.get()/.set()` in React render contexts and JS-thread code to avoid Compiler capture issues. `.value` remains valid inside genuine worklets (useAnimatedStyle, gesture callbacks, etc.).
 - **One write per frame**: don't set the same shared value multiple times in a single tick.
@@ -325,7 +326,7 @@ function DraggableBox() {
 
 - Reanimated 4.x is bundled with SDK 54.
 - RNGH: **v2 Gesture API**.
-- Babel: `react-native-worklets/plugin` (configured in this repo).
+- Babel: react-native-worklets/plugin
 - Install deps with the Expo‑pinned versions:
   `npx expo install react-native-reanimated react-native-gesture-handler`.
 

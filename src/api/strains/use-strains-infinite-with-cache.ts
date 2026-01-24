@@ -199,8 +199,8 @@ export function useStrainsInfiniteWithCache({
   variables?: UseStrainsInfiniteWithCacheParams;
   enabled?: boolean;
 } = {}) {
-  return useInfiniteQuery({
-    queryKey: [
+  const queryKey = useMemo(
+    () => [
       'strains-with-cache',
       variables?.searchQuery,
       variables?.filters,
@@ -208,6 +208,17 @@ export function useStrainsInfiniteWithCache({
       variables?.sortBy,
       variables?.sortDirection,
     ],
+    [
+      variables?.searchQuery,
+      variables?.filters,
+      variables?.pageSize,
+      variables?.sortBy,
+      variables?.sortDirection,
+    ]
+  );
+
+  const query = useInfiniteQuery({
+    queryKey,
     enabled,
     queryFn: async ({ pageParam = { index: 0 }, signal }) => {
       const client = getStrainsApiClient();
@@ -288,6 +299,7 @@ export function useStrainsInfiniteWithCache({
       return failureCount < 2; // ✅ Allow 2 retries (3 total attempts) for transient errors
     },
   });
+  return { ...query, queryKey };
 }
 
 export function useCacheStats() {
@@ -354,6 +366,7 @@ export function useOfflineAwareStrains(
     ...query,
     isOffline,
     isUsingCache,
+    queryKey: query.queryKey,
   };
 }
 

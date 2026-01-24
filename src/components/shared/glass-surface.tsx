@@ -62,6 +62,7 @@ export type GlassSurfaceProps = {
   accessibilityHint?: string;
 };
 
+// isLiquidGlassAvailable();
 const glassAvailable = isLiquidGlassAvailable();
 const DEFAULT_BLUR_INTENSITY = 80;
 const DEFAULT_BLUR_TINT: BlurTint = 'systemMaterial';
@@ -84,7 +85,9 @@ export function GlassSurface({
   accessibilityRole,
   accessibilityHint,
 }: GlassSurfaceProps): React.ReactElement {
-  const surfaceStyle = React.useMemo<StyleProp<ViewStyle>>(
+  // Only apply default surface styles to fallback View, not GlassView
+  // GlassView on iOS 26 may crash with certain style properties like overflow: 'hidden'
+  const fallbackSurfaceStyle = React.useMemo<StyleProp<ViewStyle>>(
     () => [styles.surface, style],
     [style]
   );
@@ -94,7 +97,7 @@ export function GlassSurface({
       <GlassView
         glassEffectStyle={glassEffectStyle}
         isInteractive={isInteractive}
-        style={surfaceStyle}
+        style={style}
         testID={testID}
         pointerEvents={pointerEvents}
         accessibilityLabel={accessibilityLabel}
@@ -109,7 +112,7 @@ export function GlassSurface({
   // Fallback for Android + iOS < 26
   return (
     <View
-      style={[surfaceStyle, fallbackStyle]}
+      style={[fallbackSurfaceStyle, fallbackStyle]}
       className={fallbackClassName}
       testID={testID}
       pointerEvents={pointerEvents}

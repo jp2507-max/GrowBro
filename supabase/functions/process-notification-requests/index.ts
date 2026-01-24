@@ -8,15 +8,42 @@ import type { NotificationRequestEntry, ProcessingStats } from './types.ts';
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, X-Function-Secret',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
+
+function decodeJwtPayload(token: string): Record<string, unknown> | null {
+  try {
+    const parts = token.split('.');
+    if (parts.length < 2) return null;
+
+    const payload = parts[1];
+    const padded = payload.padEnd(
+      payload.length + ((4 - (payload.length % 4)) % 4),
+      '='
+    );
+    const decoded = atob(padded.replace(/-/g, '+').replace(/_/g, '/'));
+    return JSON.parse(decoded) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
+function isServiceRoleRequest(req: Request): boolean {
+  const authHeader = req.headers.get('authorization') ?? '';
+  const match = authHeader.match(/^Bearer\\s+(.+)$/i);
+  if (!match) return false;
+
+  const payload = decodeJwtPayload(match[1]);
+  const role = typeof payload?.role === 'string' ? payload.role : null;
+  return role === 'service_role' || role === 'supabase_admin';
+}
 
 /**
  * Sends a single notification request to the send-push-notification Edge Function
  */
 async function sendNotification(
   request: NotificationRequestEntry,
-  edgeFunctionSecret: string,
+  supabaseServiceKey: string,
   supabaseUrl: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
@@ -42,7 +69,7 @@ async function sendNotification(
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Function-Secret': edgeFunctionSecret,
+          Authorization: `Bearer ${supabaseServiceKey}`,
         },
         body: JSON.stringify(payload),
       }
@@ -84,7 +111,7 @@ async function sleep(ms: number): Promise<void> {
 
 async function sendWithRetry(
   request: NotificationRequestEntry,
-  edgeFunctionSecret: string,
+  supabaseServiceKey: string,
   supabaseUrl: string,
   maxRetries = 3
 ): Promise<{ success: boolean; error?: string }> {
@@ -93,7 +120,7 @@ async function sendWithRetry(
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     const result = await sendNotification(
       request,
-      edgeFunctionSecret,
+      supabaseServiceKey,
       supabaseUrl
     );
 
@@ -141,15 +168,7 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    // Guard: ensure the Edge Function has the configured secret
-    const configuredSecret = Deno.env.get('EDGE_FUNCTION_SECRET') ?? null;
-    if (!configuredSecret) {
-      throw new Error('EDGE_FUNCTION_SECRET is not configured');
-    }
-
-    // Validate incoming request header
-    const incomingSecret = req.headers.get('x-function-secret') ?? null;
-    if (!incomingSecret || incomingSecret !== configuredSecret) {
+    if (!isServiceRoleRequest(req)) {
       return new Response(
         JSON.stringify({ success: false, error: 'Unauthorized' }),
         {
@@ -169,13 +188,11 @@ Deno.serve(async (req: Request) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Fetch unprocessed notification requests (limit to 100 per batch)
-    const { data: requests, error: fetchError } = await supabase
-      .from('notification_requests')
-      .select('*')
-      .eq('processed', false)
-      .order('created_at', { ascending: true })
-      .limit(100);
+    // Atomically claim pending requests to avoid duplicate processing if cron overlaps.
+    const { data: requests, error: fetchError } = await supabase.rpc(
+      'claim_notification_requests',
+      { batch_size: 100 }
+    );
 
     if (fetchError) {
       throw new Error(
@@ -206,35 +223,19 @@ Deno.serve(async (req: Request) => {
       errors: [],
     };
 
-    // Process each request
+    // Process each request (already marked processed by claim_notification_requests)
     for (const request of requests as NotificationRequestEntry[]) {
       stats.processed++;
 
       // Send notification with retry logic
       const result = await sendWithRetry(
         request,
-        configuredSecret,
+        supabaseServiceKey,
         supabaseUrl
       );
 
       if (result.success) {
         stats.succeeded++;
-
-        // Mark as processed
-        const { error: updateError } = await supabase
-          .from('notification_requests')
-          .update({
-            processed: true,
-            processed_at: new Date().toISOString(),
-          })
-          .eq('id', request.id);
-
-        if (updateError) {
-          console.error(
-            `Failed to update request ${request.id} as processed:`,
-            updateError
-          );
-        }
       } else {
         stats.failed++;
         stats.errors.push({
@@ -243,23 +244,6 @@ Deno.serve(async (req: Request) => {
         });
 
         console.error(`Failed to process request ${request.id}:`, result.error);
-
-        // Mark as processed even on failure to avoid infinite retries
-        // The error is logged in stats for monitoring
-        const { error: updateError } = await supabase
-          .from('notification_requests')
-          .update({
-            processed: true,
-            processed_at: new Date().toISOString(),
-          })
-          .eq('id', request.id);
-
-        if (updateError) {
-          console.error(
-            `Failed to update request ${request.id} as processed:`,
-            updateError
-          );
-        }
       }
     }
 

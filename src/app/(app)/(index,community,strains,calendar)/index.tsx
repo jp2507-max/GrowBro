@@ -30,7 +30,14 @@ const AnimatedFlashList = Animated.createAnimatedComponent(
 const BOTTOM_PADDING_EXTRA = 24;
 const MAX_ENTERING_ANIMATIONS = 6;
 
-function usePlantsData(isEnabled: boolean) {
+type UsePlantsDataResult = {
+  plants: Plant[];
+  isLoading: boolean;
+  isError: boolean;
+  refetch: ReturnType<typeof usePlantsInfinite>['refetch'];
+};
+
+function usePlantsData(isEnabled: boolean): UsePlantsDataResult {
   const { data, isLoading, isError, refetch } = usePlantsInfinite({
     variables: { query: '' },
     enabled: isEnabled,

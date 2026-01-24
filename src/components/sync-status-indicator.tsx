@@ -208,7 +208,14 @@ export function SyncStatusBanner({
             onPress={onRetry}
             accessibilityRole="button"
             accessibilityLabel={translate('sync.status.retry_button_label')}
-            accessibilityHint={translate('common.retry_hint' as TxKeyPath)}
+            // NOTE: the key 'common.retry_hint' does not exist in our translations.
+            // The defined key is 'accessibility.common.retry_hint' (see src/translations/en.json).
+            // Using the wrong key causes i18next to fall back to the raw key string,
+            // which may be announced by screen readers (regression for SR users).
+            // Fix: point to the accessibility namespace so screen readers get the proper hint.
+            accessibilityHint={translate(
+              'accessibility.common.retry_hint' as TxKeyPath
+            )}
             tx="common.retry"
           />
         )}

@@ -18,6 +18,7 @@ const PREFETCH_QUEUE: PrefetchQueueState = {
 
 const MAX_QUEUE_SIZE = 24;
 const FLUSH_COUNT_PER_TICK = 4;
+let isFlushing = false;
 
 function trimQueueToMaxSize(): void {
   while (PREFETCH_QUEUE.queued.size > MAX_QUEUE_SIZE) {
@@ -30,9 +31,10 @@ function trimQueueToMaxSize(): void {
 }
 
 function scheduleFlush(): void {
-  if (PREFETCH_QUEUE.scheduled) return;
+  if (PREFETCH_QUEUE.scheduled || isFlushing) return;
 
   PREFETCH_QUEUE.scheduled = InteractionManager.runAfterInteractions(() => {
+    isFlushing = true;
     PREFETCH_QUEUE.scheduled = null;
 
     const batch: string[] = [];
@@ -54,6 +56,7 @@ function scheduleFlush(): void {
       });
     }
 
+    isFlushing = false;
     // If more remain, schedule another idle flush.
     if (PREFETCH_QUEUE.queued.size > 0) scheduleFlush();
   });
@@ -142,8 +145,11 @@ export function prefetchStrainImages(
   try {
     // Coalesce prefetch requests to avoid creating many concurrent native prefetches
     // during fast scrolling. Run after interactions to keep scrolling responsive.
-    const optimizedUris = imageUris.filter((uri) => uri && uri.length > 0); // Note: size param reserved for future CDN/resize support
-    for (const uri of optimizedUris) PREFETCH_QUEUE.queued.add(uri);
+    for (const uri of imageUris) {
+      if (!uri || uri.length === 0) continue; // Note: size param reserved for future CDN/resize support
+      PREFETCH_QUEUE.queued.add(uri);
+      if (PREFETCH_QUEUE.queued.size >= MAX_QUEUE_SIZE) break;
+    }
     trimQueueToMaxSize();
 
     scheduleFlush();

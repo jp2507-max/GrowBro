@@ -747,9 +747,11 @@ const PENDING_CHANGES_COUNT_CACHE_MS = 2000;
 let pendingChangesCountCache: { value: number; computedAt: number } | null =
   null;
 let pendingChangesCountPromise: Promise<number> | null = null;
+let pendingChangesCountGeneration = 0;
 
 export function invalidatePendingChangesCountCache(): void {
   pendingChangesCountCache = null;
+  pendingChangesCountGeneration++;
 }
 
 export async function getPendingChangesCount(): Promise<number> {
@@ -763,6 +765,7 @@ export async function getPendingChangesCount(): Promise<number> {
 
   if (pendingChangesCountPromise) return pendingChangesCountPromise;
 
+  const generation = pendingChangesCountGeneration;
   pendingChangesCountPromise = (async () => {
     const lastPulledAt = getItem<number>(CHECKPOINT_KEY);
 
@@ -773,7 +776,9 @@ export async function getPendingChangesCount(): Promise<number> {
     );
 
     const value = pendingCounts.reduce((sum, count) => sum + count, 0);
-    pendingChangesCountCache = { value, computedAt: Date.now() };
+    if (generation === pendingChangesCountGeneration) {
+      pendingChangesCountCache = { value, computedAt: Date.now() };
+    }
     return value;
   })();
 

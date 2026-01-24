@@ -36,17 +36,17 @@ const styles = StyleSheet.create({
   },
 });
 
-// Gradient colors for light and dark modes (using centralized color tokens)
+// Gradient colors for light and dark modes - deeper forest tones for drama
 const GRADIENT_COLORS = {
   light: [
-    colors.primary[800],
-    colors.primary[700],
-    colors.primary[600],
-  ] as const,
-  dark: [
     colors.primary[950],
     colors.primary[900],
     colors.primary[800],
+  ] as const,
+  dark: [
+    colors.primary[950],
+    colors.primary[950],
+    colors.primary[900],
   ] as const,
 };
 
@@ -60,9 +60,9 @@ const SearchBarPlaceholder = React.memo(() => (
   <GlassSurface
     glassEffectStyle="clear"
     style={styles.searchPill}
-    fallbackClassName="bg-white/12 dark:bg-white/12"
+    fallbackClassName="bg-white/20 dark:bg-white/15"
   >
-    <View className="flex-row items-center gap-3 px-5 py-3.5">
+    <View className="flex-row items-center gap-3 px-5 py-4">
       <PlatformIcon
         iosName="magnifyingglass"
         size={20}
@@ -165,12 +165,12 @@ export function CommunityHeader({
             selectedIndex={selectedIndex}
             onChange={handleSegmentChange}
             style={styles.segmentedControl}
-            backgroundColor="rgba(255, 255, 255, 0.12)"
+            backgroundColor="rgba(255, 255, 255, 0.20)"
             fontStyle={SEGMENT_FONT_STYLE}
             // eslint-disable-next-line react-native/no-inline-styles
             activeFontStyle={{
-              color: isDark ? colors.primary[300] : colors.primary[800],
-              fontWeight: '600',
+              color: isDark ? colors.primary[200] : colors.primary[900],
+              fontWeight: '700',
               fontSize: 14,
             }}
             testID="community-segment-control"

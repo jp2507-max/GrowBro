@@ -478,7 +478,8 @@ function useNotificationInbox(): NotificationInboxViewModel {
     } catch {
       target = String(redirect);
     }
-    if (!target.startsWith('/')) return;
+    // Reject protocol-relative URLs (//example.com) and ensure it's a relative path
+    if (!target.startsWith('/') || target.startsWith('//')) return;
     router.replace('/notifications');
     router.push(target as Href);
   }, [redirect, router]);

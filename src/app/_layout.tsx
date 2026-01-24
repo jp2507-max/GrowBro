@@ -426,8 +426,6 @@ function RootLayout(): React.ReactElement {
       return;
     }
 
-    if (!navigationRef) return;
-
     registerNavigationContainer(
       navigationRef as NavigationContainerRef<Record<string, unknown>>
     );

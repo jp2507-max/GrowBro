@@ -16,8 +16,35 @@ import type {
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, X-Function-Secret',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
+
+function decodeJwtPayload(token: string): Record<string, unknown> | null {
+  try {
+    const parts = token.split('.');
+    if (parts.length < 2) return null;
+
+    const payload = parts[1];
+    const padded = payload.padEnd(
+      payload.length + ((4 - (payload.length % 4)) % 4),
+      '='
+    );
+    const decoded = atob(padded.replace(/-/g, '+').replace(/_/g, '/'));
+    return JSON.parse(decoded) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
+function isServiceRoleRequest(req: Request): boolean {
+  const authHeader = req.headers.get('authorization') ?? '';
+  const match = authHeader.match(/^Bearer\\s+(.+)$/i);
+  if (!match) return false;
+
+  const payload = decodeJwtPayload(match[1]);
+  const role = typeof payload?.role === 'string' ? payload.role : null;
+  return role === 'service_role' || role === 'supabase_admin';
+}
 
 /**
  * Maps notification type to Android channel ID
@@ -234,23 +261,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   }
 
   try {
-    // Guard: ensure the Edge Function has the configured secret in its environment
-    const configuredSecret = Deno.env.get('EDGE_FUNCTION_SECRET') ?? null;
-    if (!configuredSecret) {
-      // Fail fast: refuse to run without a configured secret to avoid accepting
-      // unauthenticated requests
-      return new Response(
-        JSON.stringify({ success: false, error: 'Service unavailable' }),
-        {
-          headers: { 'Content-Type': 'application/json', ...corsHeaders },
-          status: 503,
-        }
-      );
-    }
-
-    // Validate incoming request header 'X-Function-Secret' matches configured secret
-    const incomingSecret = req.headers.get('x-function-secret') ?? null;
-    if (!incomingSecret || incomingSecret !== configuredSecret) {
+    if (!isServiceRoleRequest(req)) {
       return new Response(
         JSON.stringify({ success: false, error: 'Unauthorized' }),
         {

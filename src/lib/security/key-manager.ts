@@ -161,7 +161,7 @@ async function deleteKey(keyId: string): Promise<void> {
     await SecureStore.deleteItemAsync(keyId, SECURE_STORE_OPTIONS);
 
     // Also delete metadata
-    const metadataKey = `${KEY_METADATA_KEY}:${keyId}`;
+    const metadataKey = `${KEY_METADATA_KEY}_${keyId}`;
     await SecureStore.deleteItemAsync(metadataKey, METADATA_STORE_OPTIONS);
 
     log.info(`Deleted encryption key for domain: ${keyId}`);
@@ -226,7 +226,7 @@ async function storeKeyMetadata(
   metadata: KeyMetadata
 ): Promise<void> {
   try {
-    const metadataKey = `${KEY_METADATA_KEY}:${keyId}`;
+    const metadataKey = `${KEY_METADATA_KEY}_${keyId}`;
     const metadataJson = JSON.stringify(metadata);
 
     // Store metadata in secure storage
@@ -249,7 +249,7 @@ async function storeKeyMetadata(
  */
 async function getKeyMetadata(keyId: string): Promise<KeyMetadata | null> {
   try {
-    const metadataKey = `${KEY_METADATA_KEY}:${keyId}`;
+    const metadataKey = `${KEY_METADATA_KEY}_${keyId}`;
 
     const metadataJson = await SecureStore.getItemAsync(
       metadataKey,

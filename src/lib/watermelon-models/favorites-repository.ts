@@ -252,6 +252,11 @@ export function createFavoritesRepository(
         .fetch();
 
       for (const favorite of favorites) {
+        if (favorite.deletedAt) {
+          await favorite.destroyPermanently();
+          continue;
+        }
+
         await favorite.update((record) => {
           record.syncedAt = Date.now();
         });

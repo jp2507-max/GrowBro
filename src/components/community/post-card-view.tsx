@@ -27,11 +27,11 @@ import { useCardInteractions } from './use-card-interactions';
 
 const cardStyles = StyleSheet.create({
   shadow: {
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 3,
+    shadowColor: colors.primary[950],
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 4,
   },
 });
 
@@ -177,8 +177,11 @@ export function PostCardView({
             onPressIn={handlePressIn}
             onPressOut={handlePressOut}
           >
-            <View className="mx-5 mb-6 rounded-3xl" style={cardStyles.shadow}>
-              <View className="overflow-hidden rounded-3xl border border-neutral-200 bg-white dark:border-white/10 dark:bg-charcoal-900">
+            <View
+              className="mx-4 mb-5 rounded-[28px]"
+              style={cardStyles.shadow}
+            >
+              <View className="dark:border-white/8 overflow-hidden rounded-[28px] border border-neutral-100 bg-white dark:bg-charcoal-900">
                 <PostCardHeader
                   displayUsername={displayUsername}
                   relativeTime={relativeTime}

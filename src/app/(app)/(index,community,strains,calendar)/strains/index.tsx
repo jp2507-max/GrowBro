@@ -1,8 +1,4 @@
-import {
-  useFocusEffect,
-  useIsFocused,
-  useScrollToTop,
-} from '@react-navigation/native';
+import { useFocusEffect, useScrollToTop } from '@react-navigation/native';
 import React, { useCallback, useState } from 'react';
 import { StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -36,7 +32,6 @@ const LIST_BOTTOM_EXTRA = 24;
 
 export default function StrainsScreen(): React.ReactElement {
   const { listRef, scrollHandler, resetScrollState } = useAnimatedScrollList();
-  const isFocused = useIsFocused();
 
   useScrollToTop(
     listRef as React.RefObject<{
@@ -140,7 +135,6 @@ export default function StrainsScreen(): React.ReactElement {
         <StrainsListWithCache
           searchQuery={debouncedQuery}
           filters={filters}
-          enabled={isFocused}
           onScroll={scrollHandler}
           listRef={listRef}
           contentContainerStyle={[

@@ -89,7 +89,6 @@
       "go_back": "Go back",
       "loading": "Loading",
       "loadingHint": "Content is loading, please wait",
-      "loading_hint": "Content is loading, please wait",
       "loading_label": "Loading",
       "opens_screen_hint": "Opens the {{label}} screen.",
       "refresh_hint": "Refreshes the current content.",

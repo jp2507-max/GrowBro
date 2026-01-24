@@ -613,10 +613,10 @@ export default function CommunityScreen(): React.ReactElement {
           />
 
           {/* Content Sheet - Overlapping header with curved top */}
-          <View className="z-10 -mt-8 flex-1 overflow-hidden rounded-t-[35px] bg-neutral-50 dark:bg-stone-950">
+          <View className="z-10 -mt-12 flex-1 overflow-hidden rounded-t-sheet bg-white dark:bg-charcoal-950">
             {/* Drag indicator pill */}
-            <View className="w-full items-center pb-2 pt-4">
-              <View className="h-1 w-10 rounded-full bg-neutral-300 dark:bg-charcoal-700" />
+            <View className="w-full items-center pb-3 pt-5">
+              <View className="h-1.5 w-12 rounded-full bg-neutral-200 dark:bg-charcoal-700" />
             </View>
 
             <View className="flex-1" testID="community-screen">

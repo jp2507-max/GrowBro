@@ -235,7 +235,15 @@ function useCalendarData(
     const requestIdAtMount = requestIdRef.current;
 
     const run = async () => {
-      await debouncedLoadData();
+      try {
+        await debouncedLoadData();
+      } catch (error) {
+        if (error instanceof Error && error.message === 'Debounced') {
+          return;
+        }
+        console.warn(error);
+      }
+
       if (cancelled) {
         // prevent any follow-up state if you add more later
         return;

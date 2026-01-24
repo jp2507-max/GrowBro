@@ -88,13 +88,9 @@ export async function clearAuthStorage(): Promise<void> {
   if (!isSecureStorageInitialized()) {
     await initializeSecureStorage();
   }
-  try {
-    const keys = authStorage.getAllKeys();
-    for (const key of keys) {
-      authStorage.delete(key);
-    }
-  } catch (error) {
-    console.error('[auth] Failed to clear auth storage:', error);
+  const keys = authStorage.getAllKeys();
+  for (const key of keys) {
+    authStorage.delete(key);
   }
 }
 

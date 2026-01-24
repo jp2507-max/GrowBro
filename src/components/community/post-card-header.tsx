@@ -50,10 +50,10 @@ export function PostCardHeader({
         className="flex-1 flex-row items-center gap-3"
         testID={`${testID}-author-button`}
       >
-        {/* Avatar - larger and more prominent */}
+        {/* Avatar - larger with accent ring */}
         <View className="relative">
-          <View className="size-11 items-center justify-center rounded-full bg-primary-100 dark:bg-primary-900">
-            <Text className="text-base font-bold text-primary-600 dark:text-primary-300">
+          <View className="size-12 items-center justify-center rounded-full border-2 border-primary-200 bg-primary-50 dark:border-primary-800 dark:bg-primary-950">
+            <Text className="text-lg font-bold tracking-tight text-primary-700 dark:text-primary-200">
               {displayUsername.charAt(0).toUpperCase()}
             </Text>
           </View>
@@ -75,11 +75,11 @@ export function PostCardHeader({
         </View>
         {/* Name + Time */}
         <View className="flex-1">
-          <Text className="text-[15px] font-semibold text-neutral-900 dark:text-neutral-50">
+          <Text className="text-[15px] font-bold tracking-tight text-neutral-900 dark:text-neutral-50">
             {displayUsername}
           </Text>
           {relativeTime && (
-            <Text className="mt-0.5 text-xs text-neutral-600 dark:text-neutral-400">
+            <Text className="mt-0.5 text-[11px] font-medium text-neutral-500 dark:text-neutral-500">
               {relativeTime}
             </Text>
           )}

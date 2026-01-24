@@ -180,45 +180,42 @@ export class RealtimeConnectionManager {
       this.handlePostChange(payload);
     });
 
-    // Subscribe to comments table with optional post filter
-    const commentConfig: {
-      event: '*';
-      schema: 'public';
-      table: 'post_comments';
-      filter?: string;
-    } = {
-      event: '*',
-      schema: 'public',
-      table: 'post_comments',
-    };
-
+    // Only subscribe to comments/likes when viewing a specific post.
+    // For the feed view, post counters (like_count/comment_count) are updated on the post
+    // row via triggers, so subscribing to the entire comments/likes tables would be noisy.
     if (this.postIdFilter) {
-      commentConfig.filter = `post_id=eq.${this.postIdFilter}`;
+      const commentConfig: {
+        event: '*';
+        schema: 'public';
+        table: 'post_comments';
+        filter: string;
+      } = {
+        event: '*',
+        schema: 'public',
+        table: 'post_comments',
+        filter: `post_id=eq.${this.postIdFilter}`,
+      };
+
+      this.channel.on('postgres_changes', commentConfig, (payload) => {
+        this.handleCommentChange(payload);
+      });
+
+      const likeConfig: {
+        event: '*';
+        schema: 'public';
+        table: 'post_likes';
+        filter: string;
+      } = {
+        event: '*',
+        schema: 'public',
+        table: 'post_likes',
+        filter: `post_id=eq.${this.postIdFilter}`,
+      };
+
+      this.channel.on('postgres_changes', likeConfig, (payload) => {
+        this.handleLikeChange(payload);
+      });
     }
-
-    this.channel.on('postgres_changes', commentConfig, (payload) => {
-      this.handleCommentChange(payload);
-    });
-
-    // Subscribe to likes table with optional post filter
-    const likeConfig: {
-      event: '*';
-      schema: 'public';
-      table: 'post_likes';
-      filter?: string;
-    } = {
-      event: '*',
-      schema: 'public',
-      table: 'post_likes',
-    };
-
-    if (this.postIdFilter) {
-      likeConfig.filter = `post_id=eq.${this.postIdFilter}`;
-    }
-
-    this.channel.on('postgres_changes', likeConfig, (payload) => {
-      this.handleLikeChange(payload);
-    });
   }
 
   /**
@@ -369,7 +366,16 @@ export class RealtimeConnectionManager {
    */
   private async pollUpdates(): Promise<void> {
     console.log('Polling for updates...');
-    this.callbacks.onPollRefresh?.();
+    if (!this.callbacks.onPollRefresh) {
+      console.error(
+        '[Realtime] CRITICAL: Polling active but onPollRefresh not implemented. ' +
+          'Data will NOT update. This is a bug in consumer implementation. Stopping polling.'
+      );
+      this.stopPolling();
+      return;
+    }
+
+    this.callbacks.onPollRefresh();
   }
 
   /**

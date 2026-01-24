@@ -46,6 +46,7 @@ test-output.txt
 .gemini/skills/**
 .github/skills/**
 .windsurf/skills/**
+kiro/skills/**
 
 # Backup files
 *.bak

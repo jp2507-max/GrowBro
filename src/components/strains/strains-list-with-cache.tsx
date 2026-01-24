@@ -2,12 +2,14 @@
  * Enhanced strains list with offline cache support
  */
 
+import { useFocusEffect } from '@react-navigation/native';
 import {
   FlashList,
   type FlashListProps,
   type FlashListRef,
 } from '@shopify/flash-list';
-import React, { useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import React, { useCallback, useMemo } from 'react';
 import Animated from 'react-native-reanimated';
 import type { ReanimatedScrollEvent } from 'react-native-reanimated/lib/typescript/hook/commonTypes';
 
@@ -57,7 +59,7 @@ export type StrainsListWithCacheProps = {
   filters?: StrainFilters;
   sortBy?: string;
   sortDirection?: 'asc' | 'desc';
-  enabled?: boolean;
+
   /** Animated scroll handler from useAnimatedScrollHandler - passed directly to AnimatedFlashList */
   onScroll?: AnimatedScrollHandler;
   listRef?: React.RefObject<FlashListRef<unknown> | null>;
@@ -80,7 +82,6 @@ export function StrainsListWithCache({
   filters = {},
   sortBy,
   sortDirection,
-  enabled = true,
   onScroll,
   listRef,
   contentContainerStyle,
@@ -112,6 +113,7 @@ export function StrainsListWithCache({
     refetch,
     isOffline,
     isUsingCache,
+    queryKey: strainsQueryKey,
   } = useOfflineAwareStrains(
     {
       searchQuery: (searchQuery || '').trim(),
@@ -120,7 +122,19 @@ export function StrainsListWithCache({
       sortDirection,
       pageSize: 20,
     },
-    enabled
+    false
+  );
+
+  const queryClient = useQueryClient();
+
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+      return () => {
+        // Cancel pending requests when screen loses focus
+        queryClient.cancelQueries({ queryKey: strainsQueryKey });
+      };
+    }, [refetch, strainsQueryKey, queryClient])
   );
 
   const { strains, onRetry, onEndReached } = useStrainListState({

@@ -74,25 +74,32 @@ function cacheStrainToSupabase(strain: Strain) {
     return;
   }
 
-  import('@/lib/supabase').then(({ supabase }) => {
-    supabase
-      .from('strain_cache')
-      .upsert(
-        {
-          id: strain.id,
-          slug: strain.slug,
-          name: strain.name,
-          race: strain.race,
-          data: strain,
-        },
-        { onConflict: 'id' }
-      )
-      .then(({ error: cacheError }) => {
-        if (cacheError) {
-          console.debug('[StrainModal] Cache save failed:', cacheError);
-        }
-      });
-  });
+  import('@/lib/supabase')
+    .then(({ supabase }) => {
+      supabase
+        .from('strain_cache')
+        .upsert(
+          {
+            id: strain.id,
+            slug: strain.slug,
+            name: strain.name,
+            race: strain.race,
+            data: strain,
+          },
+          { onConflict: 'id' }
+        )
+        .then(({ error: cacheError }) => {
+          if (cacheError) {
+            console.debug('[StrainModal] Cache save failed:', cacheError);
+          }
+        });
+    })
+    .catch((importError) => {
+      console.debug(
+        '[StrainModal] Failed to load supabase module:',
+        importError
+      );
+    });
 }
 
 /** Share strain via native share sheet */
