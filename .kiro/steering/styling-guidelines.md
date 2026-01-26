@@ -326,14 +326,6 @@ function DraggableBox() {
 
 ---
 
-## ⚙️ Expo SDK 54 specifics
-
-- Reanimated 4.x is bundled with SDK 54.
-- RNGH: **v2 Gesture API**.
-- Babel: react-native-worklets/plugin
-- Install deps with the Expo‑pinned versions:
-  `npx expo install react-native-reanimated react-native-gesture-handler`.
-
 ---
 
 **Short agent take**: Tailwind for static, Reanimated for dynamic; keep `className` stable; prefer layout/shared transitions; honor Reduced Motion; use tokens; prefix `sharedTransitionTag` by feature; keep heavy logic on the UI runtime and cross to JS only for side‑effects/state via `scheduleOnRN`.

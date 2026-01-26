@@ -11,13 +11,12 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
 
-function isServiceRoleRequest(req: Request): boolean {
+function isServiceRoleRequest(req: Request, expected: string): boolean {
   const authHeader = req.headers.get('authorization') ?? '';
-  const match = authHeader.match(/^Bearer\\s+(.+)$/i);
+  const match = authHeader.match(/^Bearer\s+(.+)$/i);
   if (!match) return false;
 
   const token = match[1];
-  const expected = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
   return Boolean(expected) && token === expected;
 }
 
@@ -171,7 +170,20 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    if (!isServiceRoleRequest(req)) {
+    // Initialize Supabase client with service role key
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Service unavailable' }),
+        {
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+          status: 503,
+        }
+      );
+    }
+    if (!isServiceRoleRequest(req, supabaseServiceKey)) {
       return new Response(
         JSON.stringify({ success: false, error: 'Unauthorized' }),
         {
@@ -179,14 +191,6 @@ Deno.serve(async (req: Request) => {
           status: 401,
         }
       );
-    }
-
-    // Initialize Supabase client with service role key
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-
-    if (!supabaseUrl || !supabaseServiceKey) {
-      throw new Error('Supabase environment variables not configured');
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);

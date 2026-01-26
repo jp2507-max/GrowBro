@@ -1,23 +1,24 @@
 import React from 'react';
 
-import { useStrainsInfinite } from '@/api';
+import { useStrainsInfiniteWithCache } from '@/api/strains/use-strains-infinite-with-cache';
 import { act, screen, setup } from '@/lib/test-utils';
 
 import { PlantForm } from './plant-form';
 
-jest.mock('@/api', () => ({
-  useStrainsInfinite: jest.fn().mockReturnValue({
+jest.mock('@/api/strains/use-strains-infinite-with-cache', () => ({
+  useStrainsInfiniteWithCache: jest.fn().mockReturnValue({
     data: { pages: [] },
     isFetching: false,
     isLoading: false,
   }),
 }));
 
-const mockUseStrainsInfinite = useStrainsInfinite as jest.Mock;
+const mockUseStrainsInfiniteWithCache =
+  useStrainsInfiniteWithCache as jest.Mock;
 
 describe('PlantForm', () => {
   beforeEach(() => {
-    mockUseStrainsInfinite.mockClear();
+    mockUseStrainsInfiniteWithCache.mockClear();
   });
 
   test('requires strain when submitting', async () => {
@@ -40,7 +41,9 @@ describe('PlantForm', () => {
       submitHandler?.();
     });
 
-    expect(await screen.findByText('Strain is required')).toBeOnTheScreen();
+    expect(
+      await screen.findByTestId('plant-strain-input-error')
+    ).toHaveTextContent('Required');
     expect(onSubmit).not.toHaveBeenCalled();
   });
 });

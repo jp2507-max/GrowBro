@@ -167,6 +167,7 @@ export async function createPlantFromForm(
   const id = generatePlantId();
   const metadata = buildMetadata(input);
   const stage = input.stage ?? 'seedling';
+  const plantedAt = input.plantedAt ?? now.toISOString();
 
   const record = await database.write(async () => {
     return collection.create((rec) => {
@@ -178,7 +179,7 @@ export async function createPlantFromForm(
       rec.photoperiodType = assignString(input.photoperiodType);
       rec.environment = assignString(input.environment);
       rec.geneticLean = assignString(input.geneticLean);
-      rec.plantedAt = assignString(input.plantedAt);
+      rec.plantedAt = assignString(plantedAt);
       rec.expectedHarvestAt = assignString(input.expectedHarvestAt);
       rec.imageUrl = assignString(input.imageUrl);
       rec.notes = assignString(input.notes);

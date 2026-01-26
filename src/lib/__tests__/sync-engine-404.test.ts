@@ -8,6 +8,9 @@ jest.mock('@/lib/supabase', () => ({
       getSession: jest.fn().mockResolvedValue({
         data: { session: { access_token: 'mock-token' } },
       }),
+      getUser: jest.fn().mockResolvedValue({
+        data: { user: { id: 'mock-user' } },
+      }),
     },
   },
 }));
@@ -24,9 +27,9 @@ jest.mock('@/lib/analytics', () => ({
 }));
 
 jest.mock('@/lib/task-notifications', () => ({
-  TaskNotificationService: jest.fn().mockImplementation(() => ({
+  getTaskNotificationService: jest.fn().mockReturnValue({
     rehydrateNotifications: jest.fn().mockResolvedValue(undefined),
-  })),
+  }),
 }));
 
 // Mock fetch globally

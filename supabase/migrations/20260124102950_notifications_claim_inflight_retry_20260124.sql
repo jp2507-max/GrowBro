@@ -43,7 +43,7 @@ begin
         updated as (
           update public.notification_requests nr
           set claimed_at = now(),
-              claim_id = extensions.gen_random_uuid(),
+              claim_id = gen_random_uuid(),
               attempt_count = coalesce(nr.attempt_count, 0) + 1,
               last_attempt_at = now()
           from picked p

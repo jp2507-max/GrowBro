@@ -60,29 +60,11 @@ function isProxyEnabled(): boolean {
 
 /** Fire-and-forget background cache to Supabase (dev fallback only) */
 function cacheStrainToSupabase(strain: Strain) {
-  if (isProxyEnabled()) {
-    return;
-  }
-
-  import('@/lib/supabase').then(({ supabase }) => {
-    supabase
-      .from('strain_cache')
-      .upsert(
-        {
-          id: strain.id,
-          slug: strain.slug,
-          name: strain.name,
-          race: strain.race,
-          data: strain,
-        },
-        { onConflict: 'id' }
-      )
-      .then(({ error: cacheError }) => {
-        if (cacheError) {
-          console.debug('[StrainDetails] Cache save failed:', cacheError);
-        }
-      });
-  });
+  // `public.strain_cache` is service-role-only writable (RLS).
+  // Caching is handled by the server-side `strains-proxy` Edge Function.
+  // Keep as a no-op to avoid dev/prod RLS noise.
+  if (isProxyEnabled()) return;
+  void strain;
 }
 
 /** Share strain via native share sheet */

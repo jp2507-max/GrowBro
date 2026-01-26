@@ -1,8 +1,8 @@
 /**
- * MMKV Storage Adapter for Supabase Auth
+ * Secure Storage Adapter for Supabase Auth
  *
  * This module provides a Supabase-compatible storage interface that wraps
- * the centralized secure-storage system. All auth data is stored in the
+ * the centralized encrypted secure-storage system. All auth data is stored in the
  * encrypted `authStorage` domain from `@/lib/security/secure-storage`.
  *
  * Storage Architecture:
@@ -10,11 +10,27 @@
  * - Provides async getItem/setItem/removeItem for Supabase compatibility
  * - Provides sync accessors for direct token operations
  */
+import * as SecureStore from 'expo-secure-store';
+import { MMKV } from 'react-native-mmkv';
+
+import { ENCRYPTION_SENTINEL_KEY } from '@/lib/security/constants';
 import {
   authStorage,
   initializeSecureStorage,
   isSecureStorageInitialized,
 } from '@/lib/security/secure-storage';
+
+const LEGACY_MMKV_AUTH_ID = 'auth-storage';
+const LEGACY_KEY_VERSION_STORAGE_KEY = 'auth_key_version';
+const LEGACY_ENCRYPTION_KEY_PREFIX = 'auth_encryption_key_v';
+const LEGACY_MIGRATION_FLAG_KEY = 'auth:migration:legacy-mmkv';
+const LEGACY_MIGRATION_STATUS = {
+  complete: 'complete',
+  failed: 'failed',
+  skipped: 'skipped',
+} as const;
+
+let legacyMigrationPromise: Promise<void> | null = null;
 
 /**
  * Storage adapter for Supabase Auth that wraps the centralized secure storage
@@ -23,6 +39,122 @@ import {
 async function ensureAuthStorageReady(): Promise<void> {
   if (!isSecureStorageInitialized()) {
     await initializeSecureStorage();
+  }
+
+  if (!legacyMigrationPromise) {
+    legacyMigrationPromise = migrateLegacyAuthStorage();
+  }
+
+  await legacyMigrationPromise;
+}
+
+function getAuthStorageKeys(): string[] {
+  return authStorage
+    .getAllKeys()
+    .filter(
+      (key) =>
+        key !== ENCRYPTION_SENTINEL_KEY && key !== LEGACY_MIGRATION_FLAG_KEY
+    );
+}
+
+async function getLegacyEncryptionKey(): Promise<string | null> {
+  try {
+    const version = await SecureStore.getItemAsync(
+      LEGACY_KEY_VERSION_STORAGE_KEY
+    );
+    if (!version) return null;
+    return await SecureStore.getItemAsync(
+      `${LEGACY_ENCRYPTION_KEY_PREFIX}${version}`
+    );
+  } catch (error) {
+    console.warn('[auth-storage] Legacy key lookup failed:', error);
+    return null;
+  }
+}
+
+async function migrateLegacyAuthStorage(): Promise<void> {
+  try {
+    const migrationStatus = authStorage.get(LEGACY_MIGRATION_FLAG_KEY);
+    if (
+      migrationStatus === LEGACY_MIGRATION_STATUS.complete ||
+      migrationStatus === LEGACY_MIGRATION_STATUS.failed ||
+      migrationStatus === LEGACY_MIGRATION_STATUS.skipped
+    ) {
+      return;
+    }
+
+    const legacyKey = await getLegacyEncryptionKey();
+    if (!legacyKey) {
+      authStorage.set(
+        LEGACY_MIGRATION_FLAG_KEY,
+        LEGACY_MIGRATION_STATUS.skipped
+      );
+      return;
+    }
+
+    const legacyStorage = new MMKV({
+      id: LEGACY_MMKV_AUTH_ID,
+      encryptionKey: legacyKey,
+    });
+
+    const legacyKeys = legacyStorage
+      .getAllKeys()
+      .filter(
+        (key) =>
+          key !== ENCRYPTION_SENTINEL_KEY && key !== LEGACY_MIGRATION_FLAG_KEY
+      );
+
+    if (legacyKeys.length === 0) {
+      authStorage.set(
+        LEGACY_MIGRATION_FLAG_KEY,
+        LEGACY_MIGRATION_STATUS.skipped
+      );
+      return;
+    }
+
+    const existingKeys = new Set(getAuthStorageKeys());
+    let migratedCount = 0;
+    let hasAllKeysAlready = true;
+
+    for (const key of legacyKeys) {
+      if (existingKeys.has(key)) {
+        continue;
+      }
+
+      hasAllKeysAlready = false;
+
+      const stringValue = legacyStorage.getString(key);
+      if (stringValue !== undefined) {
+        authStorage.set(key, stringValue);
+        migratedCount += 1;
+        continue;
+      }
+
+      const numberValue = legacyStorage.getNumber(key);
+      if (numberValue !== undefined) {
+        authStorage.set(key, numberValue);
+        migratedCount += 1;
+        continue;
+      }
+
+      const booleanValue = legacyStorage.getBoolean(key);
+      if (booleanValue !== undefined) {
+        authStorage.set(key, booleanValue);
+        migratedCount += 1;
+      }
+    }
+
+    if (migratedCount > 0 || hasAllKeysAlready) {
+      legacyStorage.clearAll();
+    }
+
+    authStorage.set(
+      LEGACY_MIGRATION_FLAG_KEY,
+      LEGACY_MIGRATION_STATUS.complete
+    );
+  } catch (error) {
+    console.warn('[auth-storage] Legacy storage migration failed:', error);
+    authStorage.set(LEGACY_MIGRATION_FLAG_KEY, LEGACY_MIGRATION_STATUS.failed);
   }
 }
 
@@ -98,4 +230,8 @@ export async function clearAuthStorage(): Promise<void> {
  */
 export async function initAuthStorage(): Promise<void> {
   await initializeSecureStorage();
+  if (!legacyMigrationPromise) {
+    legacyMigrationPromise = migrateLegacyAuthStorage();
+  }
+  await legacyMigrationPromise;
 }

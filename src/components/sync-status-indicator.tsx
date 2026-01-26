@@ -176,9 +176,12 @@ export function SyncStatusBanner({
         return {
           message:
             pendingChanges > 0
-              ? translate('accessibility.sync.banner.offline_message_other', {
-                  count: pendingChanges,
-                })
+              ? translate(
+                  pendingChanges === 1
+                    ? 'accessibility.sync.banner.offline_message_one'
+                    : 'accessibility.sync.banner.offline_message_other',
+                  { count: pendingChanges }
+                )
               : translate('accessibility.sync.banner.offline_title'),
           bgColor: 'bg-warning-50',
           textColor: 'text-warning-900',

@@ -19,13 +19,12 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
 
-function isServiceRoleRequest(req: Request): boolean {
+function isServiceRoleRequest(req: Request, expected: string): boolean {
   const authHeader = req.headers.get('authorization') ?? '';
-  const match = authHeader.match(/^Bearer\\s+(.+)$/i);
+  const match = authHeader.match(/^Bearer\s+(.+)$/i);
   if (!match) return false;
 
   const token = match[1];
-  const expected = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
   return Boolean(expected) && token === expected;
 }
 
@@ -244,7 +243,18 @@ Deno.serve(async (req: Request): Promise<Response> => {
   }
 
   try {
-    if (!isServiceRoleRequest(req)) {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    if (!supabaseUrl || !supabaseServiceKey) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Service unavailable' }),
+        {
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+          status: 503,
+        }
+      );
+    }
+    if (!isServiceRoleRequest(req, supabaseServiceKey)) {
       return new Response(
         JSON.stringify({ success: false, error: 'Unauthorized' }),
         {
@@ -274,19 +284,6 @@ Deno.serve(async (req: Request): Promise<Response> => {
     }
 
     // Initialize Supabase client with service role key
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-
-    if (!supabaseUrl || !supabaseServiceKey) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Service unavailable' }),
-        {
-          headers: { 'Content-Type': 'application/json', ...corsHeaders },
-          status: 503,
-        }
-      );
-    }
-
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get user's push tokens

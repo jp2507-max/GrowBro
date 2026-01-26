@@ -122,7 +122,7 @@ export function StrainsListWithCache({
       sortDirection,
       pageSize: 20,
     },
-    false
+    true
   );
 
   const queryClient = useQueryClient();

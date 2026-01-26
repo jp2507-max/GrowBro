@@ -1633,7 +1633,10 @@ export async function synchronize(): Promise<SyncResult> {
   );
 
   // 3) Update checkpoint atomically after successful apply
-  if (serverTimestamp !== null) await setItem(CHECKPOINT_KEY, serverTimestamp);
+  if (serverTimestamp !== null) {
+    await setItem(CHECKPOINT_KEY, serverTimestamp);
+    invalidatePendingChangesCountCache();
+  }
   try {
     if (typeof lastPulledAt === 'number') {
       await NoopAnalytics.track('sync_checkpoint_age_ms', {
@@ -1644,9 +1647,6 @@ export async function synchronize(): Promise<SyncResult> {
 
   // 4) Differentially re-plan notifications if tasks changed
   await updateNotificationsForChangedTasks(changedTaskIds);
-
-  // 5) Invalidate pending changes count cache after successful sync
-  invalidatePendingChangesCountCache();
 
   return { pushed, applied, serverTimestamp };
 }

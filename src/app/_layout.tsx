@@ -84,6 +84,25 @@ import { useThemeConfig } from '@/lib/use-theme-config';
 import { database } from '@/lib/watermelon';
 global.Buffer = global.Buffer ?? Buffer;
 
+// In dev, Expo DevTools' WebSocket reconnect layer occasionally emits an empty
+// warning (no message), resulting in noisy "WARN" logs with a call stack.
+// Keep real warnings, suppress only the empty ones.
+if (__DEV__) {
+  const warnAny = console.warn as unknown as {
+    (...args: unknown[]): void;
+    __growbroIgnoreEmptyWarn?: boolean;
+  };
+  if (!warnAny.__growbroIgnoreEmptyWarn) {
+    const originalWarn = console.warn.bind(console);
+    const patched = (...args: unknown[]) => {
+      if (!args || args.length === 0) return;
+      originalWarn(...args);
+    };
+    (patched as typeof warnAny).__growbroIgnoreEmptyWarn = true;
+    console.warn = patched as typeof console.warn;
+  }
+}
+
 // Type definitions for Localization API
 // Timezone and startup helpers live in `use-root-startup.ts`
 
@@ -427,7 +446,9 @@ function RootLayout(): React.ReactElement {
     }
 
     registerNavigationContainer(
-      navigationRef as NavigationContainerRef<Record<string, unknown>>
+      navigationRef as unknown as NavigationContainerRef<
+        Record<string, unknown>
+      >
     );
     hasRegisteredNavigationRef.current = true;
   }, [navigationRef]);
@@ -569,15 +590,15 @@ async function initializeAuthAndStates(): Promise<void> {
         resolve();
         return;
       }
-      try {
-        await executeCleanup(
-          `hydrateAuth timeout after ${HYDRATE_AUTH_TIMEOUT_MS}ms`
-        );
-      } catch (error) {
-        console.error('[RootLayout] executeCleanup failed:', error);
-      } finally {
-        resolve();
-      }
+      // IMPORTANT: do NOT clear auth storage on timeout.
+      // Slow network / captive portals can delay `supabase.auth.setSession()`.
+      // Clearing tokens here can force a sign-out loop and make startup worse.
+      console.warn(
+        `[RootLayout] hydrateAuth exceeded ${HYDRATE_AUTH_TIMEOUT_MS}ms; continuing startup without blocking UI`
+      );
+      // Abort to cancel the timeout listener and unblock the race.
+      abortController.abort();
+      resolve();
     }, HYDRATE_AUTH_TIMEOUT_MS);
   });
 
@@ -590,7 +611,13 @@ async function initializeAuthAndStates(): Promise<void> {
   hydrateOnboardingState();
 
   // Hydrate favorites from local DB so heart icons show correctly on first render
-  await hydrateFavorites();
+  // Do not block startup on this; it is cosmetic and can be loaded shortly after.
+  // Use InteractionManager so it runs after initial interactions/paint.
+  InteractionManager.runAfterInteractions(() => {
+    void hydrateFavorites().catch((error) => {
+      console.warn('[RootLayout] hydrateFavorites failed:', error);
+    });
+  });
   if (__DEV__) console.log('[RootLayout] initializeAuthAndStates: done');
 }
 

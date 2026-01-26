@@ -6,6 +6,7 @@ import colors from '../colors';
 
 type IconProps = SvgProps & {
   size?: number;
+  strokeWidth?: number;
 };
 
 export const HelpCircle = ({

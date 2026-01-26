@@ -522,14 +522,15 @@ async function updatePlantWithRemotePath(
       })
     );
 
-    // Trigger plant sync to push the remote path to Supabase
+    // Trigger plant sync to push the remote path to Supabase (debounced)
     try {
-      const { syncPlantsToCloud } = await import('@/lib/plants/plants-sync');
-      void syncPlantsToCloud().catch((err) => {
-        console.warn('[Queue] Plant sync after upload failed:', err);
-      });
+      const { requestPlantsPush } = await import('@/lib/plants/plants-sync');
+      requestPlantsPush();
     } catch (syncImportError) {
-      console.warn('[Queue] Failed to import plants-sync:', syncImportError);
+      console.warn(
+        '[Queue] Failed to request plant push after upload:',
+        syncImportError
+      );
     }
   } catch (error) {
     console.warn(

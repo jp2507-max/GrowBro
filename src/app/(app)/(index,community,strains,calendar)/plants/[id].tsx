@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next';
 import { Alert, Platform, StyleSheet } from 'react-native';
 import { showMessage } from 'react-native-flash-message';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { type Plant, usePlant } from '@/api/plants';
 import { useDeletePlant } from '@/api/plants/use-delete-plant';
@@ -30,6 +29,7 @@ import {
 } from '@/components/ui';
 import colors from '@/components/ui/colors';
 import { ArrowRight } from '@/components/ui/icons';
+import { useBottomTabBarHeight } from '@/lib/animations/use-bottom-tab-bar-height';
 import { getOptionalAuthenticatedUserId } from '@/lib/auth';
 import { haptics } from '@/lib/haptics';
 import { usePlantPhotoEditor } from '@/lib/hooks/use-plant-photo-editor';
@@ -123,7 +123,7 @@ type PlantContentSheetProps = {
   handleTaskPress: (taskId: string) => void;
   handleHarvestPress: () => void;
   handlePhotoInfo: (info: PlantPhotoInfo) => void;
-  insets: ReturnType<typeof useSafeAreaInsets>;
+  bottomPadding: number;
   t: ReturnType<typeof useTranslation>['t'];
 };
 
@@ -143,7 +143,7 @@ function PlantContentSheet({
   handleTaskPress,
   handleHarvestPress,
   handlePhotoInfo,
-  insets,
+  bottomPadding,
   t,
 }: PlantContentSheetProps): React.ReactElement {
   return (
@@ -226,7 +226,7 @@ function PlantContentSheet({
         {/* Floating Save Button */}
         <View
           className="absolute inset-x-0 bottom-0 bg-white/95 px-4 pt-3 dark:bg-charcoal-900/95"
-          style={{ paddingBottom: insets.bottom + 8 }}
+          style={{ paddingBottom: bottomPadding }}
         >
           <Button
             variant="default"
@@ -380,7 +380,7 @@ export default function PlantDetailScreen(): React.ReactElement | null {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
-  const insets = useSafeAreaInsets();
+  const { grossHeight } = useBottomTabBarHeight();
 
   const plantId = React.useMemo(() => (id ? String(id) : null), [id]);
 
@@ -503,7 +503,7 @@ export default function PlantDetailScreen(): React.ReactElement | null {
         handleTaskPress={handleTaskPress}
         handleHarvestPress={handleHarvestPress}
         handlePhotoInfo={handlePhotoInfo}
-        insets={insets}
+        bottomPadding={grossHeight + 8}
         t={t}
       />
     </View>

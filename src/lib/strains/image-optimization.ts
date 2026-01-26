@@ -150,7 +150,6 @@ export function prefetchStrainImages(
     for (const uri of imageUris) {
       if (!uri || uri.length === 0) continue;
       PREFETCH_QUEUE.queued.add(uri);
-      if (PREFETCH_QUEUE.queued.size >= MAX_QUEUE_SIZE) break;
     }
     trimQueueToMaxSize();
 

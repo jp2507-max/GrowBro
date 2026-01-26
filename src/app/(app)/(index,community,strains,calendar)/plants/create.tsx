@@ -25,6 +25,7 @@ import {
 } from '@/components/ui';
 import { ArrowLeft } from '@/components/ui/icons';
 import { useModal } from '@/components/ui/modal';
+import { useBottomTabBarHeight } from '@/lib/animations/use-bottom-tab-bar-height';
 import { getOptionalAuthenticatedUserId } from '@/lib/auth';
 import { haptics } from '@/lib/haptics';
 import type { PlantPhotoStoreResult } from '@/lib/media/plant-photo-storage';
@@ -326,6 +327,7 @@ export default function CreatePlantScreen(): React.ReactElement {
   const queryClient = useQueryClient();
   const successModal = useModal();
   const insets = useSafeAreaInsets();
+  const { grossHeight } = useBottomTabBarHeight();
   const [createdPlant, setCreatedPlant] = React.useState<Plant | null>(null);
   const [formKey, setFormKey] = React.useState(0);
   const [isSaving, setIsSaving] = React.useState(false);
@@ -429,7 +431,7 @@ export default function CreatePlantScreen(): React.ReactElement {
             </ScrollView>
             <View
               className="absolute inset-x-0 bottom-0 bg-sheet/95 px-4 pt-3 dark:bg-charcoal-900/95"
-              style={{ paddingBottom: insets.bottom + 8 }}
+              style={{ paddingBottom: grossHeight + 8 }}
             >
               <Button
                 variant="default"

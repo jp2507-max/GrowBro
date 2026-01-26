@@ -160,25 +160,32 @@ export class RealtimeConnectionManager {
   private setupSubscriptions(): void {
     if (!this.channel) return;
 
-    // Subscribe to posts table with optional post filter
-    const postConfig: {
-      event: '*';
-      schema: 'public';
-      table: 'posts';
-      filter?: string;
-    } = {
-      event: '*',
-      schema: 'public',
-      table: 'posts',
-    };
-
     if (this.postIdFilter) {
-      postConfig.filter = `id=eq.${this.postIdFilter}`;
+      this.channel.on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'posts',
+          filter: `id=eq.${this.postIdFilter}`,
+        },
+        (payload) => {
+          this.handlePostChange(payload);
+        }
+      );
+    } else {
+      this.channel.on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'posts',
+        },
+        (payload) => {
+          this.handlePostChange(payload);
+        }
+      );
     }
-
-    this.channel.on('postgres_changes', postConfig, (payload) => {
-      this.handlePostChange(payload);
-    });
 
     // Only subscribe to comments/likes when viewing a specific post.
     // For the feed view, post counters (like_count/comment_count) are updated on the post

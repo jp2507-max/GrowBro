@@ -20,7 +20,7 @@ BEGIN
         ON public.age_verification_audit
         FOR INSERT
         TO service_role
-        WITH CHECK ((SELECT auth.role()) = 'service_role')
+        WITH CHECK (true)
     $p$;
   END IF;
 
@@ -33,7 +33,7 @@ BEGIN
         ON public.age_verification_tokens
         FOR INSERT
         TO service_role
-        WITH CHECK ((SELECT auth.role()) = 'service_role')
+        WITH CHECK (true)
     $p$;
 
     EXECUTE $p$
@@ -41,8 +41,8 @@ BEGIN
         ON public.age_verification_tokens
         FOR UPDATE
         TO service_role
-        USING ((SELECT auth.role()) = 'service_role')
-        WITH CHECK ((SELECT auth.role()) = 'service_role')
+        USING (true)
+        WITH CHECK (true)
     $p$;
   END IF;
 END
@@ -58,7 +58,7 @@ BEGIN
         ON public.privacy_notice_deliveries
         FOR INSERT
         TO service_role
-        WITH CHECK ((SELECT auth.role()) = 'service_role')
+        WITH CHECK (true)
     $p$;
   END IF;
 END
@@ -74,7 +74,7 @@ BEGIN
         ON public.moderator_alert_log
         FOR INSERT
         TO service_role
-        WITH CHECK ((SELECT auth.role()) = 'service_role')
+        WITH CHECK (true)
     $p$;
   END IF;
 
@@ -85,7 +85,7 @@ BEGIN
         ON public.notification_delivery_log
         FOR INSERT
         TO service_role
-        WITH CHECK ((SELECT auth.role()) = 'service_role')
+        WITH CHECK (true)
     $p$;
   END IF;
 END
@@ -205,8 +205,8 @@ BEGIN
         ON public.user_age_status
         FOR ALL
         TO service_role
-        USING ((SELECT auth.role()) = 'service_role')
-        WITH CHECK ((SELECT auth.role()) = 'service_role')
+        USING (true)
+        WITH CHECK (true)
     $p$;
 
     EXECUTE $p$

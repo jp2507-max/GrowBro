@@ -276,6 +276,27 @@ async function getKeyMetadata(keyId: string): Promise<KeyMetadata | null> {
         log.debug(
           `Retrieved metadata using legacy key format for ${keyId} (migration pending)`
         );
+
+        // Proactively migrate to new format
+        try {
+          // Re-derive new key variable since it is scoped above
+          const newMetadataKey = `${KEY_METADATA_KEY}_${keyId}`;
+          await SecureStore.setItemAsync(
+            newMetadataKey,
+            metadataJson,
+            METADATA_STORE_OPTIONS
+          );
+
+          // Delete legacy key after successful migration
+          await SecureStore.deleteItemAsync(
+            oldMetadataKey,
+            METADATA_STORE_OPTIONS
+          );
+          log.debug(`Migrated metadata for ${keyId} to new format`);
+        } catch (error) {
+          // Non-critical, migration will happen on next rotation
+          log.debug(`Failed to migrate metadata for ${keyId}`, error);
+        }
       }
     }
 

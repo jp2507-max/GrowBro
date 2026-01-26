@@ -11,22 +11,6 @@ Object.defineProperty(global, '__DEV__', {
   configurable: true,
 });
 
-// Print an immediate snapshot of active Node handles (one-time) to help
-// debug CI hangs. This is intentionally lightweight and only logs constructors
-// names to avoid leaking sensitive details.
-try {
-  const handles =
-    (
-      process as { _getActiveHandles?: () => unknown[] }
-    )._getActiveHandles?.() ?? [];
-  const names = handles.map(
-    (h: unknown) =>
-      (h as { constructor?: { name?: string } })?.constructor?.name || String(h)
-  );
-
-  console.warn('[open-handles-initial]', names.slice(0, 20));
-} catch {}
-
 // react-hook form setup for testing
 // @ts-ignore
 global.window = {};
@@ -89,6 +73,16 @@ jest.mock('expo-notifications', () => {
   };
 });
 
+// mock: expo-glass-effect (native module not available in Jest)
+jest.mock('expo-glass-effect', () => {
+  return {
+    __esModule: true,
+    GlassView: ({ children }: { children?: React.ReactNode }) =>
+      children ?? null,
+    isLiquidGlassAvailable: () => false,
+  };
+});
+
 // Note: WatermelonDB is mocked via moduleNameMapper and __mocks__ folder.
 
 // mock: react-native-reanimated to avoid native timers/threads in tests
@@ -114,9 +108,36 @@ jest.mock('react-native-worklets', () => {
   ): ReturnValue => {
     return fun(...args);
   };
+
+  // Reanimated imports these at module init time.
+  const serializableMappingCache = new Map<unknown, unknown>();
+  const RuntimeKind = { ReactNative: 0, Web: 1 } as const;
+  const isWorkletFunction = (_fn: unknown): boolean => true;
+  const runOnUI = <Args extends unknown[], ReturnValue>(
+    fn: (...args: Args) => ReturnValue
+  ) => {
+    return (...args: Args): ReturnValue => fn(...args);
+  };
+
+  // Reanimated 4 expects this helper from react-native-worklets.
+  // In tests we provide a tiny in-memory ref with get/set.
+  const createSerializable = <T>(initial: T) => {
+    let current = initial;
+    return {
+      get: () => current,
+      set: (next: T) => {
+        current = next;
+      },
+    };
+  };
   return {
     scheduleOnRN: jest.fn(scheduleOnRN),
     scheduleOnUI: jest.fn(scheduleOnUI),
+    createSerializable: jest.fn(createSerializable),
+    serializableMappingCache,
+    RuntimeKind,
+    isWorkletFunction: jest.fn(isWorkletFunction),
+    runOnUI: jest.fn(runOnUI),
   };
 });
 

@@ -15,7 +15,6 @@ import { ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
 
-import { useStrainsInfinite } from '@/api';
 import type {
   GeneticLean,
   PhotoperiodType,
@@ -25,6 +24,7 @@ import type {
   Race,
 } from '@/api/plants/types';
 import type { Strain } from '@/api/strains/types';
+import { useStrainsInfiniteWithCache } from '@/api/strains/use-strains-infinite-with-cache';
 import {
   calculateCompletion,
   CompletionProgress,
@@ -46,7 +46,6 @@ import { derivePlantDefaultsFromStrain } from '@/lib/plants/derive-from-strain';
 import {
   buildCustomStrain,
   saveCustomStrainToSupabase,
-  saveStrainToSupabase,
 } from '@/lib/strains/custom-strain-cache';
 
 import { HeroPhotoSection } from './hero-photo-section';
@@ -75,11 +74,12 @@ type UseStrainSuggestionsResult = {
 function useStrainSuggestions(query: string): UseStrainSuggestionsResult {
   const trimmedQuery = query.trim();
   const debouncedQuery = useDebouncedValue(trimmedQuery, 250);
-  const { data, isFetching, isLoading } = useStrainsInfinite({
+  const { data, isFetching, isLoading } = useStrainsInfiniteWithCache({
     variables: {
       searchQuery: debouncedQuery,
       pageSize: 12,
     },
+    enabled: true,
   });
 
   // Flatten all pages for full data set
@@ -286,9 +286,6 @@ function PlantStrainField({ control, setValue, t }: PlantStrainFieldProps) {
       field.onChange(strain.name);
       setInputValue(strain.name);
       applyDerived(strain, 'api');
-      saveStrainToSupabase(strain).catch((err) =>
-        console.error('[PlantForm] Save strain failed', err)
-      );
       setIsFocused(false);
     },
     [applyDerived, field]
@@ -299,12 +296,11 @@ function PlantStrainField({ control, setValue, t }: PlantStrainFieldProps) {
     if (!name) return;
 
     const customStrain = buildCustomStrain(name);
+    // Fire-and-forget: submit for moderation so other users can find it later.
+    void saveCustomStrainToSupabase(customStrain);
     field.onChange(customStrain.name);
     setInputValue(customStrain.name);
     applyDerived(customStrain, 'custom');
-    saveCustomStrainToSupabase(customStrain).catch((err) =>
-      console.error('[PlantForm] Save custom strain failed', err)
-    );
     setIsFocused(false);
   }, [applyDerived, field, inputValue, trimmedQuery]);
 
@@ -819,6 +815,8 @@ function usePlantFormController({
       stage: 'seedling',
       photoperiodType: 'photoperiod',
       environment: 'indoor',
+      // Default to today so TaskEngine has a stable anchor date for schedules.
+      plantedAt: new Date().toISOString(),
       ...defaultValues,
     },
   });

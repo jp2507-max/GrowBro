@@ -25,6 +25,22 @@ type SyncResult = { pushed: number; pulled: number };
 let plantsSyncPromise: Promise<SyncResult> | null = null;
 let plantsSyncQueued = false;
 
+let plantsPushPromise: Promise<number> | null = null;
+let plantsPushQueued = false;
+
+let pushDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+export function requestPlantsPush(delayMs: number = 300): void {
+  // Debounce frequent triggers (e.g., create plant, then immediately update remote_image_path)
+  if (pushDebounceTimer) return;
+  pushDebounceTimer = setTimeout(() => {
+    pushDebounceTimer = null;
+    void syncPlantsToCloud().catch((error) => {
+      console.warn('[PlantsSync] debounced push failed', error);
+    });
+  }, delayMs);
+}
+
 function toIso(value: Date | string | null | undefined): string | null {
   if (!value) return null;
   if (typeof value === 'string') return value;
@@ -213,7 +229,7 @@ async function purgeExpiredDeletedPlantsLocally(
   return purgeDeletedPlantsByIds(ids);
 }
 
-export async function syncPlantsToCloud(): Promise<number> {
+async function syncPlantsToCloudOnce(): Promise<number> {
   const userId = await getOptionalAuthenticatedUserId();
   if (!userId) {
     if (__DEV__) console.info('[PlantsSync] skipped push: no user session');
@@ -276,6 +292,39 @@ export async function syncPlantsToCloud(): Promise<number> {
   }
 
   return syncable.length;
+}
+
+export async function syncPlantsToCloud(): Promise<number> {
+  // Coalesce concurrent callers and re-run once if requested while in-flight.
+  if (plantsPushPromise) {
+    plantsPushQueued = true;
+    return await plantsPushPromise;
+  }
+
+  plantsPushQueued = false;
+  const run = (async () => {
+    let result = 0;
+    do {
+      plantsPushQueued = false;
+      result = await syncPlantsToCloudOnce();
+    } while (plantsPushQueued);
+    return result;
+  })();
+
+  plantsPushPromise = run;
+  try {
+    return await run;
+  } finally {
+    if (plantsPushPromise === run) {
+      if (plantsPushQueued) {
+        // Preserve queued requests that arrived during teardown.
+        plantsPushPromise = null;
+        plantsPushPromise = syncPlantsToCloud();
+      } else {
+        plantsPushPromise = null;
+      }
+    }
+  }
 }
 
 export async function pullPlantsFromCloud(): Promise<number> {

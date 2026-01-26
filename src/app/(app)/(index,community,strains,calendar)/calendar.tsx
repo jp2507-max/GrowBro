@@ -40,13 +40,18 @@ const BOTTOM_PADDING_EXTRA = 24;
 // Utility functions
 // -----------------------------------------------------------------------------
 
+type Debounced<T extends (...args: unknown[]) => unknown> = ((
+  ...args: Parameters<T>
+) => Promise<Awaited<ReturnType<T>>>) & { cancel: () => void };
+
 function debounce<T extends (...args: unknown[]) => unknown>(
   func: T,
   wait: number
-): (...args: Parameters<T>) => Promise<Awaited<ReturnType<T>>> {
+): Debounced<T> {
   let timeout: ReturnType<typeof setTimeout>;
   let pendingReject: ((reason?: unknown) => void) | null = null;
-  return (...args: Parameters<T>) => {
+
+  const debounced = (...args: Parameters<T>) => {
     return new Promise<Awaited<ReturnType<T>>>((resolve, reject) => {
       if (pendingReject) {
         pendingReject(new Error('Debounced'));
@@ -66,6 +71,16 @@ function debounce<T extends (...args: unknown[]) => unknown>(
       }, wait);
     });
   };
+
+  debounced.cancel = () => {
+    if (pendingReject) {
+      pendingReject(new Error('Debounced'));
+      pendingReject = null;
+    }
+    clearTimeout(timeout);
+  };
+
+  return debounced;
 }
 
 function isEphemeralTask(task: Task): boolean {
@@ -135,7 +150,11 @@ function buildTaskCounts(tasks: Task[]): Map<string, number> {
   return counts;
 }
 
-function useCalendarRange(selectedDate: DateTime) {
+function useCalendarRange(selectedDate: DateTime): {
+  rangeStartMillis: number;
+  rangeEndMillis: number;
+  selectedDayMillis: number;
+} {
   const selectedWeekMillis = selectedDate.startOf('week').toMillis();
   const selectedDayMillis = selectedDate.startOf('day').toMillis();
 
@@ -157,7 +176,11 @@ function useCalendarRange(selectedDate: DateTime) {
 function useTaskDerivations(
   tasks: { pending: Task[]; completed: Task[] },
   selectedDayMillis: number
-) {
+): {
+  taskCounts: ReturnType<typeof buildTaskCounts>;
+  dayPendingTasks: Task[];
+  dayCompletedTasks: Task[];
+} {
   const taskCounts = useMemo(
     () => buildTaskCounts([...tasks.pending, ...tasks.completed]),
     [tasks]
@@ -293,6 +316,7 @@ function useCalendarData(
       cancelled = true;
       // increment the stored request ID to invalidate in-flight calls
       requestIdRef.current = requestIdAtMount + 1;
+      debouncedLoadData.cancel();
     };
   }, [debouncedLoadData, isEnabled]);
 

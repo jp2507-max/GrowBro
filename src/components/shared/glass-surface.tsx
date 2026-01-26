@@ -17,6 +17,7 @@ import type { StyleProp, ViewStyle } from 'react-native';
 import { StyleSheet, View } from 'react-native';
 
 import { OptionalBlurView } from '@/components/shared/optional-blur-view';
+import { cn } from '@/lib/utils';
 
 type GlassEffectStyle = 'clear' | 'regular';
 
@@ -62,7 +63,6 @@ export type GlassSurfaceProps = {
   accessibilityHint?: string;
 };
 
-// isLiquidGlassAvailable();
 const glassAvailable = isLiquidGlassAvailable();
 const DEFAULT_BLUR_INTENSITY = 80;
 const DEFAULT_BLUR_TINT: BlurTint = 'systemMaterial';
@@ -77,7 +77,7 @@ export function GlassSurface({
   isInteractive = false,
   style,
   fallbackStyle,
-  fallbackClassName = DEFAULT_FALLBACK_CLASS,
+  fallbackClassName,
   children,
   testID,
   pointerEvents,
@@ -113,7 +113,7 @@ export function GlassSurface({
   return (
     <View
       style={[fallbackSurfaceStyle, fallbackStyle]}
-      className={fallbackClassName}
+      className={cn(DEFAULT_FALLBACK_CLASS, fallbackClassName)}
       testID={testID}
       pointerEvents={pointerEvents}
       accessibilityLabel={accessibilityLabel}

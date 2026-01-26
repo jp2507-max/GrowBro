@@ -1,6 +1,7 @@
 import { Stack } from 'expo-router';
 import React from 'react';
 
+import { captureCategorizedErrorSync } from '@/lib/sentry-utils';
 import { hydrateFavorites } from '@/lib/strains/use-favorites';
 import { useFavoritesAutoSync } from '@/lib/strains/use-favorites-auto-sync';
 
@@ -38,7 +39,13 @@ export default function SharedTabsLayout({
 
   React.useEffect(() => {
     if (!isStrainsStack) return;
-    void hydrateFavorites();
+    hydrateFavorites().catch((error) => {
+      // Log or report (e.g., Sentry) so failures are visible.
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('[favorites] hydrate failed', error);
+      }
+      captureCategorizedErrorSync(error, { context: 'hydrateFavorites' });
+    });
   }, [isStrainsStack]);
 
   return (

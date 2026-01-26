@@ -67,11 +67,23 @@ async function findStrainInSupabase(
   idOrSlug: string
 ): Promise<Strain | undefined> {
   try {
-    const { data, error } = await supabase
-      .from('strain_cache')
-      .select('id, slug, name, race, data')
-      .or(`id.eq.${idOrSlug},slug.eq.${idOrSlug}`)
-      .limit(1);
+    const doLookup = async (table: 'strains_public' | 'strain_cache') =>
+      supabase
+        .from(table)
+        .select('id, slug, name, race, data')
+        .or(`id.eq.${idOrSlug},slug.eq.${idOrSlug}`)
+        .limit(1);
+
+    let result = await doLookup('strains_public');
+    if (
+      result.error &&
+      typeof result.error.message === 'string' &&
+      result.error.message.toLowerCase().includes('strains_public')
+    ) {
+      result = await doLookup('strain_cache');
+    }
+
+    const { data, error } = result;
 
     if (error) {
       throw error;
@@ -95,7 +107,7 @@ async function findStrainInSupabase(
  * Data flow:
  * 1. Check React Query cache (from infinite list data)
  * 2. Check Watermelon cached pages (offline list cache)
- * 3. If not found, call API which checks Supabase strain_cache
+ * 3. If not found, check Supabase cached strains (and approved community strains)
  * 4. If not in Supabase, fetches from external API and caches
  *
  * This enables deep links to work - users can share strain URLs

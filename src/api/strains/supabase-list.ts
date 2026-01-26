@@ -89,8 +89,10 @@ export async function fetchStrainsFromSupabase(
 
   const searchQuery = params.searchQuery?.trim();
 
+  // Prefer a unified view (strain_cache + approved community strains).
+  // Fall back to `strain_cache` for environments where the view isn't migrated yet.
   let query = supabase
-    .from('strain_cache')
+    .from('strains_public')
     .select('id, slug, name, race, data');
 
   if (searchQuery && searchQuery.length > 0) {
@@ -102,7 +104,26 @@ export async function fetchStrainsFromSupabase(
   query = applySort(query, params.sortBy, params.sortDirection);
   query = query.range(offset, offset + pageSize - 1);
 
-  const { data, error } = await query;
+  let result = await query;
+  if (
+    result.error &&
+    typeof result.error.message === 'string' &&
+    result.error.message.toLowerCase().includes('strains_public')
+  ) {
+    query = supabase.from('strain_cache').select('id, slug, name, race, data');
+
+    if (searchQuery && searchQuery.length > 0) {
+      const pattern = `%${searchQuery}%`;
+      query = query.or(`name.ilike.${pattern},slug.ilike.${pattern}`);
+    }
+
+    query = applyFilters(query, params.filters);
+    query = applySort(query, params.sortBy, params.sortDirection);
+    query = query.range(offset, offset + pageSize - 1);
+    result = await query;
+  }
+
+  const { data, error } = result;
 
   if (error) {
     throw error;
