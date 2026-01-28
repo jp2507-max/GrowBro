@@ -1,7 +1,7 @@
 import { Q } from '@nozbe/watermelondb';
 import { DateTime } from 'luxon';
 
-import type { Plant, PlantStage } from '@/api/plants/types';
+import type { Plant } from '@/api/plants/types';
 import { TaskEngine } from '@/lib/growbro-task-engine/task-engine';
 import { TaskFactory } from '@/lib/growbro-task-engine/task-factory';
 import type {
@@ -15,6 +15,7 @@ import {
 import { parsePotSizeLiters } from '@/lib/growbro-task-engine/utils';
 import { modelToDiagnosticResult } from '@/lib/nutrient-engine/services/diagnostic-mappers';
 import type { PlantEventKindValue } from '@/lib/plants/plant-event-kinds';
+import { toPlant } from '@/lib/plants/to-plant';
 import { database } from '@/lib/watermelon';
 import type { DiagnosticResultModel } from '@/lib/watermelon-models/diagnostic-result';
 import type { PlantModel } from '@/lib/watermelon-models/plant';
@@ -39,33 +40,14 @@ function getTimezone(): string {
   return DateTime.local().zoneName ?? 'UTC';
 }
 
-function slugify(value: string): string {
-  return value
+function slugify(value: unknown): string {
+  if (typeof value !== 'string') return '';
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  return trimmed
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '_')
     .replace(/^_+|_+$/g, '');
-}
-
-function toPlant(model: PlantModel): Plant {
-  const metadata = (model.metadata as Plant['metadata']) ?? undefined;
-  return {
-    id: model.id,
-    name: model.name,
-    stage: (model.stage as PlantStage | undefined) ?? undefined,
-    stageEnteredAt: model.stageEnteredAt ?? undefined,
-    strain: model.strain ?? undefined,
-    plantedAt: model.plantedAt ?? undefined,
-    expectedHarvestAt: model.expectedHarvestAt ?? undefined,
-    lastWateredAt: model.lastWateredAt ?? undefined,
-    lastFedAt: model.lastFedAt ?? undefined,
-    health: model.health as Plant['health'],
-    notes: model.notes ?? metadata?.notes,
-    imageUrl: model.imageUrl ?? undefined,
-    metadata,
-    environment: model.environment as Plant['environment'],
-    photoperiodType: model.photoperiodType as Plant['photoperiodType'],
-    geneticLean: model.geneticLean as Plant['geneticLean'],
-  };
 }
 
 function buildLegacySettings(plant: Plant, timezone: string): PlantSettings {
@@ -161,7 +143,11 @@ function buildLegacyIntents(plant: Plant, timezone: string): TaskIntent[] {
       if (typeof category !== 'string') return true;
       return !EXCLUDED_LEGACY_CATEGORIES.has(category);
     })
-    .map((spec) => toIntent(spec, `legacy.${slugify(spec.title)}`));
+    .map((spec, index) => {
+      const slug = slugify(spec.title);
+      const fallback = slug ? `legacy.${slug}` : `legacy.untitled_${index}`;
+      return toIntent(spec, fallback);
+    });
 }
 
 function toSeriesSpec(intent: TaskIntent): SeriesSpec {

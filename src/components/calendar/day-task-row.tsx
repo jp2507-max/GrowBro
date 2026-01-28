@@ -146,16 +146,24 @@ function PlantBadge({
   name: string;
   imageUrl?: string;
 }): React.ReactElement {
+  const imageSource = React.useMemo(
+    () => (imageUrl ? { uri: imageUrl } : undefined),
+    [imageUrl]
+  );
+
   return (
     <View
       className="flex-row items-center gap-1 rounded-full bg-primary-50 px-2 py-0.5 dark:bg-primary-900/30"
       testID="plant-badge"
     >
-      {imageUrl ? (
+      {imageSource ? (
         <Image
-          source={{ uri: imageUrl }}
+          source={imageSource}
           className="size-4 rounded-full"
           contentFit="cover"
+          cachePolicy="memory-disk"
+          recyclingKey={imageUrl}
+          transition={0}
           testID="plant-avatar"
         />
       ) : (

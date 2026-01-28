@@ -172,6 +172,12 @@
       "readings_count": "{{count}} readings",
       "save_reading": "Save Reading"
     },
+    "nutrition": {
+      "adjustments": {
+        "deficiency_generic": "Potential nutrient deficiency detected. Consider adjusting nutrient mix or frequency.",
+        "deficiency_with_nutrient": "Potential {{nutrient}} deficiency detected. Consider adjusting nutrient mix or frequency."
+      }
+    },
     "plant_hero_image": "Plant hero image",
     "plants": {
       "assessment_history": {
@@ -880,6 +886,7 @@
     "go_back": "Go back",
     "go_home": "Go to Home",
     "loading": "Loading...",
+    "loadingHint": "Content is loading, please wait",
     "na": "N/A",
     "no": "No",
     "not_selected": "not selected",
@@ -1197,6 +1204,10 @@
       "permission_title": "Notifications Disabled",
       "schedule_failed": "Failed to schedule reminder",
       "title": "Reminder Error"
+    },
+    "page_not_found": {
+      "description": "The page you’re looking for doesn’t exist or has been moved.",
+      "title": "Page not found"
     },
     "playbook": {
       "already_applied": "This playbook is already applied to this plant",
@@ -2364,6 +2375,12 @@
       "title": "Water Profile"
     }
   },
+  "nutrition": {
+    "adjustments": {
+      "deficiency_generic": "Potential nutrient deficiency detected. Consider adjusting nutrient mix or frequency.",
+      "deficiency_with_nutrient": "Potential {{nutrient}} deficiency detected. Consider adjusting nutrient mix or frequency."
+    }
+  },
   "onboarding": {
     "allow_button": "Allow notifications",
     "community": {
@@ -2466,7 +2483,7 @@
       "percent_complete": "{{percent}}% Complete"
     },
     "detail": {
-      "action_hub_title": "Today's Tasks",
+      "action_hub_title": "Daily digest",
       "all_good_message": "All good – No tasks today.",
       "no_tasks": "No pending tasks",
       "nutrient_section": {
@@ -2490,6 +2507,8 @@
       "add_starter_tasks": "Add starter tasks",
       "added_body": "Great start! Add schedule info or go straight to your calendar.",
       "added_title": "Plant added",
+      "advanced_mode_hint": "Unlock optional inputs and training preferences.",
+      "advanced_mode_label": "Advanced mode",
       "autoflower_badge": "Autoflower",
       "cancel": "Cancel",
       "completion": "{{percent}}% Complete",
@@ -2528,6 +2547,12 @@
       },
       "genetic_label": "Genetic lean",
       "genetic_placeholder": "Select genetic lean",
+      "genetics": {
+        "autoflower": "Autoflower",
+        "photoperiod": "Photoperiod (12/12 flip)"
+      },
+      "genetics_label": "Genetics",
+      "genetics_placeholder": "Photoperiod or autoflower",
       "go_to_schedule": "Go to Schedule",
       "height_label": "Plant height",
       "height_placeholder": "e.g., 45 cm",
@@ -2566,11 +2591,19 @@
       "save": "Save",
       "save_cta": "Save changes",
       "section": {
+        "advanced": "Advanced",
         "care": "Care",
         "environment": "Environment",
         "identity": "Identity",
         "photo": "Photo"
       },
+      "space_size": {
+        "large": "Large",
+        "medium": "Medium",
+        "small": "Small"
+      },
+      "space_size_label": "Grow space",
+      "space_size_placeholder": "Select grow space",
       "stage": {
         "curing": "Curing",
         "flowering": "Flowering",
@@ -2584,21 +2617,46 @@
       },
       "stage_label": "Stage",
       "stage_placeholder": "Select stage",
+      "start_type": {
+        "clone": "Clone",
+        "seed": "Seed"
+      },
+      "start_type_label": "Start type",
+      "start_type_placeholder": "Seed or clone",
       "starter_tasks_created": "Starter tasks scheduled",
       "strain_create_custom": "Create custom strain “{{name}}”",
       "strain_create_custom_hint": "Save this strain for future use.",
-      "strain_label": "Strain",
+      "strain_label": "Strain (optional)",
       "strain_no_results": "No strains found for “{{query}}”",
       "strain_placeholder": "Afghan Haze, Super Silver Haze…",
       "strain_race_label": "Race: {{race}}",
       "strain_searching": "Searching strains…",
       "success_body": "Your plant was added to My Plants.",
       "success_title": "Plant created",
+      "training_prefs": {
+        "defoliation": "Defoliation",
+        "lst": "Low stress training (LST)",
+        "scrog": "SCROG",
+        "topping": "Topping"
+      },
+      "training_prefs_hint": "Only used when advanced mode is on.",
+      "training_prefs_label": "Training preferences",
       "update_success_body": "Your plant details were saved.",
       "update_success_title": "Plant updated",
       "view_plant": "View plant",
       "view_strain_profile": "View strain profile",
       "view_strain_profile_hint": "Opens the linked strain profile."
+    },
+    "lifecycle": {
+      "stage": {
+        "completed": "Completed",
+        "curing": "Curing",
+        "drying": "Drying",
+        "flowering": "Flowering",
+        "germination": "Germination",
+        "seedling": "Seedling",
+        "vegetative": "Vegetative"
+      }
     },
     "no_results": "No plants found",
     "offline_notice": "Showing saved plants",
@@ -4120,6 +4178,22 @@
     "trichome_ratio": "Trichome Ratio",
     "validation_max": "Must be {{max}} or less",
     "validation_min": "Must be {{min}} or greater"
+  },
+  "twin": {
+    "stageReason": {
+      "autoflower_day": "Autoflower day {{day}}",
+      "autoflower_grace": "Autoflower day {{day}} (auto-advance)",
+      "curing_complete": "Curing duration reached",
+      "drying_window": "Drying window reached ({{days}} days)",
+      "flowering_end": "Approaching end of flowering window",
+      "harvest_complete": "Harvest complete",
+      "light_cycle_switched": "Light cycle switched to 12/12",
+      "node_count": "Node count reached 3+",
+      "seedling_time": "Seedling window reached ({{days}} days)",
+      "sprout_confirmed": "Sprout confirmed",
+      "stretch_complete": "Stretch period complete",
+      "trichomes": "Trichomes indicate harvest window"
+    }
   },
   "units": {
     "celsius": "°C",

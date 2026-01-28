@@ -1,5 +1,6 @@
 import { Q } from '@nozbe/watermelondb';
 
+import { triggerDigitalTwinSync } from '@/lib/digital-twin/sync-helpers';
 import { database } from '@/lib/watermelon';
 import { DiagnosticResultModel } from '@/lib/watermelon-models/diagnostic-result';
 import { PhEcReadingModel } from '@/lib/watermelon-models/ph-ec-reading';
@@ -43,6 +44,7 @@ const SECOND_OPINION_KEY =
 const LOW_CONFIDENCE_KEY = 'nutrient.diagnostics.disclaimers.low_confidence';
 const AI_BELOW_THRESHOLD_RATIONALE =
   'nutrient.diagnostics.rationale.ai_below_threshold';
+
 const AI_ONLY_WARNING_KEY = 'nutrient.diagnostics.disclaimers.ai_only_primary';
 
 export type AiDiagnosticHypothesis = {
@@ -301,14 +303,7 @@ async function combineEvaluations(args: {
   };
 
   const model = await persistResult(result, userId);
-  void import('@/lib/digital-twin/digital-twin-task-engine')
-    .then(({ DigitalTwinTaskEngine }) => {
-      const engine = new DigitalTwinTaskEngine();
-      return engine.syncForPlantId(plantId);
-    })
-    .catch((error) => {
-      console.warn('[diagnostic-service] digital twin sync failed', error);
-    });
+  triggerDigitalTwinSync(plantId, 'diagnostic-service');
   const persisted = modelToDiagnosticResult(model);
 
   return {

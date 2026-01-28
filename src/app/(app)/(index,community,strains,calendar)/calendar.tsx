@@ -309,7 +309,6 @@ function useCalendarData(
   useEffect(() => {
     if (!isEnabled) return;
     let cancelled = false;
-    const requestIdAtMount = requestIdRef.current;
 
     const run = async () => {
       try {
@@ -331,7 +330,7 @@ function useCalendarData(
     return () => {
       cancelled = true;
       // increment the stored request ID to invalidate in-flight calls
-      requestIdRef.current = requestIdAtMount + 1;
+      requestIdRef.current += 1;
       debouncedLoadData.cancel();
     };
   }, [debouncedLoadData, isEnabled]);

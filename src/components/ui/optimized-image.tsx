@@ -11,10 +11,10 @@
  */
 import * as React from 'react';
 
+import { DEFAULT_IMAGE_BLURHASH } from '@/lib/media/image-placeholders';
+
 import type { ImgProps } from './image';
 import { Image } from './image';
-
-const FALLBACK_BLURHASH = 'L6PZfSi_.AyE_3t7t7R**0o#DgR4';
 
 type PlaceholderConfig =
   | { blurhash: string }
@@ -61,7 +61,7 @@ export function OptimizedImage({
     if (thumbnailUri) {
       return { uri: thumbnailUri };
     }
-    return FALLBACK_BLURHASH;
+    return DEFAULT_IMAGE_BLURHASH;
   }, [blurhash, thumbhash, thumbnailUri]);
 
   // Prefer resized for quality, fallback to original, then thumbnail

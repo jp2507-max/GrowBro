@@ -440,11 +440,27 @@ const _useAuth = create<AuthState>((set, get) => ({
   hydrate: async () => {
     try {
       const userToken = getToken();
+
+      // Prefer the Supabase client's persisted session (MMKV) if available.
+      // This avoids calling `setSession()` with an existing refresh token,
+      // which can trigger slow refresh flows and extra auth events on startup.
+      const { data: currentData } = await supabase.auth.getSession();
+      const existingSession = currentData?.session ?? null;
+
+      if (existingSession) {
+        await get().signIn({
+          session: existingSession,
+          user: existingSession.user,
+        });
+        return;
+      }
+
       if (userToken !== null) {
         await get().signIn(userToken);
-      } else {
-        await get().signOut();
+        return;
       }
+
+      await get().signOut();
     } catch (e) {
       console.error('Auth hydration error:', e);
       try {

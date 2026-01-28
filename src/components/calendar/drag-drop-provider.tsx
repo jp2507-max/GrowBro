@@ -26,7 +26,7 @@ type DragContextValue = {
   startDrag: (task: Task) => void;
   cancelDrag: () => void;
   completeDrop: (targetDate: Date, scope: DragScope) => Promise<void>;
-  onDragUpdate: (y: number) => number | undefined;
+  setAutoScrollDirection: (dir: -1 | 0 | 1) => void;
   registerListRef: (ref: React.RefObject<ScrollableListRef>) => void;
   registerViewportHeight: (height: number) => void;
   viewportHeightShared: SharedValue<number>;
@@ -80,8 +80,8 @@ function isEphemeralTask(task: Task): boolean {
 // Calendar layout constants
 const DAY_PX = 80; // Height of each day row in pixels for drag calculations
 const UNDO_TIMEOUT_MS = 5000; // 5 seconds window for undo operations
-const AUTO_SCROLL_EDGE_THRESHOLD = 60;
 const AUTO_SCROLL_STEP = 24;
+const AUTO_SCROLL_INTERVAL_MS = 32;
 
 // Custom hooks for modular state management
 function useDragState() {
@@ -111,16 +111,19 @@ function useDragState() {
 function useListRefs(): {
   listRef: React.RefObject<ScrollableListRef>;
   currentScrollOffsetRef: React.RefObject<number>;
-  viewportHeightRef: React.RefObject<number>;
   viewportHeightShared: SharedValue<number>;
+  getCurrentOffset: () => number;
   registerListRef: (ref: React.RefObject<ScrollableListRef>) => void;
   registerViewportHeight: (height: number) => void;
   updateCurrentOffset: (y: number) => void;
 } {
   const listRef = React.useRef<ScrollableListRef>(null);
   const currentScrollOffsetRef = React.useRef<number>(0);
-  const viewportHeightRef = React.useRef<number>(0);
   const viewportHeightShared = useSharedValue(0);
+
+  const getCurrentOffset = React.useCallback(() => {
+    return currentScrollOffsetRef.current;
+  }, []);
 
   const registerListRef = React.useCallback(
     (ref: React.RefObject<ScrollableListRef>): void => {
@@ -131,7 +134,6 @@ function useListRefs(): {
 
   const registerViewportHeight = React.useCallback(
     (height: number): void => {
-      viewportHeightRef.current = height;
       viewportHeightShared.set(height);
     },
     [viewportHeightShared]
@@ -144,8 +146,8 @@ function useListRefs(): {
   return {
     listRef,
     currentScrollOffsetRef,
-    viewportHeightRef,
     viewportHeightShared,
+    getCurrentOffset,
     registerListRef,
     registerViewportHeight,
     updateCurrentOffset,
@@ -154,6 +156,19 @@ function useListRefs(): {
 
 function useUndoState() {
   const undoRef = React.useRef<UndoState>(undefined);
+
+  const clearUndoTimeout = React.useCallback(() => {
+    const timeoutId = undoRef.current?.timeoutId;
+    if (timeoutId) clearTimeout(timeoutId);
+  }, []);
+
+  const clearUndoState = React.useCallback(() => {
+    undoRef.current = undefined;
+  }, []);
+
+  const setUndoState = React.useCallback((next: UndoState) => {
+    undoRef.current = next;
+  }, []);
 
   const performUndo = React.useCallback(async () => {
     const snapshot = undoRef.current;
@@ -168,43 +183,84 @@ function useUndoState() {
     }
   }, []);
 
+  React.useEffect(
+    () => () => {
+      const timeoutId = undoRef.current?.timeoutId;
+      if (timeoutId) clearTimeout(timeoutId);
+    },
+    []
+  );
+
   return {
-    undoRef,
     performUndo,
+    clearUndoTimeout,
+    clearUndoState,
+    setUndoState,
   };
 }
 
 function useScrolling(
   listRef: React.RefObject<ScrollableListRef>,
-  currentScrollOffsetRef: React.RefObject<number>,
-  viewportHeightRef: React.RefObject<number>
+  getCurrentOffset: () => number,
+  updateCurrentOffset: (y: number) => void
 ) {
-  const onDragUpdate = React.useCallback(
-    (y: number) => {
-      const dir = shouldAutoScroll(
-        y,
-        viewportHeightRef.current,
-        AUTO_SCROLL_EDGE_THRESHOLD
+  const autoScrollDirRef = React.useRef<-1 | 0 | 1>(0);
+  const autoScrollIntervalRef = React.useRef<ReturnType<
+    typeof setInterval
+  > | null>(null);
+
+  const tickAutoScroll = React.useCallback(() => {
+    const dir = autoScrollDirRef.current;
+    if (dir === 0) return;
+    const ref = listRef.current;
+    if (!ref || typeof ref.scrollToOffset !== 'function') return;
+
+    const currentOffset = getCurrentOffset();
+    const next = Math.max(0, currentOffset + dir * AUTO_SCROLL_STEP);
+    ref.scrollToOffset({ offset: next, animated: false });
+    updateCurrentOffset(next);
+  }, [getCurrentOffset, listRef, updateCurrentOffset]);
+
+  const startAutoScroll = React.useCallback(
+    (dir: -1 | 1) => {
+      autoScrollDirRef.current = dir;
+      if (autoScrollIntervalRef.current) return;
+      autoScrollIntervalRef.current = setInterval(
+        tickAutoScroll,
+        AUTO_SCROLL_INTERVAL_MS
       );
-      if (dir === 0) return undefined;
-
-      const ref = listRef.current;
-      if (!ref || typeof ref.scrollToOffset !== 'function') return undefined;
-
-      // Get current offset directly from the ref to avoid dependency mutation
-      const currentOffset = currentScrollOffsetRef.current;
-      const next = Math.max(0, currentOffset + dir * AUTO_SCROLL_STEP);
-      ref.scrollToOffset({ offset: next, animated: false });
-
-      // Return the new offset for the caller to update the ref
-      // This avoids direct mutation inside the callback
-      return next;
     },
-    [listRef, viewportHeightRef, currentScrollOffsetRef]
+    [tickAutoScroll]
+  );
+
+  const stopAutoScroll = React.useCallback(() => {
+    autoScrollDirRef.current = 0;
+    if (autoScrollIntervalRef.current) {
+      clearInterval(autoScrollIntervalRef.current);
+      autoScrollIntervalRef.current = null;
+    }
+  }, []);
+
+  const setAutoScrollDirection = React.useCallback(
+    (dir: -1 | 0 | 1) => {
+      if (dir === 0) {
+        stopAutoScroll();
+        return;
+      }
+      startAutoScroll(dir);
+    },
+    [startAutoScroll, stopAutoScroll]
+  );
+
+  React.useEffect(
+    () => () => {
+      stopAutoScroll();
+    },
+    [stopAutoScroll]
   );
 
   return {
-    onDragUpdate,
+    setAutoScrollDirection,
   };
 }
 
@@ -323,40 +379,22 @@ function showUndoMessage(performUndo: () => Promise<void>) {
   });
 }
 
-// Helper function to setup undo state
-function setupUndoState(
-  undoRef: React.RefObject<UndoState>,
-  updatedTask: Task,
-  createUndoState: (
-    task: Task,
-    timeoutId: ReturnType<typeof setTimeout>
-  ) => UndoState
-) {
-  // Clear any existing timeout to prevent premature cleanup
-  if (undoRef.current?.timeoutId) {
-    clearTimeout(undoRef.current.timeoutId);
-  }
-
-  // Set up automatic cleanup of undo state after timeout
-  const cleanupUndoState = () => {
-    undoRef.current = undefined;
-  };
-  const timeoutId = setTimeout(cleanupUndoState, UNDO_TIMEOUT_MS);
-
-  // Create and store undo state for potential rollback
-  const undoState = createUndoState(updatedTask, timeoutId);
-  undoRef.current = undoState;
-
-  return timeoutId;
-}
-
 function useDropCompletion(options: {
   draggedTaskRef: React.RefObject<Task | undefined>;
-  undoRef: React.RefObject<UndoState>;
   performUndo: () => Promise<void>;
   onDropComplete: () => void;
+  clearUndoTimeout: () => void;
+  clearUndoState: () => void;
+  setUndoState: (state: UndoState) => void;
 }) {
-  const { draggedTaskRef, undoRef, performUndo, onDropComplete } = options;
+  const {
+    draggedTaskRef,
+    performUndo,
+    onDropComplete,
+    clearUndoTimeout,
+    clearUndoState,
+    setUndoState,
+  } = options;
   const createUndoState = useCreateUndoState();
   const updateTaskData = useTaskUpdate();
 
@@ -374,7 +412,11 @@ function useDropCompletion(options: {
 
         // Skip undo and toast for ephemeral synthesized occurrences
         if (!isEphemeralTask(updatedTask)) {
-          setupUndoState(undoRef, updatedTask, createUndoState);
+          clearUndoTimeout();
+          const timeoutId = setTimeout(() => {
+            clearUndoState();
+          }, UNDO_TIMEOUT_MS);
+          setUndoState(createUndoState(updatedTask, timeoutId));
           showUndoMessage(performUndo);
         }
 
@@ -392,22 +434,14 @@ function useDropCompletion(options: {
       performUndo,
       createUndoState,
       updateTaskData,
-      undoRef,
       onDropComplete,
+      clearUndoTimeout,
+      clearUndoState,
+      setUndoState,
     ]
   );
 
   return { performDropCompletion };
-}
-
-// Hook to manage undo cleanup effect
-function useUndoCleanup(undoRef: React.RefObject<UndoState>) {
-  React.useEffect(() => {
-    const currentUndoState = undoRef.current;
-    return () => {
-      if (currentUndoState) clearTimeout(currentUndoState.timeoutId);
-    };
-  }, [undoRef]);
 }
 
 // Hook to create the context value object
@@ -417,7 +451,7 @@ function useContextValue(options: {
   startDrag: (task: Task) => void;
   cancelDrag: () => void;
   completeDrop: (targetDate: Date, scope: DragScope) => Promise<void>;
-  onDragUpdate: (y: number) => number | undefined;
+  setAutoScrollDirection: (dir: -1 | 0 | 1) => void;
   registerListRef: (ref: React.RefObject<ScrollableListRef>) => void;
   registerViewportHeight: (height: number) => void;
   viewportHeightShared: SharedValue<number>;
@@ -431,7 +465,7 @@ function useContextValue(options: {
     startDrag,
     cancelDrag,
     completeDrop,
-    onDragUpdate,
+    setAutoScrollDirection,
     registerListRef,
     registerViewportHeight,
     viewportHeightShared,
@@ -447,7 +481,7 @@ function useContextValue(options: {
       startDrag,
       cancelDrag,
       completeDrop,
-      onDragUpdate,
+      setAutoScrollDirection,
       registerListRef,
       registerViewportHeight,
       viewportHeightShared,
@@ -461,7 +495,7 @@ function useContextValue(options: {
       startDrag,
       cancelDrag,
       completeDrop,
-      onDragUpdate,
+      setAutoScrollDirection,
       registerListRef,
       registerViewportHeight,
       viewportHeightShared,
@@ -477,26 +511,28 @@ function useDragDropContextValue(): DragContextValue {
     useDragState();
   const {
     listRef,
-    currentScrollOffsetRef,
-    viewportHeightRef,
     registerListRef,
     registerViewportHeight,
     viewportHeightShared,
+    getCurrentOffset,
     updateCurrentOffset,
   } = useListRefs();
-  const { undoRef, performUndo } = useUndoState();
-  const { onDragUpdate } = useScrolling(
+  const { performUndo, clearUndoTimeout, clearUndoState, setUndoState } =
+    useUndoState();
+  const { setAutoScrollDirection } = useScrolling(
     listRef,
-    currentScrollOffsetRef,
-    viewportHeightRef
+    getCurrentOffset,
+    updateCurrentOffset
   );
   const computeTargetDate = useComputeTargetDate();
 
   const { performDropCompletion } = useDropCompletion({
     draggedTaskRef,
-    undoRef,
     performUndo,
     onDropComplete: cancelDrag,
+    clearUndoTimeout,
+    clearUndoState,
+    setUndoState,
   });
 
   const completeDrop = React.useCallback(
@@ -506,15 +542,13 @@ function useDragDropContextValue(): DragContextValue {
     [performDropCompletion]
   );
 
-  useUndoCleanup(undoRef);
-
   return useContextValue({
     isDragging,
     draggedTask,
     startDrag,
     cancelDrag,
     completeDrop,
-    onDragUpdate,
+    setAutoScrollDirection,
     registerListRef,
     registerViewportHeight,
     viewportHeightShared,
@@ -541,7 +575,7 @@ export function useDragDrop(): DragContextValue {
         startDrag: () => {},
         cancelDrag: () => {},
         completeDrop: async () => {},
-        onDragUpdate: () => undefined,
+        setAutoScrollDirection: () => {},
         registerListRef: () => {},
         registerViewportHeight: () => {},
         viewportHeightShared: { value: 0, get: () => 0, set: () => {} },

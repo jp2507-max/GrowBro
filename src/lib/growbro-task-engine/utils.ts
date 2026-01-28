@@ -116,3 +116,20 @@ export function calculateWaterVolume(potSizeLiters: number): {
   const max = Math.round(potSizeLiters * 0.3 * 10) / 10;
   return { min, max };
 }
+
+/**
+ * Build dtstart timestamps for a specific hour of the day
+ */
+export function buildDtstartAtHour(
+  date: Date,
+  timezone: string,
+  hour: number
+): { dtstartLocal: string; dtstartUtc: string } {
+  const dt = DateTime.fromJSDate(date, { zone: timezone }).set({
+    hour,
+    minute: 0,
+    second: 0,
+    millisecond: 0,
+  });
+  return buildDtstartTimestamps(dt.toJSDate(), timezone);
+}

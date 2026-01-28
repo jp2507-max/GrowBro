@@ -1,5 +1,9 @@
 import type { PlantStage } from '@/api/plants/types';
-import { AUTOFLOWER_NUDGE_START_DAY } from '@/lib/growbro-task-engine/types';
+import {
+  AUTOFLOWER_NUDGE_START_DAY,
+  STEM_SNAP_CHECK_DAYS,
+} from '@/lib/growbro-task-engine/types';
+import i18n from '@/lib/i18n';
 
 import {
   PlantEventKind,
@@ -18,6 +22,10 @@ const STAGE_ORDER: PlantStage[] = [
   'curing',
   'ready',
 ];
+
+const SEEDLING_TO_VEG_DAYS = 14;
+const AUTOFLOWER_GRACE_DAYS = 7;
+const CURING_COMPLETE_DAYS = 21;
 
 const ALLOWED_TRANSITIONS: Record<PlantStage, PlantStage[]> = {
   germination: ['seedling'],
@@ -55,7 +63,9 @@ function getNodeCount(signals: TwinSignals): number | null {
 function shouldEnterFloweringStretch(state: TwinState): boolean {
   const { profile, dayFromPlanting } = state;
   if (profile.photoperiodType === 'autoflower') {
-    return dayFromPlanting >= AUTOFLOWER_NUDGE_START_DAY;
+    return (
+      dayFromPlanting >= AUTOFLOWER_NUDGE_START_DAY + AUTOFLOWER_GRACE_DAYS
+    );
   }
   return hasEvent(state.signals, PlantEventKind.LIGHT_CYCLE_SWITCHED);
 }
@@ -74,11 +84,14 @@ function shouldEnterHarvesting(state: TwinState): boolean {
 }
 
 function shouldEnterCuring(state: TwinState): boolean {
-  return hasEvent(state.signals, PlantEventKind.HARVEST_COMPLETED);
+  return (
+    hasEvent(state.signals, PlantEventKind.HARVEST_COMPLETED) ||
+    state.dayInStage >= STEM_SNAP_CHECK_DAYS
+  );
 }
 
 function shouldEnterReady(state: TwinState): boolean {
-  return state.dayInStage >= 21;
+  return state.dayInStage >= CURING_COMPLETE_DAYS;
 }
 
 function getVegetativeTransition(state: TwinState): {
@@ -92,12 +105,60 @@ function getVegetativeTransition(state: TwinState): {
     nextStage: 'flowering_stretch',
     reason:
       state.profile.photoperiodType === 'autoflower'
-        ? `Autoflower day ${state.dayFromPlanting}`
-        : 'Light cycle switched to 12/12',
+        ? i18n.t('twin.stageReason.autoflower_grace', {
+            day: state.dayFromPlanting,
+          })
+        : i18n.t('twin.stageReason.light_cycle_switched'),
     triggeredBy:
       state.profile.photoperiodType === 'autoflower'
         ? 'time'
         : PlantEventKind.LIGHT_CYCLE_SWITCHED,
+  };
+}
+
+type StageTransition = {
+  nextStage: PlantStage;
+  reason: string;
+  triggeredBy?: 'time' | PlantEventKindValue | 'trichomes';
+};
+
+function getSeedlingTransition(state: TwinState): StageTransition | null {
+  const nodeCount = getNodeCount(state.signals);
+  if (nodeCount !== null && nodeCount >= 3) {
+    return {
+      nextStage: 'vegetative',
+      reason: i18n.t('twin.stageReason.node_count'),
+      triggeredBy: PlantEventKind.NODE_COUNT_UPDATED,
+    };
+  }
+  if (state.dayInStage >= SEEDLING_TO_VEG_DAYS) {
+    return {
+      nextStage: 'vegetative',
+      reason: i18n.t('twin.stageReason.seedling_time', {
+        days: state.dayInStage,
+      }),
+      triggeredBy: 'time',
+    };
+  }
+  return null;
+}
+
+function getHarvestingTransition(state: TwinState): StageTransition | null {
+  if (!shouldEnterCuring(state)) return null;
+
+  const isHarvestComplete = hasEvent(
+    state.signals,
+    PlantEventKind.HARVEST_COMPLETED
+  );
+
+  return {
+    nextStage: 'curing',
+    reason: isHarvestComplete
+      ? i18n.t('twin.stageReason.harvest_complete')
+      : i18n.t('twin.stageReason.drying_window', {
+          days: state.dayInStage,
+        }),
+    triggeredBy: isHarvestComplete ? PlantEventKind.HARVEST_COMPLETED : 'time',
   };
 }
 
@@ -123,21 +184,13 @@ export function getNextStageCandidate(state: TwinState): {
       if (hasEvent(state.signals, PlantEventKind.SPROUT_CONFIRMED)) {
         return {
           nextStage: 'seedling',
-          reason: 'Sprout confirmed',
+          reason: i18n.t('twin.stageReason.sprout_confirmed'),
           triggeredBy: PlantEventKind.SPROUT_CONFIRMED,
         };
       }
       return null;
     case 'seedling': {
-      const nodeCount = getNodeCount(state.signals);
-      if (nodeCount !== null && nodeCount >= 3) {
-        return {
-          nextStage: 'vegetative',
-          reason: 'Node count reached 3+',
-          triggeredBy: PlantEventKind.NODE_COUNT_UPDATED,
-        };
-      }
-      return null;
+      return getSeedlingTransition(state);
     }
     case 'vegetative':
       return getVegetativeTransition(state);
@@ -145,7 +198,7 @@ export function getNextStageCandidate(state: TwinState): {
       if (state.dayInStage >= 7) {
         return {
           nextStage: 'flowering',
-          reason: 'Stretch period complete',
+          reason: i18n.t('twin.stageReason.stretch_complete'),
           triggeredBy: 'time',
         };
       }
@@ -154,7 +207,7 @@ export function getNextStageCandidate(state: TwinState): {
       if (shouldEnterRipening(state)) {
         return {
           nextStage: 'ripening',
-          reason: 'Approaching end of flowering window',
+          reason: i18n.t('twin.stageReason.flowering_end'),
           triggeredBy: 'time',
         };
       }
@@ -163,7 +216,7 @@ export function getNextStageCandidate(state: TwinState): {
       if (shouldEnterHarvesting(state)) {
         return {
           nextStage: 'harvesting',
-          reason: 'Trichomes indicate harvest window',
+          reason: i18n.t('twin.stageReason.trichomes'),
           triggeredBy: hasEvent(state.signals, PlantEventKind.HARVEST_STARTED)
             ? PlantEventKind.HARVEST_STARTED
             : 'trichomes',
@@ -171,19 +224,12 @@ export function getNextStageCandidate(state: TwinState): {
       }
       return null;
     case 'harvesting':
-      if (shouldEnterCuring(state)) {
-        return {
-          nextStage: 'curing',
-          reason: 'Harvest complete',
-          triggeredBy: PlantEventKind.HARVEST_COMPLETED,
-        };
-      }
-      return null;
+      return getHarvestingTransition(state);
     case 'curing':
       if (shouldEnterReady(state)) {
         return {
           nextStage: 'ready',
-          reason: 'Curing duration reached',
+          reason: i18n.t('twin.stageReason.curing_complete'),
           triggeredBy: 'time',
         };
       }

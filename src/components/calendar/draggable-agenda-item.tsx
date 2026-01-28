@@ -5,7 +5,6 @@ import type { GestureType } from 'react-native-gesture-handler';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import type { AnimatedStyle, SharedValue } from 'react-native-reanimated';
 import Animated, {
-  useAnimatedReaction,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
@@ -19,6 +18,7 @@ import {
 } from '@/components/calendar/drag-drop-provider';
 import { MoveToDateMenu } from '@/components/calendar/move-to-date-menu';
 import { View } from '@/components/ui';
+import { SPRING } from '@/lib/animations/constants';
 import { translate } from '@/lib/i18n';
 import type { Task } from '@/types/calendar';
 
@@ -121,65 +121,6 @@ function handleLogPress(): void {
 
 // Custom hook to create pan gesture
 
-function useAutoScrollTrigger(viewportHeightShared: SharedValue<number>) {
-  const lastAutoScrollMs = useSharedValue(0);
-  const autoScrollThrottleMs = 32;
-  const autoScrollEdgeThreshold = 60;
-  const shouldTriggerAutoScrollShared = useSharedValue(false);
-  const lastAutoScrollYShared = useSharedValue(0);
-
-  const maybeTriggerAutoScroll = React.useCallback(
-    (absoluteY: number) => {
-      'worklet';
-      const now = performance.now();
-      const viewportHeight = viewportHeightShared.get();
-      const isNearEdge =
-        viewportHeight > 0 &&
-        (absoluteY < autoScrollEdgeThreshold ||
-          absoluteY > viewportHeight - autoScrollEdgeThreshold);
-      if (isNearEdge && now - lastAutoScrollMs.get() >= autoScrollThrottleMs) {
-        lastAutoScrollMs.set(now);
-        shouldTriggerAutoScrollShared.set(true);
-        lastAutoScrollYShared.set(absoluteY);
-      }
-    },
-    [
-      lastAutoScrollMs,
-      lastAutoScrollYShared,
-      shouldTriggerAutoScrollShared,
-      viewportHeightShared,
-    ]
-  );
-
-  return {
-    lastAutoScrollMs,
-    shouldTriggerAutoScrollShared,
-    lastAutoScrollYShared,
-    maybeTriggerAutoScroll,
-  };
-}
-
-function useAutoScrollReaction(params: {
-  shouldTriggerAutoScrollShared: SharedValue<boolean>;
-  lastAutoScrollYShared: SharedValue<number>;
-  onDragUpdateJS: (y: number) => void;
-}) {
-  const {
-    shouldTriggerAutoScrollShared,
-    lastAutoScrollYShared,
-    onDragUpdateJS,
-  } = params;
-  useAnimatedReaction(
-    () => shouldTriggerAutoScrollShared.get(),
-    (shouldTrigger: boolean) => {
-      if (!shouldTrigger) return;
-      scheduleOnRN(onDragUpdateJS, lastAutoScrollYShared.get());
-      shouldTriggerAutoScrollShared.set(false);
-    },
-    [lastAutoScrollYShared, onDragUpdateJS, shouldTriggerAutoScrollShared]
-  );
-}
-
 function useCreatePanGesture(options: {
   tx: SharedValue<number>;
   ty: SharedValue<number>;
@@ -189,10 +130,9 @@ function useCreatePanGesture(options: {
   startDrag: (task: Task) => void;
   cancelDrag: () => void;
   completeDrop: (targetDate: Date, scope: DragScope) => Promise<void>;
-  onDragUpdate: (y: number) => number | undefined;
+  setAutoScrollDirection: (dir: -1 | 0 | 1) => void;
   viewportHeightShared: SharedValue<number>;
   computeTargetDate: (originalDate: Date, translationY: number) => Date;
-  updateCurrentOffset: (y: number) => void;
 }): GestureType {
   const {
     tx,
@@ -203,29 +143,13 @@ function useCreatePanGesture(options: {
     startDrag,
     cancelDrag,
     completeDrop,
-    onDragUpdate,
+    setAutoScrollDirection,
     viewportHeightShared,
     computeTargetDate,
-    updateCurrentOffset,
   } = options;
 
-  const {
-    lastAutoScrollMs,
-    shouldTriggerAutoScrollShared,
-    lastAutoScrollYShared,
-    maybeTriggerAutoScroll,
-  } = useAutoScrollTrigger(viewportHeightShared);
-
-  // JS-thread handlers for scheduleOnRN
-  const onDragUpdateJS = React.useCallback(
-    (y: number): void => {
-      const newOffset = onDragUpdate(y);
-      if (newOffset !== undefined) {
-        updateCurrentOffset(newOffset);
-      }
-    },
-    [onDragUpdate, updateCurrentOffset]
-  );
+  const autoScrollDirection = useSharedValue<-1 | 0 | 1>(0);
+  const autoScrollEdgeThreshold = 60;
 
   const onDropJS = React.useCallback(
     (originMs: number, dy: number): void => {
@@ -236,12 +160,6 @@ function useCreatePanGesture(options: {
     [completeDrop, computeTargetDate]
   );
 
-  useAutoScrollReaction({
-    shouldTriggerAutoScrollShared,
-    lastAutoScrollYShared,
-    onDragUpdateJS,
-  });
-
   return React.useMemo(
     () =>
       Gesture.Pan()
@@ -251,33 +169,51 @@ function useCreatePanGesture(options: {
           tx.set(0);
           ty.set(0);
           originTimeAtDragStart.set(originTime.get());
-          lastAutoScrollMs.set(0);
+          autoScrollDirection.set(0);
+          scheduleOnRN(setAutoScrollDirection, 0);
           scheduleOnRN(startDrag, task);
         })
         .onUpdate((e) => {
           tx.set(e.translationX);
           ty.set(e.translationY);
-          maybeTriggerAutoScroll(e.absoluteY);
+          const viewportHeight = viewportHeightShared.get();
+          let dir: -1 | 0 | 1 = 0;
+          if (viewportHeight > 0) {
+            if (e.absoluteY < autoScrollEdgeThreshold) {
+              dir = -1;
+            } else if (e.absoluteY > viewportHeight - autoScrollEdgeThreshold) {
+              dir = 1;
+            }
+          }
+          if (dir !== autoScrollDirection.get()) {
+            autoScrollDirection.set(dir);
+            scheduleOnRN(setAutoScrollDirection, dir);
+          }
         })
         .onEnd(() => {
           scheduleOnRN(onDropJS, originTimeAtDragStart.get(), ty.get());
-          tx.set(withSpring(0));
-          ty.set(withSpring(0));
+          autoScrollDirection.set(0);
+          scheduleOnRN(setAutoScrollDirection, 0);
+          tx.set(withSpring(0, SPRING));
+          ty.set(withSpring(0, SPRING));
         })
         .onFinalize(() => {
+          autoScrollDirection.set(0);
+          scheduleOnRN(setAutoScrollDirection, 0);
           scheduleOnRN(cancelDrag);
         }),
     [
       cancelDrag,
-      lastAutoScrollMs,
-      maybeTriggerAutoScroll,
       onDropJS,
+      setAutoScrollDirection,
       startDrag,
       task,
       tx,
       ty,
       originTime,
       originTimeAtDragStart,
+      viewportHeightShared,
+      autoScrollDirection,
     ]
   );
 }
@@ -288,20 +224,18 @@ function useDragGesture(options: {
   startDrag: (task: Task) => void;
   cancelDrag: () => void;
   completeDrop: (targetDate: Date, scope: DragScope) => Promise<void>;
-  onDragUpdate: (y: number) => number | undefined;
+  setAutoScrollDirection: (dir: -1 | 0 | 1) => void;
   viewportHeightShared: SharedValue<number>;
   computeTargetDate: (originalDate: Date, translationY: number) => Date;
-  updateCurrentOffset: (y: number) => void;
 }) {
   const {
     task,
     startDrag,
     cancelDrag,
     completeDrop,
-    onDragUpdate,
+    setAutoScrollDirection,
     viewportHeightShared,
     computeTargetDate,
-    updateCurrentOffset,
   } = options;
 
   const tx = useSharedValue(0);
@@ -330,10 +264,9 @@ function useDragGesture(options: {
     startDrag,
     cancelDrag,
     completeDrop,
-    onDragUpdate,
+    setAutoScrollDirection,
     viewportHeightShared,
     computeTargetDate,
-    updateCurrentOffset,
   });
 
   return { pan, animatedStyle };
@@ -347,9 +280,8 @@ export function DraggableAgendaItem({
     startDrag,
     cancelDrag,
     completeDrop,
-    onDragUpdate,
+    setAutoScrollDirection,
     computeTargetDate,
-    updateCurrentOffset,
     viewportHeightShared,
   } = useDragDrop();
 
@@ -358,10 +290,9 @@ export function DraggableAgendaItem({
     startDrag,
     cancelDrag,
     completeDrop,
-    onDragUpdate,
+    setAutoScrollDirection,
     viewportHeightShared,
     computeTargetDate,
-    updateCurrentOffset,
   });
 
   const [isMoveMenuOpen, setIsMoveMenuOpen] = React.useState<boolean>(false);

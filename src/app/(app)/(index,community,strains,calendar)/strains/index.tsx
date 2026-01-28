@@ -88,6 +88,10 @@ export default function StrainsScreen(): React.ReactElement {
     () => ({ paddingBottom: grossHeight + LIST_BOTTOM_EXTRA }),
     [grossHeight]
   );
+  const listContentStyle = React.useMemo(
+    () => [styles.listContentContainer, listContentPadding],
+    [listContentPadding]
+  );
 
   const handleStateChange = useCallback(
     (
@@ -137,10 +141,7 @@ export default function StrainsScreen(): React.ReactElement {
           filters={filters}
           onScroll={scrollHandler}
           listRef={listRef}
-          contentContainerStyle={[
-            styles.listContentContainer,
-            listContentPadding,
-          ]}
+          contentContainerStyle={listContentStyle}
           testID="strains-list"
           onStateChange={handleStateChange}
         />

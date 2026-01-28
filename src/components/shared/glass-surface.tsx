@@ -94,8 +94,8 @@ export function GlassSurface({
   // Only apply default surface styles to fallback View, not GlassView
   // GlassView on iOS 26 may crash with certain style properties like overflow: 'hidden'
   const fallbackSurfaceStyle = React.useMemo<StyleProp<ViewStyle>>(
-    () => [styles.surface, style],
-    [style]
+    () => [styles.surface, style, fallbackStyle],
+    [style, fallbackStyle]
   );
 
   if (glassAvailable) {
@@ -118,7 +118,7 @@ export function GlassSurface({
   // Fallback for Android + iOS < 26
   return (
     <View
-      style={[fallbackSurfaceStyle, fallbackStyle]}
+      style={fallbackSurfaceStyle}
       className={cn(DEFAULT_FALLBACK_CLASS, fallbackClassName)}
       testID={testID}
       pointerEvents={pointerEvents}

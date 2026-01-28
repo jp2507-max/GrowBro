@@ -6,6 +6,8 @@
 import { Image } from 'expo-image';
 import { InteractionManager, Platform } from 'react-native';
 
+import { DEFAULT_IMAGE_BLURHASH } from '@/lib/media/image-placeholders';
+
 type PrefetchQueueState = {
   scheduled: ReturnType<typeof InteractionManager.runAfterInteractions> | null;
   queued: Set<string>;
@@ -78,7 +80,7 @@ export function cancelPendingPrefetches(): void {
  * BlurHash placeholder for strain images
  * Generic cannabis leaf pattern
  */
-export const STRAIN_IMAGE_BLURHASH = 'L6PZfSi_.AyE_3t7t7R**0o#DgR4';
+export const STRAIN_IMAGE_BLURHASH = DEFAULT_IMAGE_BLURHASH;
 
 /**
  * Default placeholder image for strain images

@@ -18,7 +18,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { motion } from '@/lib/animations/motion';
+import { motion, withRM } from '@/lib/animations/motion';
 import type { TxKeyPath } from '@/lib/i18n';
 import { useReduceMotionEnabled } from '@/lib/strains/accessibility';
 import { cn } from '@/lib/utils';
@@ -60,12 +60,18 @@ export function Skeleton({
     opacity.set(
       withRepeat(
         withSequence(
-          withTiming(0.5, {
-            duration: motion.dur.lg,
-          }),
-          withTiming(1, {
-            duration: motion.dur.lg,
-          })
+          withTiming(
+            0.5,
+            withRM({
+              duration: motion.dur.lg,
+            })
+          ),
+          withTiming(
+            1,
+            withRM({
+              duration: motion.dur.lg,
+            })
+          )
         ),
         -1, // Infinite repeat
         false

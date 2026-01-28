@@ -119,8 +119,8 @@ export function crossfadeAroundIndex(params: CrossfadeParams): number {
 export function hsvInterpolateColor(
   activeIndex: SharedValue<number>,
   inputRange: readonly number[],
-  colors: readonly (ColorValue | number)[]
-): number {
+  colors: readonly ColorValue[]
+): ColorValue {
   'worklet';
   return interpolateColor(activeIndex.value, inputRange, colors, 'HSV');
 }

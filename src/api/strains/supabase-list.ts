@@ -114,8 +114,9 @@ export async function withStrainTableFallback<T>(
   let result = await queryFn('strains_public');
   if (
     result.error &&
-    typeof result.error.message === 'string' &&
-    result.error.message.toLowerCase().includes('strains_public')
+    ((typeof result.error.message === 'string' &&
+      result.error.message.toLowerCase().includes('strains_public')) ||
+      (result.error as { code?: string }).code === 'PGRST116')
   ) {
     result = await queryFn('strain_cache');
   }

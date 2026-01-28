@@ -1,14 +1,7 @@
 import { Q } from '@nozbe/watermelondb';
 import { randomUUID } from 'expo-crypto';
 
-import type {
-  GeneticLean,
-  PhotoperiodType,
-  Plant,
-  PlantEnvironment,
-  PlantMetadata,
-  PlantStage,
-} from '@/api/plants/types';
+import type { PlantMetadata, PlantStage } from '@/api/plants/types';
 import type { CreatePlantVariables } from '@/api/plants/use-create-plant';
 import { getOptionalAuthenticatedUserId } from '@/lib/auth';
 import { DigitalTwinTaskEngine } from '@/lib/digital-twin';
@@ -23,6 +16,9 @@ import type { SeriesModel } from '@/lib/watermelon-models/series';
 import type { TaskModel } from '@/lib/watermelon-models/task';
 
 import { maybeAutoApplyPlaybook } from './playbook-auto-apply';
+import { toPlant } from './to-plant';
+
+export { toPlant } from './to-plant';
 
 type PlantUpsertInput = CreatePlantVariables;
 
@@ -106,11 +102,15 @@ function buildMetadata(
   input: PlantUpsertInput
 ): PlantMetadataLocal | undefined {
   const metadata: PlantMetadata = {
+    startType: input.startType,
     photoperiodType: input.photoperiodType,
     environment: input.environment,
     geneticLean: input.geneticLean,
     medium: input.medium,
     potSize: input.potSize,
+    spaceSize: input.spaceSize,
+    advancedMode: input.advancedMode,
+    trainingPrefs: input.trainingPrefs,
     lightSchedule: input.lightSchedule,
     lightHours: input.lightHours,
     height: input.height,
@@ -161,11 +161,15 @@ function shouldSyncDigitalTwin(
 ): boolean {
   return (
     stageChanged ||
+    input.startType !== undefined ||
     input.photoperiodType !== undefined ||
     input.environment !== undefined ||
     input.geneticLean !== undefined ||
     input.medium !== undefined ||
     input.potSize !== undefined ||
+    input.spaceSize !== undefined ||
+    input.advancedMode !== undefined ||
+    input.trainingPrefs !== undefined ||
     input.lightSchedule !== undefined ||
     input.lightHours !== undefined ||
     input.height !== undefined ||
@@ -225,9 +229,7 @@ async function createStageHistoryEntry(params: {
     'plant_stage_history'
   );
   const now = new Date(occurredAt);
-  const resolvedUserId =
-    userId ??
-    (record.userId !== undefined ? (record.userId ?? undefined) : undefined);
+  const resolvedUserId = userId ?? record.userId ?? undefined;
 
   await historyCollection.create((history) => {
     history.plantId = plantId;
@@ -240,34 +242,6 @@ async function createStageHistoryEntry(params: {
     history.createdAt = now;
     history.updatedAt = now;
   });
-}
-
-export function toPlant(model: PlantModel): Plant {
-  const metadata = (model.metadata as PlantMetadata | undefined) ?? undefined;
-
-  return {
-    id: model.id,
-    name: model.name,
-    stage: model.stage as PlantStage | undefined,
-    stageEnteredAt: model.stageEnteredAt ?? undefined,
-    strain: model.strain ?? undefined,
-    plantedAt: model.plantedAt ?? undefined,
-    expectedHarvestAt: model.expectedHarvestAt ?? undefined,
-    lastWateredAt: model.lastWateredAt ?? undefined,
-    lastFedAt: model.lastFedAt ?? undefined,
-    health: model.health as Plant['health'],
-    notes: model.notes ?? metadata?.notes,
-    imageUrl: model.imageUrl ?? undefined,
-    metadata,
-    environment:
-      (model.environment as PlantEnvironment | undefined) ??
-      metadata?.environment,
-    photoperiodType:
-      (model.photoperiodType as PhotoperiodType | undefined) ??
-      metadata?.photoperiodType,
-    geneticLean:
-      (model.geneticLean as GeneticLean | undefined) ?? metadata?.geneticLean,
-  };
 }
 
 export async function getPlantById(id: string): Promise<PlantModel | null> {

@@ -15,6 +15,11 @@ import { useAnimatedScrollList } from '@/lib/animations/animated-scroll-list-pro
 import { createStaggeredFadeIn } from '@/lib/animations/stagger';
 import { haptics } from '@/lib/haptics';
 import { usePlantPhotoSync } from '@/lib/plants/plant-photo-sync';
+import {
+  getProductStageLabelKey,
+  type ProductPlantStage,
+  toProductStage,
+} from '@/lib/plants/product-stage';
 import { translate } from '@/lib/i18n';
 import type { TxKeyPath } from '@/lib/i18n/utils';
 import { useReduceMotionEnabled } from '@/lib/strains/accessibility';
@@ -37,7 +42,7 @@ type StageColors = {
 };
 
 // Stage colors using design tokens
-function getStageColors(stage?: string): StageColors {
+function getStageColors(stage?: ProductPlantStage): StageColors {
   switch (stage) {
     case 'germination':
       return {
@@ -63,7 +68,6 @@ function getStageColors(stage?: string): StageColors {
         badgeText: colors.sky[800],
         icon: colors.sky[300],
       };
-    case 'flowering_stretch':
     case 'flowering':
       return {
         bg: colors.indigo[200],
@@ -72,8 +76,7 @@ function getStageColors(stage?: string): StageColors {
         badgeText: colors.indigo[800],
         icon: colors.indigo[300],
       };
-    case 'ripening':
-    case 'harvesting':
+    case 'drying':
       return {
         bg: colors.terracotta[200],
         text: colors.terracotta[900],
@@ -89,7 +92,7 @@ function getStageColors(stage?: string): StageColors {
         badgeText: colors.warning[800],
         icon: colors.warning[300],
       };
-    case 'ready':
+    case 'completed':
       return {
         bg: colors.primary[200],
         text: colors.primary[900],
@@ -108,33 +111,29 @@ function getStageColors(stage?: string): StageColors {
   }
 }
 
-function translateStage(stage?: string): string | null {
+function translateStage(stage?: ProductPlantStage): string | null {
   if (!stage) return null;
-  const key = `plants.form.stage.${stage}`;
+  const key = getProductStageLabelKey(stage);
   const label = translate(key as TxKeyPath);
   return typeof label === 'string' && label.length > 0 ? label : stage;
 }
 
 // Stage progress percentages for gamification
-function getStageProgress(stage?: string): number {
+function getStageProgress(stage?: ProductPlantStage): number {
   switch (stage) {
     case 'germination':
       return 5;
     case 'seedling':
-      return 15;
+      return 20;
     case 'vegetative':
-      return 35;
-    case 'flowering_stretch':
-      return 50;
+      return 45;
     case 'flowering':
-      return 65;
-    case 'ripening':
-      return 75;
-    case 'harvesting':
+      return 70;
+    case 'drying':
       return 85;
     case 'curing':
       return 95;
-    case 'ready':
+    case 'completed':
       return 100;
     default:
       return 0;
@@ -152,7 +151,7 @@ const cardStyles = StyleSheet.create({
 
 function PlantCardImage({
   plant,
-  colors,
+  colors: stageColors,
 }: {
   plant: Plant;
   colors: StageColors;
@@ -163,7 +162,7 @@ function PlantCardImage({
   return (
     <View
       className="size-16 overflow-hidden rounded-xl border border-neutral-100 bg-white dark:border-neutral-700"
-      style={{ backgroundColor: colors.badgeBg }}
+      style={{ backgroundColor: stageColors.badgeBg }}
     >
       {resolvedLocalUri ? (
         <OptimizedImage
@@ -190,7 +189,7 @@ function PlantCardImage({
 function PlantCardHeader({
   plant,
   stageLabel,
-  colors,
+  colors: stageColors,
 }: {
   plant: Plant;
   stageLabel: string | null;
@@ -222,7 +221,7 @@ function PlantCardHeader({
           </Text>
         ) : null}
       </View>
-      <PlantCardImage plant={plant} colors={colors} />
+      <PlantCardImage plant={plant} colors={stageColors} />
     </View>
   );
 }
@@ -305,17 +304,23 @@ function PlantCardContent({
     haptics.selection();
     onPress(plant.id);
   }, [onPress, plant.id]);
-  const stageLabel = React.useMemo(
-    () => translateStage(plant.stage),
+
+  const productStage = React.useMemo(
+    () => toProductStage(plant.stage),
     [plant.stage]
   );
-  const colors = React.useMemo(
-    () => getStageColors(plant.stage),
-    [plant.stage]
+
+  const stageLabel = React.useMemo(
+    () => translateStage(productStage),
+    [productStage]
+  );
+  const stageColors = React.useMemo(
+    () => getStageColors(productStage),
+    [productStage]
   );
   const progress = React.useMemo(
-    () => getStageProgress(plant.stage),
-    [plant.stage]
+    () => getStageProgress(productStage),
+    [productStage]
   );
   const accessibilityLabel = React.useMemo(
     () =>
@@ -338,7 +343,7 @@ function PlantCardContent({
         <PlantCardHeader
           plant={plant}
           stageLabel={stageLabel}
-          colors={colors}
+          colors={stageColors}
         />
         <PlantCardProgress plantId={plant.id} progress={progress} />
         <PlantCardFooter needsAttention={needsAttention} />

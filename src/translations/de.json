@@ -172,6 +172,12 @@
       "readings_count": "{{count}} Messungen",
       "save_reading": "Messung speichern"
     },
+    "nutrition": {
+      "adjustments": {
+        "deficiency_generic": "Potenzieller Nährstoffmangel erkannt. Erwägen Sie eine Anpassung der Nährstoffmischung oder -frequenz.",
+        "deficiency_with_nutrient": "Potenzieller {{nutrient}}-Mangel erkannt. Erwägen Sie eine Anpassung der Nährstoffmischung oder -frequenz."
+      }
+    },
     "plant_hero_image": "Pflanzenbild",
     "plants": {
       "assessment_history": {
@@ -880,6 +886,7 @@
     "go_back": "Zurück",
     "go_home": "Zur Startseite",
     "loading": "Lädt...",
+    "loadingHint": "Inhalt wird geladen, bitte warten",
     "na": "k.A.",
     "no": "Nein",
     "not_selected": "nicht ausgewählt",
@@ -1197,6 +1204,10 @@
       "permission_title": "Benachrichtigungen deaktiviert",
       "schedule_failed": "Erinnerung konnte nicht geplant werden",
       "title": "Erinnerungsfehler"
+    },
+    "page_not_found": {
+      "description": "Die gesuchte Seite existiert nicht oder wurde verschoben.",
+      "title": "Seite nicht gefunden"
     },
     "playbook": {
       "already_applied": "Dieses Growbook ist bereits auf diese Pflanze angewendet",
@@ -2364,6 +2375,12 @@
       "title": "Wasserprofil"
     }
   },
+  "nutrition": {
+    "adjustments": {
+      "deficiency_generic": "Potenzieller Nährstoffmangel erkannt. Erwägen Sie eine Anpassung der Nährstoffmischung oder -frequenz.",
+      "deficiency_with_nutrient": "Potenzieller {{nutrient}}-Mangel erkannt. Erwägen Sie eine Anpassung der Nährstoffmischung oder -frequenz."
+    }
+  },
   "onboarding": {
     "allow_button": "Benachrichtigungen erlauben",
     "community": {
@@ -2466,7 +2483,7 @@
       "percent_complete": "{{percent}}% Abgeschlossen"
     },
     "detail": {
-      "action_hub_title": "Heutige Aufgaben",
+      "action_hub_title": "Tagesübersicht",
       "all_good_message": "Alles im grünen Bereich – Keine Aufgaben heute.",
       "no_tasks": "Keine anstehenden Aufgaben",
       "nutrient_section": {
@@ -2490,6 +2507,8 @@
       "add_starter_tasks": "Starter-Aufgaben hinzufügen",
       "added_body": "Super Start! Ergänze den Zeitplan oder gehe direkt zum Kalender.",
       "added_title": "Pflanze hinzugefügt",
+      "advanced_mode_hint": "Schaltet optionale Eingaben und Trainingsoptionen frei.",
+      "advanced_mode_label": "Expertenmodus",
       "autoflower_badge": "Autoflower",
       "cancel": "Abbrechen",
       "completion": "{{percent}}% Abgeschlossen",
@@ -2528,6 +2547,12 @@
       },
       "genetic_label": "Genetik",
       "genetic_placeholder": "Genetik auswählen",
+      "genetics": {
+        "autoflower": "Autoflower",
+        "photoperiod": "Photoperiode (12/12 Umstellung)"
+      },
+      "genetics_label": "Genetik",
+      "genetics_placeholder": "Photoperiode oder Autoflower",
       "go_to_schedule": "Zum Kalender",
       "height_label": "Pflanzenhöhe",
       "height_placeholder": "z. B. 45 cm",
@@ -2566,11 +2591,19 @@
       "save": "Speichern",
       "save_cta": "Änderungen speichern",
       "section": {
+        "advanced": "Erweitert",
         "care": "Pflege",
         "environment": "Umgebung",
         "identity": "Identität",
         "photo": "Foto"
       },
+      "space_size": {
+        "large": "Groß",
+        "medium": "Mittel",
+        "small": "Klein"
+      },
+      "space_size_label": "Anbaufläche",
+      "space_size_placeholder": "Anbaufläche auswählen",
       "stage": {
         "curing": "Curing",
         "flowering": "Blüte",
@@ -2584,21 +2617,46 @@
       },
       "stage_label": "Phase",
       "stage_placeholder": "Phase auswählen",
+      "start_type": {
+        "clone": "Steckling",
+        "seed": "Samen"
+      },
+      "start_type_label": "Starttyp",
+      "start_type_placeholder": "Samen oder Steckling",
       "starter_tasks_created": "Starter-Aufgaben geplant",
       "strain_create_custom": "Eigenen Strain „{{name}}“ anlegen",
       "strain_create_custom_hint": "Wir speichern diesen Strain für die Zukunft.",
-      "strain_label": "Strain",
+      "strain_label": "Strain (optional)",
       "strain_no_results": "Keine Strains gefunden für „{{query}}“",
       "strain_placeholder": "Afghan Haze, Super Silver Haze…",
       "strain_race_label": "Typ: {{race}}",
       "strain_searching": "Suche nach Strains…",
       "success_body": "Deine Pflanze wurde zu \"Meine Pflanzen\" hinzugefügt.",
       "success_title": "Pflanze erstellt",
+      "training_prefs": {
+        "defoliation": "Entlaubung",
+        "lst": "Low‑Stress‑Training (LST)",
+        "scrog": "SCROG",
+        "topping": "Topping"
+      },
+      "training_prefs_hint": "Nur bei aktiviertem Expertenmodus.",
+      "training_prefs_label": "Training-Präferenzen",
       "update_success_body": "Die Pflanzendaten wurden gespeichert.",
       "update_success_title": "Pflanze aktualisiert",
       "view_plant": "Pflanze ansehen",
       "view_strain_profile": "Sortenprofil anzeigen",
       "view_strain_profile_hint": "Öffnet das verknüpfte Sortenprofil."
+    },
+    "lifecycle": {
+      "stage": {
+        "completed": "Abgeschlossen",
+        "curing": "Aushärten",
+        "drying": "Trocknen",
+        "flowering": "Blüte",
+        "germination": "Keimung",
+        "seedling": "Keimling",
+        "vegetative": "Wachstum"
+      }
     },
     "no_results": "Keine Pflanzen gefunden",
     "offline_notice": "Gespeicherte Pflanzen werden angezeigt",
@@ -4120,6 +4178,22 @@
     "trichome_ratio": "Trichom-Verhältnis",
     "validation_max": "Muss {{max}} oder kleiner sein",
     "validation_min": "Muss {{min}} oder größer sein"
+  },
+  "twin": {
+    "stageReason": {
+      "autoflower_day": "Autoflower Tag {{day}}",
+      "autoflower_grace": "Autoflower Tag {{day}} (auto-wechsel)",
+      "curing_complete": "Aushärtungsdauer erreicht",
+      "drying_window": "Trocknungsfenster erreicht ({{days}} Tage)",
+      "flowering_end": "Annäherung an das Ende der Blütezeit",
+      "harvest_complete": "Ernte abgeschlossen",
+      "light_cycle_switched": "Lichtzyklus auf 12/12 umgestellt",
+      "node_count": "Knotenanzahl erreicht 3+",
+      "seedling_time": "Keimlingsfenster erreicht ({{days}} Tage)",
+      "sprout_confirmed": "Keimling bestätigt",
+      "stretch_complete": "Stretch-Phase abgeschlossen",
+      "trichomes": "Trichome zeigen Erntefenster an"
+    }
   },
   "units": {
     "celsius": "°C",

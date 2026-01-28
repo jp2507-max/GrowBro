@@ -1,6 +1,7 @@
 import { Q } from '@nozbe/watermelondb';
 
 import { getOptionalAuthenticatedUserId } from '@/lib/auth';
+import { triggerDigitalTwinSync } from '@/lib/digital-twin/sync-helpers';
 import { database } from '@/lib/watermelon';
 import type { PlantEventModel } from '@/lib/watermelon-models/plant-event';
 
@@ -64,17 +65,7 @@ export async function recordPlantEvent(
     });
   });
 
-  void import('@/lib/digital-twin/digital-twin-task-engine')
-    .then(({ DigitalTwinTaskEngine }) => {
-      const engine = new DigitalTwinTaskEngine();
-      return engine.syncForPlantId(input.plantId);
-    })
-    .catch((error) => {
-      console.warn(
-        '[PlantEvents] Failed to sync digital twin schedules:',
-        error
-      );
-    });
+  triggerDigitalTwinSync(input.plantId, 'PlantEvents');
 
   return toPlantEvent(created);
 }
@@ -94,8 +85,8 @@ export async function listPlantEvents(params: {
   }
 
   const rows = await getCollection()
-    .query(...conditions, Q.sortBy('occurred_at', Q.desc))
+    .query(...conditions, Q.sortBy('occurred_at', Q.desc), Q.take(limit))
     .fetch();
 
-  return rows.slice(0, limit).map(toPlantEvent);
+  return rows.map(toPlantEvent);
 }

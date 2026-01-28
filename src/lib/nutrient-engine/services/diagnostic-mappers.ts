@@ -1,17 +1,47 @@
 import type { DiagnosticResultModel } from '@/lib/watermelon-models/diagnostic-result';
 
 import {
-  type ConfidenceSource,
+  ConfidenceSource,
   type DiagnosticAiMetadata,
   type DiagnosticConfidenceFlag,
   type DiagnosticResult,
   IssueSeverity,
-  type NutrientIssue,
+  IssueType,
   type Recommendation,
   type Symptom,
 } from '../types';
 
 export const AI_OVERRIDE_THRESHOLD_DEFAULT = 0.78;
+
+function validateIssueSeverity(value: unknown): IssueSeverity {
+  const valid = Object.values(IssueSeverity) as string[];
+  if (typeof value === 'string' && valid.includes(value)) {
+    return value as IssueSeverity;
+  }
+  return IssueSeverity.MODERATE;
+}
+
+function validateIssueType(value: unknown): IssueType {
+  const valid = Object.values(IssueType) as string[];
+  if (typeof value === 'string' && valid.includes(value)) {
+    return value as IssueType;
+  }
+  console.warn(
+    `[diagnostic-mappers] invalid issueType: ${value}, defaulting to 'deficiency'`
+  );
+  return IssueType.DEFICIENCY;
+}
+
+function validateConfidenceSource(value: unknown): ConfidenceSource {
+  const valid = Object.values(ConfidenceSource) as string[];
+  if (typeof value === 'string' && valid.includes(value)) {
+    return value as ConfidenceSource;
+  }
+  console.warn(
+    `[diagnostic-mappers] invalid confidenceSource: ${value}, defaulting to 'rules'`
+  );
+  return ConfidenceSource.RULES;
+}
 
 function decodeSymptoms(codes: string[]): Symptom[] {
   return codes
@@ -20,15 +50,10 @@ function decodeSymptoms(codes: string[]): Symptom[] {
       if (!type) {
         return null;
       }
-      const normalizedSeverity = (
-        Object.values(IssueSeverity) as string[]
-      ).includes(severity)
-        ? (severity as IssueSeverity)
-        : IssueSeverity.MODERATE;
       const symptom: Symptom = {
         type,
         location: location ?? '',
-        severity: normalizedSeverity,
+        severity: validateIssueSeverity(severity),
       };
       return symptom;
     })
@@ -82,8 +107,8 @@ export function modelToDiagnosticResult(
     reservoirId: model.reservoirId ?? undefined,
     symptoms: decodeSymptoms(model.symptomCodes ?? []),
     classification: {
-      type: model.issueType as NutrientIssue['type'],
-      severity: model.issueSeverity as IssueSeverity,
+      type: validateIssueType(model.issueType),
+      severity: validateIssueSeverity(model.issueSeverity),
       nutrient: model.nutrientCode ?? undefined,
       likelyCauses: [],
     },
@@ -98,7 +123,7 @@ export function modelToDiagnosticResult(
     recommendations: decodeRecommendations(model.recommendationMessages ?? []),
     inputReadingIds: model.inputReadingIds ?? [],
     waterProfileId: model.waterProfileId ?? undefined,
-    confidenceSource: model.confidenceSource as ConfidenceSource,
+    confidenceSource: validateConfidenceSource(model.confidenceSource),
     rulesBased: Boolean(model.rulesBased),
     aiOverride: Boolean(model.aiOverride),
     rulesConfidence: model.rulesConfidence ?? undefined,

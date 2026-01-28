@@ -8,7 +8,10 @@ import { StyleSheet } from 'react-native';
 import Animated from 'react-native-reanimated';
 
 import { Image } from '@/components/ui';
-import { communityPostHeroTag } from '@/lib/animations/shared';
+import {
+  communityPostHeroTag,
+  sharedTransitionStyle,
+} from '@/lib/animations/shared';
 import { getCommunityImageProps } from '@/lib/community/image-optimization';
 import { translate } from '@/lib/i18n';
 
@@ -65,6 +68,9 @@ export function PostCardHeroImage({
       style={styles.image}
       sharedTransitionTag={
         enableSharedTransition ? communityPostHeroTag(postId) : undefined
+      }
+      sharedTransitionStyle={
+        enableSharedTransition ? sharedTransitionStyle : undefined
       }
       accessibilityIgnoresInvertColors
       accessibilityLabel={translate('accessibility.community.post_image', {

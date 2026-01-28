@@ -19,6 +19,21 @@ import { useRequestAccountDeletion } from '@/api/auth/use-request-account-deleti
 import DeleteAccountScreen from '@/app/settings/delete-account';
 import { cleanup, screen, setup, waitFor } from '@/lib/test-utils';
 
+type RequestDeletionHookOptions = Parameters<
+  typeof useRequestAccountDeletion
+>[0];
+type RequestDeletionHookResult = ReturnType<typeof useRequestAccountDeletion>;
+
+function buildRequestDeletionResult(
+  overrides?: Partial<RequestDeletionHookResult>
+): RequestDeletionHookResult {
+  return {
+    mutate: jest.fn(),
+    isPending: false,
+    ...overrides,
+  } as unknown as RequestDeletionHookResult;
+}
+
 // Mock router
 const mockRouter = {
   back: jest.fn(),
@@ -58,10 +73,10 @@ const mockMmkvStorage = {
   clearAll: jest.fn(),
 };
 
-const mockRequestDeletion = {
+const mockRequestDeletion = buildRequestDeletionResult({
   mutate: jest.fn(),
   isPending: false,
-};
+});
 
 afterEach(() => {
   cleanup();
@@ -75,7 +90,9 @@ describe('Account Deletion Flow Integration', () => {
     (MMKV as unknown as jest.Mock).mockImplementation(() => mockMmkvStorage);
     mockDatabase.write.mockImplementation((fn) => fn());
     mockDatabase.unsafeResetDatabase.mockResolvedValue(undefined);
-    jest.mocked(useRequestAccountDeletion).mockReturnValue(mockRequestDeletion);
+    jest
+      .mocked(useRequestAccountDeletion)
+      .mockReturnValue(buildRequestDeletionResult(mockRequestDeletion));
     (SecureStore.deleteItemAsync as jest.Mock).mockResolvedValue(undefined);
 
     // Mock Alert
@@ -178,10 +195,12 @@ describe('Account Deletion Flow Integration', () => {
     beforeEach(() => {
       // Mock the flow to be at confirmation step
       // We'll manually set up the component in the confirmation state
-      jest.mocked(useRequestAccountDeletion).mockReturnValue({
-        mutate: mockRequestDeletion.mutate,
-        isPending: false,
-      });
+      jest.mocked(useRequestAccountDeletion).mockReturnValue(
+        buildRequestDeletionResult({
+          mutate: mockRequestDeletion.mutate,
+          isPending: false,
+        })
+      );
     });
 
     test('requires typing DELETE to enable confirmation button', async () => {
@@ -272,18 +291,20 @@ describe('Account Deletion Flow Integration', () => {
       // Mock successful deletion
       jest
         .mocked(useRequestAccountDeletion)
-        .mockImplementation(
-          (options?: {
-            onSuccess?: (data: unknown) => void;
-            onError?: (error: Error) => void;
-          }) => {
-            return {
-              mutate: jest.fn(() => {
-                options?.onSuccess?.({});
-              }),
-              isPending: false,
-            };
-          }
+        .mockImplementation((options?: RequestDeletionHookOptions) =>
+          buildRequestDeletionResult({
+            mutate: jest.fn(() => {
+              // react-query mutation callbacks typically accept
+              // (data, variables, onMutateResult, context)
+              (options as any)?.onSuccess?.(
+                {},
+                undefined,
+                undefined,
+                undefined
+              );
+            }) as any,
+            isPending: false,
+          })
         );
 
       const { user } = setup(<DeleteAccountScreen />);
@@ -307,18 +328,18 @@ describe('Account Deletion Flow Integration', () => {
     test('redirects to login after successful deletion', async () => {
       jest
         .mocked(useRequestAccountDeletion)
-        .mockImplementation(
-          (options?: {
-            onSuccess?: (data: unknown) => void;
-            onError?: (error: Error) => void;
-          }) => {
-            return {
-              mutate: jest.fn(() => {
-                options?.onSuccess?.({});
-              }),
-              isPending: false,
-            };
-          }
+        .mockImplementation((options?: RequestDeletionHookOptions) =>
+          buildRequestDeletionResult({
+            mutate: jest.fn(() => {
+              (options as any)?.onSuccess?.(
+                {},
+                undefined,
+                undefined,
+                undefined
+              );
+            }) as any,
+            isPending: false,
+          })
         );
 
       const { user } = setup(<DeleteAccountScreen />);
@@ -342,18 +363,18 @@ describe('Account Deletion Flow Integration', () => {
 
       jest
         .mocked(useRequestAccountDeletion)
-        .mockImplementation(
-          (options?: {
-            onSuccess?: (data: unknown) => void;
-            onError?: (error: Error) => void;
-          }) => {
-            return {
-              mutate: jest.fn(() => {
-                options?.onError?.(new Error('Network error'));
-              }),
-              isPending: false,
-            };
-          }
+        .mockImplementation((options?: RequestDeletionHookOptions) =>
+          buildRequestDeletionResult({
+            mutate: jest.fn(() => {
+              (options as any)?.onError?.(
+                new Error('Network error'),
+                undefined,
+                undefined,
+                undefined
+              );
+            }) as any,
+            isPending: false,
+          })
         );
 
       const { user } = setup(<DeleteAccountScreen />);
@@ -375,10 +396,12 @@ describe('Account Deletion Flow Integration', () => {
 
   describe('Loading States', () => {
     test('disables buttons during deletion request', async () => {
-      jest.mocked(useRequestAccountDeletion).mockReturnValue({
-        mutate: jest.fn(),
-        isPending: true,
-      });
+      jest.mocked(useRequestAccountDeletion).mockReturnValue(
+        buildRequestDeletionResult({
+          mutate: jest.fn(),
+          isPending: true,
+        })
+      );
 
       const { user } = setup(<DeleteAccountScreen />);
 
@@ -397,10 +420,12 @@ describe('Account Deletion Flow Integration', () => {
     });
 
     test('shows loading state on confirm button', async () => {
-      jest.mocked(useRequestAccountDeletion).mockReturnValue({
-        mutate: jest.fn(),
-        isPending: true,
-      });
+      jest.mocked(useRequestAccountDeletion).mockReturnValue(
+        buildRequestDeletionResult({
+          mutate: jest.fn(),
+          isPending: true,
+        })
+      );
 
       const { user } = setup(<DeleteAccountScreen />);
 
@@ -429,18 +454,18 @@ describe('Account Deletion Flow Integration', () => {
 
       jest
         .mocked(useRequestAccountDeletion)
-        .mockImplementation(
-          (options?: {
-            onSuccess?: (data: unknown) => void;
-            onError?: (error: Error) => void;
-          }) => {
-            return {
-              mutate: jest.fn(() => {
-                options?.onSuccess?.({});
-              }),
-              isPending: false,
-            };
-          }
+        .mockImplementation((options?: RequestDeletionHookOptions) =>
+          buildRequestDeletionResult({
+            mutate: jest.fn(() => {
+              (options as any)?.onSuccess?.(
+                {},
+                undefined,
+                undefined,
+                undefined
+              );
+            }) as any,
+            isPending: false,
+          })
         );
 
       const { user } = setup(<DeleteAccountScreen />);
@@ -464,18 +489,18 @@ describe('Account Deletion Flow Integration', () => {
     test('clears all secure store keys', async () => {
       jest
         .mocked(useRequestAccountDeletion)
-        .mockImplementation(
-          (options?: {
-            onSuccess?: (data: unknown) => void;
-            onError?: (error: Error) => void;
-          }) => {
-            return {
-              mutate: jest.fn(() => {
-                options?.onSuccess?.({});
-              }),
-              isPending: false,
-            };
-          }
+        .mockImplementation((options?: RequestDeletionHookOptions) =>
+          buildRequestDeletionResult({
+            mutate: jest.fn(() => {
+              (options as any)?.onSuccess?.(
+                {},
+                undefined,
+                undefined,
+                undefined
+              );
+            }) as any,
+            isPending: false,
+          })
         );
 
       const { user } = setup(<DeleteAccountScreen />);

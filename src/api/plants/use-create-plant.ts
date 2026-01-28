@@ -2,12 +2,15 @@ import { createMutation } from 'react-query-kit';
 
 import type {
   GeneticLean,
+  GrowSpaceSize,
   PhotoperiodType,
   Plant,
   PlantEnvironment,
   PlantMetadata,
   PlantStage,
+  PlantStartType,
   Race,
+  TrainingPreference,
 } from '@/api/plants/types';
 import { getOptionalAuthenticatedUserId } from '@/lib/auth';
 import { createPlantFromForm, toPlant } from '@/lib/plants/plant-service';
@@ -24,11 +27,15 @@ export type CreatePlantVariables = {
   strainRace?: Race;
   plantedAt?: string;
   expectedHarvestAt?: string;
+  startType: PlantStartType;
   photoperiodType?: PhotoperiodType;
   environment?: PlantEnvironment;
   geneticLean?: GeneticLean;
   medium?: PlantMetadata['medium'];
   potSize?: string;
+  spaceSize?: GrowSpaceSize;
+  advancedMode?: boolean;
+  trainingPrefs?: TrainingPreference[];
   lightSchedule?: string;
   lightHours?: number;
   height?: number;

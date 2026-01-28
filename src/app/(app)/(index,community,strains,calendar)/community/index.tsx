@@ -585,10 +585,15 @@ export default function CommunityScreen(): React.ReactElement {
   const getItemType = React.useCallback((item: Post) => {
     return item.media_uri ? 'post-with-media' : 'post-text-only';
   }, []);
+  const keyExtractor = React.useCallback((item: Post) => String(item.id), []);
 
   const flashListConfig = React.useMemo(
     () => getOptimizedFlashListConfig(),
     []
+  );
+  const contentContainerStyle = React.useMemo(
+    () => ({ paddingBottom: grossHeight + 80 }),
+    [grossHeight]
   );
 
   const handleFilterPressWithHaptics = React.useCallback(() => {
@@ -626,7 +631,7 @@ export default function CommunityScreen(): React.ReactElement {
                 data={filteredPosts as Post[]}
                 renderItem={renderItem}
                 getItemType={getItemType}
-                keyExtractor={(item: Post) => String(item.id)}
+                keyExtractor={keyExtractor}
                 onEndReached={onEndReached}
                 onEndReachedThreshold={0.4}
                 onScroll={scrollHandler}
@@ -635,7 +640,7 @@ export default function CommunityScreen(): React.ReactElement {
                 drawDistance={flashListConfig.drawDistance}
                 refreshing={isRefreshing}
                 onRefresh={handleRefresh}
-                contentContainerStyle={{ paddingBottom: grossHeight + 80 }}
+                contentContainerStyle={contentContainerStyle}
                 ListHeaderComponent={listHeader}
                 ListEmptyComponent={listEmpty}
                 ListFooterComponent={listFooter}

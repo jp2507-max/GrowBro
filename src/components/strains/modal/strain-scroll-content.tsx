@@ -1,7 +1,8 @@
-import BlurView from 'expo-blur';
+import { BlurView } from 'expo-blur';
 import * as React from 'react';
-import type { useAnimatedScrollHandler } from 'react-native-reanimated';
-import Animated from 'react-native-reanimated';
+import Animated, {
+  type useAnimatedScrollHandler,
+} from 'react-native-reanimated';
 
 import { Text, View } from '@/components/ui';
 import { translate } from '@/lib/i18n';

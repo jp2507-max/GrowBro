@@ -2,11 +2,13 @@
  * Constants and default values for strains feature
  */
 
+import { DEFAULT_IMAGE_BLURHASH } from '@/lib/media/image-placeholders';
+
 /**
  * Default BlurHash placeholder for strain images
  * Represents a neutral gray/green gradient
  */
-export const DEFAULT_STRAIN_BLURHASH = 'LGF5]+Yk^6#M@-5c,1J5@[or[Q6.';
+export const DEFAULT_STRAIN_BLURHASH = DEFAULT_IMAGE_BLURHASH;
 
 /**
  * Default message for missing or unavailable data

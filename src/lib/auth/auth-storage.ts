@@ -210,9 +210,7 @@ export const mmkvAuthStorageSync = {
  */
 export async function clearAuthStorage(): Promise<void> {
   await ensureAuthStorageReady();
-  const keys = authStorage
-    .getAllKeys()
-    .filter((key) => key !== LEGACY_MIGRATION_FLAG_KEY);
+  const keys = getAuthStorageKeys();
   for (const key of keys) {
     authStorage.delete(key);
   }

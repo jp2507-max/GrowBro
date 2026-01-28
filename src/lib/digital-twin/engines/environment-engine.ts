@@ -3,12 +3,6 @@ import i18n from '@/lib/i18n';
 
 import type { TaskIntent, TwinState } from '../twin-types';
 
-function buildIntent(
-  params: Omit<TaskIntent, 'engineKey'> & { engineKey: string }
-): TaskIntent {
-  return { ...params };
-}
-
 export function getEnvironmentIntents(state: TwinState): TaskIntent[] {
   const intents: TaskIntent[] = [];
   const { profile } = state;
@@ -29,18 +23,16 @@ export function getEnvironmentIntents(state: TwinState): TaskIntent[] {
       start,
       profile.timezone
     );
-    intents.push(
-      buildIntent({
-        engineKey: 'environment.ipm_preventative',
-        title: i18n.t('tasks.ipm_preventative.title'),
-        description: i18n.t('tasks.ipm_preventative.description'),
-        rrule: 'FREQ=WEEKLY;BYDAY=SU',
-        dtstartLocal,
-        dtstartUtc,
-        timezone: profile.timezone,
-        metadata: { category: 'environment' },
-      })
-    );
+    intents.push({
+      engineKey: 'environment.ipm_preventative',
+      title: i18n.t('tasks.ipm_preventative.title'),
+      description: i18n.t('tasks.ipm_preventative.description'),
+      rrule: 'FREQ=WEEKLY;BYDAY=SU',
+      dtstartLocal,
+      dtstartUtc,
+      timezone: profile.timezone,
+      metadata: { category: 'environment' },
+    });
   }
 
   if (isFlowerOrLater) {
@@ -48,18 +40,16 @@ export function getEnvironmentIntents(state: TwinState): TaskIntent[] {
       start,
       profile.timezone
     );
-    intents.push(
-      buildIntent({
-        engineKey: 'environment.ipm_biological',
-        title: i18n.t('tasks.ipm_biological.title'),
-        description: i18n.t('tasks.ipm_biological.description'),
-        rrule: 'FREQ=WEEKLY;BYDAY=SU',
-        dtstartLocal,
-        dtstartUtc,
-        timezone: profile.timezone,
-        metadata: { category: 'environment' },
-      })
-    );
+    intents.push({
+      engineKey: 'environment.ipm_biological',
+      title: i18n.t('tasks.ipm_biological.title'),
+      description: i18n.t('tasks.ipm_biological.description'),
+      rrule: 'FREQ=WEEKLY;BYDAY=SU',
+      dtstartLocal,
+      dtstartUtc,
+      timezone: profile.timezone,
+      metadata: { category: 'environment' },
+    });
   }
 
   const shouldCheckLightDistance =
@@ -72,18 +62,16 @@ export function getEnvironmentIntents(state: TwinState): TaskIntent[] {
       start,
       profile.timezone
     );
-    intents.push(
-      buildIntent({
-        engineKey: 'environment.check_light_distance',
-        title: i18n.t('tasks.check_light_distance.title'),
-        description: i18n.t('tasks.check_light_distance.description'),
-        rrule: 'FREQ=WEEKLY;BYDAY=WE',
-        dtstartLocal,
-        dtstartUtc,
-        timezone: profile.timezone,
-        metadata: { category: 'environment' },
-      })
-    );
+    intents.push({
+      engineKey: 'environment.check_light_distance',
+      title: i18n.t('tasks.check_light_distance.title'),
+      description: i18n.t('tasks.check_light_distance.description'),
+      rrule: 'FREQ=WEEKLY;BYDAY=WE',
+      dtstartLocal,
+      dtstartUtc,
+      timezone: profile.timezone,
+      metadata: { category: 'environment' },
+    });
   }
 
   return intents;

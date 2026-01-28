@@ -64,6 +64,16 @@ export function buildCustomStrain(name: string, race: Race = 'hybrid'): Strain {
   };
 }
 
+function logSubmissionError(error: unknown): void {
+  const errorWithCode = error as { code?: string };
+  const isDuplicate = errorWithCode.code === '23505';
+  if (isDuplicate) {
+    console.debug('[custom-strain] duplicate submission ignored', error);
+  } else {
+    console.warn('[custom-strain] submission failed', error);
+  }
+}
+
 async function submitCustomStrainToSupabase(strain: Strain): Promise<void> {
   // IMPORTANT:
   // `public.strain_cache` is service-role-only writable (RLS). So we do NOT write
@@ -83,22 +93,10 @@ async function submitCustomStrainToSupabase(strain: Strain): Promise<void> {
     });
 
     if (error) {
-      const errorWithCode = error as { code?: string };
-      const isDuplicate = errorWithCode.code === '23505';
-      if (isDuplicate) {
-        console.debug('[custom-strain] duplicate submission ignored', error);
-      } else {
-        console.warn('[custom-strain] submission failed', error);
-      }
+      logSubmissionError(error);
     }
   } catch (error) {
-    const errorWithCode = error as { code?: string };
-    const isDuplicate = errorWithCode.code === '23505';
-    if (isDuplicate) {
-      console.debug('[custom-strain] duplicate submission ignored', error);
-    } else {
-      console.warn('[custom-strain] submission failed', error);
-    }
+    logSubmissionError(error);
   }
 }
 

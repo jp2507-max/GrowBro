@@ -1,6 +1,8 @@
+import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 
 import { Pressable, View } from '@/components/ui';
+import colors from '@/components/ui/colors';
 import { X } from '@/components/ui/icons';
 import { ListErrorState } from '@/components/ui/list';
 import { translate } from '@/lib/i18n';

@@ -83,6 +83,21 @@ describe('growth-state-machine', () => {
     expect(result?.triggeredBy).toBe(PlantEventKind.LIGHT_CYCLE_SWITCHED);
   });
 
+  it('advances seedling to vegetative on time window', () => {
+    const state = createBaseState({
+      stage: 'seedling',
+      dayInStage: 15,
+      profile: {
+        ...createBaseState().profile,
+        stage: 'seedling',
+      },
+    });
+
+    const result = getNextStageCandidate(state);
+    expect(result?.nextStage).toBe('vegetative');
+    expect(result?.triggeredBy).toBe('time');
+  });
+
   it('advances to harvesting when trichomes indicate harvest window', () => {
     const state = createBaseState({
       stage: 'ripening',

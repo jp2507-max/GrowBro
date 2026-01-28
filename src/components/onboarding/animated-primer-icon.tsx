@@ -22,6 +22,7 @@ import Animated, {
 
 import { View } from '@/components/ui';
 import colors from '@/components/ui/colors';
+import { withRM } from '@/lib/animations/motion';
 import { useReduceMotionEnabled } from '@/lib/strains/accessibility';
 
 type AnimationValues = {
@@ -51,31 +52,43 @@ function usePrimerIconAnimation(reduceMotion: boolean): AnimationValues {
     }
 
     opacity.set(
-      withTiming(1, {
-        duration: 600,
-        easing: Easing.out(Easing.ease),
-      })
+      withTiming(
+        1,
+        withRM({
+          duration: 600,
+          easing: Easing.out(Easing.ease),
+        })
+      )
     );
     scale.set(
-      withSpring(1, {
-        damping: 20,
-        stiffness: 80,
-        mass: 1,
-      })
+      withSpring(
+        1,
+        withRM({
+          damping: 20,
+          stiffness: 80,
+          mass: 1,
+        })
+      )
     );
     translateY.set(
       withDelay(
         400,
         withRepeat(
           withSequence(
-            withTiming(-6, {
-              duration: 2500,
-              easing: Easing.inOut(Easing.sin),
-            }),
-            withTiming(0, {
-              duration: 2500,
-              easing: Easing.inOut(Easing.sin),
-            })
+            withTiming(
+              -6,
+              withRM({
+                duration: 2500,
+                easing: Easing.inOut(Easing.sin),
+              })
+            ),
+            withTiming(
+              0,
+              withRM({
+                duration: 2500,
+                easing: Easing.inOut(Easing.sin),
+              })
+            )
           ),
           -1,
           false
@@ -87,14 +100,20 @@ function usePrimerIconAnimation(reduceMotion: boolean): AnimationValues {
         500,
         withRepeat(
           withSequence(
-            withTiming(0.4, {
-              duration: 2000,
-              easing: Easing.inOut(Easing.ease),
-            }),
-            withTiming(0.2, {
-              duration: 2000,
-              easing: Easing.inOut(Easing.ease),
-            })
+            withTiming(
+              0.4,
+              withRM({
+                duration: 2000,
+                easing: Easing.inOut(Easing.ease),
+              })
+            ),
+            withTiming(
+              0.2,
+              withRM({
+                duration: 2000,
+                easing: Easing.inOut(Easing.ease),
+              })
+            )
           ),
           -1,
           false

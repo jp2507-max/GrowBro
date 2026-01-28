@@ -1,4 +1,5 @@
 import { NoopAnalytics } from '@/lib/analytics';
+import { triggerDigitalTwinSync } from '@/lib/digital-twin/sync-helpers';
 import { supabase } from '@/lib/supabase';
 import type { Series, Task } from '@/types/calendar';
 
@@ -110,14 +111,7 @@ export async function onTaskCompleted(
     await updatePlantField(taskData.plantId!, 'last_fed_at');
   }
 
-  void import('@/lib/digital-twin')
-    .then(({ DigitalTwinTaskEngine }) => {
-      const engine = new DigitalTwinTaskEngine();
-      return engine.syncForPlantId(taskData.plantId!);
-    })
-    .catch((error) => {
-      console.warn('[PlantTelemetry] digital twin sync failed', error);
-    });
+  triggerDigitalTwinSync(taskData.plantId!, 'PlantTelemetry');
 }
 
 export async function onSeriesOccurrenceCompleted(

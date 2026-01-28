@@ -7,9 +7,9 @@
 
 import type { Database } from '@nozbe/watermelondb';
 
+import { triggerDigitalTwinSync } from '@/lib/digital-twin/sync-helpers';
+import { type TrichomeAssessmentModel } from '@/lib/watermelon-models/trichome-assessment';
 import type { TrichomeAssessment } from '@/types/playbook';
-
-import { type TrichomeAssessmentModel } from '../watermelon-models/trichome-assessment';
 
 export type TrichomeStage = 'clear' | 'milky' | 'cloudy' | 'amber';
 
@@ -221,14 +221,7 @@ export class TrichomeHelper {
       });
     });
 
-    void import('@/lib/digital-twin')
-      .then(({ DigitalTwinTaskEngine }) => {
-        const engine = new DigitalTwinTaskEngine();
-        return engine.syncForPlantId(assessment.plantId);
-      })
-      .catch((error) => {
-        console.warn('[TrichomeHelper] Failed to sync digital twin:', error);
-      });
+    triggerDigitalTwinSync(assessment.plantId, 'TrichomeHelper');
 
     return created.toTrichomeAssessment();
   }

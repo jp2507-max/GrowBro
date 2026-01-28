@@ -32,7 +32,9 @@ let pushDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 export function requestPlantsPush(delayMs: number = 300): void {
   // Debounce frequent triggers (e.g., create plant, then immediately update remote_image_path)
-  if (pushDebounceTimer) return;
+  if (pushDebounceTimer) {
+    clearTimeout(pushDebounceTimer);
+  }
   pushDebounceTimer = setTimeout(() => {
     pushDebounceTimer = null;
     void syncPlantsToCloud().catch((error) => {

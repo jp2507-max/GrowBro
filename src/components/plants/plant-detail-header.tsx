@@ -8,6 +8,10 @@ import { GlassButton, Image, Pressable, Text, View } from '@/components/ui';
 import colors from '@/components/ui/colors';
 import { ArrowLeft } from '@/components/ui/icons';
 import { usePlantPhotoSync } from '@/lib/plants/plant-photo-sync';
+import {
+  getProductStageLabelKey,
+  toProductStage,
+} from '@/lib/plants/product-stage';
 
 type PlantDetailHeaderProps = {
   plant: Plant;
@@ -119,7 +123,11 @@ export function PlantDetailHeader({
               {plant.stage ? (
                 <View className="rounded-full bg-terracotta-500/80 px-3 py-1">
                   <Text className="text-sm font-medium text-white">
-                    {t(`plants.form.stage.${plant.stage}`)}
+                    {(() => {
+                      const productStage = toProductStage(plant.stage);
+                      if (!productStage) return t('common.na');
+                      return t(getProductStageLabelKey(productStage));
+                    })()}
                   </Text>
                 </View>
               ) : null}

@@ -1,6 +1,7 @@
 import { DateTime } from 'luxon';
 
 import {
+  buildDtstartAtHour,
   buildDtstartTimestamps,
   calculateWaterVolume,
 } from '@/lib/growbro-task-engine/utils';
@@ -9,12 +10,6 @@ import { PlantEventKind } from '@/lib/plants/plant-event-kinds';
 
 import type { TaskIntent, TwinState } from '../twin-types';
 
-function buildIntent(
-  params: Omit<TaskIntent, 'engineKey'> & { engineKey: string }
-): TaskIntent {
-  return { ...params };
-}
-
 function isDryPayload(payload?: Record<string, unknown> | null): boolean {
   if (!payload) return false;
   const status = payload.status;
@@ -22,20 +17,6 @@ function isDryPayload(payload?: Record<string, unknown> | null): boolean {
   if (typeof status === 'string' && status.toLowerCase() === 'dry') return true;
   if (typeof isDry === 'boolean') return isDry;
   return false;
-}
-
-function buildDtstartAtHour(
-  date: Date,
-  timezone: string,
-  hour: number
-): { dtstartLocal: string; dtstartUtc: string } {
-  const dt = DateTime.fromJSDate(date, { zone: timezone }).set({
-    hour,
-    minute: 0,
-    second: 0,
-    millisecond: 0,
-  });
-  return buildDtstartTimestamps(dt.toJSDate(), timezone);
 }
 
 function isOverdueWatering(
@@ -71,41 +52,37 @@ function buildSoilIntents(params: {
     start,
     profile.timezone
   );
-  intents.push(
-    buildIntent({
-      engineKey: 'hydrology.check_water_need',
-      title: i18n.t('tasks.check_water_need.title'),
-      description: i18n.t('tasks.check_water_need.description_soil', {
-        min,
-        max,
-      }),
-      rrule: 'FREQ=DAILY;INTERVAL=1',
-      dtstartLocal,
-      dtstartUtc,
-      timezone: profile.timezone,
-      metadata: { category: 'hydrology' },
-    })
-  );
+  intents.push({
+    engineKey: 'hydrology.check_water_need',
+    title: i18n.t('tasks.check_water_need.title'),
+    description: i18n.t('tasks.check_water_need.description_soil', {
+      min,
+      max,
+    }),
+    rrule: 'FREQ=DAILY;INTERVAL=1',
+    dtstartLocal,
+    dtstartUtc,
+    timezone: profile.timezone,
+    metadata: { category: 'hydrology' },
+  });
 
   const maxDays = profile.medium === 'living_soil' ? 8 : 7;
   if (isOverdueWatering(profile.lastWateredAt, maxDays)) {
     const overdue = buildDtstartTimestamps(now, profile.timezone);
-    intents.push(
-      buildIntent({
-        engineKey: 'hydrology.water_now.overdue',
-        title: i18n.t('tasks.water_plant.title'),
-        description: i18n.t('tasks.water_plant.description_soil_rich', {
-          min,
-          max,
-        }),
-        rrule: 'FREQ=DAILY;INTERVAL=1',
-        count: 1,
-        dtstartLocal: overdue.dtstartLocal,
-        dtstartUtc: overdue.dtstartUtc,
-        timezone: profile.timezone,
-        metadata: { category: 'hydrology', trigger: 'overdue' },
-      })
-    );
+    intents.push({
+      engineKey: 'hydrology.water_now.overdue',
+      title: i18n.t('tasks.water_plant.title'),
+      description: i18n.t('tasks.water_plant.description_soil_rich', {
+        min,
+        max,
+      }),
+      rrule: 'FREQ=DAILY;INTERVAL=1',
+      count: 1,
+      dtstartLocal: overdue.dtstartLocal,
+      dtstartUtc: overdue.dtstartUtc,
+      timezone: profile.timezone,
+      metadata: { category: 'hydrology', trigger: 'overdue' },
+    });
   }
 
   return intents;
@@ -122,7 +99,7 @@ function buildCocoIntents(params: {
   const evening = buildDtstartAtHour(start, profile.timezone, 21);
 
   return [
-    buildIntent({
+    {
       engineKey: 'hydrology.fertigate.coco.morning',
       title: i18n.t('tasks.water_plant.title'),
       description: i18n.t('tasks.water_plant.description_coco'),
@@ -131,8 +108,8 @@ function buildCocoIntents(params: {
       dtstartUtc: morning.dtstartUtc,
       timezone: profile.timezone,
       metadata: { category: 'hydrology', medium: 'coco' },
-    }),
-    buildIntent({
+    },
+    {
       engineKey: 'hydrology.fertigate.coco.evening',
       title: i18n.t('tasks.water_plant.title'),
       description: i18n.t('tasks.water_plant.description_coco'),
@@ -141,7 +118,7 @@ function buildCocoIntents(params: {
       dtstartUtc: evening.dtstartUtc,
       timezone: profile.timezone,
       metadata: { category: 'hydrology', medium: 'coco' },
-    }),
+    },
   ];
 }
 
@@ -160,7 +137,7 @@ function buildHydroIntents(params: {
   );
 
   return [
-    buildIntent({
+    {
       engineKey: 'hydrology.fertigate.hydro.morning',
       title: i18n.t('tasks.water_plant.title'),
       description: i18n.t('tasks.water_plant.description_hydro'),
@@ -169,8 +146,8 @@ function buildHydroIntents(params: {
       dtstartUtc: morning.dtstartUtc,
       timezone: profile.timezone,
       metadata: { category: 'hydrology', medium: 'hydro' },
-    }),
-    buildIntent({
+    },
+    {
       engineKey: 'hydrology.fertigate.hydro.evening',
       title: i18n.t('tasks.water_plant.title'),
       description: i18n.t('tasks.water_plant.description_hydro'),
@@ -179,8 +156,8 @@ function buildHydroIntents(params: {
       dtstartUtc: evening.dtstartUtc,
       timezone: profile.timezone,
       metadata: { category: 'hydrology', medium: 'hydro' },
-    }),
-    buildIntent({
+    },
+    {
       engineKey: 'hydrology.check_ph_ec',
       title: i18n.t('tasks.check_ph_ec.title'),
       description: i18n.t('tasks.check_ph_ec.description'),
@@ -189,8 +166,8 @@ function buildHydroIntents(params: {
       dtstartUtc,
       timezone: profile.timezone,
       metadata: { category: 'hydrology' },
-    }),
-    buildIntent({
+    },
+    {
       engineKey: 'hydrology.check_water_temp',
       title: i18n.t('tasks.check_water_temp.title'),
       description: i18n.t('tasks.check_water_temp.description'),
@@ -199,8 +176,8 @@ function buildHydroIntents(params: {
       dtstartUtc,
       timezone: profile.timezone,
       metadata: { category: 'hydrology' },
-    }),
-    buildIntent({
+    },
+    {
       engineKey: 'hydrology.change_reservoir',
       title: i18n.t('tasks.change_reservoir.title'),
       description: i18n.t('tasks.change_reservoir.description'),
@@ -209,7 +186,7 @@ function buildHydroIntents(params: {
       dtstartUtc,
       timezone: profile.timezone,
       metadata: { category: 'hydrology' },
-    }),
+    },
   ];
 }
 
@@ -233,7 +210,7 @@ function buildPotWeightIntent(params: {
   );
 
   return [
-    buildIntent({
+    {
       engineKey: `hydrology.water_now.${potWeightEvent.id}`,
       title: i18n.t('tasks.water_plant.title'),
       description:
@@ -249,13 +226,15 @@ function buildPotWeightIntent(params: {
         category: 'hydrology',
         sourceEventId: potWeightEvent.id,
       },
-    }),
+    },
   ];
 }
 
-export function getHydrologyIntents(state: TwinState): TaskIntent[] {
+export function getHydrologyIntents(
+  state: TwinState,
+  now: Date = new Date()
+): TaskIntent[] {
   const { profile, signals } = state;
-  const now = new Date();
   const start = profile.stageEnteredAt ?? now;
   const { min, max } = calculateWaterVolume(profile.potSizeLiters);
 
