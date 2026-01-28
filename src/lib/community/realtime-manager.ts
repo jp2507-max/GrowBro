@@ -13,6 +13,8 @@ import { communityMetrics } from './metrics-tracker';
 
 type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'error';
 
+let gbrRealtimeManagerId = 0;
+
 type SupabaseRealtimePayload = {
   eventType: 'INSERT' | 'UPDATE' | 'DELETE';
   new: Record<string, unknown> | null;
@@ -39,6 +41,7 @@ type RealtimeCallbacks = {
  * Requirements: 3.1, 3.2, 3.7
  */
 export class RealtimeConnectionManager {
+  private readonly debugId = (gbrRealtimeManagerId += 1);
   private channel: RealtimeChannel | null = null;
   private connectionState: ConnectionState = 'disconnected';
   private callbacks: RealtimeCallbacks = {};
@@ -157,65 +160,69 @@ export class RealtimeConnectionManager {
   private setupSubscriptions(): void {
     if (!this.channel) return;
 
-    // Subscribe to posts table with optional post filter
-    const postConfig: {
-      event: '*';
-      schema: 'public';
-      table: 'posts';
-      filter?: string;
-    } = {
-      event: '*',
-      schema: 'public',
-      table: 'posts',
-    };
-
     if (this.postIdFilter) {
-      postConfig.filter = `id=eq.${this.postIdFilter}`;
+      this.channel.on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'posts',
+          filter: `id=eq.${this.postIdFilter}`,
+        },
+        (payload) => {
+          this.handlePostChange(payload);
+        }
+      );
+    } else {
+      this.channel.on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'posts',
+        },
+        (payload) => {
+          this.handlePostChange(payload);
+        }
+      );
     }
 
-    this.channel.on('postgres_changes', postConfig, (payload) => {
-      this.handlePostChange(payload);
-    });
-
-    // Subscribe to comments table with optional post filter
-    const commentConfig: {
-      event: '*';
-      schema: 'public';
-      table: 'post_comments';
-      filter?: string;
-    } = {
-      event: '*',
-      schema: 'public',
-      table: 'post_comments',
-    };
-
+    // Only subscribe to comments/likes when viewing a specific post.
+    // For the feed view, post counters (like_count/comment_count) are updated on the post
+    // row via triggers, so subscribing to the entire comments/likes tables would be noisy.
     if (this.postIdFilter) {
-      commentConfig.filter = `post_id=eq.${this.postIdFilter}`;
+      const commentConfig: {
+        event: '*';
+        schema: 'public';
+        table: 'post_comments';
+        filter: string;
+      } = {
+        event: '*',
+        schema: 'public',
+        table: 'post_comments',
+        filter: `post_id=eq.${this.postIdFilter}`,
+      };
+
+      this.channel.on('postgres_changes', commentConfig, (payload) => {
+        this.handleCommentChange(payload);
+      });
+
+      const likeConfig: {
+        event: '*';
+        schema: 'public';
+        table: 'post_likes';
+        filter: string;
+      } = {
+        event: '*',
+        schema: 'public',
+        table: 'post_likes',
+        filter: `post_id=eq.${this.postIdFilter}`,
+      };
+
+      this.channel.on('postgres_changes', likeConfig, (payload) => {
+        this.handleLikeChange(payload);
+      });
     }
-
-    this.channel.on('postgres_changes', commentConfig, (payload) => {
-      this.handleCommentChange(payload);
-    });
-
-    // Subscribe to likes table with optional post filter
-    const likeConfig: {
-      event: '*';
-      schema: 'public';
-      table: 'post_likes';
-      filter?: string;
-    } = {
-      event: '*',
-      schema: 'public',
-      table: 'post_likes',
-    };
-
-    if (this.postIdFilter) {
-      likeConfig.filter = `post_id=eq.${this.postIdFilter}`;
-    }
-
-    this.channel.on('postgres_changes', likeConfig, (payload) => {
-      this.handleLikeChange(payload);
-    });
   }
 
   /**
@@ -269,10 +276,13 @@ export class RealtimeConnectionManager {
   private connect(): void {
     if (!this.isActive) return;
     if (this.channel) {
-      console.warn('Already connected or connecting to realtime');
+      console.warn(
+        `[Realtime #${this.debugId}] Already connected or connecting`
+      );
       return;
     }
 
+    console.log(`[Realtime #${this.debugId}] Connecting...`);
     this.setConnectionState('connecting');
 
     // Create channel with unique name based on filter
@@ -366,7 +376,20 @@ export class RealtimeConnectionManager {
    */
   private async pollUpdates(): Promise<void> {
     console.log('Polling for updates...');
-    this.callbacks.onPollRefresh?.();
+    if (!this.callbacks.onPollRefresh) {
+      console.error(
+        '[Realtime] CRITICAL: Polling active but onPollRefresh not implemented. ' +
+          'Data will NOT update. This is a bug in consumer implementation. Stopping polling.'
+      );
+      this.stopPolling();
+      return;
+    }
+
+    try {
+      await this.callbacks.onPollRefresh();
+    } catch (err) {
+      console.error('[Realtime] onPollRefresh callback failed:', err);
+    }
   }
 
   /**
@@ -383,7 +406,11 @@ export class RealtimeConnectionManager {
         const latency = Date.now() - commitTime;
         communityMetrics.addLatencySample(latency);
       }
-      await this.callbacks.onPostChange(event);
+      try {
+        await this.callbacks.onPostChange(event);
+      } catch (err) {
+        console.error('[Realtime] onPostChange callback failed:', err);
+      }
     }
   }
 
@@ -401,7 +428,11 @@ export class RealtimeConnectionManager {
         const latency = Date.now() - commitTime;
         communityMetrics.addLatencySample(latency);
       }
-      await this.callbacks.onCommentChange(event);
+      try {
+        await this.callbacks.onCommentChange(event);
+      } catch (err) {
+        console.error('[Realtime] onCommentChange callback failed:', err);
+      }
     }
   }
 
@@ -419,7 +450,11 @@ export class RealtimeConnectionManager {
         const latency = Date.now() - commitTime;
         communityMetrics.addLatencySample(latency);
       }
-      await this.callbacks.onLikeChange(event);
+      try {
+        await this.callbacks.onLikeChange(event);
+      } catch (err) {
+        console.error('[Realtime] onLikeChange callback failed:', err);
+      }
     }
   }
 

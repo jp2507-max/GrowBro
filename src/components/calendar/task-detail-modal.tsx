@@ -101,10 +101,13 @@ function ActionButton({
 }
 
 type ModalStyles = {
-  backgroundStyle: {
-    backgroundColor: string;
-    borderTopLeftRadius: number;
-    borderTopRightRadius: number;
+  glassSurfaceProps: {
+    glassEffectStyle: 'regular';
+    style: {
+      borderTopLeftRadius: number;
+      borderTopRightRadius: number;
+    };
+    fallbackClassName: string;
   };
   handleStyle: {
     backgroundColor: string;
@@ -121,13 +124,16 @@ function useModalDarkModeStyles(): ModalStyles {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
 
-  const backgroundStyle = React.useMemo(
+  const glassSurfaceProps = React.useMemo(
     () => ({
-      backgroundColor: isDark ? colors.darkSurface.card : colors.white,
-      borderTopLeftRadius: 35,
-      borderTopRightRadius: 35,
+      glassEffectStyle: 'regular' as const,
+      style: {
+        borderTopLeftRadius: 35,
+        borderTopRightRadius: 35,
+      },
+      fallbackClassName: 'bg-white dark:bg-charcoal-900',
     }),
-    [isDark]
+    []
   );
 
   const handleStyle = React.useMemo(
@@ -141,8 +147,8 @@ function useModalDarkModeStyles(): ModalStyles {
   );
 
   return React.useMemo(
-    () => ({ backgroundStyle, handleStyle }),
-    [backgroundStyle, handleStyle]
+    () => ({ glassSurfaceProps, handleStyle }),
+    [glassSurfaceProps, handleStyle]
   );
 }
 
@@ -154,7 +160,7 @@ export function TaskDetailModal({
   onDelete,
   onDismiss,
 }: TaskDetailModalProps): React.ReactElement {
-  const { backgroundStyle, handleStyle } = useModalDarkModeStyles();
+  const { glassSurfaceProps, handleStyle } = useModalDarkModeStyles();
   const dismiss = React.useCallback(() => {
     modalRef.current?.dismiss();
     onDismiss?.();
@@ -192,8 +198,9 @@ export function TaskDetailModal({
         ref={modalRef}
         snapPoints={['40%']}
         testID="task-detail-modal"
-        backgroundStyle={backgroundStyle}
         handleIndicatorStyle={handleStyle}
+        useGlassSurface
+        glassSurfaceProps={glassSurfaceProps}
       >
         <BottomSheetView style={styles.content}>
           <Text className="text-center text-neutral-500 dark:text-neutral-400">
@@ -215,8 +222,9 @@ export function TaskDetailModal({
       snapPoints={['50%']}
       title={title}
       testID="task-detail-modal"
-      backgroundStyle={backgroundStyle}
       handleIndicatorStyle={handleStyle}
+      useGlassSurface
+      glassSurfaceProps={glassSurfaceProps}
     >
       <BottomSheetView style={styles.content}>
         {/* Task Title */}

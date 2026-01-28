@@ -50,7 +50,8 @@ export const getLanguage = (): Language => {
 // Simple dot-path resolver for resource fallback
 function resolveResource(
   lang: keyof typeof resources,
-  path: string
+  path: string,
+  opts?: TOptions
 ): string | undefined {
   const parts = path.split('.') as string[];
   let cur: unknown = resources[lang]?.translation;
@@ -58,6 +59,15 @@ function resolveResource(
     if (cur && typeof cur === 'object' && p in (cur as Record<string, unknown>))
       cur = (cur as Record<string, unknown>)[p];
     else return undefined;
+  }
+  // Handle i18next plural forms (one/other structure)
+  if (cur && typeof cur === 'object' && 'one' in cur && 'other' in cur) {
+    const pluralObj = cur as { one: string; other: string };
+    const rawCount = (opts as Record<string, unknown>)?.count;
+    let count = Number(rawCount);
+    if (Number.isNaN(count)) count = 0;
+    // Use 'one' for count === 1, 'other' for all other values
+    return count === 1 ? pluralObj.one : pluralObj.other;
   }
   return typeof cur === 'string' ? cur : undefined;
 }
@@ -77,7 +87,11 @@ export const translate = memoize(
     // If i18n isn't initialized (common in tests), fall back to local resources
     if (!i18n.isInitialized) {
       const lang = (i18n.language as keyof typeof resources) || 'en';
-      const fallback = resolveResource(lang in resources ? lang : 'en', key);
+      const fallback = resolveResource(
+        lang in resources ? lang : 'en',
+        key,
+        options as TOptions
+      );
       if (fallback)
         return interpolate(fallback, options as TOptions | undefined);
     }

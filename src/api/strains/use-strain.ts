@@ -5,7 +5,10 @@ import { database } from '@/lib/watermelon';
 import { CachedStrainsRepository } from '@/lib/watermelon-models/cached-strains-repository';
 
 import { getStrainsApiClient } from './client';
-import { mapSupabaseRowToStrain } from './supabase-list';
+import {
+  mapSupabaseRowToStrain,
+  withStrainTableFallback,
+} from './supabase-list';
 import type { Strain } from './types';
 
 /**
@@ -67,11 +70,27 @@ async function findStrainInSupabase(
   idOrSlug: string
 ): Promise<Strain | undefined> {
   try {
-    const { data, error } = await supabase
-      .from('strain_cache')
-      .select('id, slug, name, race, data')
-      .or(`id.eq.${idOrSlug},slug.eq.${idOrSlug}`)
-      .limit(1);
+    const result = await withStrainTableFallback(async (table) => {
+      // Try ID first
+      const byId = await supabase
+        .from(table)
+        .select('id, slug, name, race, data')
+        .eq('id', idOrSlug)
+        .limit(1);
+
+      if (byId.data?.length) {
+        return byId;
+      }
+
+      // Fallback to slug
+      return supabase
+        .from(table)
+        .select('id, slug, name, race, data')
+        .eq('slug', idOrSlug)
+        .limit(1);
+    });
+
+    const { data, error } = result;
 
     if (error) {
       throw error;
@@ -95,7 +114,7 @@ async function findStrainInSupabase(
  * Data flow:
  * 1. Check React Query cache (from infinite list data)
  * 2. Check Watermelon cached pages (offline list cache)
- * 3. If not found, call API which checks Supabase strain_cache
+ * 3. If not found, check Supabase cached strains (and approved community strains)
  * 4. If not in Supabase, fetches from external API and caches
  *
  * This enables deep links to work - users can share strain URLs

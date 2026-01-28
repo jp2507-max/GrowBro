@@ -8,7 +8,10 @@ import { StyleSheet } from 'react-native';
 import Animated from 'react-native-reanimated';
 
 import { Image } from '@/components/ui';
-import { communityPostHeroTag } from '@/lib/animations/shared';
+import {
+  communityPostHeroTag,
+  sharedTransitionStyle,
+} from '@/lib/animations/shared';
 import { getCommunityImageProps } from '@/lib/community/image-optimization';
 import { translate } from '@/lib/i18n';
 
@@ -16,9 +19,10 @@ const AnimatedImage = Animated.createAnimatedComponent(Image);
 
 const styles = StyleSheet.create({
   image: {
-    // 4:5 aspect ratio for taller, more visual-first design (Instagram-like)
-    aspectRatio: 4 / 5,
-    width: '100%',
+    // Small square image for horizontal card layout
+    width: 120,
+    height: 120,
+    borderRadius: 12,
   },
 });
 
@@ -61,10 +65,12 @@ export function PostCardHeroImage({
 
   return (
     <AnimatedImage
-      className="w-full"
       style={styles.image}
       sharedTransitionTag={
         enableSharedTransition ? communityPostHeroTag(postId) : undefined
+      }
+      sharedTransitionStyle={
+        enableSharedTransition ? sharedTransitionStyle : undefined
       }
       accessibilityIgnoresInvertColors
       accessibilityLabel={translate('accessibility.community.post_image', {

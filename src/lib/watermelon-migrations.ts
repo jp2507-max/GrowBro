@@ -1295,5 +1295,50 @@ export const migrations = schemaMigrations({
         }),
       ],
     },
+    // Migration from version 39 to 40: Add stage_entered_at and plant history/events
+    {
+      toVersion: 40,
+      steps: [
+        addColumns({
+          table: 'plants',
+          columns: [
+            { name: 'stage_entered_at', type: 'string', isOptional: true },
+          ],
+        }),
+        {
+          type: 'create_table',
+          schema: createTableSchema('plant_stage_history', [
+            { name: 'plant_id', type: 'string', isIndexed: true },
+            { name: 'from_stage', type: 'string', isOptional: true },
+            { name: 'to_stage', type: 'string', isOptional: true },
+            { name: 'trigger', type: 'string' },
+            { name: 'reason', type: 'string', isOptional: true },
+            { name: 'occurred_at', type: 'number', isIndexed: true },
+            { name: 'metadata_json', type: 'string', isOptional: true },
+            { name: 'user_id', type: 'string', isOptional: true },
+            { name: 'server_revision', type: 'number', isOptional: true },
+            { name: 'server_updated_at_ms', type: 'number', isOptional: true },
+            { name: 'created_at', type: 'number' },
+            { name: 'updated_at', type: 'number' },
+            { name: 'deleted_at', type: 'number', isOptional: true },
+          ]),
+        },
+        {
+          type: 'create_table',
+          schema: createTableSchema('plant_events', [
+            { name: 'plant_id', type: 'string', isIndexed: true },
+            { name: 'kind', type: 'string' },
+            { name: 'occurred_at', type: 'number', isIndexed: true },
+            { name: 'payload_json', type: 'string', isOptional: true },
+            { name: 'user_id', type: 'string', isOptional: true },
+            { name: 'server_revision', type: 'number', isOptional: true },
+            { name: 'server_updated_at_ms', type: 'number', isOptional: true },
+            { name: 'created_at', type: 'number', isIndexed: true },
+            { name: 'updated_at', type: 'number' },
+            { name: 'deleted_at', type: 'number', isOptional: true },
+          ]),
+        },
+      ],
+    },
   ],
 });

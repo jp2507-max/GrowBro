@@ -35,6 +35,69 @@ const NETWORK_METHODS = new Set([
   'request',
 ]);
 
+const AUTO_WORKLET_CALLERS = new Set([
+  'useAnimatedStyle',
+  'useAnimatedProps',
+  'useDerivedValue',
+  'useAnimatedScrollHandler',
+  'useAnimatedReaction',
+  'runOnUI',
+  'scheduleOnUI',
+]);
+
+const GESTURE_CALLBACKS = new Set([
+  'onStart',
+  'onUpdate',
+  'onEnd',
+  'onFinalize',
+]);
+
+function isGestureRootCall(node) {
+  if (!node || node.type !== 'CallExpression') return false;
+  const callee = node.callee;
+  if (!callee || callee.type !== 'MemberExpression') return false;
+  return (
+    callee.object &&
+    callee.object.type === 'Identifier' &&
+    callee.object.name === 'Gesture'
+  );
+}
+
+function isGestureBuilderChain(node) {
+  let current = node;
+  while (current) {
+    if (current.type === 'CallExpression') {
+      if (isGestureRootCall(current)) return true;
+      const callee = current.callee;
+      if (callee && callee.type === 'MemberExpression') {
+        current = callee.object;
+        continue;
+      }
+    }
+    if (current.type === 'MemberExpression') {
+      current = current.object;
+      continue;
+    }
+    if (current.type === 'Identifier' && current.name === 'Gesture') {
+      return true;
+    }
+    return false;
+  }
+  return false;
+}
+
+function isGestureCallbackCallExpression(node) {
+  if (!node || node.type !== 'CallExpression') return false;
+  const callee = node.callee;
+  if (!callee || callee.type !== 'MemberExpression') return false;
+  const propertyName =
+    callee.property && callee.property.type === 'Identifier'
+      ? callee.property.name
+      : null;
+  if (!propertyName || !GESTURE_CALLBACKS.has(propertyName)) return false;
+  return isGestureBuilderChain(callee.object);
+}
+
 /**
  * Check if a node is inside a worklet function
  * Worklets are functions that run on the UI thread in React Native Reanimated
@@ -65,19 +128,18 @@ function isInsideWorklet(node) {
 
       // Check for auto-workletized functions (Reanimated hooks that run callbacks on UI thread)
       // Check if the function's immediate parent is a CallExpression with a Reanimated hook
-      if (
-        current.parent &&
-        current.parent.type === 'CallExpression' &&
-        current.parent.callee &&
-        current.parent.callee.type === 'Identifier' &&
-        (current.parent.callee.name === 'useAnimatedStyle' ||
-          current.parent.callee.name === 'useAnimatedProps' ||
-          current.parent.callee.name === 'useDerivedValue' ||
-          current.parent.callee.name === 'useAnimatedScrollHandler' ||
-          current.parent.callee.name === 'useAnimatedReaction' ||
-          current.parent.callee.name === 'runOnUI')
-      ) {
-        return true; // Found auto-workletized function
+      if (current.parent && current.parent.type === 'CallExpression') {
+        const callee = current.parent.callee;
+        if (
+          callee &&
+          callee.type === 'Identifier' &&
+          AUTO_WORKLET_CALLERS.has(callee.name)
+        ) {
+          return true; // Found auto-workletized function
+        }
+        if (isGestureCallbackCallExpression(current.parent)) {
+          return true; // RNGH gesture callback
+        }
       }
     }
     current = current.parent; // Move up the AST tree
@@ -96,11 +158,11 @@ module.exports = {
     },
     messages: {
       bannedIdentifier:
-        'Worklet contains banned identifier "{{name}}". Worklets must be pure and side-effect free. Use runOnJS to schedule side effects on the JS thread.',
+        'Worklet contains banned identifier "{{name}}". Worklets must be pure and side-effect free. Use scheduleOnRN to schedule side effects on the JS thread.',
       networkCall:
-        'Network calls are not allowed in worklets. Use runOnJS to schedule network requests on the JS thread.',
+        'Network calls are not allowed in worklets. Use scheduleOnRN to schedule network requests on the JS thread.',
       consoleLog:
-        'console.log is not allowed in worklets. Remove logging or use runOnJS for debugging.',
+        'console.log is not allowed in worklets. Remove logging or use scheduleOnRN for debugging.',
     },
     schema: [],
   },

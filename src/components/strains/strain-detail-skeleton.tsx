@@ -9,6 +9,7 @@ import { translate } from '@/lib/i18n';
 
 type Props = {
   onBack: () => void;
+  hideHeader?: boolean;
 };
 
 function SkeletonChips() {
@@ -22,7 +23,10 @@ function SkeletonChips() {
   );
 }
 
-export function StrainDetailSkeleton({ onBack }: Props): React.ReactElement {
+export function StrainDetailSkeleton({
+  onBack,
+  hideHeader = false,
+}: Props): React.ReactElement {
   const insets = useSafeAreaInsets();
 
   return (
@@ -32,30 +36,32 @@ export function StrainDetailSkeleton({ onBack }: Props): React.ReactElement {
     >
       {/* Hero Image Skeleton */}
       <View className="relative h-96 w-full bg-neutral-200 dark:bg-neutral-800">
-        {/* Header Actions Overlay */}
-        <View
-          className="absolute inset-x-0 top-0 z-10 flex-row items-center justify-between px-4"
-          style={{ paddingTop: insets.top + 8 }}
-        >
-          <GlassButton
-            onPress={() => {
-              haptics.selection();
-              onBack();
-            }}
-            accessibilityLabel={translate('accessibility.common.go_back')}
-            accessibilityHint={translate('strains.detail.back_hint')}
-            testID="back-button"
-            fallbackClassName="bg-black/20"
+        {!hideHeader && (
+          /* Header Actions Overlay */
+          <View
+            className="absolute inset-x-0 top-0 z-10 flex-row items-center justify-between px-4"
+            style={{ paddingTop: insets.top + 8 }}
           >
-            <ArrowLeft color="white" width={24} height={24} />
-          </GlassButton>
+            <GlassButton
+              onPress={() => {
+                haptics.selection();
+                onBack();
+              }}
+              accessibilityLabel={translate('accessibility.common.go_back')}
+              accessibilityHint={translate('strains.detail.back_hint')}
+              testID="back-button"
+              fallbackClassName="bg-black/20"
+            >
+              <ArrowLeft color="white" width={24} height={24} />
+            </GlassButton>
 
-          {/* Placeholder for action buttons */}
-          <View className="flex-row gap-2">
-            <View className="size-10 rounded-full bg-black/20" />
-            <View className="size-10 rounded-full bg-black/20" />
+            {/* Placeholder for action buttons */}
+            <View className="flex-row gap-2">
+              <View className="size-10 rounded-full bg-black/20" />
+              <View className="size-10 rounded-full bg-black/20" />
+            </View>
           </View>
-        </View>
+        )}
 
         {/* Title Overlay with GlassSurface */}
         <View className="absolute inset-x-0 bottom-0">

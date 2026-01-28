@@ -5,9 +5,12 @@
 
 import { Env } from '@env';
 import * as Sentry from '@sentry/react-native';
+import { isRunningInExpoGo } from 'expo';
+import { Platform } from 'react-native';
 
 import { hasConsent } from '@/lib/privacy-consent';
 import { beforeBreadcrumbHook, beforeSendHook } from '@/lib/sentry-utils';
+import { isEnvFlagEnabled } from '@/lib/utils/env-flags';
 
 import {
   PERFORMANCE_TRANSACTIONS,
@@ -22,6 +25,10 @@ let sentryInitialized = false;
  * Should be called once during app startup
  */
 export function initializeSentryPerformance(): boolean {
+  const disableObservability = isEnvFlagEnabled(
+    'EXPO_PUBLIC_DISABLE_OBSERVABILITY'
+  );
+
   // Only initialize if DSN is provided and user has consented
   if (!Env.SENTRY_DSN || !hasConsent('crashReporting') || sentryInitialized) {
     return false;
@@ -33,22 +40,40 @@ export function initializeSentryPerformance(): boolean {
   const integrations: unknown[] = [];
 
   // Add React Navigation instrumentation for performance tracking
-  if (SENTRY_PERFORMANCE_CONFIG.ENABLE_NAVIGATION_INSTRUMENTATION) {
+  if (
+    !disableObservability &&
+    SENTRY_PERFORMANCE_CONFIG.ENABLE_NAVIGATION_INSTRUMENTATION
+  ) {
     const navigationIntegration = createNavigationInstrumentation();
     integrations.push(navigationIntegration);
   }
 
   // Only add replay/feedback if enabled AND user consented to session replay
-  if (Env.SENTRY_ENABLE_REPLAY && hasConsent('sessionReplay')) {
+  if (
+    !disableObservability &&
+    Env.SENTRY_ENABLE_REPLAY &&
+    Platform.OS !== 'ios' &&
+    hasConsent('sessionReplay')
+  ) {
     integrations.push(Sentry.mobileReplayIntegration());
     integrations.push(Sentry.feedbackIntegration());
   }
 
-  // Determine traces sample rate based on environment
-  const tracesSampleRate =
-    Env.APP_ENV === 'production'
-      ? SENTRY_PERFORMANCE_CONFIG.TRACES_SAMPLE_RATE_PRODUCTION
-      : SENTRY_PERFORMANCE_CONFIG.TRACES_SAMPLE_RATE_DEVELOPMENT;
+  // Determine traces sample rate based on build type; staging/prod release builds should not default to 100% sampling.
+  const tracesSampleRate = disableObservability
+    ? 0
+    : __DEV__
+      ? SENTRY_PERFORMANCE_CONFIG.TRACES_SAMPLE_RATE_DEVELOPMENT
+      : Env.APP_ENV === 'staging'
+        ? SENTRY_PERFORMANCE_CONFIG.TRACES_SAMPLE_RATE_STAGING
+        : SENTRY_PERFORMANCE_CONFIG.TRACES_SAMPLE_RATE_PRODUCTION;
+  const profilesSampleRate = disableObservability
+    ? 0
+    : __DEV__
+      ? 1.0
+      : Env.APP_ENV === 'staging'
+        ? 0.25
+        : 0.1;
 
   Sentry.init({
     dsn: Env.SENTRY_DSN,
@@ -71,14 +96,18 @@ export function initializeSentryPerformance(): boolean {
     dist: process.env.SENTRY_DIST,
     // Performance monitoring configuration
     tracesSampleRate,
-    profilesSampleRate: Env.APP_ENV === 'production' ? 0.1 : 1.0,
+    profilesSampleRate,
     // Enable auto instrumentation
-    enableAutoSessionTracking:
-      SENTRY_PERFORMANCE_CONFIG.ENABLE_AUTO_INSTRUMENTATION,
-    enableNativeFramesTracking: true,
-    enableStallTracking: SENTRY_PERFORMANCE_CONFIG.ENABLE_STALL_TRACKING,
-    enableAppStartTracking:
-      SENTRY_PERFORMANCE_CONFIG.ENABLE_APP_START_INSTRUMENTATION,
+    enableAutoSessionTracking: disableObservability
+      ? false
+      : SENTRY_PERFORMANCE_CONFIG.ENABLE_AUTO_INSTRUMENTATION,
+    enableNativeFramesTracking: !isRunningInExpoGo(),
+    enableStallTracking: disableObservability
+      ? false
+      : SENTRY_PERFORMANCE_CONFIG.ENABLE_STALL_TRACKING,
+    enableAppStartTracking: disableObservability
+      ? false
+      : SENTRY_PERFORMANCE_CONFIG.ENABLE_APP_START_INSTRUMENTATION,
   });
 
   return true;

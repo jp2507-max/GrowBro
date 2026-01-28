@@ -11,6 +11,7 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from 'react-native-reanimated';
+import { scheduleOnUI } from 'react-native-worklets';
 
 import { Pressable, Text, View } from '@/components/ui';
 import colors from '@/components/ui/colors';
@@ -105,32 +106,38 @@ function DayPill({
   const selectedScale = useSharedValue(item.isSelected ? 1.08 : 1);
 
   React.useEffect(() => {
-    selectedScale.value = withSpring(item.isSelected ? 1.08 : 1, {
-      damping: 12,
-      stiffness: 180,
-      reduceMotion: ReduceMotion.System,
-    });
+    selectedScale.set(
+      withSpring(item.isSelected ? 1.08 : 1, {
+        damping: 12,
+        stiffness: 180,
+        reduceMotion: ReduceMotion.System,
+      })
+    );
   }, [item.isSelected, selectedScale]);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value * selectedScale.value }],
+    transform: [{ scale: scale.get() * selectedScale.get() }],
   }));
 
   const handlePressIn = React.useCallback(() => {
     haptics.selection();
-    scale.value = withSpring(0.92, {
-      damping: 10,
-      stiffness: 350,
-      reduceMotion: ReduceMotion.System,
-    });
+    scale.set(
+      withSpring(0.92, {
+        damping: 10,
+        stiffness: 350,
+        reduceMotion: ReduceMotion.System,
+      })
+    );
   }, [scale]);
 
   const handlePressOut = React.useCallback(() => {
-    scale.value = withSpring(1, {
-      damping: 10,
-      stiffness: 350,
-      reduceMotion: ReduceMotion.System,
-    });
+    scale.set(
+      withSpring(1, {
+        damping: 10,
+        stiffness: 350,
+        reduceMotion: ReduceMotion.System,
+      })
+    );
   }, [scale]);
 
   // Determine pill style based on state
@@ -212,6 +219,12 @@ export function WeekStrip({
   const { width: screenWidth } = useWindowDimensions();
   const hasScrolledRef = React.useRef(false);
   const [isLayoutReady, setIsLayoutReady] = React.useState(false);
+  const scrollToWeek = React.useCallback(
+    (x: number, animated: boolean): void => {
+      scrollTo(scrollViewRef, x, 0, animated);
+    },
+    [scrollViewRef]
+  );
 
   // Anchor week is stable - only shifts when selected date goes outside buffer range
   const [anchorWeekStart, setAnchorWeekStart] = React.useState(() =>
@@ -255,10 +268,10 @@ export function WeekStrip({
         Math.min(targetWeekIndex, TOTAL_WEEKS - 1)
       );
       const scrollX = clampedIndex * screenWidth;
-      scrollTo(scrollViewRef, scrollX, 0, hasScrolledRef.current);
+      scheduleOnUI(scrollToWeek, scrollX, hasScrolledRef.current);
       hasScrolledRef.current = true;
     }
-  }, [selectedWeekOffset, screenWidth, isLayoutReady, scrollViewRef]);
+  }, [selectedWeekOffset, screenWidth, isLayoutReady, scrollToWeek]);
 
   return (
     <Animated.ScrollView

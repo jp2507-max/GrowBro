@@ -18,6 +18,7 @@ export class PlantModel extends Model {
   @text('environment') environment?: string | null;
   @text('genetic_lean') geneticLean?: string | null;
   @text('planted_at') plantedAt?: string | null;
+  @text('stage_entered_at') stageEnteredAt?: string | null;
   @text('expected_harvest_at') expectedHarvestAt?: string | null;
   @text('last_watered_at') lastWateredAt?: string | null;
   @text('last_fed_at') lastFedAt?: string | null;

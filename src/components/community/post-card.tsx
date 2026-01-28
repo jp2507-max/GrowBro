@@ -21,6 +21,7 @@ import { translate } from '@/lib/i18n';
 
 import { PostCardView } from './post-card-view';
 import type { PressEvent } from './types';
+import { usePostSharing } from './use-post-sharing';
 
 type PostCardProps = {
   post: ApiPost;
@@ -101,6 +102,8 @@ function PostCardComponent({
     [router, postUserId]
   );
 
+  const { handleSharePress } = usePostSharing(String(postId));
+
   return (
     <PostCardView
       post={post}
@@ -113,6 +116,7 @@ function PostCardComponent({
       testID={testID}
       handleAuthorPress={handleAuthorPress}
       handleCommentPress={handleCommentPress}
+      onSharePress={handleSharePress}
     />
   );
 }

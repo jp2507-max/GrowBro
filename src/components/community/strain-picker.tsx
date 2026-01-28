@@ -37,11 +37,6 @@ function hexToRgb(hex: string): RgbColor {
   return { r, g, b };
 }
 
-function rgbaFromRgb(rgb: RgbColor, alpha: number): string {
-  'worklet';
-  return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`;
-}
-
 const listContentStyle = { gap: 8, paddingBottom: 20 };
 const PRIMARY_500 = colors.primary[500];
 const PRIMARY_500_RGB = hexToRgb(PRIMARY_500);
@@ -101,38 +96,46 @@ function StrainOption({
   const bgOpacity = useSharedValue(0);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
+    transform: [{ scale: scale.get() }],
   }));
 
   const animatedBgStyle = useAnimatedStyle(() => ({
-    backgroundColor: rgbaFromRgb(PRIMARY_500_RGB, bgOpacity.value),
+    backgroundColor: `rgba(${PRIMARY_500_RGB.r}, ${PRIMARY_500_RGB.g}, ${PRIMARY_500_RGB.b}, ${bgOpacity.get()})`,
   }));
 
   React.useEffect(() => {
-    scale.value = 1;
-    bgOpacity.value = 0;
+    scale.set(1);
+    bgOpacity.set(0);
   }, [bgOpacity, scale, strain.id]);
 
   const handlePressIn = React.useCallback((): void => {
-    scale.value = withTiming(0.97, {
-      duration: 100,
-      reduceMotion: ReduceMotion.System,
-    });
-    bgOpacity.value = withTiming(0.08, {
-      duration: 100,
-      reduceMotion: ReduceMotion.System,
-    });
+    scale.set(
+      withTiming(0.97, {
+        duration: 100,
+        reduceMotion: ReduceMotion.System,
+      })
+    );
+    bgOpacity.set(
+      withTiming(0.08, {
+        duration: 100,
+        reduceMotion: ReduceMotion.System,
+      })
+    );
   }, [scale, bgOpacity]);
 
   const handlePressOut = React.useCallback((): void => {
-    scale.value = withTiming(1, {
-      duration: 150,
-      reduceMotion: ReduceMotion.System,
-    });
-    bgOpacity.value = withTiming(0, {
-      duration: 150,
-      reduceMotion: ReduceMotion.System,
-    });
+    scale.set(
+      withTiming(1, {
+        duration: 150,
+        reduceMotion: ReduceMotion.System,
+      })
+    );
+    bgOpacity.set(
+      withTiming(0, {
+        duration: 150,
+        reduceMotion: ReduceMotion.System,
+      })
+    );
   }, [scale, bgOpacity]);
 
   const handlePress = React.useCallback(() => {
@@ -208,8 +211,12 @@ function StrainSearchInput({
       >
         <Search size={18} className="mr-3 text-neutral-400" />
         <TextInput
-          accessibilityLabel="Search strains"
-          accessibilityHint="Enter text to search for strains"
+          accessibilityLabel={translate(
+            'accessibility.strains.search_strains_label'
+          )}
+          accessibilityHint={translate(
+            'accessibility.strains.search_strains_hint'
+          )}
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
@@ -241,10 +248,13 @@ type StrainPickerModalProps = {
   onClear: () => void;
   onEndReached: () => void;
   renderItem: ({ item }: { item: Strain }) => React.ReactElement;
-  backgroundStyle: {
-    backgroundColor: string;
-    borderTopLeftRadius: number;
-    borderTopRightRadius: number;
+  glassSurfaceProps: {
+    glassEffectStyle: 'regular';
+    style: {
+      borderTopLeftRadius: number;
+      borderTopRightRadius: number;
+    };
+    fallbackClassName: string;
   };
   handleStyle: {
     backgroundColor: string;
@@ -266,7 +276,7 @@ function StrainPickerModal({
   onClear,
   onEndReached,
   renderItem,
-  backgroundStyle,
+  glassSurfaceProps,
   handleStyle,
   testID,
 }: StrainPickerModalProps) {
@@ -281,8 +291,9 @@ function StrainPickerModal({
       ref={modal.ref}
       index={0}
       snapPoints={['70%']}
-      backgroundStyle={backgroundStyle}
       handleIndicatorStyle={handleStyle}
+      useGlassSurface
+      glassSurfaceProps={glassSurfaceProps}
       animationConfigs={animationConfigs}
       enablePanDownToClose
       onDismiss={() => {
@@ -390,13 +401,16 @@ function StrainPickerTrigger({
 }
 
 function useStrainPickerStyles(isDark: boolean) {
-  const backgroundStyle = React.useMemo(
+  const glassSurfaceProps = React.useMemo(
     () => ({
-      backgroundColor: isDark ? colors.darkSurface.card : colors.white,
-      borderTopLeftRadius: 35,
-      borderTopRightRadius: 35,
+      glassEffectStyle: 'regular' as const,
+      style: {
+        borderTopLeftRadius: 35,
+        borderTopRightRadius: 35,
+      },
+      fallbackClassName: 'bg-white dark:bg-charcoal-900',
     }),
-    [isDark]
+    []
   );
 
   const handleStyle = React.useMemo(
@@ -409,7 +423,7 @@ function useStrainPickerStyles(isDark: boolean) {
     [isDark]
   );
 
-  return { backgroundStyle, handleStyle };
+  return { glassSurfaceProps, handleStyle };
 }
 
 export function StrainPicker({
@@ -439,7 +453,7 @@ export function StrainPicker({
     () => data?.pages.flatMap((page) => page.data) ?? [],
     [data]
   );
-  const { backgroundStyle, handleStyle } = useStrainPickerStyles(isDark);
+  const { glassSurfaceProps, handleStyle } = useStrainPickerStyles(isDark);
 
   const handleOpen = React.useCallback(() => {
     setIsOpen(true);
@@ -499,7 +513,7 @@ export function StrainPicker({
         onClear={handleClear}
         onEndReached={handleEndReached}
         renderItem={renderItem}
-        backgroundStyle={backgroundStyle}
+        glassSurfaceProps={glassSurfaceProps}
         handleStyle={handleStyle}
         testID={testID}
       />

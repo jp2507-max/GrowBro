@@ -204,29 +204,33 @@ export const StrainCard = React.memo<Props>(
     const scale = useSharedValue(1);
 
     const animatedStyle = useAnimatedStyle(() => ({
-      transform: [{ scale: scale.value }],
+      transform: [{ scale: scale.get() }],
     }));
 
     React.useEffect(() => {
-      scale.value = 1;
+      scale.set(1);
     }, [strain.id, scale]);
 
     const onPressIn = React.useCallback(() => {
       haptics.selection();
       onStartNavigation?.(strain.id);
-      scale.value = withSpring(0.97, {
-        damping: 10,
-        stiffness: 300,
-        reduceMotion: ReduceMotion.System,
-      });
+      scale.set(
+        withSpring(0.97, {
+          damping: 10,
+          stiffness: 300,
+          reduceMotion: ReduceMotion.System,
+        })
+      );
     }, [onStartNavigation, scale, strain.id]);
 
     const onPressOut = React.useCallback(() => {
-      scale.value = withSpring(1, {
-        damping: 10,
-        stiffness: 300,
-        reduceMotion: ReduceMotion.System,
-      });
+      scale.set(
+        withSpring(1, {
+          damping: 10,
+          stiffness: 300,
+          reduceMotion: ReduceMotion.System,
+        })
+      );
     }, [scale]);
 
     const accessibilityLabel = React.useMemo(

@@ -4,7 +4,7 @@ import {
   type FlashListRef,
   type ListRenderItemInfo,
 } from '@shopify/flash-list';
-import React, { forwardRef, useMemo } from 'react';
+import React, { forwardRef, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
@@ -16,6 +16,10 @@ import {
 
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
+import {
+  getMediumFlashListConfig,
+  getOptimizedFlashListConfig,
+} from '@/lib/flashlist-config';
 import { useThemeConfig } from '@/lib/use-theme-config';
 
 const SKELETON_PLACEHOLDERS = 6;
@@ -69,6 +73,11 @@ const baseListStyle = StyleSheet.flatten(styles.list) as ViewStyle;
 const baseContentStyle = StyleSheet.flatten(
   styles.contentContainer
 ) as ViewStyle;
+const EMPTY_LIST: readonly unknown[] = [];
+const SKELETON_DATA: readonly number[] = Array.from(
+  { length: SKELETON_PLACEHOLDERS },
+  (_, index) => index
+);
 
 function mergeListStyle(
   styleProp: StyleProp<ViewStyle>,
@@ -93,14 +102,11 @@ function mergeContentStyle(styleProp: StyleProp<ViewStyle>): ViewStyle {
 function buildListData<ItemT>(
   showSkeleton: boolean,
   data: readonly ItemT[] | null | undefined
-): ItemT[] {
+): readonly ItemT[] {
   if (showSkeleton) {
-    return Array.from(
-      { length: SKELETON_PLACEHOLDERS },
-      (_, index) => index as unknown as ItemT
-    );
+    return SKELETON_DATA as unknown as readonly ItemT[];
   }
-  return data ? [...data] : [];
+  return data ?? (EMPTY_LIST as readonly ItemT[]);
 }
 
 function resolveStrings(
@@ -212,7 +218,7 @@ function renderJestList<ItemT>(
   }
 
   const footer = renderFooter(ListFooterComponent);
-  const items = (data ?? []) as ItemT[];
+  const items = (data ?? []) as readonly ItemT[];
 
   return (
     <View className="flex-1" testID="list-content">
@@ -231,60 +237,48 @@ function renderNativeList<ItemT>(
     readonly strings: ListStrings;
     readonly showSkeleton: boolean;
     readonly showError: boolean;
-    readonly themeBackground: string;
     readonly ref: React.ForwardedRef<FlashListRef<ItemT>>;
+    readonly listData: readonly ItemT[];
+    readonly renderItemResolved: (
+      info: ListRenderItemInfo<ItemT>
+    ) => React.ReactElement | null;
+    readonly keyExtractorResolved: (item: ItemT, index: number) => string;
+    readonly ListEmptyComponentResolved: () => React.ReactElement;
+    readonly mergedContentContainerStyle: ViewStyle;
+    readonly mergedListStyle: ViewStyle;
   }
 ): React.ReactElement {
   const {
-    data,
-    renderItem,
-    ListEmptyComponent,
+    data: ignoredData,
+    renderItem: ignoredRenderItem,
+    keyExtractor: ignoredKeyExtractor,
+    ListEmptyComponent: ignoredListEmptyComponent,
     ListFooterComponent,
-    ListSkeletonComponent,
-    keyExtractor = fallbackKeyExtractor,
-    onRetry,
-    strings,
-    showSkeleton,
-    showError,
-    themeBackground,
     ref,
     onEndReachedThreshold,
-    contentContainerStyle,
-    style,
+    listData,
+    renderItemResolved,
+    keyExtractorResolved,
+    ListEmptyComponentResolved,
+    mergedContentContainerStyle,
+    mergedListStyle,
     ...rest
   } = props;
 
-  const Skeleton = ListSkeletonComponent ?? DefaultListSkeleton;
-  const listData = buildListData(showSkeleton, data);
-  const mergedContentContainerStyle = mergeContentStyle(
-    contentContainerStyle as StyleProp<ViewStyle>
-  );
-  const mergedListStyle = mergeListStyle(
-    style as StyleProp<ViewStyle>,
-    themeBackground
-  );
+  // `rest` comes from ListProps and may include fields we override below.
+  // Make sure we omit them to avoid duplicate prop warnings in TS.
+  void ignoredData;
+  void ignoredRenderItem;
+  void ignoredKeyExtractor;
+  void ignoredListEmptyComponent;
 
   return (
     <FlashList<ItemT>
       ref={ref}
       data={listData}
-      renderItem={(info: ListRenderItemInfo<ItemT>) => {
-        if (showSkeleton) {
-          return <Skeleton index={info.index} />;
-        }
-        return renderItem?.(info) ?? null;
-      }}
-      keyExtractor={(item, index) =>
-        showSkeleton ? `skeleton-${index}` : keyExtractor(item, index)
-      }
-      ListEmptyComponent={() =>
-        renderEmptyContent({
-          hasError: showSkeleton ? false : showError,
-          strings,
-          onRetry,
-          ListEmptyComponent,
-        })
-      }
+      renderItem={renderItemResolved}
+      keyExtractor={keyExtractorResolved}
+      ListEmptyComponent={ListEmptyComponentResolved}
       ListFooterComponent={ListFooterComponent}
       onEndReachedThreshold={onEndReachedThreshold ?? 0.4}
       contentContainerStyle={mergedContentContainerStyle}
@@ -311,6 +305,11 @@ function ListInner<ItemT>(
     isLoading,
     isSkeletonTimedOut,
     strings,
+    drawDistance,
+    removeClippedSubviews,
+    scrollEventThrottle,
+    contentContainerStyle,
+    style,
     ...rest
   }: ListProps<ItemT>,
   ref: React.ForwardedRef<FlashListRef<ItemT>>
@@ -323,8 +322,62 @@ function ListInner<ItemT>(
   );
   const showSkeleton = Boolean(isLoading && !isSkeletonTimedOut);
   const showError = Boolean(error);
-  const isEmpty = !data || (data as ItemT[]).length === 0;
+  const isEmpty = !data || data.length === 0;
   const isJest = Boolean(process?.env?.JEST_WORKER_ID);
+  const itemCount = showSkeleton ? SKELETON_PLACEHOLDERS : (data?.length ?? 0);
+  const flashListConfig = useMemo(
+    () =>
+      itemCount >= 100
+        ? getOptimizedFlashListConfig()
+        : getMediumFlashListConfig(),
+    [itemCount]
+  );
+  const resolvedDrawDistance = drawDistance ?? flashListConfig.drawDistance;
+  const resolvedRemoveClippedSubviews =
+    removeClippedSubviews ?? flashListConfig.removeClippedSubviews;
+  const resolvedScrollEventThrottle =
+    scrollEventThrottle ?? flashListConfig.scrollEventThrottle;
+  const Skeleton = useMemo(
+    () => ListSkeletonComponent ?? DefaultListSkeleton,
+    [ListSkeletonComponent]
+  );
+  const listData = useMemo(
+    () => buildListData(showSkeleton, data),
+    [data, showSkeleton]
+  );
+  const keyExtractorResolved = useCallback(
+    (item: ItemT, index: number) =>
+      showSkeleton
+        ? `skeleton-${index}`
+        : (keyExtractor ?? fallbackKeyExtractor)(item, index),
+    [keyExtractor, showSkeleton]
+  );
+  const renderItemResolved = useCallback(
+    (info: ListRenderItemInfo<ItemT>) => {
+      if (showSkeleton) return <Skeleton index={info.index} />;
+      return renderItem?.(info) ?? null;
+    },
+    [renderItem, showSkeleton, Skeleton]
+  );
+  const ListEmptyComponentResolved = useCallback(
+    () =>
+      renderEmptyContent({
+        hasError: showSkeleton ? false : showError,
+        strings: resolvedStrings,
+        onRetry,
+        ListEmptyComponent,
+      }),
+    [showSkeleton, showError, resolvedStrings, onRetry, ListEmptyComponent]
+  );
+  const mergedContentContainerStyle = useMemo(
+    () => mergeContentStyle(contentContainerStyle as StyleProp<ViewStyle>),
+    [contentContainerStyle]
+  );
+  const mergedListStyle = useMemo(
+    () =>
+      mergeListStyle(style as StyleProp<ViewStyle>, theme.colors.background),
+    [style, theme.colors.background]
+  );
 
   const sharedProps: ListProps<ItemT> & {
     readonly strings: ListStrings;
@@ -344,6 +397,11 @@ function ListInner<ItemT>(
     strings: resolvedStrings,
     showSkeleton,
     showError,
+    drawDistance: resolvedDrawDistance,
+    removeClippedSubviews: resolvedRemoveClippedSubviews,
+    scrollEventThrottle: resolvedScrollEventThrottle,
+    contentContainerStyle: mergedContentContainerStyle,
+    style: mergedListStyle,
     ...rest,
   };
 
@@ -353,8 +411,13 @@ function ListInner<ItemT>(
 
   return renderNativeList({
     ...sharedProps,
-    themeBackground: theme.colors.background,
     ref,
+    listData,
+    renderItemResolved,
+    keyExtractorResolved,
+    ListEmptyComponentResolved,
+    mergedContentContainerStyle,
+    mergedListStyle,
   });
 }
 

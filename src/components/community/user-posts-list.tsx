@@ -5,11 +5,12 @@
  */
 
 import { FlashList } from '@shopify/flash-list';
-import React from 'react';
+import React, { useCallback, useMemo } from 'react';
 
 import type { Post } from '@/api/community';
 import { ActivityIndicator, Text, View } from '@/components/ui';
 import { normalizePostUserId } from '@/lib/community/post-utils';
+import { getOptimizedFlashListConfig } from '@/lib/flashlist-config';
 import { translate } from '@/lib/i18n';
 
 import { PostCard } from './post-card';
@@ -33,6 +34,28 @@ export function UserPostsList({
   onPostDelete,
   testID = 'user-posts-list',
 }: UserPostsListProps): React.ReactElement {
+  const flashListConfig = useMemo(() => getOptimizedFlashListConfig(), []);
+  const keyExtractor = useCallback((item: Post) => String(item.id), []);
+  const renderItem = useCallback(
+    ({ item }: { item: Post }) => (
+      <PostCard
+        post={normalizePostUserId(item)}
+        onDelete={onPostDelete}
+        testID={`${testID}-post-${item.id}`}
+      />
+    ),
+    [onPostDelete, testID]
+  );
+  const listFooter = useMemo(
+    () =>
+      isFetchingNextPage ? (
+        <View className="p-4">
+          <ActivityIndicator />
+        </View>
+      ) : null,
+    [isFetchingNextPage]
+  );
+
   if (isLoading) {
     return (
       <View
@@ -63,22 +86,14 @@ export function UserPostsList({
   return (
     <FlashList
       data={posts}
-      renderItem={({ item }) => (
-        <PostCard
-          post={normalizePostUserId(item)}
-          onDelete={onPostDelete}
-          testID={`${testID}-post-${item.id}`}
-        />
-      )}
+      renderItem={renderItem}
+      keyExtractor={keyExtractor}
       onEndReached={hasNextPage ? onEndReached : undefined}
       onEndReachedThreshold={0.5}
-      ListFooterComponent={
-        isFetchingNextPage ? (
-          <View className="p-4">
-            <ActivityIndicator />
-          </View>
-        ) : null
-      }
+      ListFooterComponent={listFooter}
+      scrollEventThrottle={flashListConfig.scrollEventThrottle}
+      removeClippedSubviews={flashListConfig.removeClippedSubviews}
+      drawDistance={flashListConfig.drawDistance}
       testID={testID}
     />
   );

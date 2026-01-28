@@ -6,7 +6,7 @@ import type { EdgeInsets } from 'react-native-safe-area-context';
 
 import { GlassSurface } from '@/components/shared/glass-surface';
 import { GlassButton, Text, View } from '@/components/ui';
-import { Settings as SettingsIcon } from '@/components/ui/icons';
+import { PlatformIcon, Settings as SettingsIcon } from '@/components/ui/icons';
 import { translate } from '@/lib/i18n';
 import type { TxKeyPath } from '@/lib/i18n/utils';
 import { getHeaderColors } from '@/lib/theme-utils';
@@ -15,7 +15,6 @@ import { cn } from '@/lib/utils';
 const styles = StyleSheet.create({
   statsPill: {
     borderRadius: 999,
-    overflow: 'hidden',
   },
 });
 
@@ -142,6 +141,9 @@ export function HeaderSettingsButton(): React.ReactElement {
     'accessibility.home.open_settings_hint' as TxKeyPath
   );
 
+  const { colorScheme } = useColorScheme();
+  const colors = getHeaderColors(colorScheme === 'dark');
+
   return (
     <GlassButton
       onPress={() => router.push('/settings')}
@@ -150,7 +152,12 @@ export function HeaderSettingsButton(): React.ReactElement {
       fallbackClassName="bg-white/20 dark:bg-black/20"
       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
     >
-      <SettingsIcon className="text-white" />
+      <PlatformIcon
+        iosName="gearshape"
+        size={20}
+        color={colors.text}
+        fallback={<SettingsIcon />}
+      />
     </GlassButton>
   );
 }

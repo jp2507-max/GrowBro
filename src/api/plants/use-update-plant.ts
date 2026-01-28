@@ -2,16 +2,19 @@ import { createMutation } from 'react-query-kit';
 
 import type {
   GeneticLean,
+  GrowSpaceSize,
   PhotoperiodType,
   Plant,
   PlantEnvironment,
   PlantMetadata,
   PlantStage,
+  PlantStartType,
   Race,
+  TrainingPreference,
 } from '@/api/plants/types';
 import { getOptionalAuthenticatedUserId } from '@/lib/auth';
 import { toPlant, updatePlantFromForm } from '@/lib/plants/plant-service';
-import { syncPlantsToCloud } from '@/lib/plants/plants-sync';
+import { requestPlantsPush } from '@/lib/plants/plants-sync';
 import { captureExceptionIfConsented } from '@/lib/settings/privacy-runtime';
 
 export type UpdatePlantVariables = {
@@ -25,11 +28,15 @@ export type UpdatePlantVariables = {
   strainRace?: Race;
   plantedAt?: string;
   expectedHarvestAt?: string;
+  startType?: PlantStartType;
   photoperiodType?: PhotoperiodType;
   environment?: PlantEnvironment;
   geneticLean?: GeneticLean;
   medium?: PlantMetadata['medium'];
   potSize?: string;
+  spaceSize?: GrowSpaceSize;
+  advancedMode?: boolean;
+  trainingPrefs?: TrainingPreference[];
   lightSchedule?: string;
   lightHours?: number;
   notes?: string;
@@ -53,13 +60,15 @@ export const useUpdatePlant = createMutation<
       { userId: userId ?? undefined }
     );
     const plant = toPlant(model);
-    void syncPlantsToCloud().catch((syncError) => {
-      console.error('[UpdatePlant] sync to cloud failed', syncError);
+    try {
+      requestPlantsPush();
+    } catch (syncError) {
+      console.error('[UpdatePlant] sync request failed', syncError);
       captureExceptionIfConsented(
         syncError instanceof Error ? syncError : new Error(String(syncError)),
         { context: 'plant-update-sync', plantId: id }
       );
-    });
+    }
     return plant;
   },
 });

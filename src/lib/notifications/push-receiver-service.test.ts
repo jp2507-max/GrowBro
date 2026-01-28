@@ -146,7 +146,9 @@ function testHandleNotificationResponse() {
 
     await responseHandler(response);
 
-    expect(mockHandle).toHaveBeenCalledWith('growbro://post/456');
+    expect(mockHandle).toHaveBeenCalledWith('growbro://post/456', {
+      source: 'notifications',
+    });
   });
 }
 

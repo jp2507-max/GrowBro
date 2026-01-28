@@ -87,11 +87,13 @@
       "confirm_date_hint": "Confirms the selected date.",
       "expand_section_hint": "Double-tap to expand section",
       "go_back": "Go back",
-      "loading_hint": "Content is loading, please wait",
+      "loading": "Loading",
+      "loadingHint": "Content is loading, please wait",
       "loading_label": "Loading",
       "opens_screen_hint": "Opens the {{label}} screen.",
       "refresh_hint": "Refreshes the current content.",
       "reset_date_hint": "Clears the selected date.",
+      "retry": "Retry",
       "retry_hint": "Retries the last action.",
       "return_to_previous": "Returns to the previous screen",
       "saves_changes": "Saves your changes",
@@ -170,6 +172,12 @@
       "readings_count": "{{count}} readings",
       "save_reading": "Save Reading"
     },
+    "nutrition": {
+      "adjustments": {
+        "deficiency_generic": "Potential nutrient deficiency detected. Consider adjusting nutrient mix or frequency.",
+        "deficiency_with_nutrient": "Potential {{nutrient}} deficiency detected. Consider adjusting nutrient mix or frequency."
+      }
+    },
     "plant_hero_image": "Plant hero image",
     "plants": {
       "assessment_history": {
@@ -208,6 +216,8 @@
       "retry_load_hint": "Retry loading the strain details",
       "search_for_query_label": "Search for {{query}}",
       "search_hint": "Filters strains as you type.",
+      "search_strains_hint": "Enter text to search for strains",
+      "search_strains_label": "Search strains",
       "select_search_query_hint": "Fills search with this query",
       "toggle_effect_hint": "Toggles effect filter.",
       "toggle_flavor_hint": "Toggles flavor filter."
@@ -227,6 +237,13 @@
         "syncing_title": "Syncing your settings..."
       },
       "clear_logs_hint": "Clears the sync diagnostics log.",
+      "status": {
+        "error": "Sync Error",
+        "offline": "Offline",
+        "offline_pending": "Offline ({{count}})",
+        "retry_button_label": "Retry sync",
+        "syncing": "Syncing..."
+      },
       "sync_failed": "Sync failed",
       "sync_now_hint": "Starts a manual sync immediately.",
       "syncing": "Syncing..."
@@ -867,7 +884,9 @@
     "edit": "Edit",
     "error": "Error",
     "go_back": "Go back",
+    "go_home": "Go to Home",
     "loading": "Loading...",
+    "loadingHint": "Content is loading, please wait",
     "na": "N/A",
     "no": "No",
     "not_selected": "not selected",
@@ -1058,6 +1077,8 @@
       "help_station": "Help Station",
       "showcase": "Showcase"
     },
+    "share_post_message": "Check out this post on GrowBro: {{url}}",
+    "share_post_title": "Share Post",
     "sort_label": "Sort",
     "sort_newest": "Newest",
     "sort_top_7d": "Top (7d)",
@@ -1183,6 +1204,10 @@
       "permission_title": "Notifications Disabled",
       "schedule_failed": "Failed to schedule reminder",
       "title": "Reminder Error"
+    },
+    "page_not_found": {
+      "description": "The page you’re looking for doesn’t exist or has been moved.",
+      "title": "Page not found"
     },
     "playbook": {
       "already_applied": "This playbook is already applied to this plant",
@@ -1841,6 +1866,7 @@
   "inputs": {
     "accept_terms_label": "Accept terms and conditions",
     "checkbox_label": "Checkbox",
+    "radio_label": "Radio button",
     "switch_label": "Switch"
   },
   "list": {
@@ -1981,6 +2007,7 @@
     },
     "reports_per_month": "Reports/Month",
     "sla": {
+      "accessibilityHint": "Service level agreement status",
       "status": {
         "critical": "OVERDUE",
         "green": "On Track",
@@ -2348,6 +2375,12 @@
       "title": "Water Profile"
     }
   },
+  "nutrition": {
+    "adjustments": {
+      "deficiency_generic": "Potential nutrient deficiency detected. Consider adjusting nutrient mix or frequency.",
+      "deficiency_with_nutrient": "Potential {{nutrient}} deficiency detected. Consider adjusting nutrient mix or frequency."
+    }
+  },
   "onboarding": {
     "allow_button": "Allow notifications",
     "community": {
@@ -2450,7 +2483,7 @@
       "percent_complete": "{{percent}}% Complete"
     },
     "detail": {
-      "action_hub_title": "Today's Tasks",
+      "action_hub_title": "Daily digest",
       "all_good_message": "All good – No tasks today.",
       "no_tasks": "No pending tasks",
       "nutrient_section": {
@@ -2474,6 +2507,8 @@
       "add_starter_tasks": "Add starter tasks",
       "added_body": "Great start! Add schedule info or go straight to your calendar.",
       "added_title": "Plant added",
+      "advanced_mode_hint": "Unlock optional inputs and training preferences.",
+      "advanced_mode_label": "Advanced mode",
       "autoflower_badge": "Autoflower",
       "cancel": "Cancel",
       "completion": "{{percent}}% Complete",
@@ -2512,6 +2547,12 @@
       },
       "genetic_label": "Genetic lean",
       "genetic_placeholder": "Select genetic lean",
+      "genetics": {
+        "autoflower": "Autoflower",
+        "photoperiod": "Photoperiod (12/12 flip)"
+      },
+      "genetics_label": "Genetics",
+      "genetics_placeholder": "Photoperiod or autoflower",
       "go_to_schedule": "Go to Schedule",
       "height_label": "Plant height",
       "height_placeholder": "e.g., 45 cm",
@@ -2550,36 +2591,72 @@
       "save": "Save",
       "save_cta": "Save changes",
       "section": {
+        "advanced": "Advanced",
         "care": "Care",
         "environment": "Environment",
         "identity": "Identity",
         "photo": "Photo"
       },
+      "space_size": {
+        "large": "Large",
+        "medium": "Medium",
+        "small": "Small"
+      },
+      "space_size_label": "Grow space",
+      "space_size_placeholder": "Select grow space",
       "stage": {
         "curing": "Curing",
         "flowering": "Flowering",
+        "flowering_stretch": "Flowering stretch",
+        "germination": "Germination",
         "harvesting": "Harvesting",
         "ready": "Ready",
+        "ripening": "Ripening",
         "seedling": "Seedling",
         "vegetative": "Vegetative"
       },
       "stage_label": "Stage",
       "stage_placeholder": "Select stage",
+      "start_type": {
+        "clone": "Clone",
+        "seed": "Seed"
+      },
+      "start_type_label": "Start type",
+      "start_type_placeholder": "Seed or clone",
       "starter_tasks_created": "Starter tasks scheduled",
       "strain_create_custom": "Create custom strain “{{name}}”",
       "strain_create_custom_hint": "Save this strain for future use.",
-      "strain_label": "Strain",
+      "strain_label": "Strain (optional)",
       "strain_no_results": "No strains found for “{{query}}”",
       "strain_placeholder": "Afghan Haze, Super Silver Haze…",
       "strain_race_label": "Race: {{race}}",
       "strain_searching": "Searching strains…",
       "success_body": "Your plant was added to My Plants.",
       "success_title": "Plant created",
+      "training_prefs": {
+        "defoliation": "Defoliation",
+        "lst": "Low stress training (LST)",
+        "scrog": "SCROG",
+        "topping": "Topping"
+      },
+      "training_prefs_hint": "Only used when advanced mode is on.",
+      "training_prefs_label": "Training preferences",
       "update_success_body": "Your plant details were saved.",
       "update_success_title": "Plant updated",
       "view_plant": "View plant",
       "view_strain_profile": "View strain profile",
       "view_strain_profile_hint": "Opens the linked strain profile."
+    },
+    "lifecycle": {
+      "stage": {
+        "completed": "Completed",
+        "curing": "Curing",
+        "drying": "Drying",
+        "flowering": "Flowering",
+        "germination": "Germination",
+        "seedling": "Seedling",
+        "vegetative": "Vegetative"
+      }
     },
     "no_results": "No plants found",
     "offline_notice": "Showing saved plants",
@@ -3079,6 +3156,19 @@
       "syncing": "Syncing statistics...",
       "title": "Account Statistics"
     }
+  },
+  "sentry_test": {
+    "crash_consent_off": "Crash reporting consent: off",
+    "crash_consent_on": "Crash reporting consent: on",
+    "dsn_missing": "DSN: missing (set SENTRY_DSN to enable Sentry)",
+    "dsn_set": "DSN: set",
+    "initialized_off": "Sentry SDK: not initialized",
+    "initialized_on": "Sentry SDK: initialized",
+    "last_event_id": "Last event id: {{id}}",
+    "send_error": "Send test error",
+    "send_error_hint": "Sends a test error event to Sentry",
+    "subtitle": "Send a test event to verify Sentry delivery.",
+    "title": "Sentry Test"
   },
   "settings": {
     "a11y": {
@@ -3925,8 +4015,12 @@
     "status": {
       "active": "Current",
       "completed": "✓ Completed",
+      "error": "Sync Error",
+      "offline": "Offline",
+      "offline_pending": "Offline ({{count}})",
       "overdue": "Overdue",
       "pending": "Pending",
+      "retry_button_label": "Retry sync",
       "syncing": "Syncing...",
       "upcoming": "Upcoming"
     },
@@ -3945,6 +4039,11 @@
     "burp_jars_week1": {
       "description": "Open jars for 15-30 minutes to release moisture and refresh air. Check for mold or ammonia smell.",
       "description_rich": "Open jar & air for 15 min. Check for mold or ammonia smell.",
+      "title": "Burp Jars"
+    },
+    "burp_jars_week2": {
+      "description": "Open jars daily to maintain proper humidity. Continue monitoring aroma and moisture levels.",
+      "description_rich": "Open jar & air for 15 min daily. Keep monitoring aroma and moisture.",
       "title": "Burp Jars"
     },
     "burp_jars_week3": {
@@ -3996,12 +4095,21 @@
       "description_coco_flower_safe": "Bloom nutrients. Watch for yellow leaf tips (nutrient burn). Monitor EC/pH.",
       "description_coco_veg": "Veg schedule (N-heavy). Feed with every watering, monitor EC/pH.",
       "description_coco_veg_safe": "Veg nutrients. **Tip: Start with 50% of manufacturer's dosage.** Monitor EC/pH.",
+      "description_ramp": "Target feed strength: {{percent}}% of label. {{base}}",
       "description_soil": "Apply nutrients according to your feeding schedule. Adjust based on plant response.",
       "description_soil_flower": "Bloom schedule (P/K-heavy). Apply nutrients based on plant response.",
       "description_soil_flower_safe": "Bloom nutrients. Watch for yellow leaf tips (nutrient burn).",
       "description_soil_veg": "Veg schedule (N-heavy). Apply nutrients based on plant response.",
       "description_soil_veg_safe": "Veg nutrients. **Tip: Start with 50% of manufacturer's dosage.**",
       "title": "Feed Plant"
+    },
+    "ipm_biological": {
+      "description": "Use biological controls (beneficials, sticky traps). Avoid spray applications during flowering.",
+      "title": "Biological IPM Check"
+    },
+    "ipm_preventative": {
+      "description": "Inspect leaves and stems for pests (undersides too). Wipe down surfaces and keep the grow area clean.",
+      "title": "Preventative IPM Check"
     },
     "reorder_error": "Failed to reorder tasks. Please try again.",
     "reordered": "Tasks reordered",
@@ -4023,6 +4131,7 @@
     "water_plant": {
       "description_coco": "Water until ~10-20% runoff. Coco dries quickly - check daily.",
       "description_coco_rich": "~{{min}}-{{max}}L to water (when medium is dry). Check runoff EC/pH.",
+      "description_hydro": "Top off and maintain nutrient solution. Verify flow and root zone moisture.",
       "description_soil": "Water until ~10-20% runoff. Check soil moisture before watering.",
       "description_soil_rich": "~{{min}}-{{max}}L to water (when soil is dry). Water until slight runoff.",
       "title": "Water Plant"
@@ -4069,6 +4178,22 @@
     "trichome_ratio": "Trichome Ratio",
     "validation_max": "Must be {{max}} or less",
     "validation_min": "Must be {{min}} or greater"
+  },
+  "twin": {
+    "stageReason": {
+      "autoflower_day": "Autoflower day {{day}}",
+      "autoflower_grace": "Autoflower day {{day}} (auto-advance)",
+      "curing_complete": "Curing duration reached",
+      "drying_window": "Drying window reached ({{days}} days)",
+      "flowering_end": "Approaching end of flowering window",
+      "harvest_complete": "Harvest complete",
+      "light_cycle_switched": "Light cycle switched to 12/12",
+      "node_count": "Node count reached 3+",
+      "seedling_time": "Seedling window reached ({{days}} days)",
+      "sprout_confirmed": "Sprout confirmed",
+      "stretch_complete": "Stretch period complete",
+      "trichomes": "Trichomes indicate harvest window"
+    }
   },
   "units": {
     "celsius": "°C",

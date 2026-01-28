@@ -25,28 +25,32 @@ export function useCardAnimation(
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
+    transform: [{ scale: scale.get() }],
   }));
 
   useEffect(() => {
-    scale.value = 1;
+    scale.set(1);
   }, [resetKey, scale]);
 
   const onPressIn = useCallback(() => {
-    scale.value = withSpring(0.98, {
-      damping: 15,
-      stiffness: 350,
-      reduceMotion: ReduceMotion.System,
-    });
+    scale.set(
+      withSpring(0.98, {
+        damping: 15,
+        stiffness: 350,
+        reduceMotion: ReduceMotion.System,
+      })
+    );
     haptics.selection();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const onPressOut = useCallback(() => {
-    scale.value = withSpring(1, {
-      damping: 15,
-      stiffness: 350,
-      reduceMotion: ReduceMotion.System,
-    });
+    scale.set(
+      withSpring(1, {
+        damping: 15,
+        stiffness: 350,
+        reduceMotion: ReduceMotion.System,
+      })
+    );
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return { animatedStyle, onPressIn, onPressOut };

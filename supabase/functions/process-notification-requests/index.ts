@@ -1,4 +1,3 @@
-// @ts-nocheck
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
@@ -8,15 +7,24 @@ import type { NotificationRequestEntry, ProcessingStats } from './types.ts';
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, X-Function-Secret',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
+
+function isServiceRoleRequest(req: Request, expected: string): boolean {
+  const authHeader = req.headers.get('authorization') ?? '';
+  const match = authHeader.match(/^Bearer\s+(.+)$/i);
+  if (!match) return false;
+
+  const token = match[1];
+  return Boolean(expected) && token === expected;
+}
 
 /**
  * Sends a single notification request to the send-push-notification Edge Function
  */
 async function sendNotification(
   request: NotificationRequestEntry,
-  edgeFunctionSecret: string,
+  supabaseServiceKey: string,
   supabaseUrl: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
@@ -42,7 +50,7 @@ async function sendNotification(
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Function-Secret': edgeFunctionSecret,
+          Authorization: `Bearer ${supabaseServiceKey}`,
         },
         body: JSON.stringify(payload),
       }
@@ -84,7 +92,7 @@ async function sleep(ms: number): Promise<void> {
 
 async function sendWithRetry(
   request: NotificationRequestEntry,
-  edgeFunctionSecret: string,
+  supabaseServiceKey: string,
   supabaseUrl: string,
   maxRetries = 3
 ): Promise<{ success: boolean; error?: string }> {
@@ -93,7 +101,7 @@ async function sendWithRetry(
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     const result = await sendNotification(
       request,
-      edgeFunctionSecret,
+      supabaseServiceKey,
       supabaseUrl
     );
 
@@ -124,6 +132,26 @@ async function sendWithRetry(
   return { success: false, error: lastError };
 }
 
+function computeRetryDelaySeconds(attemptCount: number): number {
+  // attemptCount is the number of times this request has been claimed (i.e., outer retries).
+  // Exponential backoff with cap: 10s, 20s, 40s, ... up to 1 hour.
+  const baseSeconds = 10;
+  const maxSeconds = 60 * 60;
+  const exponent = Math.max(0, attemptCount - 1);
+  const delay = Math.min(maxSeconds, baseSeconds * Math.pow(2, exponent));
+
+  // Random jitter to avoid thundering herds on retries (0-3s).
+  const jitter = Math.floor(Math.random() * 4);
+  return delay + jitter;
+}
+
+function isNonRetriableError(message: string): boolean {
+  return (
+    message.includes('User opted out') ||
+    message.includes('No active push tokens')
+  );
+}
+
 Deno.serve(async (req: Request) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -141,15 +169,20 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    // Guard: ensure the Edge Function has the configured secret
-    const configuredSecret = Deno.env.get('EDGE_FUNCTION_SECRET') ?? null;
-    if (!configuredSecret) {
-      throw new Error('EDGE_FUNCTION_SECRET is not configured');
-    }
+    // Initialize Supabase client with service role key
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 
-    // Validate incoming request header
-    const incomingSecret = req.headers.get('x-function-secret') ?? null;
-    if (!incomingSecret || incomingSecret !== configuredSecret) {
+    if (!supabaseUrl || !supabaseServiceKey) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Service unavailable' }),
+        {
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+          status: 503,
+        }
+      );
+    }
+    if (!isServiceRoleRequest(req, supabaseServiceKey)) {
       return new Response(
         JSON.stringify({ success: false, error: 'Unauthorized' }),
         {
@@ -159,23 +192,14 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Initialize Supabase client with service role key
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-
-    if (!supabaseUrl || !supabaseServiceKey) {
-      throw new Error('Supabase environment variables not configured');
-    }
-
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Fetch unprocessed notification requests (limit to 100 per batch)
-    const { data: requests, error: fetchError } = await supabase
-      .from('notification_requests')
-      .select('*')
-      .eq('processed', false)
-      .order('created_at', { ascending: true })
-      .limit(100);
+    // Atomically claim pending requests to avoid duplicate processing if cron overlaps.
+    // NOTE: claim_notification_requests marks rows as in-flight (claimed_at/claim_id) but does NOT mark them processed.
+    const { data: requests, error: fetchError } = await supabase.rpc(
+      'claim_notification_requests',
+      { batch_size: 100 }
+    );
 
     if (fetchError) {
       throw new Error(
@@ -206,59 +230,109 @@ Deno.serve(async (req: Request) => {
       errors: [],
     };
 
-    // Process each request
+    const maxAttempts = 5;
+
+    // Process each claimed request. We ACK (processed=true) only after a definitive outcome.
     for (const request of requests as NotificationRequestEntry[]) {
       stats.processed++;
+
+      const claimId = request.claim_id;
+      if (!claimId) {
+        stats.failed++;
+        const errorMessage = 'Missing claim_id on claimed request (unexpected)';
+        stats.errors.push({ requestId: request.id, error: errorMessage });
+        console.error(`[process-notification-requests] ${errorMessage}`, {
+          requestId: request.id,
+        });
+        continue;
+      }
 
       // Send notification with retry logic
       const result = await sendWithRetry(
         request,
-        configuredSecret,
+        supabaseServiceKey,
         supabaseUrl
       );
 
       if (result.success) {
         stats.succeeded++;
 
-        // Mark as processed
-        const { error: updateError } = await supabase
+        const { error: ackError } = await supabase
           .from('notification_requests')
           .update({
             processed: true,
             processed_at: new Date().toISOString(),
+            claimed_at: null,
+            claim_id: null,
+            next_attempt_at: null,
+            last_error: null,
           })
-          .eq('id', request.id);
+          .eq('id', request.id)
+          .eq('claim_id', claimId);
 
-        if (updateError) {
+        if (ackError) {
           console.error(
-            `Failed to update request ${request.id} as processed:`,
-            updateError
+            `Failed to ACK notification request ${request.id}:`,
+            ackError
           );
         }
       } else {
         stats.failed++;
+        const errorMessage = result.error || 'Unknown error';
         stats.errors.push({
           requestId: request.id,
-          error: result.error || 'Unknown error',
+          error: errorMessage,
         });
 
-        console.error(`Failed to process request ${request.id}:`, result.error);
+        console.error(`Failed to process request ${request.id}:`, errorMessage);
 
-        // Mark as processed even on failure to avoid infinite retries
-        // The error is logged in stats for monitoring
-        const { error: updateError } = await supabase
-          .from('notification_requests')
-          .update({
-            processed: true,
-            processed_at: new Date().toISOString(),
-          })
-          .eq('id', request.id);
+        const attemptCount = Number(request.attempt_count ?? 1);
+        const isTerminal =
+          isNonRetriableError(errorMessage) || attemptCount >= maxAttempts;
 
-        if (updateError) {
-          console.error(
-            `Failed to update request ${request.id} as processed:`,
-            updateError
-          );
+        if (isTerminal) {
+          const { error: terminalError } = await supabase
+            .from('notification_requests')
+            .update({
+              processed: true,
+              processed_at: new Date().toISOString(),
+              claimed_at: null,
+              claim_id: null,
+              next_attempt_at: null,
+              last_error: errorMessage,
+            })
+            .eq('id', request.id)
+            .eq('claim_id', claimId);
+
+          if (terminalError) {
+            console.error(
+              `Failed to mark notification request terminal ${request.id}:`,
+              terminalError
+            );
+          }
+        } else {
+          const retryDelaySeconds = computeRetryDelaySeconds(attemptCount);
+          const nextAttemptAt = new Date(
+            Date.now() + retryDelaySeconds * 1000
+          ).toISOString();
+
+          const { error: releaseError } = await supabase
+            .from('notification_requests')
+            .update({
+              claimed_at: null,
+              claim_id: null,
+              next_attempt_at: nextAttemptAt,
+              last_error: errorMessage,
+            })
+            .eq('id', request.id)
+            .eq('claim_id', claimId);
+
+          if (releaseError) {
+            console.error(
+              `Failed to schedule retry for notification request ${request.id}:`,
+              releaseError
+            );
+          }
         }
       }
     }

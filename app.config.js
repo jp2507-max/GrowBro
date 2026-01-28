@@ -53,9 +53,10 @@ try {
   };
 }
 
-const isReactCompilerEnabled = toBoolean(
-  process.env.EXPO_PUBLIC_EXPERIMENT_REACT_COMPILER
-);
+const isReactCompilerEnabled =
+  process.env.EXPO_PUBLIC_EXPERIMENT_REACT_COMPILER === undefined
+    ? true
+    : toBoolean(process.env.EXPO_PUBLIC_EXPERIMENT_REACT_COMPILER);
 
 const appIconBadgeConfig = {
   enabled: Env.APP_ENV !== 'production',

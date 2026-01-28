@@ -39,13 +39,15 @@ export function AddPlantFab(): React.ReactElement {
 
   const handlePressIn = React.useCallback((): void => {
     haptics.selection();
-    scale.value = withSpring(0.85, SPRING_CONFIG_PRESS);
+    scale.set(withSpring(0.85, SPRING_CONFIG_PRESS));
   }, [scale]);
 
   const handlePressOut = React.useCallback((): void => {
-    scale.value = withSequence(
-      withSpring(1.05, SPRING_CONFIG_RELEASE),
-      withDelay(80, withSpring(1, SPRING_CONFIG_RELEASE))
+    scale.set(
+      withSequence(
+        withSpring(1.05, SPRING_CONFIG_RELEASE),
+        withDelay(80, withSpring(1, SPRING_CONFIG_RELEASE))
+      )
     );
   }, [scale]);
 
@@ -54,7 +56,7 @@ export function AddPlantFab(): React.ReactElement {
   }, [router]);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
+    transform: [{ scale: scale.get() }],
   }));
 
   const positionStyle = React.useMemo(

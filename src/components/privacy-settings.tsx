@@ -1,8 +1,9 @@
 import * as FileSystem from 'expo-file-system';
 import React, { useEffect, useState } from 'react';
-import { Alert, Platform, Share, Switch, Text, View } from 'react-native';
+import { Alert, Platform, Share, Text, View } from 'react-native';
 
 import { Button } from '@/components/ui';
+import { Switch } from '@/components/ui/switch';
 import { showErrorMessage } from '@/components/ui/utils';
 import { translate } from '@/lib';
 import { generatePrivacyExportJson } from '@/lib/privacy/export-service';

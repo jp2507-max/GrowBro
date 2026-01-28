@@ -10,7 +10,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 import Animated, {
-  ReduceMotion,
+  cancelAnimation,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
@@ -18,9 +18,10 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { motion } from '@/lib/animations/motion';
+import { motion, withRM } from '@/lib/animations/motion';
 import type { TxKeyPath } from '@/lib/i18n';
 import { useReduceMotionEnabled } from '@/lib/strains/accessibility';
+import { cn } from '@/lib/utils';
 
 type SkeletonProps = {
   width?: number | string;
@@ -49,30 +50,40 @@ export function Skeleton({
   const reduceMotion = useReduceMotionEnabled();
 
   React.useEffect(() => {
+    cancelAnimation(opacity);
     if (reduceMotion) {
-      opacity.value = 1;
+      opacity.set(1);
       return;
     }
 
     // Shimmer animation with Reduced Motion support
-    opacity.value = withRepeat(
-      withSequence(
-        withTiming(0.5, {
-          duration: motion.dur.lg,
-          reduceMotion: ReduceMotion.System,
-        }),
-        withTiming(1, {
-          duration: motion.dur.lg,
-          reduceMotion: ReduceMotion.System,
-        })
-      ),
-      -1, // Infinite repeat
-      false
+    opacity.set(
+      withRepeat(
+        withSequence(
+          withTiming(
+            0.5,
+            withRM({
+              duration: motion.dur.lg,
+            })
+          ),
+          withTiming(
+            1,
+            withRM({
+              duration: motion.dur.lg,
+            })
+          )
+        ),
+        -1, // Infinite repeat
+        false
+      )
     );
+    return () => {
+      cancelAnimation(opacity);
+    };
   }, [opacity, reduceMotion]);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
+    opacity: opacity.get(),
   }));
 
   return (
@@ -85,10 +96,10 @@ export function Skeleton({
           borderRadius,
         },
       ]}
-      className={`bg-neutral-200 dark:bg-neutral-800 ${className ?? ''}`}
+      className={cn('bg-neutral-200 dark:bg-neutral-800', className)}
       testID={testID}
-      accessibilityLabel={txLabel ? t(txLabel) : 'Loading'}
-      accessibilityHint={txHint ? t(txHint) : 'Content is loading, please wait'}
+      accessibilityLabel={txLabel ? t(txLabel) : t('common.loading')}
+      accessibilityHint={txHint ? t(txHint) : t('common.loadingHint')}
       accessibilityRole="progressbar"
     />
   );

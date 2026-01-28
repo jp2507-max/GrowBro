@@ -57,14 +57,17 @@ function useSplashScreenHide() {
 }
 
 /**
- * SF Symbol names for each tab (iOS only).
- * Android will use drawable resources defined in the native project.
+ * SF Symbol names for each tab.
+ * Uses state variants: outline when inactive, filled when active (iOS HIG).
  */
 const SF_SYMBOLS = {
-  home: 'house.fill',
-  calendar: 'calendar',
-  community: 'bubble.left.and.bubble.right.fill',
-  strains: 'leaf.fill',
+  home: { default: 'house', selected: 'house.fill' },
+  calendar: { default: 'calendar', selected: 'calendar.circle.fill' },
+  community: {
+    default: 'bubble.left.and.bubble.right',
+    selected: 'bubble.left.and.bubble.right.fill',
+  },
+  strains: { default: 'leaf', selected: 'leaf.fill' },
 } as const;
 
 export default function TabLayout() {
@@ -120,22 +123,22 @@ export default function TabLayout() {
         <NativeTabs
           minimizeBehavior={Platform.OS === 'ios' ? 'onScrollDown' : undefined}
         >
-          <NativeTabs.Trigger name="index">
+          <NativeTabs.Trigger name="(index)">
             <Icon sf={SF_SYMBOLS.home} />
             <Label>{translate('tabs.home')}</Label>
           </NativeTabs.Trigger>
 
-          <NativeTabs.Trigger name="calendar">
+          <NativeTabs.Trigger name="(calendar)">
             <Icon sf={SF_SYMBOLS.calendar} />
             <Label>{translate('tabs.calendar')}</Label>
           </NativeTabs.Trigger>
 
-          <NativeTabs.Trigger name="community">
+          <NativeTabs.Trigger name="(community)">
             <Icon sf={SF_SYMBOLS.community} />
             <Label>{translate('tabs.community')}</Label>
           </NativeTabs.Trigger>
 
-          <NativeTabs.Trigger name="strains">
+          <NativeTabs.Trigger name="(strains)">
             <Icon sf={SF_SYMBOLS.strains} />
             <Label>{translate('tabs.strains')}</Label>
           </NativeTabs.Trigger>

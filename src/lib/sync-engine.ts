@@ -30,6 +30,8 @@ import type { InventoryBatchModel } from '@/lib/watermelon-models/inventory-batc
 import type { InventoryItemModel } from '@/lib/watermelon-models/inventory-item';
 import type { InventoryMovementModel } from '@/lib/watermelon-models/inventory-movement';
 import type { OccurrenceOverrideModel } from '@/lib/watermelon-models/occurrence-override';
+import type { PlantEventModel } from '@/lib/watermelon-models/plant-event';
+import type { PlantStageHistoryModel } from '@/lib/watermelon-models/plant-stage-history';
 import type { SeriesModel } from '@/lib/watermelon-models/series';
 import type { TaskModel } from '@/lib/watermelon-models/task';
 
@@ -37,6 +39,8 @@ type TableName =
   | 'series'
   | 'tasks'
   | 'occurrence_overrides'
+  | 'plant_stage_history'
+  | 'plant_events'
   | 'harvests'
   | 'inventory'
   | 'harvest_audits'
@@ -94,6 +98,8 @@ type SyncModelMap = {
   series: SeriesModel;
   tasks: TaskModel;
   occurrence_overrides: OccurrenceOverrideModel;
+  plant_stage_history: PlantStageHistoryModel;
+  plant_events: PlantEventModel;
   harvests: HarvestModel;
   inventory: InventoryModel;
   harvest_audits: HarvestAuditModel;
@@ -145,6 +151,8 @@ const SYNC_TABLES: TableName[] = [
   'series',
   'tasks',
   'occurrence_overrides',
+  'plant_stage_history',
+  'plant_events',
   'harvests',
   'inventory',
   'harvest_audits',
@@ -154,6 +162,8 @@ const SYNC_TABLES: TableName[] = [
 ];
 const MAX_PUSH_CHUNK_PER_TABLE = 1000; // per-batch limit (Req 6.2)
 const CHECKPOINT_KEY = 'sync.lastPulledAt';
+const SYNC_DISABLED_UNTIL_KEY = 'sync.disabledUntilMs';
+const SYNC_DISABLED_REASON_KEY = 'sync.disabledReason';
 const API_BASE =
   (typeof Env?.API_URL === 'string' && Env.API_URL) ||
   (typeof Env?.EXPO_PUBLIC_API_BASE_URL === 'string' &&
@@ -174,6 +184,35 @@ const REQUEST_TIMEOUT_MS = 30000; // 30 second timeout
 
 function nowMs(): number {
   return Date.now();
+}
+
+let syncDisabledUntilCache: number | null = null;
+
+function getSyncDisabledUntilMs(): number | null {
+  const cached =
+    syncDisabledUntilCache ?? getItem<number>(SYNC_DISABLED_UNTIL_KEY);
+  if (typeof cached === 'number') {
+    if (cached <= nowMs()) {
+      syncDisabledUntilCache = null;
+      // Clear stale persisted value
+      setItem(SYNC_DISABLED_UNTIL_KEY, null);
+      setItem(SYNC_DISABLED_REASON_KEY, null);
+      return null;
+    }
+    syncDisabledUntilCache = cached;
+    return cached;
+  }
+  return null;
+}
+
+function setSyncDisabled(untilMs: number, reason: string): void {
+  syncDisabledUntilCache = untilMs;
+  setItem(SYNC_DISABLED_UNTIL_KEY, untilMs);
+  setItem(SYNC_DISABLED_REASON_KEY, reason);
+}
+
+function getSyncDisabledReason(): string | null {
+  return getItem<string>(SYNC_DISABLED_REASON_KEY) ?? null;
 }
 
 // Exposed UI flags - backed by Zustand store
@@ -371,6 +410,16 @@ function buildPushBatches(
           updated: slice(changes.occurrence_overrides.updated),
           deleted: slice(changes.occurrence_overrides.deleted),
         },
+        plant_stage_history: {
+          created: slice(changes.plant_stage_history.created),
+          updated: slice(changes.plant_stage_history.updated),
+          deleted: slice(changes.plant_stage_history.deleted),
+        },
+        plant_events: {
+          created: slice(changes.plant_events.created),
+          updated: slice(changes.plant_events.updated),
+          deleted: slice(changes.plant_events.deleted),
+        },
         harvests: {
           created: slice(changes.harvests.created),
           updated: slice(changes.harvests.updated),
@@ -516,6 +565,8 @@ function createEmptyChanges(): ChangesByTable {
     series: { created: [], updated: [], deleted: [] },
     tasks: { created: [], updated: [], deleted: [] },
     occurrence_overrides: { created: [], updated: [], deleted: [] },
+    plant_stage_history: { created: [], updated: [], deleted: [] },
+    plant_events: { created: [], updated: [], deleted: [] },
     harvests: { created: [], updated: [], deleted: [] },
     inventory: { created: [], updated: [], deleted: [] },
     harvest_audits: { created: [], updated: [], deleted: [] },
@@ -539,6 +590,14 @@ function addUserIdToChanges(changes: ChangesByTable, userId: string): void {
   changes.occurrence_overrides.updated = enrich(
     changes.occurrence_overrides.updated
   );
+  changes.plant_stage_history.created = enrich(
+    changes.plant_stage_history.created
+  );
+  changes.plant_stage_history.updated = enrich(
+    changes.plant_stage_history.updated
+  );
+  changes.plant_events.created = enrich(changes.plant_events.created);
+  changes.plant_events.updated = enrich(changes.plant_events.updated);
   changes.harvests.created = enrich(changes.harvests.created);
   changes.harvests.updated = enrich(changes.harvests.updated);
   changes.inventory.created = enrich(changes.inventory.created);
@@ -558,12 +617,39 @@ function addUserIdToChanges(changes: ChangesByTable, userId: string): void {
 }
 
 async function fetchAllRepositoryData(
+  repos: CollectionsMap,
+  lastPulledAt: number | null
+): Promise<
+  [
+    TaskModel[],
+    SeriesModel[],
+    OccurrenceOverrideModel[],
+    PlantStageHistoryModel[],
+    PlantEventModel[],
+    HarvestModel[],
+    InventoryModel[],
+    HarvestAuditModel[],
+    InventoryItemModel[],
+    InventoryBatchModel[],
+    InventoryMovementModel[],
+  ]
+> {
+  if (lastPulledAt === null) {
+    return fetchAllRows(repos);
+  }
+
+  return fetchChangedRowsSince(repos, lastPulledAt);
+}
+
+function fetchAllRows(
   repos: CollectionsMap
 ): Promise<
   [
     TaskModel[],
     SeriesModel[],
     OccurrenceOverrideModel[],
+    PlantStageHistoryModel[],
+    PlantEventModel[],
     HarvestModel[],
     InventoryModel[],
     HarvestAuditModel[],
@@ -576,6 +662,8 @@ async function fetchAllRepositoryData(
     repos.tasks.query().fetch(),
     repos.series.query().fetch(),
     repos.occurrence_overrides.query().fetch(),
+    repos.plant_stage_history.query().fetch(),
+    repos.plant_events.query().fetch(),
     repos.harvests.query().fetch(),
     repos.inventory.query().fetch(),
     repos['harvest_audits'].query().fetch(),
@@ -587,6 +675,8 @@ async function fetchAllRepositoryData(
       TaskModel[],
       SeriesModel[],
       OccurrenceOverrideModel[],
+      PlantStageHistoryModel[],
+      PlantEventModel[],
       HarvestModel[],
       InventoryModel[],
       HarvestAuditModel[],
@@ -595,6 +685,73 @@ async function fetchAllRepositoryData(
       InventoryMovementModel[],
     ]
   >;
+}
+
+async function fetchChangedRowsSince(
+  repos: CollectionsMap,
+  checkpointMs: number
+): Promise<
+  [
+    TaskModel[],
+    SeriesModel[],
+    OccurrenceOverrideModel[],
+    PlantStageHistoryModel[],
+    PlantEventModel[],
+    HarvestModel[],
+    InventoryModel[],
+    HarvestAuditModel[],
+    InventoryItemModel[],
+    InventoryBatchModel[],
+    InventoryMovementModel[],
+  ]
+> {
+  return Promise.all([
+    fetchChangedRows(repos.tasks, checkpointMs),
+    fetchChangedRows(repos.series, checkpointMs),
+    fetchChangedRows(repos.occurrence_overrides, checkpointMs),
+    fetchChangedRows(repos.plant_stage_history, checkpointMs),
+    fetchChangedRows(repos.plant_events, checkpointMs),
+    fetchChangedRows(repos.harvests, checkpointMs),
+    fetchChangedRows(repos.inventory, checkpointMs),
+    fetchChangedRows(repos['harvest_audits'], checkpointMs),
+    fetchChangedRows(repos['inventory_items'], checkpointMs),
+    fetchChangedRows(repos['inventory_batches'], checkpointMs),
+    fetchChangedRows(repos['inventory_movements'], checkpointMs),
+  ]) as Promise<
+    [
+      TaskModel[],
+      SeriesModel[],
+      OccurrenceOverrideModel[],
+      PlantStageHistoryModel[],
+      PlantEventModel[],
+      HarvestModel[],
+      InventoryModel[],
+      HarvestAuditModel[],
+      InventoryItemModel[],
+      InventoryBatchModel[],
+      InventoryMovementModel[],
+    ]
+  >;
+}
+
+async function fetchChangedRows<T extends Model>(
+  collection: Collection<T>,
+  checkpointMs: number
+): Promise<T[]> {
+  const [deletedRows, nonDeletedChangedRows] = await Promise.all([
+    collection.query(Q.where('deleted_at', Q.gt(checkpointMs))).fetch(),
+    collection
+      .query(
+        Q.where('deleted_at', null),
+        Q.or(
+          Q.where('created_at', Q.gt(checkpointMs)),
+          Q.where('updated_at', Q.gt(checkpointMs))
+        )
+      )
+      .fetch(),
+  ]);
+
+  return [...deletedRows, ...nonDeletedChangedRows];
 }
 
 async function collectLocalChanges(
@@ -607,13 +764,15 @@ async function collectLocalChanges(
     taskRows,
     seriesRows,
     overrideRows,
+    stageHistoryRows,
+    plantEventRows,
     harvestRows,
     inventoryRows,
     auditRows,
     inventoryItemRows,
     inventoryBatchRows,
     inventoryMovementRows,
-  ] = await fetchAllRepositoryData(repos);
+  ] = await fetchAllRepositoryData(repos, lastPulledAt);
 
   for (const r of seriesRows)
     bucketRowIntoChanges({ table: 'series', row: r, lastPulledAt, changes });
@@ -622,6 +781,20 @@ async function collectLocalChanges(
   for (const r of overrideRows)
     bucketRowIntoChanges({
       table: 'occurrence_overrides',
+      row: r,
+      lastPulledAt,
+      changes,
+    });
+  for (const r of stageHistoryRows)
+    bucketRowIntoChanges({
+      table: 'plant_stage_history',
+      row: r,
+      lastPulledAt,
+      changes,
+    });
+  for (const r of plantEventRows)
+    bucketRowIntoChanges({
+      table: 'plant_events',
       row: r,
       lastPulledAt,
       changes,
@@ -665,16 +838,51 @@ async function collectLocalChanges(
  * Returns a count of locally pending changes (created+updated+deleted across all tables)
  * since the last successful checkpoint. Used for UI badges and summaries.
  */
+const PENDING_CHANGES_COUNT_CACHE_MS = 2000;
+let pendingChangesCountCache: { value: number; computedAt: number } | null =
+  null;
+let pendingChangesCountPromise: Promise<number> | null = null;
+let pendingChangesCountGeneration = 0;
+
+export function invalidatePendingChangesCountCache(): void {
+  pendingChangesCountCache = null;
+  pendingChangesCountPromise = null;
+  pendingChangesCountGeneration++;
+}
+
 export async function getPendingChangesCount(): Promise<number> {
-  const lastPulledAt = getItem<number>(CHECKPOINT_KEY);
+  const now = Date.now();
+  if (
+    pendingChangesCountCache &&
+    now - pendingChangesCountCache.computedAt < PENDING_CHANGES_COUNT_CACHE_MS
+  ) {
+    return pendingChangesCountCache.value;
+  }
 
-  const pendingCounts = await Promise.all(
-    SYNC_TABLES.map((table) =>
-      countPendingChangesForTable(table, lastPulledAt ?? null)
-    )
-  );
+  if (pendingChangesCountPromise) return pendingChangesCountPromise;
 
-  return pendingCounts.reduce((sum, count) => sum + count, 0);
+  const generation = pendingChangesCountGeneration;
+  pendingChangesCountPromise = (async () => {
+    const lastPulledAt = getItem<number>(CHECKPOINT_KEY);
+
+    const pendingCounts = await Promise.all(
+      SYNC_TABLES.map((table) =>
+        countPendingChangesForTable(table, lastPulledAt ?? null)
+      )
+    );
+
+    const value = pendingCounts.reduce((sum, count) => sum + count, 0);
+    if (generation === pendingChangesCountGeneration) {
+      pendingChangesCountCache = { value, computedAt: Date.now() };
+    }
+    return value;
+  })();
+
+  try {
+    return await pendingChangesCountPromise;
+  } finally {
+    pendingChangesCountPromise = null;
+  }
 }
 
 async function countPendingChangesForTable(
@@ -717,6 +925,10 @@ function getAllRepos(): CollectionsMap {
     occurrence_overrides: database.collections.get<OccurrenceOverrideModel>(
       'occurrence_overrides'
     ),
+    plant_stage_history: database.collections.get<PlantStageHistoryModel>(
+      'plant_stage_history'
+    ),
+    plant_events: database.collections.get<PlantEventModel>('plant_events'),
     harvests: database.collections.get<HarvestModel>('harvests'),
     inventory: database.collections.get<InventoryModel>('inventory'),
     harvest_audits:
@@ -758,8 +970,24 @@ async function applyUpsertsCoreTables(
     'occurrence_overrides',
     changes.occurrence_overrides?.updated ?? []
   );
+  const { applied: pshC } = await upsertBatch(
+    'plant_stage_history',
+    changes.plant_stage_history?.created ?? []
+  );
+  const { applied: pshU } = await upsertBatch(
+    'plant_stage_history',
+    changes.plant_stage_history?.updated ?? []
+  );
+  const { applied: peC } = await upsertBatch(
+    'plant_events',
+    changes.plant_events?.created ?? []
+  );
+  const { applied: peU } = await upsertBatch(
+    'plant_events',
+    changes.plant_events?.updated ?? []
+  );
 
-  const applied = sC + sU + tC + tU + oC + oU;
+  const applied = sC + sU + tC + tU + oC + oU + pshC + pshU + peC + peU;
   const changedIds = [
     ...sCIds,
     ...sUIds,
@@ -898,6 +1126,15 @@ async function applyDeletes(
     changes.harvest_audits?.deleted ?? []
   );
 
+  const { applied: dPsh } = await applyDeletesBatch(
+    'plant_stage_history',
+    changes.plant_stage_history?.deleted ?? []
+  );
+  const { applied: dPe } = await applyDeletesBatch(
+    'plant_events',
+    changes.plant_events?.deleted ?? []
+  );
+
   // Inventory consumables tables
   const { applied: dII } = await applyDeletesBatch(
     'inventory_items',
@@ -912,7 +1149,7 @@ async function applyDeletes(
     changes.inventory_movements?.deleted ?? []
   );
 
-  applied = dT + dS + dO + dH + dI + dA + dII + dIB + dIM;
+  applied = dT + dS + dO + dH + dI + dA + dPsh + dPe + dII + dIB + dIM;
   changedIds.push(...dTIds, ...dSIds, ...dOIds, ...dHIds, ...dIIds, ...dAIds);
 
   return { applied, changedTaskIds: changedIds };
@@ -1349,6 +1586,11 @@ async function pullChangesOnce(req: SyncRequest): Promise<SyncResponse> {
     clearTimeout(timeoutId);
 
     if (!res.ok) {
+      if (res.status === 404) {
+        const cooldownMs = 5 * 60 * 1000; // 5 minutes instead of 24 hours
+        const untilMs = nowMs() + cooldownMs;
+        setSyncDisabled(untilMs, 'pull_endpoint_404');
+      }
       try {
         await NoopAnalytics.track('sync_error', {
           stage: 'pull',
@@ -1514,7 +1756,8 @@ export async function synchronize(): Promise<SyncResult> {
   );
 
   // 3) Update checkpoint atomically after successful apply
-  if (serverTimestamp !== null) await setItem(CHECKPOINT_KEY, serverTimestamp);
+  await setItem(CHECKPOINT_KEY, serverTimestamp);
+  invalidatePendingChangesCountCache();
   try {
     if (typeof lastPulledAt === 'number') {
       await NoopAnalytics.track('sync_checkpoint_age_ms', {
@@ -1540,9 +1783,18 @@ export async function runSyncWithRetry(
 
   const trigger: SyncTrigger = options.trigger ?? 'auto';
   let lastError: unknown = null;
+
   getSyncState().setSyncInFlight(true);
   try {
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const disabledUntilMs = getSyncDisabledUntilMs();
+      if (disabledUntilMs !== null && disabledUntilMs > nowMs()) {
+        const reason = getSyncDisabledReason();
+        const message = reason
+          ? `sync disabled (cooldown active: ${reason})`
+          : 'sync disabled (cooldown active)';
+        throw new Error(message);
+      }
       const attemptStart = nowMs();
       try {
         const result = await synchronize();

@@ -15,6 +15,11 @@ import { useAnimatedScrollList } from '@/lib/animations/animated-scroll-list-pro
 import { createStaggeredFadeIn } from '@/lib/animations/stagger';
 import { haptics } from '@/lib/haptics';
 import { usePlantPhotoSync } from '@/lib/plants/plant-photo-sync';
+import {
+  getProductStageLabelKey,
+  type ProductPlantStage,
+  toProductStage,
+} from '@/lib/plants/product-stage';
 import { translate } from '@/lib/i18n';
 import type { TxKeyPath } from '@/lib/i18n/utils';
 import { useReduceMotionEnabled } from '@/lib/strains/accessibility';
@@ -37,8 +42,16 @@ type StageColors = {
 };
 
 // Stage colors using design tokens
-function getStageColors(stage?: string): StageColors {
+function getStageColors(stage?: ProductPlantStage): StageColors {
   switch (stage) {
+    case 'germination':
+      return {
+        bg: colors.neutral[200],
+        text: colors.neutral[900],
+        badgeBg: colors.neutral[50],
+        badgeText: colors.neutral[900],
+        icon: colors.neutral[300],
+      };
     case 'seedling':
       return {
         bg: colors.success[200],
@@ -63,7 +76,7 @@ function getStageColors(stage?: string): StageColors {
         badgeText: colors.indigo[800],
         icon: colors.indigo[300],
       };
-    case 'harvesting':
+    case 'drying':
       return {
         bg: colors.terracotta[200],
         text: colors.terracotta[900],
@@ -79,7 +92,7 @@ function getStageColors(stage?: string): StageColors {
         badgeText: colors.warning[800],
         icon: colors.warning[300],
       };
-    case 'ready':
+    case 'completed':
       return {
         bg: colors.primary[200],
         text: colors.primary[900],
@@ -98,27 +111,29 @@ function getStageColors(stage?: string): StageColors {
   }
 }
 
-function translateStage(stage?: string): string | null {
+function translateStage(stage?: ProductPlantStage): string | null {
   if (!stage) return null;
-  const key = `plants.form.stage.${stage}`;
+  const key = getProductStageLabelKey(stage);
   const label = translate(key as TxKeyPath);
   return typeof label === 'string' && label.length > 0 ? label : stage;
 }
 
 // Stage progress percentages for gamification
-function getStageProgress(stage?: string): number {
+function getStageProgress(stage?: ProductPlantStage): number {
   switch (stage) {
+    case 'germination':
+      return 5;
     case 'seedling':
-      return 15;
+      return 20;
     case 'vegetative':
-      return 35;
+      return 45;
     case 'flowering':
-      return 65;
-    case 'harvesting':
+      return 70;
+    case 'drying':
       return 85;
     case 'curing':
       return 95;
-    case 'ready':
+    case 'completed':
       return 100;
     default:
       return 0;
@@ -136,7 +151,7 @@ const cardStyles = StyleSheet.create({
 
 function PlantCardImage({
   plant,
-  colors,
+  colors: stageColors,
 }: {
   plant: Plant;
   colors: StageColors;
@@ -147,7 +162,7 @@ function PlantCardImage({
   return (
     <View
       className="size-16 overflow-hidden rounded-xl border border-neutral-100 bg-white dark:border-neutral-700"
-      style={{ backgroundColor: colors.badgeBg }}
+      style={{ backgroundColor: stageColors.badgeBg }}
     >
       {resolvedLocalUri ? (
         <OptimizedImage
@@ -174,7 +189,7 @@ function PlantCardImage({
 function PlantCardHeader({
   plant,
   stageLabel,
-  colors,
+  colors: stageColors,
 }: {
   plant: Plant;
   stageLabel: string | null;
@@ -206,7 +221,7 @@ function PlantCardHeader({
           </Text>
         ) : null}
       </View>
-      <PlantCardImage plant={plant} colors={colors} />
+      <PlantCardImage plant={plant} colors={stageColors} />
     </View>
   );
 }
@@ -289,17 +304,23 @@ function PlantCardContent({
     haptics.selection();
     onPress(plant.id);
   }, [onPress, plant.id]);
-  const stageLabel = React.useMemo(
-    () => translateStage(plant.stage),
+
+  const productStage = React.useMemo(
+    () => toProductStage(plant.stage),
     [plant.stage]
   );
-  const colors = React.useMemo(
-    () => getStageColors(plant.stage),
-    [plant.stage]
+
+  const stageLabel = React.useMemo(
+    () => translateStage(productStage),
+    [productStage]
+  );
+  const stageColors = React.useMemo(
+    () => getStageColors(productStage),
+    [productStage]
   );
   const progress = React.useMemo(
-    () => getStageProgress(plant.stage),
-    [plant.stage]
+    () => getStageProgress(productStage),
+    [productStage]
   );
   const accessibilityLabel = React.useMemo(
     () =>
@@ -322,7 +343,7 @@ function PlantCardContent({
         <PlantCardHeader
           plant={plant}
           stageLabel={stageLabel}
-          colors={colors}
+          colors={stageColors}
         />
         <PlantCardProgress plantId={plant.id} progress={progress} />
         <PlantCardFooter needsAttention={needsAttention} />
@@ -343,7 +364,8 @@ export function PlantCard({
   const localItemY = useSharedValue(0);
   const effItemY = itemY ?? localItemY;
   const measuredHeight = useSharedValue(0);
-  const reduceMotion = useReduceMotionEnabled();
+  const reduceMotionEnabled = useReduceMotionEnabled();
+  const reduceMotionShared = useSharedValue(reduceMotionEnabled ? 1 : 0);
 
   const enteringAnimation = React.useMemo(
     () =>
@@ -357,18 +379,21 @@ export function PlantCard({
     [enableEnteringAnimation, index]
   );
 
-  const containerStyle = useAnimatedStyle(() => {
-    'worklet';
+  React.useEffect(() => {
+    reduceMotionShared.set(reduceMotionEnabled ? 1 : 0);
+  }, [reduceMotionEnabled, reduceMotionShared]);
 
-    if (reduceMotion) {
+  const containerStyle = useAnimatedStyle(() => {
+    if (reduceMotionShared.get() === 1) {
       return { transform: [{ translateY: 0 }, { scale: 1 }] };
     }
 
-    const h = Math.max(measuredHeight.value, 1);
-    const start = effItemY.value - 1;
-    const mid = effItemY.value;
-    const end = effItemY.value + h;
-    const offset = listOffsetY.value;
+    const h = Math.max(measuredHeight.get(), 1);
+    const itemY = effItemY.get();
+    const start = itemY - 1;
+    const mid = itemY;
+    const end = itemY + h;
+    const offset = listOffsetY.get();
     const scaleProgress = Math.min(
       Math.max((offset - mid) / (end - mid), 0),
       1
@@ -382,11 +407,11 @@ export function PlantCard({
     (e: LayoutChangeEvent) => {
       const h = e.nativeEvent.layout.height;
       const y = e.nativeEvent.layout.y;
-      if (h && Math.abs(h - measuredHeight.value) > 0.5) {
-        measuredHeight.value = h;
+      if (h && Math.abs(h - measuredHeight.get()) > 0.5) {
+        measuredHeight.set(h);
       }
-      if (y !== localItemY.value) {
-        localItemY.value = y;
+      if (y !== localItemY.get()) {
+        localItemY.set(y);
       }
     },
     [measuredHeight, localItemY]

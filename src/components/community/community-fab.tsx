@@ -29,26 +29,26 @@ const fabStyles = StyleSheet.create({
   shadow: {
     ...Platform.select({
       ios: {
-        shadowColor: colors.terracotta[700],
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.35,
-        shadowRadius: 8,
+        shadowColor: colors.terracotta[600],
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.45,
+        shadowRadius: 16,
       },
       android: {
-        elevation: 6,
+        elevation: 8,
       },
     }),
   },
   helpShadow: {
     ...Platform.select({
       ios: {
-        shadowColor: colors.sky[600],
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.35,
-        shadowRadius: 8,
+        shadowColor: colors.sky[500],
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.45,
+        shadowRadius: 16,
       },
       android: {
-        elevation: 6,
+        elevation: 8,
       },
     }),
   },
@@ -72,31 +72,35 @@ export function CommunityFab({
   const isHelpMode = mode === 'help';
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
+    transform: [{ scale: scale.get() }],
   }));
 
   const handlePressIn = React.useCallback(() => {
-    scale.value = withSpring(0.85, {
-      damping: 12,
-      stiffness: 450,
-      reduceMotion: ReduceMotion.System,
-    });
+    scale.set(
+      withSpring(0.85, {
+        damping: 12,
+        stiffness: 450,
+        reduceMotion: ReduceMotion.System,
+      })
+    );
   }, [scale]);
 
   const handlePressOut = React.useCallback(() => {
-    scale.value = withSequence(
-      withSpring(1.08, {
-        damping: 8,
-        stiffness: 350,
-        reduceMotion: ReduceMotion.System,
-      }),
-      withDelay(
-        80,
-        withSpring(1, {
-          damping: 10,
-          stiffness: 300,
+    scale.set(
+      withSequence(
+        withSpring(1.08, {
+          damping: 8,
+          stiffness: 350,
           reduceMotion: ReduceMotion.System,
-        })
+        }),
+        withDelay(
+          80,
+          withSpring(1, {
+            damping: 10,
+            stiffness: 300,
+            reduceMotion: ReduceMotion.System,
+          })
+        )
       )
     );
   }, [scale]);
@@ -122,7 +126,7 @@ export function CommunityFab({
       accessibilityLabel={accessibilityLabel}
       accessibilityHint={accessibilityHint}
       testID={testID}
-      className={`absolute right-6 size-14 items-center justify-center rounded-full ${
+      className={`absolute right-5 size-16 items-center justify-center rounded-full ${
         isHelpMode ? 'bg-sky-500' : 'bg-terracotta-500'
       }`}
       style={[
@@ -134,9 +138,9 @@ export function CommunityFab({
     >
       <View className="items-center justify-center">
         {isHelpMode ? (
-          <HelpCircle size={24} color={colors.white} />
+          <HelpCircle size={26} color={colors.white} strokeWidth={2.5} />
         ) : (
-          <Plus size={24} color={colors.white} />
+          <Plus size={28} color={colors.white} strokeWidth={2.5} />
         )}
       </View>
     </AnimatedPressable>

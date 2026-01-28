@@ -25,6 +25,24 @@ type SyncResult = { pushed: number; pulled: number };
 let plantsSyncPromise: Promise<SyncResult> | null = null;
 let plantsSyncQueued = false;
 
+let plantsPushPromise: Promise<number> | null = null;
+let plantsPushQueued = false;
+
+let pushDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+export function requestPlantsPush(delayMs: number = 300): void {
+  // Debounce frequent triggers (e.g., create plant, then immediately update remote_image_path)
+  if (pushDebounceTimer) {
+    clearTimeout(pushDebounceTimer);
+  }
+  pushDebounceTimer = setTimeout(() => {
+    pushDebounceTimer = null;
+    void syncPlantsToCloud().catch((error) => {
+      console.warn('[PlantsSync] debounced push failed', error);
+    });
+  }, delayMs);
+}
+
 function toIso(value: Date | string | null | undefined): string | null {
   if (!value) return null;
   if (typeof value === 'string') return value;
@@ -92,6 +110,7 @@ function buildPlantPayload(plant: PlantData, userId: string): RemotePlant {
     stage: plant.stage ?? null,
     strain: plant.strain ?? null,
     planted_at: plant.plantedAt ?? null,
+    stage_entered_at: plant.stageEnteredAt ?? null,
     expected_harvest_at: plant.expectedHarvestAt ?? null,
     last_watered_at: plant.lastWateredAt ?? null,
     last_fed_at: plant.lastFedAt ?? null,
@@ -213,7 +232,7 @@ async function purgeExpiredDeletedPlantsLocally(
   return purgeDeletedPlantsByIds(ids);
 }
 
-export async function syncPlantsToCloud(): Promise<number> {
+async function syncPlantsToCloudOnce(): Promise<number> {
   const userId = await getOptionalAuthenticatedUserId();
   if (!userId) {
     if (__DEV__) console.info('[PlantsSync] skipped push: no user session');
@@ -276,6 +295,42 @@ export async function syncPlantsToCloud(): Promise<number> {
   }
 
   return syncable.length;
+}
+
+export async function syncPlantsToCloud(): Promise<number> {
+  // Coalesce concurrent callers and re-run once if requested while in-flight.
+  if (plantsPushPromise) {
+    plantsPushQueued = true;
+    return await plantsPushPromise;
+  }
+
+  plantsPushQueued = false;
+  const run = (async () => {
+    let result = 0;
+    do {
+      plantsPushQueued = false;
+      result = await syncPlantsToCloudOnce();
+    } while (plantsPushQueued);
+    return result;
+  })();
+
+  plantsPushPromise = run;
+  try {
+    return await run;
+  } finally {
+    if (plantsPushPromise === run) {
+      if (plantsPushQueued) {
+        // Preserve queued requests that arrived during teardown.
+        plantsPushPromise = null;
+        plantsPushPromise = syncPlantsToCloud().catch((err) => {
+          console.warn('[PlantsSync] queued continuation failed', err);
+          return 0;
+        });
+      } else {
+        plantsPushPromise = null;
+      }
+    }
+  }
 }
 
 export async function pullPlantsFromCloud(): Promise<number> {

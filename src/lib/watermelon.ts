@@ -38,6 +38,8 @@ import { OutboxModel } from './watermelon-models/outbox';
 import { OutboxNotificationActionModel } from './watermelon-models/outbox-notification-action';
 import { PhEcReadingModel } from './watermelon-models/ph-ec-reading';
 import { PlantModel } from './watermelon-models/plant';
+import { PlantEventModel } from './watermelon-models/plant-event';
+import { PlantStageHistoryModel } from './watermelon-models/plant-stage-history';
 import { PlaybookModel } from './watermelon-models/playbook';
 import { PlaybookApplicationModel } from './watermelon-models/playbook-application';
 import { PostModel } from './watermelon-models/post';
@@ -156,5 +158,7 @@ export const database = new Database({
     // User profile model
     ProfileModel,
     PlantModel,
+    PlantStageHistoryModel,
+    PlantEventModel,
   ],
 });

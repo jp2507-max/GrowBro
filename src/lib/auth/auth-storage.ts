@@ -1,129 +1,193 @@
-import * as Crypto from 'expo-crypto';
+/**
+ * Secure Storage Adapter for Supabase Auth
+ *
+ * This module provides a Supabase-compatible storage interface that wraps
+ * the centralized encrypted secure-storage system. All auth data is stored in the
+ * encrypted `authStorage` domain from `@/lib/security/secure-storage`.
+ *
+ * Storage Architecture:
+ * - Uses the centralized `authStorage` from secure-storage.ts
+ * - Provides async getItem/setItem/removeItem for Supabase compatibility
+ * - Provides sync accessors for direct token operations
+ */
 import * as SecureStore from 'expo-secure-store';
 import { MMKV } from 'react-native-mmkv';
 
-/**
- * MMKV storage adapter for Supabase Auth
- * Provides encrypted storage for authentication tokens and session data
- *
- * Note: MMKV provides:
- * - Android: encrypted-at-rest via AES-256
- * - iOS: OS-level encryption via file system
- */
+import { ENCRYPTION_SENTINEL_KEY } from '@/lib/security/constants';
+import {
+  authStorage,
+  initializeSecureStorage,
+  isSecureStorageInitialized,
+} from '@/lib/security/secure-storage';
 
-// Generate or retrieve encryption key
-// Stored securely in Keychain (iOS) / Keystore (Android) for persistence across app sessions
-let encryptionKey: string | undefined;
+const LEGACY_MMKV_AUTH_ID = 'auth-storage';
+const LEGACY_KEY_VERSION_STORAGE_KEY = 'auth_key_version';
+const LEGACY_ENCRYPTION_KEY_PREFIX = 'auth_encryption_key_v';
+const LEGACY_MIGRATION_FLAG_KEY = 'auth:migration:legacy-mmkv';
+const LEGACY_MIGRATION_STATUS = {
+  complete: 'complete',
+  failed: 'failed',
+  skipped: 'skipped',
+} as const;
 
-async function getOrCreateEncryptionKey(): Promise<string> {
-  if (encryptionKey) {
-    return encryptionKey;
-  }
-
-  const ENCRYPTION_KEY_STORAGE_KEY = 'auth-encryption-key';
-
-  try {
-    // Try to load existing key from secure storage
-    const storedKey = await SecureStore.getItemAsync(
-      ENCRYPTION_KEY_STORAGE_KEY
-    );
-    if (storedKey) {
-      encryptionKey = storedKey;
-      return encryptionKey;
-    }
-  } catch (error) {
-    console.warn('Failed to load encryption key from secure storage:', error);
-    // Continue to generate a new key if loading fails
-  }
-
-  // Generate new key if not found or loading failed
-  const randomBytes = await Crypto.getRandomBytesAsync(32);
-  encryptionKey = Array.from(randomBytes)
-    .map((byte) => byte.toString(16).padStart(2, '0'))
-    .join('');
-
-  // Store the new key securely
-  try {
-    await SecureStore.setItemAsync(ENCRYPTION_KEY_STORAGE_KEY, encryptionKey, {
-      keychainAccessible: SecureStore.WHEN_UNLOCKED,
-    });
-  } catch (error) {
-    console.error('Failed to store encryption key securely:', error);
-    // Continue anyway - the key will work for this session
-  }
-
-  return encryptionKey;
-}
-
-// Create encrypted MMKV instance for auth storage
-let authStorage: MMKV | null = null;
-
-async function getAuthStorage(): Promise<MMKV> {
-  if (authStorage) {
-    return authStorage;
-  }
-
-  const key = await getOrCreateEncryptionKey();
-  authStorage = new MMKV({
-    id: 'auth-storage',
-    encryptionKey: key,
-  });
-
-  return authStorage;
-}
-
-export async function clearAuthStorage(): Promise<void> {
-  const storage = await getAuthStorage();
-  try {
-    const keys = storage.getAllKeys();
-    for (const key of keys) {
-      storage.delete(key);
-    }
-  } catch (error) {
-    console.error('[auth] Failed to clear auth storage:', error);
-  }
-}
+let legacyMigrationPromise: Promise<void> | null = null;
 
 /**
- * Storage adapter for Supabase Auth that uses MMKV
+ * Storage adapter for Supabase Auth that wraps the centralized secure storage
  * Implements the Storage interface required by @supabase/supabase-js
  */
+async function ensureAuthStorageReady(): Promise<void> {
+  await initAuthStorage();
+}
+
+function getAuthStorageKeys(): string[] {
+  return authStorage
+    .getAllKeys()
+    .filter(
+      (key) =>
+        key !== ENCRYPTION_SENTINEL_KEY && key !== LEGACY_MIGRATION_FLAG_KEY
+    );
+}
+
+async function getLegacyEncryptionKey(): Promise<string | null> {
+  try {
+    const version = await SecureStore.getItemAsync(
+      LEGACY_KEY_VERSION_STORAGE_KEY
+    );
+    if (!version) return null;
+    return await SecureStore.getItemAsync(
+      `${LEGACY_ENCRYPTION_KEY_PREFIX}${version}`
+    );
+  } catch (error) {
+    console.warn('[auth-storage] Legacy key lookup failed:', error);
+    return null;
+  }
+}
+
+async function migrateLegacyAuthStorage(): Promise<void> {
+  try {
+    const migrationStatus = authStorage.get(LEGACY_MIGRATION_FLAG_KEY);
+    if (
+      migrationStatus === LEGACY_MIGRATION_STATUS.complete ||
+      migrationStatus === LEGACY_MIGRATION_STATUS.failed ||
+      migrationStatus === LEGACY_MIGRATION_STATUS.skipped
+    ) {
+      return;
+    }
+
+    const legacyKey = await getLegacyEncryptionKey();
+    if (!legacyKey) {
+      authStorage.set(
+        LEGACY_MIGRATION_FLAG_KEY,
+        LEGACY_MIGRATION_STATUS.skipped
+      );
+      return;
+    }
+
+    const legacyStorage = new MMKV({
+      id: LEGACY_MMKV_AUTH_ID,
+      encryptionKey: legacyKey,
+    });
+
+    const legacyKeys = legacyStorage
+      .getAllKeys()
+      .filter(
+        (key) =>
+          key !== ENCRYPTION_SENTINEL_KEY && key !== LEGACY_MIGRATION_FLAG_KEY
+      );
+
+    if (legacyKeys.length === 0) {
+      authStorage.set(
+        LEGACY_MIGRATION_FLAG_KEY,
+        LEGACY_MIGRATION_STATUS.skipped
+      );
+      return;
+    }
+
+    const existingKeys = new Set(getAuthStorageKeys());
+    let migratedCount = 0;
+    let hasAllKeysAlready = true;
+
+    for (const key of legacyKeys) {
+      if (existingKeys.has(key)) {
+        continue;
+      }
+
+      hasAllKeysAlready = false;
+
+      const stringValue = legacyStorage.getString(key);
+      if (stringValue !== undefined) {
+        authStorage.set(key, stringValue);
+        migratedCount += 1;
+        continue;
+      }
+
+      const numberValue = legacyStorage.getNumber(key);
+      if (numberValue !== undefined) {
+        authStorage.set(key, numberValue);
+        migratedCount += 1;
+        continue;
+      }
+
+      const booleanValue = legacyStorage.getBoolean(key);
+      if (booleanValue !== undefined) {
+        authStorage.set(key, booleanValue);
+        migratedCount += 1;
+      }
+    }
+
+    if (migratedCount > 0 || hasAllKeysAlready) {
+      legacyStorage.clearAll();
+    }
+
+    authStorage.set(
+      LEGACY_MIGRATION_FLAG_KEY,
+      LEGACY_MIGRATION_STATUS.complete
+    );
+  } catch (error) {
+    console.warn('[auth-storage] Legacy storage migration failed:', error);
+    authStorage.set(LEGACY_MIGRATION_FLAG_KEY, LEGACY_MIGRATION_STATUS.failed);
+  }
+}
+
 export const mmkvAuthStorage = {
   getItem: async (key: string): Promise<string | null> => {
-    const storage = await getAuthStorage();
-    return storage.getString(key) ?? null;
+    await ensureAuthStorageReady();
+    const value = authStorage.get(key);
+    return typeof value === 'string' ? value : null;
   },
 
   setItem: async (key: string, value: string): Promise<void> => {
-    const storage = await getAuthStorage();
-    storage.set(key, value);
+    await ensureAuthStorageReady();
+    authStorage.set(key, value);
   },
 
   removeItem: async (key: string): Promise<void> => {
-    const storage = await getAuthStorage();
-    storage.delete(key);
+    await ensureAuthStorageReady();
+    authStorage.delete(key);
   },
 };
 
 /**
- * Synchronous version of MMKV storage for cases where async is not needed
+ * Synchronous version of storage for cases where async is not needed
  * Note: Initialization must be done before using these methods
  */
 export const mmkvAuthStorageSync = {
   getItem: (key: string): string | null => {
-    if (!authStorage) {
+    if (!isSecureStorageInitialized()) {
       console.warn(
-        'Auth storage not initialized. Call getAuthStorage() first.'
+        'Auth storage not initialized. Call initAuthStorage() first.'
       );
       return null;
     }
-    return authStorage.getString(key) ?? null;
+    const value = authStorage.get(key);
+    return typeof value === 'string' ? value : null;
   },
 
   setItem: (key: string, value: string): void => {
-    if (!authStorage) {
+    if (!isSecureStorageInitialized()) {
       console.warn(
-        'Auth storage not initialized. Call getAuthStorage() first.'
+        'Auth storage not initialized. Call initAuthStorage() first.'
       );
       return;
     }
@@ -131,9 +195,9 @@ export const mmkvAuthStorageSync = {
   },
 
   removeItem: (key: string): void => {
-    if (!authStorage) {
+    if (!isSecureStorageInitialized()) {
       console.warn(
-        'Auth storage not initialized. Call getAuthStorage() first.'
+        'Auth storage not initialized. Call initAuthStorage() first.'
       );
       return;
     }
@@ -142,9 +206,28 @@ export const mmkvAuthStorageSync = {
 };
 
 /**
+ * Clear all auth storage data
+ */
+export async function clearAuthStorage(): Promise<void> {
+  await ensureAuthStorageReady();
+  const keys = getAuthStorageKeys();
+  for (const key of keys) {
+    authStorage.delete(key);
+  }
+}
+
+/**
  * Initialize auth storage before using sync methods
  * This should be called early in the app lifecycle (e.g., in _layout.tsx)
  */
 export async function initAuthStorage(): Promise<void> {
-  await getAuthStorage();
+  if (!isSecureStorageInitialized()) {
+    await initializeSecureStorage();
+  }
+
+  if (!legacyMigrationPromise) {
+    legacyMigrationPromise = migrateLegacyAuthStorage();
+  }
+
+  await legacyMigrationPromise;
 }

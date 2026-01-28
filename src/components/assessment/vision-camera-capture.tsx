@@ -4,10 +4,11 @@ import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, StyleSheet } from 'react-native';
 import { Camera, useCameraDevice } from 'react-native-vision-camera';
 
-import { Button, Text, View } from '@/components/ui';
+import { Text, View } from '@/components/ui';
 import colors from '@/components/ui/colors';
 import { stripExifData } from '@/lib/assessment/image-processing';
 import { useCameraLifecycle } from '@/lib/assessment/use-camera-lifecycle';
+import { haptics } from '@/lib/haptics';
 import { qualityAssessmentEngine } from '@/lib/quality/engine';
 import { deleteFile } from '@/lib/utils/filesystem';
 import type {
@@ -16,6 +17,7 @@ import type {
   QualityResult,
 } from '@/types/assessment';
 
+import { CaptureButton } from './capture-button';
 import { CaptureGuidance } from './capture-guidance';
 
 type VisionCameraCaptureProps = {
@@ -43,6 +45,7 @@ export function VisionCameraCapture({
   const handleCapture = useCallback(async (): Promise<void> => {
     if (!camera.current || isCapturingRef.current) return;
 
+    haptics.medium();
     isCapturingRef.current = true;
     setIsCapturing(true);
     try {
@@ -103,31 +106,7 @@ export function VisionCameraCapture({
         maxPhotos={maxPhotos}
       />
 
-      {/* Capture Button */}
-      <View className="absolute inset-x-0 bottom-0 items-center pb-12">
-        <Button
-          onPress={handleCapture}
-          disabled={isCapturing}
-          className="size-20 rounded-full bg-neutral-100"
-          testID="capture-button"
-          accessibilityRole="button"
-          accessibilityLabel={t('assessment.camera.actions.capture')}
-          accessibilityHint={t('assessment.camera.actions.capture_hint')}
-        >
-          {isCapturing ? (
-            <View
-              accessible={true}
-              accessibilityLabel={t('assessment.camera.status.capturing')}
-              accessibilityHint={t('assessment.camera.status.capturing_hint')}
-              accessibilityRole="progressbar"
-            >
-              <ActivityIndicator size="small" color={colors.black} />
-            </View>
-          ) : (
-            <View className="size-16 rounded-full border-4 border-charcoal-950 bg-neutral-100" />
-          )}
-        </Button>
-      </View>
+      <CaptureButton onPress={handleCapture} isCapturing={isCapturing} />
     </View>
   );
 }

@@ -23,7 +23,14 @@ type FavoritesAutoSyncState = {
   lastSyncAttempt: number;
 };
 
-export function useFavoritesAutoSync(): FavoritesAutoSyncState {
+type FavoritesAutoSyncOptions = {
+  enabled?: boolean;
+};
+
+export function useFavoritesAutoSync(
+  options: FavoritesAutoSyncOptions = {}
+): FavoritesAutoSyncState {
+  const { enabled = true } = options;
   const { isInternetReachable } = useNetworkStatus();
   const fullSync = useFavorites.use.fullSync();
   const isSyncing = useFavorites.use.isSyncing();
@@ -35,6 +42,11 @@ export function useFavoritesAutoSync(): FavoritesAutoSyncState {
   const isMountedRef = useRef(true);
   const lastSyncAttemptRef = useRef(0);
   const [lastSyncAttempt, setLastSyncAttempt] = useState(0);
+  const enabledRef = useRef(enabled);
+
+  useEffect(() => {
+    enabledRef.current = enabled;
+  }, [enabled]);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -44,6 +56,11 @@ export function useFavoritesAutoSync(): FavoritesAutoSyncState {
   }, []);
 
   useEffect(() => {
+    if (!enabled) {
+      pendingOnlineSyncRef.current = false;
+      wasOfflineRef.current = !isInternetReachable;
+      return;
+    }
     const now = Date.now();
     const timeSinceLastSync = now - lastSyncAttemptRef.current;
     const justCameOnline = wasOfflineRef.current && isInternetReachable;
@@ -68,6 +85,10 @@ export function useFavoritesAutoSync(): FavoritesAutoSyncState {
 
       InteractionManager.runAfterInteractions(() => {
         if (!isMountedRef.current) return;
+        if (!enabledRef.current) {
+          isSyncScheduledRef.current = false;
+          return;
+        }
         void fullSync()
           .catch((error: Error) => {
             console.error('[useFavoritesAutoSync] Auto-sync failed:', error);
@@ -83,7 +104,7 @@ export function useFavoritesAutoSync(): FavoritesAutoSyncState {
     }
 
     wasOfflineRef.current = !isInternetReachable;
-  }, [isInternetReachable, isSyncing, fullSync, pipelineInFlight]);
+  }, [enabled, isInternetReachable, isSyncing, fullSync, pipelineInFlight]);
 
   return {
     isSyncing,

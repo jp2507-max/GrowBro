@@ -160,7 +160,7 @@ export const Button = React.forwardRef<View, Props>(
 
     const animatedStyle = useAnimatedStyle(
       () => ({
-        transform: [{ scale: scale.value }],
+        transform: [{ scale: scale.get() }],
       }),
       []
     );
@@ -168,10 +168,12 @@ export const Button = React.forwardRef<View, Props>(
     const handlePressIn = React.useCallback(
       (e: Parameters<NonNullable<PressableProps['onPressIn']>>[0]) => {
         if (!noAnimation && !disabled && !loading) {
-          scale.value = withTiming(PRESS_SCALE, {
-            duration: PRESS_DURATION,
-            reduceMotion: ReduceMotion.System,
-          });
+          scale.set(
+            withTiming(PRESS_SCALE, {
+              duration: PRESS_DURATION,
+              reduceMotion: ReduceMotion.System,
+            })
+          );
         }
         onPressIn?.(e);
       },
@@ -181,10 +183,12 @@ export const Button = React.forwardRef<View, Props>(
     const handlePressOut = React.useCallback(
       (e: Parameters<NonNullable<PressableProps['onPressOut']>>[0]) => {
         if (!noAnimation && !disabled && !loading) {
-          scale.value = withTiming(1, {
-            duration: PRESS_DURATION,
-            reduceMotion: ReduceMotion.System,
-          });
+          scale.set(
+            withTiming(1, {
+              duration: PRESS_DURATION,
+              reduceMotion: ReduceMotion.System,
+            })
+          );
         }
         onPressOut?.(e);
       },

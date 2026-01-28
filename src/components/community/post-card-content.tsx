@@ -27,19 +27,18 @@ export function PostCardContent({
     : body;
 
   return (
-    <View className="px-4 pb-5">
+    <View className="flex-1">
       <Text
         className="text-sm leading-relaxed text-neutral-800 dark:text-neutral-200"
         testID={`${testID}-body`}
       >
         {displayText}
-        {shouldTruncate && (
-          <Text className="text-sm font-medium text-primary-600 dark:text-primary-300">
-            {' '}
-            {translate('common.read_more')}
-          </Text>
-        )}
       </Text>
+      {shouldTruncate && (
+        <Text className="mt-2 self-end text-sm font-medium text-primary-600 dark:text-primary-300">
+          {translate('common.read_more')}
+        </Text>
+      )}
     </View>
   );
 }

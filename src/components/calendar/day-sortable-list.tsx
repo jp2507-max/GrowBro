@@ -1,7 +1,7 @@
 import React from 'react';
 import type { ViewStyle } from 'react-native';
 import { StyleSheet } from 'react-native';
-import Animated, { runOnJS } from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
 import type { SortableGridRenderItem } from 'react-native-sortables';
 import Sortable from 'react-native-sortables';
 
@@ -80,11 +80,10 @@ export function DaySortableList({
       indexToKey: string[];
       keyToIndex: Record<string, number>;
       data: Task[];
-    }) => {
-      'worklet';
+    }): void => {
       // Call the provided onDragEnd handler if present
       if (onDragEnd) {
-        runOnJS(onDragEnd)({
+        onDragEnd({
           key: params.key,
           fromIndex: params.fromIndex,
           toIndex: params.toIndex,

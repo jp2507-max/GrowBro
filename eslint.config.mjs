@@ -255,6 +255,7 @@ export default defineConfig([
       'max-lines-per-function': 'off',
       'max-params': 'off',
       '@typescript-eslint/no-require-imports': 'off', // Jest dynamic mocking requires require()
+      '@typescript-eslint/no-explicit-any': 'off',
     },
   },
   // Scripts and generated packages run in Node; allow __dirname/Buffer and relax length

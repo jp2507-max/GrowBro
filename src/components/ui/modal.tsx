@@ -42,10 +42,13 @@ import {
 } from '@gorhom/bottom-sheet';
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
+import type { StyleProp, ViewStyle } from 'react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { Path, Svg } from 'react-native-svg';
 
+import type { GlassSurfaceProps } from '@/components/shared/glass-surface';
+import { GlassSurface } from '@/components/shared/glass-surface';
 import colors from '@/components/ui/colors';
 import { withRM } from '@/lib/animations/motion';
 
@@ -58,6 +61,10 @@ export { BottomSheetScrollView, BottomSheetView };
 type ModalProps = BottomSheetModalProps & {
   title?: string;
   testID?: string;
+  /** Use glass background (Liquid Glass → Blur → solid). */
+  useGlassSurface?: boolean;
+  /** Customize the glass surface used for the sheet background. */
+  glassSurfaceProps?: Omit<GlassSurfaceProps, 'children'>;
 };
 
 type ModalForwardedRef = React.ForwardedRef<BottomSheetModal>;
@@ -86,6 +93,8 @@ export const Modal = React.forwardRef(
       detached = false,
       handleComponent: customHandleComponent,
       handleIndicatorStyle,
+      useGlassSurface = false,
+      glassSurfaceProps,
       ...props
     }: ModalProps,
     ref: ModalForwardedRef
@@ -116,6 +125,33 @@ export const Modal = React.forwardRef(
       duration: 250,
     });
 
+    const resolvedGlassSurfaceProps = React.useMemo<
+      Omit<GlassSurfaceProps, 'children'>
+    >(
+      () => ({
+        glassEffectStyle: 'regular',
+        fallbackClassName: 'bg-white dark:bg-charcoal-900',
+        style: {
+          borderTopLeftRadius: 24,
+          borderTopRightRadius: 24,
+        },
+        ...glassSurfaceProps,
+      }),
+      [glassSurfaceProps]
+    );
+
+    const glassBackground = React.useCallback(
+      ({ style }: { style?: StyleProp<ViewStyle> }) => (
+        <GlassSurface
+          {...resolvedGlassSurfaceProps}
+          isInteractive={false}
+          pointerEvents="none"
+          style={[style, resolvedGlassSurfaceProps.style]}
+        />
+      ),
+      [resolvedGlassSurfaceProps]
+    );
+
     return (
       <BottomSheetModal
         {...props}
@@ -128,6 +164,12 @@ export const Modal = React.forwardRef(
         handleIndicatorStyle={handleIndicatorStyle}
         animationConfigs={animationConfigs}
         handleComponent={customHandleComponent || renderHandleWithHeader}
+        backgroundComponent={
+          useGlassSurface ? glassBackground : props.backgroundComponent
+        }
+        backgroundStyle={
+          useGlassSurface ? styles.transparentBackground : props.backgroundStyle
+        }
       />
     );
   }
@@ -235,5 +277,8 @@ const styles = StyleSheet.create({
   detached: {
     marginHorizontal: 16,
     overflow: 'hidden',
+  },
+  transparentBackground: {
+    backgroundColor: 'transparent',
   },
 });

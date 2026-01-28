@@ -1,10 +1,11 @@
 // Reanimated compatibility + augmentation shim
 // Provides minimal type surface required by dependent libraries (e.g. @gorhom/bottom-sheet)
 // when using a version of Reanimated whose type declarations differ.
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any, max-params */
 
 declare module 'react-native-reanimated' {
   import type * as React from 'react';
+  import type { ColorValue } from 'react-native';
 
   // Core animated object (treated as any for flexibility)
   const Animated: any;
@@ -14,7 +15,8 @@ declare module 'react-native-reanimated' {
   export const runOnJS: (...args: any[]) => any;
   export const useAnimatedStyle: (...args: any[]) => any;
   export const useDerivedValue: (...args: any[]) => any;
-  export const useSharedValue: <T>(v: T) => { value: T };
+  export const useSharedValue: <T>(v: T) => SharedValue<T>;
+  export const useAnimatedReaction: (...args: any[]) => any;
   export const useAnimatedScrollHandler: (...args: any[]) => any;
   export const useComposedEventHandler: (...args: any[]) => any;
   export const withSpring: (...args: any[]) => any;
@@ -23,6 +25,28 @@ declare module 'react-native-reanimated' {
   export const withSequence: (...args: any[]) => any;
   export const withDelay: (...args: any[]) => any;
   export const withClamp: (...args: any[]) => any;
+  export const cancelAnimation: (...args: any[]) => any;
+
+  // Interpolation helpers
+  export function interpolate(
+    value: number,
+    inputRange: readonly number[],
+    outputRange: readonly number[],
+    extrapolation?: 'clamp' | 'extend' | 'identity' | undefined
+  ): number;
+  export function interpolateColor(
+    value: number,
+    inputRange: readonly number[],
+    outputRange: readonly (string | number | ColorValue)[],
+    colorSpace?: 'RGB' | 'HSV'
+  ): ColorValue;
+
+  // Extrapolation constants
+  export const Extrapolation: {
+    CLAMP: 'clamp';
+    EXTEND: 'extend';
+    IDENTITY: 'identity';
+  };
 
   // Layout / transition helpers (used in modal.tsx)
   export const FadeIn: any;
@@ -36,7 +60,11 @@ declare module 'react-native-reanimated' {
   };
 
   // Minimal type aliases used by the codebase
-  export type SharedValue<T> = { value: T };
+  export type SharedValue<T> = {
+    value: T;
+    get: () => T;
+    set: (value: T | ((value: T) => T)) => void;
+  };
   export type AnimatedStyle = any;
 
   export function createAnimatedComponent<P>(

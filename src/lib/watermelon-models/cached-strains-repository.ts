@@ -96,31 +96,34 @@ export class CachedStrainsRepository {
   ): Promise<CachedStrainModel> {
     const queryHash = this.generateQueryHash(params);
     const now = Date.now();
+    const strainsJson = JSON.stringify(strains);
 
     // Check if already cached
     const existing = await this.findCachedPage(queryHash, pageNumber);
 
     if (existing) {
       // Update existing cache
-      return this.database.write(async () => {
+      const result = await this.database.write(async () => {
         return existing.update((record) => {
-          record.strainsData = JSON.stringify(strains);
+          record.strainsData = strainsJson;
           record.cachedAt = now;
           record.expiresAt = now + CACHE_TTL_MS;
         });
       });
+      return result;
     }
 
     // Create new cache entry
-    return this.database.write(async () => {
+    const result = await this.database.write(async () => {
       return this.collection.create((record) => {
         record.queryHash = queryHash;
         record.pageNumber = pageNumber;
-        record.strainsData = JSON.stringify(strains);
+        record.strainsData = strainsJson;
         record.cachedAt = now;
         record.expiresAt = now + CACHE_TTL_MS;
       });
     });
+    return result;
   }
 
   /**

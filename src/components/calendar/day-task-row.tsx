@@ -146,16 +146,24 @@ function PlantBadge({
   name: string;
   imageUrl?: string;
 }): React.ReactElement {
+  const imageSource = React.useMemo(
+    () => (imageUrl ? { uri: imageUrl } : undefined),
+    [imageUrl]
+  );
+
   return (
     <View
       className="flex-row items-center gap-1 rounded-full bg-primary-50 px-2 py-0.5 dark:bg-primary-900/30"
       testID="plant-badge"
     >
-      {imageUrl ? (
+      {imageSource ? (
         <Image
-          source={{ uri: imageUrl }}
+          source={imageSource}
           className="size-4 rounded-full"
           contentFit="cover"
+          cachePolicy="memory-disk"
+          recyclingKey={imageUrl}
+          transition={0}
           testID="plant-avatar"
         />
       ) : (
@@ -188,24 +196,28 @@ export function DayTaskRowComponent({
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
+    transform: [{ scale: scale.get() }],
   }));
 
   const handlePressIn = React.useCallback(() => {
     haptics.selection();
-    scale.value = withSpring(0.97, {
-      damping: 10,
-      stiffness: 300,
-      reduceMotion: ReduceMotion.System,
-    });
+    scale.set(
+      withSpring(0.97, {
+        damping: 10,
+        stiffness: 300,
+        reduceMotion: ReduceMotion.System,
+      })
+    );
   }, [scale]);
 
   const handlePressOut = React.useCallback(() => {
-    scale.value = withSpring(1, {
-      damping: 10,
-      stiffness: 300,
-      reduceMotion: ReduceMotion.System,
-    });
+    scale.set(
+      withSpring(1, {
+        damping: 10,
+        stiffness: 300,
+        reduceMotion: ReduceMotion.System,
+      })
+    );
   }, [scale]);
 
   const handlePress = React.useCallback(() => {

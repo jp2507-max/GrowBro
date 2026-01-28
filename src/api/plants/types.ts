@@ -3,9 +3,12 @@ import { type Race } from '@/api/strains/types';
 export type { Race } from '@/api/strains/types';
 
 export type PlantStage =
+  | 'germination'
   | 'seedling'
   | 'vegetative'
+  | 'flowering_stretch'
   | 'flowering'
+  | 'ripening'
   | 'harvesting'
   | 'curing'
   | 'ready';
@@ -16,6 +19,12 @@ export type PlantEnvironment = 'indoor' | 'outdoor' | 'greenhouse';
 
 export type PhotoperiodType = 'photoperiod' | 'autoflower';
 
+export type PlantStartType = 'seed' | 'clone';
+
+export type GrowSpaceSize = 'small' | 'medium' | 'large';
+
+export type TrainingPreference = 'lst' | 'topping' | 'scrog' | 'defoliation';
+
 export type GeneticLean =
   | 'indica_dominant'
   | 'sativa_dominant'
@@ -23,11 +32,15 @@ export type GeneticLean =
   | 'unknown';
 
 export type PlantMetadata = {
+  startType?: PlantStartType;
   photoperiodType?: PhotoperiodType;
   environment?: PlantEnvironment;
   geneticLean?: GeneticLean;
   medium?: 'soil' | 'coco' | 'hydro' | 'living_soil' | 'other';
   potSize?: string;
+  spaceSize?: GrowSpaceSize;
+  advancedMode?: boolean;
+  trainingPrefs?: TrainingPreference[];
   lightSchedule?: string;
   lightHours?: number;
   height?: number;
@@ -47,6 +60,7 @@ export type Plant = {
   id: string;
   name: string;
   stage?: PlantStage;
+  stageEnteredAt?: string;
   strain?: string;
   plantedAt?: string;
   expectedHarvestAt?: string;

@@ -4,6 +4,10 @@ import { useTranslation } from 'react-i18next';
 
 import type { Plant } from '@/api/plants/types';
 import { Text, View } from '@/components/ui';
+import {
+  getProductStageLabelKey,
+  toProductStage,
+} from '@/lib/plants/product-stage';
 
 type PlantStatsGridProps = {
   plant: Plant;
@@ -29,8 +33,9 @@ export function PlantStatsGrid({
 
   // Get phase from stage
   const phase = React.useMemo(() => {
-    if (!plant.stage) return '—';
-    return t(`plants.form.stage.${plant.stage}`);
+    const productStage = toProductStage(plant.stage);
+    if (!productStage) return '—';
+    return t(getProductStageLabelKey(productStage));
   }, [plant.stage, t]);
 
   return (

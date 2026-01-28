@@ -5,11 +5,18 @@ import { Env } from '@env';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { DatabaseProvider } from '@nozbe/watermelondb/react';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import type { NavigationContainerRef } from '@react-navigation/native';
 import { ThemeProvider } from '@react-navigation/native';
 import * as Sentry from '@sentry/react-native';
 // Setup Buffer polyfill for React Native
 import { Buffer } from 'buffer';
-import { Stack, usePathname, useRouter } from 'expo-router';
+import {
+  Stack,
+  useNavigationContainerRef,
+  usePathname,
+  useRootNavigationState,
+  useRouter,
+} from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import React, { useEffect } from 'react';
 import { InteractionManager, StyleSheet, View } from 'react-native';
@@ -65,6 +72,7 @@ import { getReferencedPhotoUris } from '@/lib/media/photo-storage-helpers';
 import {
   initializeSentryPerformance,
   isSentryPerformanceInitialized,
+  registerNavigationContainer,
 } from '@/lib/performance';
 import {
   initializePrivacyConsent,
@@ -76,6 +84,25 @@ import { installAiConsentHooks } from '@/lib/uploads/ai-images';
 import { useThemeConfig } from '@/lib/use-theme-config';
 import { database } from '@/lib/watermelon';
 global.Buffer = global.Buffer ?? Buffer;
+
+// In dev, Expo DevTools' WebSocket reconnect layer occasionally emits an empty
+// warning (no message), resulting in noisy "WARN" logs with a call stack.
+// Keep real warnings, suppress only the empty ones.
+if (__DEV__) {
+  const warnAny = console.warn as unknown as {
+    (...args: unknown[]): void;
+    __growbroIgnoreEmptyWarn?: boolean;
+  };
+  if (!warnAny.__growbroIgnoreEmptyWarn) {
+    const originalWarn = console.warn.bind(console);
+    const patched = (...args: unknown[]) => {
+      if (!args || args.length === 0) return;
+      originalWarn(...args);
+    };
+    (patched as typeof warnAny).__growbroIgnoreEmptyWarn = true;
+    console.warn = patched as typeof console.warn;
+  }
+}
 
 // Type definitions for Localization API
 // Timezone and startup helpers live in `use-root-startup.ts`
@@ -386,8 +413,11 @@ function RootLayout(): React.ReactElement {
   const [isAuthReady, setIsAuthReady] = React.useState(false);
   const [showConsent, setShowConsent] = React.useState(false);
   const hasHiddenSplashRef = React.useRef(false);
+  const hasRegisteredNavigationRef = React.useRef(false);
   const router = useRouter();
   const pathname = usePathname();
+  const navigationRef = useNavigationContainerRef();
+  const rootNavigationState = useRootNavigationState();
 
   useRootStartup(setIsI18nReady, isFirstTime);
   useOfflineModeMonitor();
@@ -408,6 +438,28 @@ function RootLayout(): React.ReactElement {
   useAgeGateSession(ageGateStatus, sessionId);
   useConsentCheck(setShowConsent);
   usePhotoJanitorSetup(isI18nReady);
+
+  // Register navigation container with Sentry once it's fully mounted and ready
+  // Per Sentry docs and React Navigation best practices, registration should
+  // happen only when isReady() returns true to guarantee the navigation tree
+  // is initialized. We depend on rootNavigationState to trigger this check
+  // whenever the navigation state changes, ensuring we catch the ready signal.
+  React.useEffect(() => {
+    if (
+      !isSentryPerformanceInitialized() ||
+      hasRegisteredNavigationRef.current ||
+      !navigationRef.isReady()
+    ) {
+      return;
+    }
+
+    registerNavigationContainer(
+      navigationRef as unknown as NavigationContainerRef<
+        Record<string, unknown>
+      >
+    );
+    hasRegisteredNavigationRef.current = true;
+  }, [navigationRef, rootNavigationState]);
 
   React.useEffect(() => {
     if (!isI18nReady || !isAuthReady || hasHiddenSplashRef.current) return;
@@ -546,15 +598,15 @@ async function initializeAuthAndStates(): Promise<void> {
         resolve();
         return;
       }
-      try {
-        await executeCleanup(
-          `hydrateAuth timeout after ${HYDRATE_AUTH_TIMEOUT_MS}ms`
-        );
-      } catch (error) {
-        console.error('[RootLayout] executeCleanup failed:', error);
-      } finally {
-        resolve();
-      }
+      // IMPORTANT: do NOT clear auth storage on timeout.
+      // Slow network / captive portals can delay `supabase.auth.setSession()`.
+      // Clearing tokens here can force a sign-out loop and make startup worse.
+      console.warn(
+        `[RootLayout] hydrateAuth exceeded ${HYDRATE_AUTH_TIMEOUT_MS}ms; continuing startup without blocking UI`
+      );
+      // Abort to cancel the timeout listener and unblock the race.
+      abortController.abort();
+      resolve();
     }, HYDRATE_AUTH_TIMEOUT_MS);
   });
 
@@ -567,7 +619,13 @@ async function initializeAuthAndStates(): Promise<void> {
   hydrateOnboardingState();
 
   // Hydrate favorites from local DB so heart icons show correctly on first render
-  await hydrateFavorites();
+  // Do not block startup on this; it is cosmetic and can be loaded shortly after.
+  // Use InteractionManager so it runs after initial interactions/paint.
+  InteractionManager.runAfterInteractions(() => {
+    void hydrateFavorites().catch((error) => {
+      console.warn('[RootLayout] hydrateFavorites failed:', error);
+    });
+  });
   if (__DEV__) console.log('[RootLayout] initializeAuthAndStates: done');
 }
 
@@ -589,7 +647,9 @@ function AppStack(): React.ReactElement {
       <Stack.Screen name="(app)" options={{ headerShown: false }} />
       <Stack.Screen name="(modals)" options={{ headerShown: false }} />
       <Stack.Screen name="sync-diagnostics" options={{ headerShown: false }} />
-      <Stack.Screen name="plants" options={{ headerShown: false }} />
+      {__DEV__ && (
+        <Stack.Screen name="sentry-test" options={{ headerShown: false }} />
+      )}
       <Stack.Screen name="age-gate" options={{ headerShown: false }} />
       <Stack.Screen name="onboarding" options={{ headerShown: false }} />
       <Stack.Screen

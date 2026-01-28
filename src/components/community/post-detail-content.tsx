@@ -11,6 +11,7 @@ import Animated, {
   // @ts-ignore - Reanimated 4.x type exports issue
   scrollTo,
 } from 'react-native-reanimated';
+import { scheduleOnUI } from 'react-native-worklets';
 
 import { CommentInputFooter } from '@/components/community/comment-input-footer';
 import { PostActionBar } from '@/components/community/post-action-bar';
@@ -74,6 +75,12 @@ function useScrollToHighlightedComment({
     number | null
   >(null);
   const lastHighlightedScrollKeyRef = React.useRef<string | null>(null);
+  const scrollToHighlightedComment = React.useCallback(
+    (y: number, animated: boolean): void => {
+      scrollTo(scrollViewRef, 0, y, animated);
+    },
+    [scrollViewRef]
+  );
 
   const handleCommentListLayout = React.useCallback((y: number) => {
     setCommentListY(y);
@@ -101,18 +108,20 @@ function useScrollToHighlightedComment({
     if (lastHighlightedScrollKeyRef.current === scrollKey) return;
     lastHighlightedScrollKeyRef.current = scrollKey;
 
-    const scrollToHighlightedComment = (): void => {
-      scrollTo(scrollViewRef, 0, targetY, true);
-    };
-
     const raf = requestAnimationFrame(() => {
-      scrollToHighlightedComment();
+      scheduleOnUI(scrollToHighlightedComment, targetY, true);
     });
 
     return () => {
       cancelAnimationFrame(raf);
     };
-  }, [commentListY, highlightedCommentId, highlightedCommentY, scrollViewRef]);
+  }, [
+    commentListY,
+    highlightedCommentId,
+    highlightedCommentY,
+    scrollViewRef,
+    scrollToHighlightedComment,
+  ]);
 
   return { handleCommentListLayout, handleHighlightedCommentLayout };
 }

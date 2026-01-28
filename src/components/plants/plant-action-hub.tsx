@@ -6,6 +6,10 @@ import type { PlantStage } from '@/api/plants/types';
 import { Button, Text, View } from '@/components/ui';
 import colors from '@/components/ui/colors';
 import { Check, Droplet, Leaf } from '@/components/ui/icons';
+import {
+  type ProductPlantStage,
+  toProductStage,
+} from '@/lib/plants/product-stage';
 
 type ActionHubProps = {
   plantId: string;
@@ -27,7 +31,7 @@ type ActionHubProps = {
  * Displays a success card when no tasks, or a sleek checklist widget when tasks exist.
  */
 /** Stages where harvest button should be shown */
-const HARVEST_ELIGIBLE_STAGES: PlantStage[] = ['flowering'];
+const HARVEST_ELIGIBLE_STAGES: ProductPlantStage[] = ['flowering'];
 
 function getTaskIcon(
   type: 'water' | 'feed' | 'other' | undefined
@@ -54,7 +58,9 @@ export function PlantActionHub({
   const { t } = useTranslation();
 
   const hasTasks = tasks.length > 0;
-  const canHarvest = plantStage && HARVEST_ELIGIBLE_STAGES.includes(plantStage);
+  const productStage = toProductStage(plantStage);
+  const canHarvest =
+    productStage && HARVEST_ELIGIBLE_STAGES.includes(productStage);
 
   return (
     <View className="gap-3 px-4">

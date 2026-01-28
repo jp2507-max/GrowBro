@@ -11,10 +11,16 @@
  */
 
 import { FlashList } from '@shopify/flash-list';
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
+import type { ViewToken } from 'react-native';
 
 import type { Post as ApiPost } from '@/api/posts';
 import { View } from '@/components/ui';
+import {
+  getCommunityPrefetchUris,
+  prefetchCommunityImages,
+} from '@/lib/community/image-optimization';
+import { getOptimizedFlashListConfig } from '@/lib/flashlist-config';
 import { useIntegratedAgeVerification } from '@/lib/moderation/use-integrated-age-verification';
 import { useIntegratedGeoRestrictions } from '@/lib/moderation/use-integrated-geo-restrictions';
 
@@ -79,6 +85,35 @@ export function IntegratedFeed({
       testID,
       isFetchingNextPage,
     });
+  const flashListConfig = useMemo(() => getOptimizedFlashListConfig(), []);
+  const viewabilityConfig = useMemo(
+    () => ({ itemVisiblePercentThreshold: 50, minimumViewTime: 80 }),
+    []
+  );
+
+  const handleViewableItemsChanged = useCallback(
+    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
+      const visiblePosts = viewableItems
+        .map((item) => item.item as ApiPost | undefined)
+        .filter((item): item is ApiPost => Boolean(item));
+
+      const indices = viewableItems
+        .map((item) => (typeof item.index === 'number' ? item.index : -1))
+        .filter((index) => index >= 0);
+
+      const maxIndex = indices.length > 0 ? Math.max(...indices) : -1;
+      const nextPosts =
+        maxIndex >= 0
+          ? filteredPosts.slice(maxIndex + 1, maxIndex + 1 + 6)
+          : [];
+
+      const uris = getCommunityPrefetchUris([...visiblePosts, ...nextPosts]);
+      if (uris.length > 0) {
+        prefetchCommunityImages(uris);
+      }
+    },
+    [filteredPosts]
+  );
 
   if (isLoading || isAgeLoading || isGeoLoading || isFiltering) {
     return <CommunitySkeletonList />;
@@ -113,8 +148,13 @@ export function IntegratedFeed({
         refreshing={isRefreshing}
         onEndReached={onEndReached}
         onEndReachedThreshold={0.5}
+        onViewableItemsChanged={handleViewableItemsChanged}
+        viewabilityConfig={viewabilityConfig}
         ListEmptyComponent={ListEmptyComponent}
         ListFooterComponent={ListFooterComponent}
+        scrollEventThrottle={flashListConfig.scrollEventThrottle}
+        removeClippedSubviews={flashListConfig.removeClippedSubviews}
+        drawDistance={flashListConfig.drawDistance}
       />
     </View>
   );
