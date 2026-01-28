@@ -34,6 +34,7 @@ export function FloatingNavButtons({
         accessibilityLabel={translate('accessibility.modal.close_label')}
         accessibilityHint={translate('accessibility.modal.close_hint')}
         testID="close-button"
+        // Intentional: Dark background ensures white icon visibility on variable images
         fallbackClassName="bg-black/30"
       >
         <X color={colors.white} width={24} height={24} />
@@ -50,6 +51,7 @@ export function FloatingNavButtons({
           accessibilityLabel={translate('strains.detail.share')}
           accessibilityHint={translate('strains.detail.share_hint')}
           testID="share-button"
+          // Intentional: Dark background ensures white icon visibility on variable images
           fallbackClassName="bg-black/30"
         >
           <ShareIcon color={colors.white} width={24} height={24} />

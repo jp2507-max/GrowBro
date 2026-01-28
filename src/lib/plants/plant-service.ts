@@ -11,22 +11,31 @@ import type {
 } from '@/api/plants/types';
 import type { CreatePlantVariables } from '@/api/plants/use-create-plant';
 import { getOptionalAuthenticatedUserId } from '@/lib/auth';
+import { DigitalTwinTaskEngine } from '@/lib/digital-twin';
 import { database } from '@/lib/watermelon';
 import type { OccurrenceOverrideModel } from '@/lib/watermelon-models/occurrence-override';
 import type {
   PlantMetadataLocal,
   PlantModel,
 } from '@/lib/watermelon-models/plant';
+import type { PlantStageHistoryModel } from '@/lib/watermelon-models/plant-stage-history';
 import type { SeriesModel } from '@/lib/watermelon-models/series';
 import type { TaskModel } from '@/lib/watermelon-models/task';
 
-import { createTaskEngine } from '../growbro-task-engine';
 import { maybeAutoApplyPlaybook } from './playbook-auto-apply';
 
 type PlantUpsertInput = CreatePlantVariables;
 
 type PlantQueryOptions = {
   userId?: string | null;
+};
+
+type StageChangeInfo = {
+  previousStage: PlantStage | undefined;
+  previousImageUrl: string | null | undefined;
+  newStage: PlantStage | undefined;
+  stageChanged: boolean;
+  imageChanged: boolean;
 };
 
 function getCollection() {
@@ -125,6 +134,114 @@ function assignString(value: string | undefined | null): string | undefined {
   return value ?? undefined;
 }
 
+function getStageChangeInfo(
+  record: PlantModel,
+  input: Partial<PlantUpsertInput>
+): StageChangeInfo {
+  const previousStage = record.stage as PlantStage | undefined;
+  const previousImageUrl = record.imageUrl;
+  const newStage = input.stage as PlantStage | undefined;
+  const stageChanged =
+    input.stage !== undefined && input.stage !== previousStage;
+  const imageChanged =
+    input.imageUrl !== undefined && input.imageUrl !== previousImageUrl;
+
+  return {
+    previousStage,
+    previousImageUrl,
+    newStage,
+    stageChanged,
+    imageChanged,
+  };
+}
+
+function shouldSyncDigitalTwin(
+  input: Partial<PlantUpsertInput>,
+  stageChanged: boolean
+): boolean {
+  return (
+    stageChanged ||
+    input.photoperiodType !== undefined ||
+    input.environment !== undefined ||
+    input.geneticLean !== undefined ||
+    input.medium !== undefined ||
+    input.potSize !== undefined ||
+    input.lightSchedule !== undefined ||
+    input.lightHours !== undefined ||
+    input.height !== undefined ||
+    input.plantedAt !== undefined ||
+    input.expectedHarvestAt !== undefined ||
+    input.strainId !== undefined ||
+    input.strainSlug !== undefined ||
+    input.strainSource !== undefined ||
+    input.strainRace !== undefined
+  );
+}
+
+async function updatePlantRecord(params: {
+  record: PlantModel;
+  input: Partial<PlantUpsertInput>;
+  metadata: PlantMetadataLocal | undefined;
+  now: Date;
+  stageChanged: boolean;
+  userId?: string;
+}): Promise<void> {
+  const { record, input, metadata, now, stageChanged, userId } = params;
+  await record.update((model) => {
+    if (userId !== undefined) model.userId = userId ?? undefined;
+    if (input.name !== undefined) model.name = input.name;
+    if (input.stage !== undefined) model.stage = assignString(input.stage);
+    if (input.strain !== undefined) model.strain = assignString(input.strain);
+    if (input.photoperiodType !== undefined)
+      model.photoperiodType = assignString(input.photoperiodType);
+    if (input.environment !== undefined)
+      model.environment = assignString(input.environment);
+    if (input.geneticLean !== undefined)
+      model.geneticLean = assignString(input.geneticLean);
+    if (input.plantedAt !== undefined)
+      model.plantedAt = assignString(input.plantedAt);
+    if (stageChanged) model.stageEnteredAt = now.toISOString();
+    if (input.expectedHarvestAt !== undefined)
+      model.expectedHarvestAt = assignString(input.expectedHarvestAt);
+    if (input.imageUrl !== undefined)
+      model.imageUrl = assignString(input.imageUrl);
+    if (input.notes !== undefined) model.notes = assignString(input.notes);
+    if (metadata !== undefined) model.metadata = metadata;
+    model.updatedAt = now;
+  });
+}
+
+async function createStageHistoryEntry(params: {
+  record: PlantModel;
+  plantId: string;
+  previousStage: PlantStage | undefined;
+  newStage: PlantStage;
+  occurredAt: number;
+  userId?: string;
+}): Promise<void> {
+  const { record, plantId, previousStage, newStage, occurredAt, userId } =
+    params;
+  const historyCollection = database.get<PlantStageHistoryModel>(
+    'plant_stage_history'
+  );
+  const now = new Date(occurredAt);
+  const resolvedUserId =
+    userId ??
+    (record.userId !== undefined ? (record.userId ?? undefined) : undefined);
+
+  await historyCollection.create((history) => {
+    history.plantId = plantId;
+    history.fromStage = previousStage ?? undefined;
+    history.toStage = newStage;
+    history.trigger = 'user';
+    history.reason = undefined;
+    history.occurredAt = occurredAt;
+    if (resolvedUserId) history.userId = resolvedUserId;
+    history.createdAt = now;
+    history.updatedAt = now;
+  });
+}
+
 export function toPlant(model: PlantModel): Plant {
   const metadata = (model.metadata as PlantMetadata | undefined) ?? undefined;
 
@@ -132,6 +249,7 @@ export function toPlant(model: PlantModel): Plant {
     id: model.id,
     name: model.name,
     stage: model.stage as PlantStage | undefined,
+    stageEnteredAt: model.stageEnteredAt ?? undefined,
     strain: model.strain ?? undefined,
     plantedAt: model.plantedAt ?? undefined,
     expectedHarvestAt: model.expectedHarvestAt ?? undefined,
@@ -168,6 +286,7 @@ export async function createPlantFromForm(
   const metadata = buildMetadata(input);
   const stage = input.stage ?? 'seedling';
   const plantedAt = input.plantedAt ?? now.toISOString();
+  const stageEnteredAt = plantedAt;
 
   const record = await database.write(async () => {
     return collection.create((rec) => {
@@ -180,6 +299,7 @@ export async function createPlantFromForm(
       rec.environment = assignString(input.environment);
       rec.geneticLean = assignString(input.geneticLean);
       rec.plantedAt = assignString(plantedAt);
+      rec.stageEnteredAt = assignString(stageEnteredAt);
       rec.expectedHarvestAt = assignString(input.expectedHarvestAt);
       rec.imageUrl = assignString(input.imageUrl);
       rec.notes = assignString(input.notes);
@@ -195,8 +315,8 @@ export async function createPlantFromForm(
   });
 
   // Non-blocking: Create GrowBro task schedules for the new plant
-  const engine = createTaskEngine();
-  engine.ensureSchedulesForPlant(toPlant(record)).catch((error) => {
+  const engine = new DigitalTwinTaskEngine();
+  engine.syncForPlant(toPlant(record)).catch((error) => {
     console.warn(
       '[PlantService] Failed to create task schedules for new plant:',
       error
@@ -227,64 +347,51 @@ export async function updatePlantFromForm(
     throw new Error(`Plant ${id} not found`);
   }
 
-  // Capture previous stage and imageUrl for change detection
-  const previousStage = record.stage as PlantStage | undefined;
-  const previousImageUrl = record.imageUrl;
-  const newStage = input.stage as PlantStage | undefined;
-  const stageChanged =
-    input.stage !== undefined && input.stage !== previousStage;
-  const imageChanged =
-    input.imageUrl !== undefined && input.imageUrl !== previousImageUrl;
+  const stageInfo = getStageChangeInfo(record, input);
 
   const metadata = buildMetadata(input as PlantUpsertInput);
   const now = new Date();
 
   await database.write(async () => {
-    await record.update((model) => {
-      if (options.userId !== undefined)
-        model.userId = options.userId ?? undefined;
-      if (input.name !== undefined) model.name = input.name;
-      if (input.stage !== undefined) model.stage = assignString(input.stage);
-      if (input.strain !== undefined) model.strain = assignString(input.strain);
-      if (input.photoperiodType !== undefined)
-        model.photoperiodType = assignString(input.photoperiodType);
-      if (input.environment !== undefined)
-        model.environment = assignString(input.environment);
-      if (input.geneticLean !== undefined)
-        model.geneticLean = assignString(input.geneticLean);
-      if (input.plantedAt !== undefined)
-        model.plantedAt = assignString(input.plantedAt);
-      if (input.expectedHarvestAt !== undefined)
-        model.expectedHarvestAt = assignString(input.expectedHarvestAt);
-      if (input.imageUrl !== undefined)
-        model.imageUrl = assignString(input.imageUrl);
-      if (input.notes !== undefined) model.notes = assignString(input.notes);
-      if (metadata !== undefined) model.metadata = metadata;
-      model.updatedAt = now;
+    await updatePlantRecord({
+      record,
+      input,
+      metadata,
+      now,
+      stageChanged: stageInfo.stageChanged,
+      userId: options.userId,
     });
+
+    if (stageInfo.stageChanged && stageInfo.newStage) {
+      await createStageHistoryEntry({
+        record,
+        plantId: id,
+        previousStage: stageInfo.previousStage,
+        newStage: stageInfo.newStage,
+        occurredAt: now.getTime(),
+        userId: options.userId,
+      });
+    }
   });
 
   // Non-blocking: Enqueue plant photo for background upload if image changed
-  if (imageChanged) {
+  if (stageInfo.imageChanged) {
     maybeEnqueuePlantPhotoUpload(id, input.imageUrl).catch((error) => {
       console.warn('[PlantService] Failed to enqueue photo upload:', error);
     });
   }
 
-  // Non-blocking: Handle stage change with TaskEngine
-  if (stageChanged && newStage) {
-    const engine = createTaskEngine();
-    engine
-      .onStageChange(
-        { plantId: id, fromStage: previousStage ?? null, toStage: newStage },
-        toPlant(record)
-      )
-      .catch((error) => {
-        console.warn(
-          '[PlantService] Failed to update task schedules on stage change:',
-          error
-        );
-      });
+  const shouldSyncTwin = shouldSyncDigitalTwin(input, stageInfo.stageChanged);
+
+  // Non-blocking: Sync digital twin tasks on relevant plant changes
+  if (shouldSyncTwin) {
+    const engine = new DigitalTwinTaskEngine();
+    engine.syncForPlant(toPlant(record)).catch((error) => {
+      console.warn(
+        '[PlantService] Failed to sync digital twin schedules:',
+        error
+      );
+    });
   }
 
   return record;

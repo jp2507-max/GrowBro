@@ -221,6 +221,15 @@ export class TrichomeHelper {
       });
     });
 
+    void import('@/lib/digital-twin')
+      .then(({ DigitalTwinTaskEngine }) => {
+        const engine = new DigitalTwinTaskEngine();
+        return engine.syncForPlantId(assessment.plantId);
+      })
+      .catch((error) => {
+        console.warn('[TrichomeHelper] Failed to sync digital twin:', error);
+      });
+
     return created.toTrichomeAssessment();
   }
 

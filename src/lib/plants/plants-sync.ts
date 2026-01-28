@@ -108,6 +108,7 @@ function buildPlantPayload(plant: PlantData, userId: string): RemotePlant {
     stage: plant.stage ?? null,
     strain: plant.strain ?? null,
     planted_at: plant.plantedAt ?? null,
+    stage_entered_at: plant.stageEnteredAt ?? null,
     expected_harvest_at: plant.expectedHarvestAt ?? null,
     last_watered_at: plant.lastWateredAt ?? null,
     last_fed_at: plant.lastFedAt ?? null,
@@ -319,7 +320,10 @@ export async function syncPlantsToCloud(): Promise<number> {
       if (plantsPushQueued) {
         // Preserve queued requests that arrived during teardown.
         plantsPushPromise = null;
-        plantsPushPromise = syncPlantsToCloud();
+        plantsPushPromise = syncPlantsToCloud().catch((err) => {
+          console.warn('[PlantsSync] queued continuation failed', err);
+          return 0;
+        });
       } else {
         plantsPushPromise = null;
       }

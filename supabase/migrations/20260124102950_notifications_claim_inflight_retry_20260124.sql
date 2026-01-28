@@ -61,6 +61,8 @@ begin
 end$$;
 
 -- Reduce pg_net churn: only call worker when there is claimable work.
+-- Note: This migration modifies an existing function. The service_key validation
+-- is added by migration 20260124161500_h_fix_notification_auth_header.sql.
 do $$
 begin
   if to_regprocedure('public.process_notification_requests()') is not null then
@@ -73,6 +75,7 @@ begin
       as $function$
       declare
         request_id bigint;
+        api_url text;
       begin
         if not exists (
           select 1
@@ -84,8 +87,14 @@ begin
           return;
         end if;
 
+        api_url := public.get_config('supabase_api_url');
+        if api_url is null or api_url = '' then
+          raise warning 'process_notification_requests: supabase_api_url is not configured in app_config table';
+          return;
+        end if;
+
         select net.http_post(
-          url := 'https://mgbekkpswaizzthgefbc.supabase.co/functions/v1/process-notification-requests',
+          url := api_url || '/functions/v1/process-notification-requests',
           headers := jsonb_build_object(
             'Content-Type', 'application/json',
             'Authorization', 'Bearer ' || current_setting('supabase.service_role_key', true)

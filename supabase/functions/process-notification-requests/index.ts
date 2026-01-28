@@ -1,4 +1,3 @@
-// @ts-nocheck
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
@@ -141,8 +140,8 @@ function computeRetryDelaySeconds(attemptCount: number): number {
   const exponent = Math.max(0, attemptCount - 1);
   const delay = Math.min(maxSeconds, baseSeconds * Math.pow(2, exponent));
 
-  // Small deterministic jitter to avoid thundering herds on retries (0-3s).
-  const jitter = (attemptCount * 37) % 4;
+  // Random jitter to avoid thundering herds on retries (0-3s).
+  const jitter = Math.floor(Math.random() * 4);
   return delay + jitter;
 }
 

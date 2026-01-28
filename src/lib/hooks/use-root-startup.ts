@@ -1,4 +1,5 @@
 import * as Localization from 'expo-localization';
+import { DateTime } from 'luxon';
 import React from 'react';
 import {
   AppState,
@@ -15,6 +16,7 @@ import { consentManager } from '@/lib/privacy/consent-manager';
 import { setDeletionAdapter } from '@/lib/privacy/deletion-adapter';
 import { createSupabaseDeletionAdapter } from '@/lib/privacy/deletion-adapter-supabase';
 import { refreshQualityThresholds } from '@/lib/quality/remote-config';
+import { getItem, setItem } from '@/lib/storage';
 import {
   registerBackgroundTask,
   unregisterBackgroundTask,
@@ -86,6 +88,7 @@ type MetricsState = {
  * Default is 5 seconds.
  */
 const STARTUP_NOTIFICATION_REHYDRATE_DELAY_MS = 5000;
+const DIGITAL_TWIN_SYNC_KEY = 'digital_twin.last_sync_at';
 
 function createMetricsManager(start: number) {
   const state: MetricsState = {
@@ -376,5 +379,33 @@ export function useRootStartup(
     const dayMs = 24 * 60 * 60 * 1000;
     const id = setInterval(run, dayMs);
     return () => clearInterval(id);
+  }, []);
+
+  // Fire-and-forget: run digital twin sync daily (simple 24h interval)
+  React.useEffect(() => {
+    let isMounted = true;
+    const run = async () => {
+      const lastRun = getItem<number>(DIGITAL_TWIN_SYNC_KEY);
+      const now = DateTime.local();
+      if (lastRun) {
+        const last = DateTime.fromMillis(lastRun);
+        if (last.isValid && last.hasSame(now, 'day')) return;
+      }
+      try {
+        const { syncAllPlantsDigitalTwin } = await import('@/lib/digital-twin');
+        await syncAllPlantsDigitalTwin();
+        if (isMounted) setItem(DIGITAL_TWIN_SYNC_KEY, now.toMillis());
+      } catch (error) {
+        console.warn('[RootStartup] Digital twin sync failed', error);
+      }
+    };
+
+    void run();
+    const dayMs = 24 * 60 * 60 * 1000;
+    const id = setInterval(run, dayMs);
+    return () => {
+      isMounted = false;
+      clearInterval(id);
+    };
   }, []);
 }

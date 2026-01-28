@@ -16,6 +16,10 @@ export function StrainErrorState({
   onRetry,
   topInset,
 }: Props): React.ReactElement {
+  const { colorScheme } = useColorScheme();
+  const iconColor =
+    colorScheme === 'dark' ? colors.neutral[100] : colors.charcoal[900];
+
   return (
     <View
       className="flex-1 bg-neutral-50 dark:bg-charcoal-950"
@@ -33,7 +37,7 @@ export function StrainErrorState({
           onPress={onClose}
           testID="close-button"
         >
-          <X color="currentColor" width={20} height={20} />
+          <X color={iconColor} width={20} height={20} />
         </Pressable>
       </View>
       <ListErrorState

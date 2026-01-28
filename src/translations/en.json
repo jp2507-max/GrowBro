@@ -2574,8 +2574,11 @@
       "stage": {
         "curing": "Curing",
         "flowering": "Flowering",
+        "flowering_stretch": "Flowering stretch",
+        "germination": "Germination",
         "harvesting": "Harvesting",
         "ready": "Ready",
+        "ripening": "Ripening",
         "seedling": "Seedling",
         "vegetative": "Vegetative"
       },
@@ -3980,6 +3983,11 @@
       "description_rich": "Open jar & air for 15 min. Check for mold or ammonia smell.",
       "title": "Burp Jars"
     },
+    "burp_jars_week2": {
+      "description": "Open jars daily to maintain proper humidity. Continue monitoring aroma and moisture levels.",
+      "description_rich": "Open jar & air for 15 min daily. Keep monitoring aroma and moisture.",
+      "title": "Burp Jars"
+    },
     "burp_jars_week3": {
       "description": "Open jars briefly to maintain proper humidity levels. Less frequent burping is needed as cure progresses.",
       "description_rich": "Open jar & air for 15 min. Less frequent as cure progresses.",
@@ -4029,12 +4037,21 @@
       "description_coco_flower_safe": "Bloom nutrients. Watch for yellow leaf tips (nutrient burn). Monitor EC/pH.",
       "description_coco_veg": "Veg schedule (N-heavy). Feed with every watering, monitor EC/pH.",
       "description_coco_veg_safe": "Veg nutrients. **Tip: Start with 50% of manufacturer's dosage.** Monitor EC/pH.",
+      "description_ramp": "Target feed strength: {{percent}}% of label. {{base}}",
       "description_soil": "Apply nutrients according to your feeding schedule. Adjust based on plant response.",
       "description_soil_flower": "Bloom schedule (P/K-heavy). Apply nutrients based on plant response.",
       "description_soil_flower_safe": "Bloom nutrients. Watch for yellow leaf tips (nutrient burn).",
       "description_soil_veg": "Veg schedule (N-heavy). Apply nutrients based on plant response.",
       "description_soil_veg_safe": "Veg nutrients. **Tip: Start with 50% of manufacturer's dosage.**",
       "title": "Feed Plant"
+    },
+    "ipm_biological": {
+      "description": "Use biological controls (beneficials, sticky traps). Avoid spray applications during flowering.",
+      "title": "Biological IPM Check"
+    },
+    "ipm_preventative": {
+      "description": "Inspect leaves and stems for pests (undersides too). Wipe down surfaces and keep the grow area clean.",
+      "title": "Preventative IPM Check"
     },
     "reorder_error": "Failed to reorder tasks. Please try again.",
     "reordered": "Tasks reordered",
@@ -4056,6 +4073,7 @@
     "water_plant": {
       "description_coco": "Water until ~10-20% runoff. Coco dries quickly - check daily.",
       "description_coco_rich": "~{{min}}-{{max}}L to water (when medium is dry). Check runoff EC/pH.",
+      "description_hydro": "Top off and maintain nutrient solution. Verify flow and root zone moisture.",
       "description_soil": "Water until ~10-20% runoff. Check soil moisture before watering.",
       "description_soil_rich": "~{{min}}-{{max}}L to water (when soil is dry). Water until slight runoff.",
       "title": "Water Plant"

@@ -23,9 +23,9 @@ export function EffectsFlavorsSection({ strain }: Props): React.ReactElement {
             {translate('strains.detail.effects')}
           </Text>
           <View className="flex-row flex-wrap">
-            {strain.effects.map((effect) => (
+            {strain.effects.map((effect, index) => (
               <View
-                key={effect.name}
+                key={`${effect.name}-${index}`}
                 className="mb-3 mr-3 flex-row items-center rounded-full border border-primary-200 bg-primary-100 px-5 py-3 dark:border-primary-700 dark:bg-primary-900/40"
               >
                 <Smile
@@ -49,9 +49,9 @@ export function EffectsFlavorsSection({ strain }: Props): React.ReactElement {
             {translate('strains.detail.flavors')}
           </Text>
           <View className="flex-row flex-wrap">
-            {strain.flavors.map((flavor) => (
+            {strain.flavors.map((flavor, index) => (
               <View
-                key={flavor.name}
+                key={`${flavor.name}-${index}`}
                 className="mb-3 mr-3 flex-row items-center rounded-full border border-primary-200 bg-primary-100 px-5 py-3 dark:border-primary-700 dark:bg-primary-900/40"
               >
                 <Leaf

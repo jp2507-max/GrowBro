@@ -59,7 +59,7 @@
         "APP_ENV": "development",
         "EXPO_NO_DOTENV": "1",
         "HUSKY": "0",
-        "BUNDLE_ID": "com.growbro",
+        "BUNDLE_ID": "com.growbro.development",
         "SCHEME": "growbro-dev",
         "EXPO_PUBLIC_SCHEME": "growbro-dev"
       }

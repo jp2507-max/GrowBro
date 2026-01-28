@@ -37,9 +37,9 @@ test-output.txt
 
 # Ignore MCP config stored by VS Code and Cursor
 .vscode/mcp.json
-.cursor/**
-!.cursor/plans/**
-!.cursor/rules/**
+.cursor/*
+!.cursor/plans/
+!.cursor/rules/
 
 # Ignore agent-related files (skills, rules, etc.)
 .agent/skills/**

@@ -1,3 +1,4 @@
+import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -13,6 +14,9 @@ type Props = {
 
 export function StrainModalSkeleton({ onClose }: Props): React.ReactElement {
   const insets = useSafeAreaInsets();
+  const { colorScheme } = useColorScheme();
+  const iconColor =
+    colorScheme === 'dark' ? colors.neutral[100] : colors.charcoal[900];
 
   return (
     <View className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
@@ -28,15 +32,10 @@ export function StrainModalSkeleton({ onClose }: Props): React.ReactElement {
           onPress={onClose}
           testID="close-button"
         >
-          <X
-            color={colors.charcoal[900]}
-            className="dark:text-neutral-100"
-            width={20}
-            height={20}
-          />
+          <X color={iconColor} size={20} />
         </Pressable>
       </View>
-      <StrainDetailSkeleton onBack={onClose} />
+      <StrainDetailSkeleton onBack={onClose} hideHeader={true} />
     </View>
   );
 }

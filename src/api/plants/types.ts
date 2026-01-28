@@ -3,9 +3,12 @@ import { type Race } from '@/api/strains/types';
 export type { Race } from '@/api/strains/types';
 
 export type PlantStage =
+  | 'germination'
   | 'seedling'
   | 'vegetative'
+  | 'flowering_stretch'
   | 'flowering'
+  | 'ripening'
   | 'harvesting'
   | 'curing'
   | 'ready';
@@ -47,6 +50,7 @@ export type Plant = {
   id: string;
   name: string;
   stage?: PlantStage;
+  stageEnteredAt?: string;
   strain?: string;
   plantedAt?: string;
   expectedHarvestAt?: string;

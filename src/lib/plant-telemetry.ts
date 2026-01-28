@@ -109,6 +109,15 @@ export async function onTaskCompleted(
     });
     await updatePlantField(taskData.plantId!, 'last_fed_at');
   }
+
+  void import('@/lib/digital-twin')
+    .then(({ DigitalTwinTaskEngine }) => {
+      const engine = new DigitalTwinTaskEngine();
+      return engine.syncForPlantId(taskData.plantId!);
+    })
+    .catch((error) => {
+      console.warn('[PlantTelemetry] digital twin sync failed', error);
+    });
 }
 
 export async function onSeriesOccurrenceCompleted(

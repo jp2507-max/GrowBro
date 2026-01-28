@@ -21,12 +21,9 @@ function getAnchorSegment(segment: string): string {
   return match?.[1] ?? segment;
 }
 
-const ROUTE_MAP: Record<string, string> = {
-  index: 'index',
-  community: 'community/index',
-  strains: 'strains/index',
-  calendar: 'calendar',
-};
+const ROUTE_MAP: Record<string, string> = Object.fromEntries(
+  Object.entries(unstable_settings).map(([key, { anchor }]) => [key, anchor])
+);
 
 export default function SharedTabsLayout({
   segment,

@@ -30,6 +30,8 @@ import type { InventoryBatchModel } from '@/lib/watermelon-models/inventory-batc
 import type { InventoryItemModel } from '@/lib/watermelon-models/inventory-item';
 import type { InventoryMovementModel } from '@/lib/watermelon-models/inventory-movement';
 import type { OccurrenceOverrideModel } from '@/lib/watermelon-models/occurrence-override';
+import type { PlantEventModel } from '@/lib/watermelon-models/plant-event';
+import type { PlantStageHistoryModel } from '@/lib/watermelon-models/plant-stage-history';
 import type { SeriesModel } from '@/lib/watermelon-models/series';
 import type { TaskModel } from '@/lib/watermelon-models/task';
 
@@ -37,6 +39,8 @@ type TableName =
   | 'series'
   | 'tasks'
   | 'occurrence_overrides'
+  | 'plant_stage_history'
+  | 'plant_events'
   | 'harvests'
   | 'inventory'
   | 'harvest_audits'
@@ -94,6 +98,8 @@ type SyncModelMap = {
   series: SeriesModel;
   tasks: TaskModel;
   occurrence_overrides: OccurrenceOverrideModel;
+  plant_stage_history: PlantStageHistoryModel;
+  plant_events: PlantEventModel;
   harvests: HarvestModel;
   inventory: InventoryModel;
   harvest_audits: HarvestAuditModel;
@@ -145,6 +151,8 @@ const SYNC_TABLES: TableName[] = [
   'series',
   'tasks',
   'occurrence_overrides',
+  'plant_stage_history',
+  'plant_events',
   'harvests',
   'inventory',
   'harvest_audits',
@@ -402,6 +410,16 @@ function buildPushBatches(
           updated: slice(changes.occurrence_overrides.updated),
           deleted: slice(changes.occurrence_overrides.deleted),
         },
+        plant_stage_history: {
+          created: slice(changes.plant_stage_history.created),
+          updated: slice(changes.plant_stage_history.updated),
+          deleted: slice(changes.plant_stage_history.deleted),
+        },
+        plant_events: {
+          created: slice(changes.plant_events.created),
+          updated: slice(changes.plant_events.updated),
+          deleted: slice(changes.plant_events.deleted),
+        },
         harvests: {
           created: slice(changes.harvests.created),
           updated: slice(changes.harvests.updated),
@@ -547,6 +565,8 @@ function createEmptyChanges(): ChangesByTable {
     series: { created: [], updated: [], deleted: [] },
     tasks: { created: [], updated: [], deleted: [] },
     occurrence_overrides: { created: [], updated: [], deleted: [] },
+    plant_stage_history: { created: [], updated: [], deleted: [] },
+    plant_events: { created: [], updated: [], deleted: [] },
     harvests: { created: [], updated: [], deleted: [] },
     inventory: { created: [], updated: [], deleted: [] },
     harvest_audits: { created: [], updated: [], deleted: [] },
@@ -570,6 +590,14 @@ function addUserIdToChanges(changes: ChangesByTable, userId: string): void {
   changes.occurrence_overrides.updated = enrich(
     changes.occurrence_overrides.updated
   );
+  changes.plant_stage_history.created = enrich(
+    changes.plant_stage_history.created
+  );
+  changes.plant_stage_history.updated = enrich(
+    changes.plant_stage_history.updated
+  );
+  changes.plant_events.created = enrich(changes.plant_events.created);
+  changes.plant_events.updated = enrich(changes.plant_events.updated);
   changes.harvests.created = enrich(changes.harvests.created);
   changes.harvests.updated = enrich(changes.harvests.updated);
   changes.inventory.created = enrich(changes.inventory.created);
@@ -596,6 +624,8 @@ async function fetchAllRepositoryData(
     TaskModel[],
     SeriesModel[],
     OccurrenceOverrideModel[],
+    PlantStageHistoryModel[],
+    PlantEventModel[],
     HarvestModel[],
     InventoryModel[],
     HarvestAuditModel[],
@@ -605,67 +635,48 @@ async function fetchAllRepositoryData(
   ]
 > {
   if (lastPulledAt === null) {
-    return Promise.all([
-      repos.tasks.query().fetch(),
-      repos.series.query().fetch(),
-      repos.occurrence_overrides.query().fetch(),
-      repos.harvests.query().fetch(),
-      repos.inventory.query().fetch(),
-      repos['harvest_audits'].query().fetch(),
-      repos['inventory_items'].query().fetch(),
-      repos['inventory_batches'].query().fetch(),
-      repos['inventory_movements'].query().fetch(),
-    ]) as Promise<
-      [
-        TaskModel[],
-        SeriesModel[],
-        OccurrenceOverrideModel[],
-        HarvestModel[],
-        InventoryModel[],
-        HarvestAuditModel[],
-        InventoryItemModel[],
-        InventoryBatchModel[],
-        InventoryMovementModel[],
-      ]
-    >;
+    return fetchAllRows(repos);
   }
 
-  const checkpointMs = lastPulledAt;
+  return fetchChangedRowsSince(repos, lastPulledAt);
+}
 
-  async function fetchChangedRows<T extends Model>(
-    collection: Collection<T>
-  ): Promise<T[]> {
-    const [deletedRows, nonDeletedChangedRows] = await Promise.all([
-      collection.query(Q.where('deleted_at', Q.gt(checkpointMs))).fetch(),
-      collection
-        .query(
-          Q.where('deleted_at', null),
-          Q.or(
-            Q.where('created_at', Q.gt(checkpointMs)),
-            Q.where('updated_at', Q.gt(checkpointMs))
-          )
-        )
-        .fetch(),
-    ]);
-
-    return [...deletedRows, ...nonDeletedChangedRows];
-  }
-
+function fetchAllRows(
+  repos: CollectionsMap
+): Promise<
+  [
+    TaskModel[],
+    SeriesModel[],
+    OccurrenceOverrideModel[],
+    PlantStageHistoryModel[],
+    PlantEventModel[],
+    HarvestModel[],
+    InventoryModel[],
+    HarvestAuditModel[],
+    InventoryItemModel[],
+    InventoryBatchModel[],
+    InventoryMovementModel[],
+  ]
+> {
   return Promise.all([
-    fetchChangedRows(repos.tasks),
-    fetchChangedRows(repos.series),
-    fetchChangedRows(repos.occurrence_overrides),
-    fetchChangedRows(repos.harvests),
-    fetchChangedRows(repos.inventory),
-    fetchChangedRows(repos['harvest_audits']),
-    fetchChangedRows(repos['inventory_items']),
-    fetchChangedRows(repos['inventory_batches']),
-    fetchChangedRows(repos['inventory_movements']),
+    repos.tasks.query().fetch(),
+    repos.series.query().fetch(),
+    repos.occurrence_overrides.query().fetch(),
+    repos.plant_stage_history.query().fetch(),
+    repos.plant_events.query().fetch(),
+    repos.harvests.query().fetch(),
+    repos.inventory.query().fetch(),
+    repos['harvest_audits'].query().fetch(),
+    repos['inventory_items'].query().fetch(),
+    repos['inventory_batches'].query().fetch(),
+    repos['inventory_movements'].query().fetch(),
   ]) as Promise<
     [
       TaskModel[],
       SeriesModel[],
       OccurrenceOverrideModel[],
+      PlantStageHistoryModel[],
+      PlantEventModel[],
       HarvestModel[],
       InventoryModel[],
       HarvestAuditModel[],
@@ -674,6 +685,73 @@ async function fetchAllRepositoryData(
       InventoryMovementModel[],
     ]
   >;
+}
+
+async function fetchChangedRowsSince(
+  repos: CollectionsMap,
+  checkpointMs: number
+): Promise<
+  [
+    TaskModel[],
+    SeriesModel[],
+    OccurrenceOverrideModel[],
+    PlantStageHistoryModel[],
+    PlantEventModel[],
+    HarvestModel[],
+    InventoryModel[],
+    HarvestAuditModel[],
+    InventoryItemModel[],
+    InventoryBatchModel[],
+    InventoryMovementModel[],
+  ]
+> {
+  return Promise.all([
+    fetchChangedRows(repos.tasks, checkpointMs),
+    fetchChangedRows(repos.series, checkpointMs),
+    fetchChangedRows(repos.occurrence_overrides, checkpointMs),
+    fetchChangedRows(repos.plant_stage_history, checkpointMs),
+    fetchChangedRows(repos.plant_events, checkpointMs),
+    fetchChangedRows(repos.harvests, checkpointMs),
+    fetchChangedRows(repos.inventory, checkpointMs),
+    fetchChangedRows(repos['harvest_audits'], checkpointMs),
+    fetchChangedRows(repos['inventory_items'], checkpointMs),
+    fetchChangedRows(repos['inventory_batches'], checkpointMs),
+    fetchChangedRows(repos['inventory_movements'], checkpointMs),
+  ]) as Promise<
+    [
+      TaskModel[],
+      SeriesModel[],
+      OccurrenceOverrideModel[],
+      PlantStageHistoryModel[],
+      PlantEventModel[],
+      HarvestModel[],
+      InventoryModel[],
+      HarvestAuditModel[],
+      InventoryItemModel[],
+      InventoryBatchModel[],
+      InventoryMovementModel[],
+    ]
+  >;
+}
+
+async function fetchChangedRows<T extends Model>(
+  collection: Collection<T>,
+  checkpointMs: number
+): Promise<T[]> {
+  const [deletedRows, nonDeletedChangedRows] = await Promise.all([
+    collection.query(Q.where('deleted_at', Q.gt(checkpointMs))).fetch(),
+    collection
+      .query(
+        Q.where('deleted_at', null),
+        Q.or(
+          Q.where('created_at', Q.gt(checkpointMs)),
+          Q.where('updated_at', Q.gt(checkpointMs))
+        )
+      )
+      .fetch(),
+  ]);
+
+  return [...deletedRows, ...nonDeletedChangedRows];
 }
 
 async function collectLocalChanges(
@@ -686,6 +764,8 @@ async function collectLocalChanges(
     taskRows,
     seriesRows,
     overrideRows,
+    stageHistoryRows,
+    plantEventRows,
     harvestRows,
     inventoryRows,
     auditRows,
@@ -701,6 +781,20 @@ async function collectLocalChanges(
   for (const r of overrideRows)
     bucketRowIntoChanges({
       table: 'occurrence_overrides',
+      row: r,
+      lastPulledAt,
+      changes,
+    });
+  for (const r of stageHistoryRows)
+    bucketRowIntoChanges({
+      table: 'plant_stage_history',
+      row: r,
+      lastPulledAt,
+      changes,
+    });
+  for (const r of plantEventRows)
+    bucketRowIntoChanges({
+      table: 'plant_events',
       row: r,
       lastPulledAt,
       changes,
@@ -831,6 +925,10 @@ function getAllRepos(): CollectionsMap {
     occurrence_overrides: database.collections.get<OccurrenceOverrideModel>(
       'occurrence_overrides'
     ),
+    plant_stage_history: database.collections.get<PlantStageHistoryModel>(
+      'plant_stage_history'
+    ),
+    plant_events: database.collections.get<PlantEventModel>('plant_events'),
     harvests: database.collections.get<HarvestModel>('harvests'),
     inventory: database.collections.get<InventoryModel>('inventory'),
     harvest_audits:
@@ -872,8 +970,24 @@ async function applyUpsertsCoreTables(
     'occurrence_overrides',
     changes.occurrence_overrides?.updated ?? []
   );
+  const { applied: pshC } = await upsertBatch(
+    'plant_stage_history',
+    changes.plant_stage_history?.created ?? []
+  );
+  const { applied: pshU } = await upsertBatch(
+    'plant_stage_history',
+    changes.plant_stage_history?.updated ?? []
+  );
+  const { applied: peC } = await upsertBatch(
+    'plant_events',
+    changes.plant_events?.created ?? []
+  );
+  const { applied: peU } = await upsertBatch(
+    'plant_events',
+    changes.plant_events?.updated ?? []
+  );
 
-  const applied = sC + sU + tC + tU + oC + oU;
+  const applied = sC + sU + tC + tU + oC + oU + pshC + pshU + peC + peU;
   const changedIds = [
     ...sCIds,
     ...sUIds,
@@ -1012,6 +1126,15 @@ async function applyDeletes(
     changes.harvest_audits?.deleted ?? []
   );
 
+  const { applied: dPsh } = await applyDeletesBatch(
+    'plant_stage_history',
+    changes.plant_stage_history?.deleted ?? []
+  );
+  const { applied: dPe } = await applyDeletesBatch(
+    'plant_events',
+    changes.plant_events?.deleted ?? []
+  );
+
   // Inventory consumables tables
   const { applied: dII } = await applyDeletesBatch(
     'inventory_items',
@@ -1026,7 +1149,7 @@ async function applyDeletes(
     changes.inventory_movements?.deleted ?? []
   );
 
-  applied = dT + dS + dO + dH + dI + dA + dII + dIB + dIM;
+  applied = dT + dS + dO + dH + dI + dA + dPsh + dPe + dII + dIB + dIM;
   changedIds.push(...dTIds, ...dSIds, ...dOIds, ...dHIds, ...dIIds, ...dAIds);
 
   return { applied, changedTaskIds: changedIds };
@@ -1633,10 +1756,8 @@ export async function synchronize(): Promise<SyncResult> {
   );
 
   // 3) Update checkpoint atomically after successful apply
-  if (serverTimestamp !== null) {
-    await setItem(CHECKPOINT_KEY, serverTimestamp);
-    invalidatePendingChangesCountCache();
-  }
+  await setItem(CHECKPOINT_KEY, serverTimestamp);
+  invalidatePendingChangesCountCache();
   try {
     if (typeof lastPulledAt === 'number') {
       await NoopAnalytics.track('sync_checkpoint_age_ms', {

@@ -40,6 +40,13 @@ const BOTTOM_PADDING_EXTRA = 24;
 // Utility functions
 // -----------------------------------------------------------------------------
 
+export class DebouncedError extends Error {
+  constructor() {
+    super('Debounced');
+    this.name = 'DebouncedError';
+  }
+}
+
 type Debounced<T extends (...args: unknown[]) => unknown> = ((
   ...args: Parameters<T>
 ) => Promise<Awaited<ReturnType<T>>>) & { cancel: () => void };
@@ -54,7 +61,7 @@ function debounce<T extends (...args: unknown[]) => unknown>(
   const debounced = (...args: Parameters<T>) => {
     return new Promise<Awaited<ReturnType<T>>>((resolve, reject) => {
       if (pendingReject) {
-        pendingReject(new Error('Debounced'));
+        pendingReject(new DebouncedError());
         pendingReject = null;
       }
       pendingReject = reject;
@@ -74,7 +81,7 @@ function debounce<T extends (...args: unknown[]) => unknown>(
 
   debounced.cancel = () => {
     if (pendingReject) {
-      pendingReject(new Error('Debounced'));
+      pendingReject(new DebouncedError());
       pendingReject = null;
     }
     clearTimeout(timeout);
@@ -148,6 +155,34 @@ function buildTaskCounts(tasks: Task[]): Map<string, number> {
     counts.set(dateKey, (counts.get(dateKey) ?? 0) + 1);
   });
   return counts;
+}
+
+async function loadCalendarData(
+  rangeStartMillis: number,
+  rangeEndMillis: number,
+  selectedDayMillis: number
+): Promise<{
+  tasks: { pending: Task[]; completed: Task[] };
+  plantMap: Map<string, PlantInfo>;
+}> {
+  const rStart = DateTime.fromMillis(rangeStartMillis);
+  const rEnd = DateTime.fromMillis(rangeEndMillis);
+
+  const { pending, completed } = await fetchTasksForRange(
+    rStart.toJSDate(),
+    rEnd.toJSDate()
+  );
+
+  const dayStart = DateTime.fromMillis(selectedDayMillis);
+  const dayTasks = [
+    ...filterTasksForDay(pending, dayStart),
+    ...filterTasksForDay(completed, dayStart),
+  ];
+
+  const plantIds = getPlantIdsFromTasks(dayTasks);
+  const plantMap = await loadPlantMap(plantIds);
+
+  return { tasks: { pending, completed }, plantMap };
 }
 
 function useCalendarRange(selectedDate: DateTime): {
@@ -245,37 +280,18 @@ function useCalendarData(
     setIsLoading(true);
 
     try {
-      const rStart = DateTime.fromMillis(rangeStartMillis);
-      const rEnd = DateTime.fromMillis(rangeEndMillis);
-
-      // 1. Fetch all tasks in the 5-week range
-      const { pending, completed } = await fetchTasksForRange(
-        rStart.toJSDate(),
-        rEnd.toJSDate()
+      const { tasks, plantMap } = await loadCalendarData(
+        rangeStartMillis,
+        rangeEndMillis,
+        selectedDayMillis
       );
 
       // If a newer request has started, ignore this result
       if (currentRequestId !== requestIdRef.current || !isEnabledRef.current)
         return;
 
-      setTasks({ pending, completed });
-
-      // 2. Identify tasks for the SELECTED day to fetch plant info
-      const dayStart = DateTime.fromMillis(selectedDayMillis);
-      const dayTasks = [
-        ...filterTasksForDay(pending, dayStart),
-        ...filterTasksForDay(completed, dayStart),
-      ];
-
-      // 3. Fetch plant info efficiently
-      const plantIds = getPlantIdsFromTasks(dayTasks);
-      const newPlantMap = await loadPlantMap(plantIds);
-
-      // Check again before setting secondary state
-      if (currentRequestId !== requestIdRef.current || !isEnabledRef.current)
-        return;
-
-      setPlantMap(newPlantMap);
+      setTasks(tasks);
+      setPlantMap(plantMap);
     } catch (error) {
       if (currentRequestId === requestIdRef.current) {
         console.warn('[CalendarScreen] Failed to load calendar data:', error);
@@ -299,7 +315,7 @@ function useCalendarData(
       try {
         await debouncedLoadData();
       } catch (error) {
-        if (error instanceof Error && error.message === 'Debounced') {
+        if (error instanceof DebouncedError) {
           return;
         }
         console.warn(error);

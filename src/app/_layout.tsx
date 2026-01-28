@@ -14,6 +14,7 @@ import {
   Stack,
   useNavigationContainerRef,
   usePathname,
+  useRootNavigationState,
   useRouter,
 } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -416,6 +417,7 @@ function RootLayout(): React.ReactElement {
   const router = useRouter();
   const pathname = usePathname();
   const navigationRef = useNavigationContainerRef();
+  const rootNavigationState = useRootNavigationState();
 
   useRootStartup(setIsI18nReady, isFirstTime);
   useOfflineModeMonitor();
@@ -437,10 +439,16 @@ function RootLayout(): React.ReactElement {
   useConsentCheck(setShowConsent);
   usePhotoJanitorSetup(isI18nReady);
 
+  // Register navigation container with Sentry once it's fully mounted and ready
+  // Per Sentry docs and React Navigation best practices, registration should
+  // happen only when isReady() returns true to guarantee the navigation tree
+  // is initialized. We depend on rootNavigationState to trigger this check
+  // whenever the navigation state changes, ensuring we catch the ready signal.
   React.useEffect(() => {
     if (
       !isSentryPerformanceInitialized() ||
-      hasRegisteredNavigationRef.current
+      hasRegisteredNavigationRef.current ||
+      !navigationRef.isReady()
     ) {
       return;
     }
@@ -451,7 +459,7 @@ function RootLayout(): React.ReactElement {
       >
     );
     hasRegisteredNavigationRef.current = true;
-  }, [navigationRef]);
+  }, [navigationRef, rootNavigationState]);
 
   React.useEffect(() => {
     if (!isI18nReady || !isAuthReady || hasHiddenSplashRef.current) return;

@@ -1,26 +1,43 @@
-import type { SvgProps } from 'react-native-svg';
+import type { ReactElement } from 'react';
 import Svg, { Line } from 'react-native-svg';
 
-type IconProps = SvgProps & {
+type IconProps = {
+  color?: string;
   size?: number;
+  testID?: string;
 };
 
-export function X({ size = 24, className, ...props }: IconProps) {
-  return (
-    <Svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
+export const X = ({
+  color = '#737373',
+  size = 24,
+  testID,
+}: IconProps): ReactElement => (
+  <Svg
+    testID={testID}
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+  >
+    <Line
+      x1="18"
+      y1="6"
+      x2="6"
+      y2="18"
+      stroke={color}
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className={className}
-      {...props}
-    >
-      <Line x1="18" y1="6" x2="6" y2="18" />
-      <Line x1="6" y1="6" x2="18" y2="18" />
-    </Svg>
-  );
-}
+    />
+    <Line
+      x1="6"
+      y1="6"
+      x2="18"
+      y2="18"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);

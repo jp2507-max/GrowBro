@@ -1,3 +1,4 @@
+import BlurView from 'expo-blur';
 import * as React from 'react';
 import type { useAnimatedScrollHandler } from 'react-native-reanimated';
 import Animated from 'react-native-reanimated';
@@ -28,13 +29,18 @@ export function StrainScrollContent({
     >
       <View className="h-hero justify-end px-6 pb-8">
         <View className="mb-2 flex-row gap-2">
-          <View className="rounded-full bg-white/20 px-3 py-1 backdrop-blur-md">
-            <Text className="text-xs font-bold uppercase tracking-wider text-white">
-              {translate(`strains.race.${strain.race}`)}
-            </Text>
-          </View>
+          <BlurView intensity={80} className="rounded-full px-3 py-1">
+            <View className="rounded-full bg-white/20 px-3 py-1">
+              <Text className="text-xs font-bold uppercase tracking-wider text-white">
+                {translate(`strains.race.${strain.race}`)}
+              </Text>
+            </View>
+          </BlurView>
         </View>
-        <Text className="text-4xl font-extrabold text-white shadow-sm">
+        <Text
+          className="text-4xl font-extrabold text-white shadow-sm"
+          testID="strain-name"
+        >
           {strain.name}
         </Text>
       </View>

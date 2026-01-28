@@ -11,6 +11,7 @@ type RemotePlant = {
   stage?: string | null;
   strain?: string | null;
   planted_at?: string | null;
+  stage_entered_at?: string | null;
   expected_harvest_at?: string | null;
   last_watered_at?: string | null;
   last_fed_at?: string | null;
@@ -250,6 +251,7 @@ async function updatePlantFromRemote(
     record.stage = remote.stage ?? null;
     record.strain = remote.strain ?? null;
     record.plantedAt = remote.planted_at ?? null;
+    record.stageEnteredAt = remote.stage_entered_at ?? null;
     record.expectedHarvestAt = remote.expected_harvest_at ?? null;
     record.lastWateredAt = remote.last_watered_at ?? null;
     record.lastFedAt = remote.last_fed_at ?? null;
@@ -375,6 +377,7 @@ export async function upsertRemotePlants(
           record.stage = remote.stage ?? null;
           record.strain = remote.strain ?? null;
           record.plantedAt = remote.planted_at ?? null;
+          record.stageEnteredAt = remote.stage_entered_at ?? null;
           record.expectedHarvestAt = remote.expected_harvest_at ?? null;
           record.lastWateredAt = remote.last_watered_at ?? null;
           record.lastFedAt = remote.last_fed_at ?? null;

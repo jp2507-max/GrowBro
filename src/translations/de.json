@@ -2574,8 +2574,11 @@
       "stage": {
         "curing": "Curing",
         "flowering": "Blüte",
+        "flowering_stretch": "Blüte-Stretch",
+        "germination": "Keimung",
         "harvesting": "Ernte",
         "ready": "Fertig",
+        "ripening": "Reifung",
         "seedling": "Keimling",
         "vegetative": "Wachstum"
       },
@@ -3980,6 +3983,11 @@
       "description_rich": "Glas öffnen & 15 Min lüften. Auf Schimmel oder Ammoniakgeruch prüfen.",
       "title": "Gläser lüften"
     },
+    "burp_jars_week2": {
+      "description": "Gläser täglich öffnen, um die Luftfeuchtigkeit zu halten. Aroma und Feuchte weiter beobachten.",
+      "description_rich": "Glas öffnen & 15 Min lüften. Aroma und Feuchte weiter beobachten.",
+      "title": "Gläser lüften"
+    },
     "burp_jars_week3": {
       "description": "Gläser kurz öffnen, um die Luftfeuchtigkeit aufrechtzuerhalten. Weniger häufiges Lüften ist nötig, je weiter die Aushärtung fortschreitet.",
       "description_rich": "Glas öffnen & 15 Min lüften. Weniger häufig bei fortgeschrittener Aushärtung.",
@@ -4029,12 +4037,21 @@
       "description_coco_flower_safe": "Blüte-Dünger. Auf gelbe Blattspitzen (Überdüngung) achten. EC/pH überwachen.",
       "description_coco_veg": "Wachstums-Schema (Stickstoff/N-betont). Bei jeder Bewässerung düngen, EC/pH überwachen.",
       "description_coco_veg_safe": "Wachstums-Dünger. **Tipp: Starte mit 50% der Hersteller-Dosierung.** EC/pH überwachen.",
+      "description_ramp": "Zielstärke: {{percent}}% der Herstellerangabe. {{base}}",
       "description_soil": "Nährstoffe gemäß deinem Düngeplan anwenden. Basierend auf Pflanzenreaktion anpassen.",
       "description_soil_flower": "Blüte-Schema (Phosphor/Kalium). Nährstoffe nach Pflanzenreaktion anpassen.",
       "description_soil_flower_safe": "Blüte-Dünger. Auf gelbe Blattspitzen (Überdüngung) achten.",
       "description_soil_veg": "Wachstums-Schema (Stickstoff/N-betont). Nährstoffe nach Pflanzenreaktion anpassen.",
       "description_soil_veg_safe": "Wachstums-Dünger. **Tipp: Starte mit 50% der Hersteller-Dosierung.**",
       "title": "Nährstoffe geben"
+    },
+    "ipm_biological": {
+      "description": "Biologische Kontrollen einsetzen (Nützlinge, Gelbtafeln). In der Blüte keine Sprays.",
+      "title": "Biologische IPM-Prüfung"
+    },
+    "ipm_preventative": {
+      "description": "Blätter und Stängel auf Schädlinge prüfen (auch Unterseiten). Flächen abwischen und Growbereich sauber halten.",
+      "title": "Vorbeugender IPM-Check"
     },
     "reorder_error": "Neuordnung fehlgeschlagen. Bitte erneut versuchen.",
     "reordered": "Aufgaben neu geordnet",
@@ -4056,6 +4073,7 @@
     "water_plant": {
       "description_coco": "Gießen bis ~10-20% Ablauf. Kokos trocknet schnell - täglich prüfen.",
       "description_coco_rich": "Ca. {{min}}-{{max}}L gießen (wenn Medium trocken). Ablauf EC/pH prüfen.",
+      "description_hydro": "Nährlösung auffüllen und Durchfluss prüfen. Wurzelzone feucht halten.",
       "description_soil": "Gießen bis ~10-20% Ablauf. Bodenfeuchtigkeit vor dem Gießen prüfen.",
       "description_soil_rich": "Ca. {{min}}-{{max}}L gießen (wenn Erde trocken). Bis leichtem Ablauf gießen.",
       "title": "Pflanze gießen"

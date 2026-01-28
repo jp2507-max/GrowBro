@@ -37,15 +37,7 @@ let legacyMigrationPromise: Promise<void> | null = null;
  * Implements the Storage interface required by @supabase/supabase-js
  */
 async function ensureAuthStorageReady(): Promise<void> {
-  if (!isSecureStorageInitialized()) {
-    await initializeSecureStorage();
-  }
-
-  if (!legacyMigrationPromise) {
-    legacyMigrationPromise = migrateLegacyAuthStorage();
-  }
-
-  await legacyMigrationPromise;
+  await initAuthStorage();
 }
 
 function getAuthStorageKeys(): string[] {
@@ -218,7 +210,9 @@ export const mmkvAuthStorageSync = {
  */
 export async function clearAuthStorage(): Promise<void> {
   await ensureAuthStorageReady();
-  const keys = authStorage.getAllKeys();
+  const keys = authStorage
+    .getAllKeys()
+    .filter((key) => key !== LEGACY_MIGRATION_FLAG_KEY);
   for (const key of keys) {
     authStorage.delete(key);
   }
@@ -229,9 +223,13 @@ export async function clearAuthStorage(): Promise<void> {
  * This should be called early in the app lifecycle (e.g., in _layout.tsx)
  */
 export async function initAuthStorage(): Promise<void> {
-  await initializeSecureStorage();
+  if (!isSecureStorageInitialized()) {
+    await initializeSecureStorage();
+  }
+
   if (!legacyMigrationPromise) {
     legacyMigrationPromise = migrateLegacyAuthStorage();
   }
+
   await legacyMigrationPromise;
 }

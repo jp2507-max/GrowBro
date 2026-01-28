@@ -8,6 +8,7 @@ set search_path to ''
 as $function$
 declare
   request_id bigint;
+  api_url text;
 begin
   if not exists (
     select 1
@@ -17,8 +18,14 @@ begin
     return;
   end if;
 
+  api_url := public.get_config('supabase_api_url');
+  if api_url is null or api_url = '' then
+    raise warning 'process_notification_requests: supabase_api_url is not configured in app_config table';
+    return;
+  end if;
+
   select net.http_post(
-    url := 'https://mgbekkpswaizzthgefbc.supabase.co/functions/v1/process-notification-requests',
+    url := api_url || '/functions/v1/process-notification-requests',
     headers := jsonb_build_object(
       'Content-Type', 'application/json',
       'Authorization', 'Bearer ' || current_setting('supabase.service_role_key', true)
@@ -41,6 +48,7 @@ set search_path to ''
 as $function$
 declare
   request_id bigint;
+  api_url text;
 begin
   if not exists (
     select 1
@@ -51,8 +59,14 @@ begin
     return;
   end if;
 
+  api_url := public.get_config('supabase_api_url');
+  if api_url is null or api_url = '' then
+    raise warning 'poll_expo_push_receipts: supabase_api_url is not configured in app_config table';
+    return;
+  end if;
+
   select net.http_post(
-    url := 'https://mgbekkpswaizzthgefbc.supabase.co/functions/v1/poll-push-receipts',
+    url := api_url || '/functions/v1/poll-push-receipts',
     headers := jsonb_build_object(
       'Content-Type', 'application/json',
       'Authorization', 'Bearer ' || current_setting('supabase.service_role_key', true)

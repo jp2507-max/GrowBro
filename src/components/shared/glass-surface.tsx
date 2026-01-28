@@ -8,6 +8,11 @@
  * Known issue mitigation:
  * - `isInteractive` cannot be toggled after mount; use `key` to remount if needed
  * - Avoid placing under parent opacity animations (expo/expo#41024)
+ *
+ * Platform difference - Border radius:
+ * - Fallback View (iOS < 26, Android): Applies default borderRadius: 16 via styles.surface
+ * - GlassView (iOS 26+): Only uses user-provided style prop to avoid crash risk from overflow: 'hidden'
+ * - To maintain consistent rounded corners across platforms, explicitly include borderRadius in the style prop
  */
 
 import type { BlurTint } from 'expo-blur';
@@ -32,7 +37,8 @@ export type GlassSurfaceProps = {
   blurEnabled?: boolean;
   /** Whether the surface should respond to touch (buttons). Defaults to false. */
   isInteractive?: boolean;
-  /** React Native style for dimensions, border radius, padding, etc. */
+  /** React Native style for dimensions, border radius, padding, etc.
+   *  Note: On iOS 26+, include borderRadius explicitly to match fallback appearance. */
   style?: StyleProp<ViewStyle>;
   /** Fallback style when glass is unavailable. Applied to the plain View. */
   fallbackStyle?: StyleProp<ViewStyle>;

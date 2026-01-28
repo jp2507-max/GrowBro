@@ -385,7 +385,11 @@ export class RealtimeConnectionManager {
       return;
     }
 
-    this.callbacks.onPollRefresh();
+    try {
+      await this.callbacks.onPollRefresh();
+    } catch (err) {
+      console.error('[Realtime] onPollRefresh callback failed:', err);
+    }
   }
 
   /**

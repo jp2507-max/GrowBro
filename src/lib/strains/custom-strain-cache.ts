@@ -83,11 +83,22 @@ async function submitCustomStrainToSupabase(strain: Strain): Promise<void> {
     });
 
     if (error) {
-      // Ignore duplicates / moderation flow noise; this should never block plant creation.
-      console.debug('[custom-strain] submission failed', error);
+      const errorWithCode = error as { code?: string };
+      const isDuplicate = errorWithCode.code === '23505';
+      if (isDuplicate) {
+        console.debug('[custom-strain] duplicate submission ignored', error);
+      } else {
+        console.warn('[custom-strain] submission failed', error);
+      }
     }
   } catch (error) {
-    console.debug('[custom-strain] submission failed', error);
+    const errorWithCode = error as { code?: string };
+    const isDuplicate = errorWithCode.code === '23505';
+    if (isDuplicate) {
+      console.debug('[custom-strain] duplicate submission ignored', error);
+    } else {
+      console.warn('[custom-strain] submission failed', error);
+    }
   }
 }
 

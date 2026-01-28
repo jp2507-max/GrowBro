@@ -80,6 +80,48 @@ function applySort(
   return query.order('name', { ascending, nullsLast: true });
 }
 
+function buildStrainsQuery({
+  table,
+  params,
+  offset,
+  pageSize,
+}: {
+  table: 'strains_public' | 'strain_cache';
+  params: GetStrainsParams;
+  offset: number;
+  pageSize: number;
+}): SupabaseQuery {
+  const searchQuery = params.searchQuery?.trim();
+  let query = supabase.from(table).select('id, slug, name, race, data');
+
+  if (searchQuery && searchQuery.length > 0) {
+    // Escape special characters for PostgREST .or() and LIKE pattern
+    const escaped = searchQuery.replace(/[%_\,()]/g, '\\$&');
+    const pattern = `%${escaped}%`;
+    query = query.or(`name.ilike.${pattern},slug.ilike.${pattern}`);
+  }
+
+  query = applyFilters(query, params.filters);
+  query = applySort(query, params.sortBy, params.sortDirection);
+  return query.range(offset, offset + pageSize - 1);
+}
+
+export async function withStrainTableFallback<T>(
+  queryFn: (
+    table: 'strains_public' | 'strain_cache'
+  ) => Promise<{ data: T; error: Error | null }>
+): Promise<{ data: T; error: Error | null }> {
+  let result = await queryFn('strains_public');
+  if (
+    result.error &&
+    typeof result.error.message === 'string' &&
+    result.error.message.toLowerCase().includes('strains_public')
+  ) {
+    result = await queryFn('strain_cache');
+  }
+  return result;
+}
+
 export async function fetchStrainsFromSupabase(
   params: GetStrainsParams = {}
 ): Promise<StrainsResponse> {
@@ -87,41 +129,10 @@ export async function fetchStrainsFromSupabase(
   const pageSize = params.pageSize ?? 20;
   const offset = page * pageSize;
 
-  const searchQuery = params.searchQuery?.trim();
-
-  // Prefer a unified view (strain_cache + approved community strains).
-  // Fall back to `strain_cache` for environments where the view isn't migrated yet.
-  let query = supabase
-    .from('strains_public')
-    .select('id, slug, name, race, data');
-
-  if (searchQuery && searchQuery.length > 0) {
-    const pattern = `%${searchQuery}%`;
-    query = query.or(`name.ilike.${pattern},slug.ilike.${pattern}`);
-  }
-
-  query = applyFilters(query, params.filters);
-  query = applySort(query, params.sortBy, params.sortDirection);
-  query = query.range(offset, offset + pageSize - 1);
-
-  let result = await query;
-  if (
-    result.error &&
-    typeof result.error.message === 'string' &&
-    result.error.message.toLowerCase().includes('strains_public')
-  ) {
-    query = supabase.from('strain_cache').select('id, slug, name, race, data');
-
-    if (searchQuery && searchQuery.length > 0) {
-      const pattern = `%${searchQuery}%`;
-      query = query.or(`name.ilike.${pattern},slug.ilike.${pattern}`);
-    }
-
-    query = applyFilters(query, params.filters);
-    query = applySort(query, params.sortBy, params.sortDirection);
-    query = query.range(offset, offset + pageSize - 1);
-    result = await query;
-  }
+  const result = await withStrainTableFallback(async (table) => {
+    const query = buildStrainsQuery({ table, params, offset, pageSize });
+    return await query;
+  });
 
   const { data, error } = result;
 

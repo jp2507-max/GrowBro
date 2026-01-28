@@ -357,7 +357,7 @@ describe('TaskFactory', () => {
   });
 
   describe('Curing stage', () => {
-    it('creates daily burp task for first 2 weeks', () => {
+    it('creates twice-daily burp task for week 1', () => {
       const settings = createDefaultSettings({ stage: 'curing' });
       const specs = TaskFactory.create(settings);
 
@@ -365,10 +365,12 @@ describe('TaskFactory', () => {
         (s) => s.title === 'Burp Jars' && s.count === 14
       );
       expect(dailyBurp).toBeDefined();
-      expect(dailyBurp?.rrule).toBe('FREQ=DAILY;INTERVAL=1');
+      expect(dailyBurp?.rrule).toBe(
+        'FREQ=DAILY;INTERVAL=1;BYHOUR=9,21;BYMINUTE=0;BYSECOND=0'
+      );
     });
 
-    it('creates every-3-days burp task for weeks 3-4', () => {
+    it('creates daily burp task for week 2', () => {
       const stageEnteredAt = new Date();
       const settings = createDefaultSettings({
         stage: 'curing',
@@ -376,11 +378,29 @@ describe('TaskFactory', () => {
       });
       const specs = TaskFactory.create(settings);
 
-      const laterBurp = specs.find(
-        (s) => s.title === 'Burp Jars' && s.rrule === 'FREQ=DAILY;INTERVAL=3'
+      const week2Burp = specs.find(
+        (s) => s.title === 'Burp Jars' && s.count === 7
       );
-      expect(laterBurp).toBeDefined();
-      expect(laterBurp?.untilUtc).toBeDefined();
+      expect(week2Burp).toBeDefined();
+      expect(week2Burp?.rrule).toBe(
+        'FREQ=DAILY;INTERVAL=1;BYHOUR=9;BYMINUTE=0;BYSECOND=0'
+      );
+    });
+
+    it('creates weekly burp task from week 3 onward', () => {
+      const stageEnteredAt = new Date();
+      const settings = createDefaultSettings({
+        stage: 'curing',
+        stageEnteredAt,
+      });
+      const specs = TaskFactory.create(settings);
+
+      const weeklyBurp = specs.find(
+        (s) =>
+          s.title === 'Burp Jars' &&
+          s.rrule === 'FREQ=WEEKLY;INTERVAL=1;BYHOUR=9;BYMINUTE=0;BYSECOND=0'
+      );
+      expect(weeklyBurp).toBeDefined();
     });
   });
 

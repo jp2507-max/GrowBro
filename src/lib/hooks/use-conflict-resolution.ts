@@ -12,6 +12,8 @@ import type { InventoryBatchModel } from '@/lib/watermelon-models/inventory-batc
 import type { InventoryItemModel } from '@/lib/watermelon-models/inventory-item';
 import type { InventoryMovementModel } from '@/lib/watermelon-models/inventory-movement';
 import type { OccurrenceOverrideModel } from '@/lib/watermelon-models/occurrence-override';
+import type { PlantEventModel } from '@/lib/watermelon-models/plant-event';
+import type { PlantStageHistoryModel } from '@/lib/watermelon-models/plant-stage-history';
 import type { SeriesModel } from '@/lib/watermelon-models/series';
 import type { TaskModel } from '@/lib/watermelon-models/task';
 
@@ -47,6 +49,8 @@ type ValidSyncConflictTableName =
   | 'series'
   | 'tasks'
   | 'occurrence_overrides'
+  | 'plant_stage_history'
+  | 'plant_events'
   | 'harvests'
   | 'inventory'
   | 'harvest_audits'
@@ -78,6 +82,8 @@ function isSyncConflictAnalyticsTable(
     tableName === 'series' ||
     tableName === 'tasks' ||
     tableName === 'occurrence_overrides' ||
+    tableName === 'plant_stage_history' ||
+    tableName === 'plant_events' ||
     tableName === 'harvests' ||
     tableName === 'inventory' ||
     tableName === 'harvest_audits' ||
@@ -132,6 +138,8 @@ export function useConflictResolution() {
                   | SeriesModel
                   | TaskModel
                   | OccurrenceOverrideModel
+                  | PlantStageHistoryModel
+                  | PlantEventModel
                   | HarvestModel
                   | InventoryModel
                   | HarvestAuditModel
@@ -195,6 +203,8 @@ export function useConflictResolution() {
                   | SeriesModel
                   | TaskModel
                   | OccurrenceOverrideModel
+                  | PlantStageHistoryModel
+                  | PlantEventModel
                   | HarvestModel
                   | InventoryModel
                   | HarvestAuditModel

@@ -91,16 +91,24 @@ export function StrainsListWithCache({
   const [activeStrainId, setActiveStrainId] = React.useState<string | null>(
     null
   );
+
+  // Normalize search inputs once to ensure consistency between queryKey and data fetching
+  const normalizedSearchQuery = useMemo(
+    () => (searchQuery || '').trim(),
+    [searchQuery]
+  );
+  const normalizedFilters = useMemo(() => filters || {}, [filters]);
+
   // Memoize queryKey to avoid JSON.stringify on every render
   const queryKey = useMemo(
     () =>
       JSON.stringify({
-        q: searchQuery,
-        f: filters,
+        q: normalizedSearchQuery,
+        f: normalizedFilters,
         s: sortBy,
         d: sortDirection,
       }),
-    [searchQuery, filters, sortBy, sortDirection]
+    [normalizedSearchQuery, normalizedFilters, sortBy, sortDirection]
   );
 
   const {
@@ -116,8 +124,8 @@ export function StrainsListWithCache({
     queryKey: strainsQueryKey,
   } = useOfflineAwareStrains(
     {
-      searchQuery: (searchQuery || '').trim(),
-      filters: filters || {},
+      searchQuery: normalizedSearchQuery,
+      filters: normalizedFilters,
       sortBy,
       sortDirection,
       pageSize: 20,

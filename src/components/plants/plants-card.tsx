@@ -39,6 +39,14 @@ type StageColors = {
 // Stage colors using design tokens
 function getStageColors(stage?: string): StageColors {
   switch (stage) {
+    case 'germination':
+      return {
+        bg: colors.neutral[200],
+        text: colors.neutral[900],
+        badgeBg: colors.neutral[50],
+        badgeText: colors.neutral[900],
+        icon: colors.neutral[300],
+      };
     case 'seedling':
       return {
         bg: colors.success[200],
@@ -55,6 +63,7 @@ function getStageColors(stage?: string): StageColors {
         badgeText: colors.sky[800],
         icon: colors.sky[300],
       };
+    case 'flowering_stretch':
     case 'flowering':
       return {
         bg: colors.indigo[200],
@@ -63,6 +72,7 @@ function getStageColors(stage?: string): StageColors {
         badgeText: colors.indigo[800],
         icon: colors.indigo[300],
       };
+    case 'ripening':
     case 'harvesting':
       return {
         bg: colors.terracotta[200],
@@ -108,12 +118,18 @@ function translateStage(stage?: string): string | null {
 // Stage progress percentages for gamification
 function getStageProgress(stage?: string): number {
   switch (stage) {
+    case 'germination':
+      return 5;
     case 'seedling':
       return 15;
     case 'vegetative':
       return 35;
+    case 'flowering_stretch':
+      return 50;
     case 'flowering':
       return 65;
+    case 'ripening':
+      return 75;
     case 'harvesting':
       return 85;
     case 'curing':

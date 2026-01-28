@@ -279,10 +279,8 @@ async function getKeyMetadata(keyId: string): Promise<KeyMetadata | null> {
 
         // Proactively migrate to new format
         try {
-          // Re-derive new key variable since it is scoped above
-          const newMetadataKey = `${KEY_METADATA_KEY}_${keyId}`;
           await SecureStore.setItemAsync(
-            newMetadataKey,
+            metadataKey,
             metadataJson,
             METADATA_STORE_OPTIONS
           );

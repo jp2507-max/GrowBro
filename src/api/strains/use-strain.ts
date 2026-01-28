@@ -5,7 +5,10 @@ import { database } from '@/lib/watermelon';
 import { CachedStrainsRepository } from '@/lib/watermelon-models/cached-strains-repository';
 
 import { getStrainsApiClient } from './client';
-import { mapSupabaseRowToStrain } from './supabase-list';
+import {
+  mapSupabaseRowToStrain,
+  withStrainTableFallback,
+} from './supabase-list';
 import type { Strain } from './types';
 
 /**
@@ -67,21 +70,25 @@ async function findStrainInSupabase(
   idOrSlug: string
 ): Promise<Strain | undefined> {
   try {
-    const doLookup = async (table: 'strains_public' | 'strain_cache') =>
-      supabase
+    const result = await withStrainTableFallback(async (table) => {
+      // Try ID first
+      const byId = await supabase
         .from(table)
         .select('id, slug, name, race, data')
-        .or(`id.eq.${idOrSlug},slug.eq.${idOrSlug}`)
+        .eq('id', idOrSlug)
         .limit(1);
 
-    let result = await doLookup('strains_public');
-    if (
-      result.error &&
-      typeof result.error.message === 'string' &&
-      result.error.message.toLowerCase().includes('strains_public')
-    ) {
-      result = await doLookup('strain_cache');
-    }
+      if (byId.data?.length) {
+        return byId;
+      }
+
+      // Fallback to slug
+      return supabase
+        .from(table)
+        .select('id, slug, name, race, data')
+        .eq('slug', idOrSlug)
+        .limit(1);
+    });
 
     const { data, error } = result;
 

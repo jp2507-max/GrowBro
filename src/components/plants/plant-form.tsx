@@ -346,9 +346,20 @@ function PlantStrainField({ control, setValue, t }: PlantStrainFieldProps) {
 }
 
 const STAGE_OPTIONS: { value: PlantStage; i18nKey: string; icon: string }[] = [
+  {
+    value: 'germination',
+    i18nKey: 'plants.form.stage.germination',
+    icon: '🌰',
+  },
   { value: 'seedling', i18nKey: 'plants.form.stage.seedling', icon: '🌱' },
   { value: 'vegetative', i18nKey: 'plants.form.stage.vegetative', icon: '🌿' },
+  {
+    value: 'flowering_stretch',
+    i18nKey: 'plants.form.stage.flowering_stretch',
+    icon: '🌼',
+  },
   { value: 'flowering', i18nKey: 'plants.form.stage.flowering', icon: '🌸' },
+  { value: 'ripening', i18nKey: 'plants.form.stage.ripening', icon: '🍯' },
   { value: 'harvesting', i18nKey: 'plants.form.stage.harvesting', icon: '✂️' },
   { value: 'curing', i18nKey: 'plants.form.stage.curing', icon: '🫙' },
   { value: 'ready', i18nKey: 'plants.form.stage.ready', icon: '✅' },

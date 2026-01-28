@@ -38,9 +38,10 @@ BEGIN
       NEW.name,
       NEW.race,
       NEW.data,
-      now(),
+      NEW.created_at,  -- preserve original submission timestamp
       now()
-    );
+    )
+    ON CONFLICT (id) DO NOTHING;  -- defensive: handle unlikely id collision
   END IF;
 
   RETURN NEW;

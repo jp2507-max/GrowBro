@@ -14,7 +14,7 @@ export const HelpCircle = ({
   size = 24,
   strokeWidth = 1.5,
   ...props
-}: IconProps) => (
+}: IconProps): JSX.Element => (
   <Svg width={size} height={size} fill="none" viewBox="0 0 24 24" {...props}>
     <Circle
       cx={12}
