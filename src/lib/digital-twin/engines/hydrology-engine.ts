@@ -21,10 +21,11 @@ function isDryPayload(payload?: Record<string, unknown> | null): boolean {
 
 function isOverdueWatering(
   lastWateredAt: Date | undefined,
-  maxDays: number
+  maxDays: number,
+  now: Date
 ): boolean {
   if (!lastWateredAt) return false;
-  const diff = DateTime.now().diff(
+  const diff = DateTime.fromJSDate(now).diff(
     DateTime.fromJSDate(lastWateredAt),
     'days'
   ).days;
@@ -67,7 +68,7 @@ function buildSoilIntents(params: {
   });
 
   const maxDays = profile.medium === 'living_soil' ? 8 : 7;
-  if (isOverdueWatering(profile.lastWateredAt, maxDays)) {
+  if (isOverdueWatering(profile.lastWateredAt, maxDays, now)) {
     const overdue = buildDtstartTimestamps(now, profile.timezone);
     intents.push({
       engineKey: 'hydrology.water_now.overdue',
@@ -200,6 +201,13 @@ function buildPotWeightIntent(params: {
     (event) => event.kind === PlantEventKind.POT_WEIGHT_CHECK
   );
   if (!potWeightEvent || !isDryPayload(potWeightEvent.payload ?? null)) {
+    return [];
+  }
+
+  if (
+    typeof potWeightEvent.occurredAt !== 'number' ||
+    !Number.isFinite(potWeightEvent.occurredAt)
+  ) {
     return [];
   }
 

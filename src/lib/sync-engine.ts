@@ -1811,6 +1811,7 @@ export async function runSyncWithRetry(
           ]);
         } catch {}
         await setItem('sync.lastSuccessAt', nowMs());
+        invalidatePendingChangesCountCache();
         const durationMs = nowMs() - attemptStart;
         recordTotalDuration(durationMs);
         await emitSyncPerformanceSnapshot({

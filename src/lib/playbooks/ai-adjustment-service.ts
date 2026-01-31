@@ -3,13 +3,15 @@
  * Handles suggestion generation, gating, cooldowns, and outcome tracking
  */
 
-import { type Database, type Model, Q } from '@nozbe/watermelondb';
+import { type Database, Q } from '@nozbe/watermelondb';
 
+import { type AdjustmentCooldownModel } from '@/lib/watermelon-models/adjustment-cooldown';
+import { type AdjustmentSuggestionModel } from '@/lib/watermelon-models/adjustment-suggestion';
+import { type PlantAdjustmentPreferenceModel } from '@/lib/watermelon-models/plant-adjustment-preference';
 import type { TaskModel } from '@/lib/watermelon-models/task';
 import type {
   AdjustmentContext,
   AdjustmentRootCause,
-  AdjustmentStatus,
   AdjustmentSuggestion,
   AdjustmentThresholds,
   HelpfulnessVote,
@@ -17,44 +19,6 @@ import type {
 } from '@/types/ai-adjustments';
 
 import { getFeatureFlags } from '../feature-flags';
-
-// WatermelonDB model types for collections used in this service
-type AdjustmentSuggestionRecord = Model & {
-  _raw: {
-    id: string;
-    plant_id: string;
-    playbook_id: string;
-    suggestion_type: string;
-    root_cause: string;
-    reasoning: string;
-    affected_tasks: string;
-    confidence: number;
-    status: string;
-    accepted_tasks?: string;
-    helpfulness_vote?: string;
-    expires_at: number;
-    created_at: number;
-    updated_at: number;
-  };
-};
-
-type PlantAdjustmentPreferenceRecord = Model & {
-  _raw: {
-    plant_id: string;
-    never_suggest: boolean;
-    created_at: number;
-    updated_at: number;
-  };
-};
-
-type AdjustmentCooldownRecord = Model & {
-  _raw: {
-    plant_id: string;
-    root_cause: string;
-    cooldown_until: number;
-    created_at: number;
-  };
-};
 
 const COOLDOWN_DAYS = 7;
 const SUGGESTION_EXPIRY_DAYS = 3;
@@ -191,27 +155,24 @@ export class AIAdjustmentService {
       : suggestion.affectedTasks;
 
     await this.database.write(async () => {
-      const tasksCollection = this.database.get('tasks');
+      const tasksCollection = this.database.get<TaskModel>('tasks');
 
       for (const taskAdjustment of tasksToUpdate) {
         const task = await tasksCollection.find(taskAdjustment.taskId);
         await task.update((t) => {
-          // @ts-expect-error - WatermelonDB doesn't expose field names in Model type
-          t.due_at_local = taskAdjustment.proposedDueDate;
-          // Note: In production, also update due_at_utc, timezone, and notifications
+          t.dueAtLocal = taskAdjustment.proposedDueDate;
+          // Note: In production, also update dueAtUtc, timezone, and notifications
         });
       }
 
       // Update suggestion status
-      const suggestionsCollection = this.database.get('adjustment_suggestions');
+      const suggestionsCollection =
+        this.database.get<AdjustmentSuggestionModel>('adjustment_suggestions');
       const suggestionRecord = await suggestionsCollection.find(suggestionId);
       await suggestionRecord.update((s) => {
-        // @ts-expect-error - WatermelonDB doesn't expose field names in Model type
         s.status = 'accepted';
-        // @ts-expect-error - WatermelonDB doesn't expose field names in Model type
-        s.accepted_tasks = JSON.stringify(acceptedTaskIds || []);
-        // @ts-expect-error - WatermelonDB doesn't expose field names in Model type
-        s.updated_at = Date.now();
+        s.acceptedTasks = acceptedTaskIds || [];
+        s.updatedAt = Date.now();
       });
     });
 
@@ -229,13 +190,12 @@ export class AIAdjustmentService {
     }
 
     await this.database.write(async () => {
-      const suggestionsCollection = this.database.get('adjustment_suggestions');
+      const suggestionsCollection =
+        this.database.get<AdjustmentSuggestionModel>('adjustment_suggestions');
       const suggestionRecord = await suggestionsCollection.find(suggestionId);
       await suggestionRecord.update((s) => {
-        // @ts-expect-error - WatermelonDB doesn't expose field names in Model type
         s.status = 'declined';
-        // @ts-expect-error - WatermelonDB doesn't expose field names in Model type
-        s.updated_at = Date.now();
+        s.updatedAt = Date.now();
       });
     });
 
@@ -251,13 +211,12 @@ export class AIAdjustmentService {
     vote: HelpfulnessVote
   ): Promise<void> {
     await this.database.write(async () => {
-      const suggestionsCollection = this.database.get('adjustment_suggestions');
+      const suggestionsCollection =
+        this.database.get<AdjustmentSuggestionModel>('adjustment_suggestions');
       const suggestionRecord = await suggestionsCollection.find(suggestionId);
       await suggestionRecord.update((s) => {
-        // @ts-expect-error - WatermelonDB doesn't expose field names in Model type
-        s.helpfulness_vote = vote;
-        // @ts-expect-error - WatermelonDB doesn't expose field names in Model type
-        s.updated_at = Date.now();
+        s.helpfulnessVote = vote;
+        s.updatedAt = Date.now();
       });
     });
   }
@@ -267,30 +226,25 @@ export class AIAdjustmentService {
    */
   async setNeverSuggest(plantId: string, neverSuggest: boolean): Promise<void> {
     await this.database.write(async () => {
-      const preferencesCollection = this.database.get(
-        'plant_adjustment_preferences'
-      );
+      const preferencesCollection =
+        this.database.get<PlantAdjustmentPreferenceModel>(
+          'plant_adjustment_preferences'
+        );
       const existing = await preferencesCollection
         .query(Q.where('plant_id', plantId))
         .fetch();
 
       if (existing.length > 0) {
         await existing[0].update((p) => {
-          // @ts-expect-error - WatermelonDB doesn't expose field names in Model type
-          p.never_suggest = neverSuggest;
-          // @ts-expect-error - WatermelonDB doesn't expose field names in Model type
-          p.updated_at = Date.now();
+          p.neverSuggest = neverSuggest;
+          p.updatedAt = Date.now();
         });
       } else {
         await preferencesCollection.create((p) => {
-          // @ts-expect-error - WatermelonDB doesn't expose field names in Model type
-          p.plant_id = plantId;
-          // @ts-expect-error - WatermelonDB doesn't expose field names in Model type
-          p.never_suggest = neverSuggest;
-          // @ts-expect-error - WatermelonDB doesn't expose field names in Model type
-          p.created_at = Date.now();
-          // @ts-expect-error - WatermelonDB doesn't expose field names in Model type
-          p.updated_at = Date.now();
+          p.plantId = plantId;
+          p.neverSuggest = neverSuggest;
+          p.createdAt = Date.now();
+          p.updatedAt = Date.now();
         });
       }
     });
@@ -302,14 +256,14 @@ export class AIAdjustmentService {
   async getPendingSuggestions(
     plantId: string
   ): Promise<AdjustmentSuggestion[]> {
-    const suggestionsCollection = this.database.get('adjustment_suggestions');
+    const suggestionsCollection = this.database.get<AdjustmentSuggestionModel>(
+      'adjustment_suggestions'
+    );
     const records = await suggestionsCollection
       .query(Q.where('plant_id', plantId), Q.where('status', 'pending'))
       .fetch();
 
-    return records.map((r) =>
-      this.mapRecordToSuggestion(r as AdjustmentSuggestionRecord)
-    );
+    return records.map((r) => r.toAdjustmentSuggestion());
   }
 
   /**
@@ -318,14 +272,14 @@ export class AIAdjustmentService {
   async getAcceptedSuggestions(
     plantId: string
   ): Promise<AdjustmentSuggestion[]> {
-    const suggestionsCollection = this.database.get('adjustment_suggestions');
+    const suggestionsCollection = this.database.get<AdjustmentSuggestionModel>(
+      'adjustment_suggestions'
+    );
     const records = await suggestionsCollection
       .query(Q.where('plant_id', plantId), Q.where('status', 'accepted'))
       .fetch();
 
-    return records.map((r) =>
-      this.mapRecordToSuggestion(r as AdjustmentSuggestionRecord)
-    );
+    return records.map((r) => r.toAdjustmentSuggestion());
   }
 
   // Private helper methods
@@ -333,9 +287,10 @@ export class AIAdjustmentService {
   private async getPlantPreference(
     plantId: string
   ): Promise<{ neverSuggest: boolean } | null> {
-    const preferencesCollection = this.database.get(
-      'plant_adjustment_preferences'
-    );
+    const preferencesCollection =
+      this.database.get<PlantAdjustmentPreferenceModel>(
+        'plant_adjustment_preferences'
+      );
     const records = await preferencesCollection
       .query(Q.where('plant_id', plantId))
       .fetch();
@@ -343,8 +298,7 @@ export class AIAdjustmentService {
     if (records.length === 0) return null;
 
     return {
-      neverSuggest: (records[0] as PlantAdjustmentPreferenceRecord)._raw
-        .never_suggest,
+      neverSuggest: records[0].neverSuggest,
     };
   }
 
@@ -352,18 +306,16 @@ export class AIAdjustmentService {
     plantId: string,
     rootCause: AdjustmentRootCause
   ): Promise<boolean> {
-    const cooldownsCollection = this.database.get('adjustment_cooldowns');
+    const cooldownsCollection = this.database.get<AdjustmentCooldownModel>(
+      'adjustment_cooldowns'
+    );
     const records = await cooldownsCollection
       .query(Q.where('plant_id', plantId), Q.where('root_cause', rootCause))
       .fetch();
 
     if (records.length === 0) return false;
 
-    // Check if any record has an active cooldown (cooldown_until > now)
-    const now = Date.now();
-    return records.some(
-      (record) => (record as AdjustmentCooldownRecord)._raw.cooldown_until > now
-    );
+    return records.some((record) => record.isActive());
   }
 
   private async setCooldown(
@@ -373,7 +325,9 @@ export class AIAdjustmentService {
     const cooldownUntil = Date.now() + COOLDOWN_DAYS * 24 * 60 * 60 * 1000;
 
     await this.database.write(async () => {
-      const cooldownsCollection = this.database.get('adjustment_cooldowns');
+      const cooldownsCollection = this.database.get<AdjustmentCooldownModel>(
+        'adjustment_cooldowns'
+      );
       const existing = await cooldownsCollection
         .query(Q.where('plant_id', plantId), Q.where('root_cause', rootCause))
         .fetch();
@@ -381,22 +335,16 @@ export class AIAdjustmentService {
       if (existing.length > 0) {
         // Update existing record
         await existing[0].update((c) => {
-          // @ts-expect-error - WatermelonDB doesn't expose field names in Model type
-          c.cooldown_until = cooldownUntil;
-          // @ts-expect-error - WatermelonDB doesn't expose field names in Model type
-          c.created_at = Date.now();
+          c.cooldownUntil = cooldownUntil;
+          c.createdAt = Date.now();
         });
       } else {
         // Create new record
         await cooldownsCollection.create((c) => {
-          // @ts-expect-error - WatermelonDB doesn't expose field names in Model type
-          c.plant_id = plantId;
-          // @ts-expect-error - WatermelonDB doesn't expose field names in Model type
-          c.root_cause = rootCause;
-          // @ts-expect-error - WatermelonDB doesn't expose field names in Model type
-          c.cooldown_until = cooldownUntil;
-          // @ts-expect-error - WatermelonDB doesn't expose field names in Model type
-          c.created_at = Date.now();
+          c.plantId = plantId;
+          c.rootCause = rootCause;
+          c.cooldownUntil = cooldownUntil;
+          c.createdAt = Date.now();
         });
       }
     });
@@ -519,32 +467,21 @@ export class AIAdjustmentService {
     suggestion: AdjustmentSuggestion
   ): Promise<void> {
     await this.database.write(async () => {
-      const suggestionsCollection = this.database.get('adjustment_suggestions');
+      const suggestionsCollection =
+        this.database.get<AdjustmentSuggestionModel>('adjustment_suggestions');
       await suggestionsCollection.create((s) => {
-        // @ts-expect-error - WatermelonDB doesn't expose field names in Model type
-        s.id = suggestion.id;
-        // @ts-expect-error - WatermelonDB doesn't expose field names in Model type
-        s.plant_id = suggestion.plantId;
-        // @ts-expect-error - WatermelonDB doesn't expose field names in Model type
-        s.playbook_id = suggestion.playbookId;
-        // @ts-expect-error - WatermelonDB doesn't expose field names in Model type
-        s.suggestion_type = suggestion.suggestionType;
-        // @ts-expect-error - WatermelonDB doesn't expose field names in Model type
-        s.root_cause = suggestion.rootCause;
-        // @ts-expect-error - WatermelonDB doesn't expose field names in Model type
+        s._raw.id = suggestion.id;
+        s.plantId = suggestion.plantId;
+        s.playbookId = suggestion.playbookId;
+        s.suggestionType = suggestion.suggestionType;
+        s.rootCause = suggestion.rootCause;
         s.reasoning = suggestion.reasoning;
-        // @ts-expect-error - WatermelonDB doesn't expose field names in Model type
-        s.affected_tasks = JSON.stringify(suggestion.affectedTasks);
-        // @ts-expect-error - WatermelonDB doesn't expose field names in Model type
+        s.affectedTasks = suggestion.affectedTasks;
         s.confidence = suggestion.confidence;
-        // @ts-expect-error - WatermelonDB doesn't expose field names in Model type
         s.status = suggestion.status;
-        // @ts-expect-error - WatermelonDB doesn't expose field names in Model type
-        s.expires_at = suggestion.expiresAt;
-        // @ts-expect-error - WatermelonDB doesn't expose field names in Model type
-        s.created_at = suggestion.createdAt;
-        // @ts-expect-error - WatermelonDB doesn't expose field names in Model type
-        s.updated_at = suggestion.updatedAt;
+        s.expiresAt = suggestion.expiresAt;
+        s.createdAt = suggestion.createdAt;
+        s.updatedAt = suggestion.updatedAt;
       });
     });
   }
@@ -553,38 +490,13 @@ export class AIAdjustmentService {
     suggestionId: string
   ): Promise<AdjustmentSuggestion | null> {
     try {
-      const suggestionsCollection = this.database.get('adjustment_suggestions');
+      const suggestionsCollection =
+        this.database.get<AdjustmentSuggestionModel>('adjustment_suggestions');
       const record = await suggestionsCollection.find(suggestionId);
-      return this.mapRecordToSuggestion(record as AdjustmentSuggestionRecord);
+      return record.toAdjustmentSuggestion();
     } catch {
       return null;
     }
-  }
-
-  private mapRecordToSuggestion(
-    record: AdjustmentSuggestionRecord
-  ): AdjustmentSuggestion {
-    return {
-      id: record.id,
-      plantId: record._raw.plant_id,
-      playbookId: record._raw.playbook_id,
-      suggestionType: record._raw
-        .suggestion_type as AdjustmentSuggestion['suggestionType'],
-      rootCause: record._raw.root_cause as AdjustmentRootCause,
-      reasoning: record._raw.reasoning,
-      affectedTasks: JSON.parse(record._raw.affected_tasks || '[]'),
-      confidence: record._raw.confidence,
-      status: record._raw.status as AdjustmentStatus,
-      acceptedTasks: record._raw.accepted_tasks
-        ? JSON.parse(record._raw.accepted_tasks)
-        : undefined,
-      helpfulnessVote: record._raw.helpfulness_vote as
-        | HelpfulnessVote
-        | undefined,
-      expiresAt: record._raw.expires_at,
-      createdAt: record._raw.created_at,
-      updatedAt: record._raw.updated_at,
-    };
   }
 
   private generateId(): string {

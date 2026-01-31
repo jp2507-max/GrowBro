@@ -5,7 +5,6 @@ import {
   Controller,
   type SubmitErrorHandler,
   type SubmitHandler,
-  useController,
   useForm,
   type UseFormSetValue,
   useWatch,
@@ -26,19 +25,16 @@ import type {
   Race,
   TrainingPreference,
 } from '@/api/plants/types';
-import type { Strain } from '@/api/strains/types';
-import { useStrainsInfiniteWithCache } from '@/api/strains/use-strains-infinite-with-cache';
+import { StrainPicker } from '@/components/community/strain-picker';
 import {
   calculateCompletion,
   CompletionProgress,
 } from '@/components/plants/completion-progress';
 import { FormSection } from '@/components/plants/form-section';
 import {
-  ActivityIndicator,
   Checkbox,
   ControlledDatePicker,
   ControlledInput,
-  Input,
   type OptionType,
   Pressable,
   Select,
@@ -47,308 +43,9 @@ import {
   View,
 } from '@/components/ui';
 import type { PlantPhotoStoreResult } from '@/lib/media/plant-photo-storage';
-import { derivePlantDefaultsFromStrain } from '@/lib/plants/derive-from-strain';
-import {
-  buildCustomStrain,
-  saveCustomStrainToSupabase,
-} from '@/lib/strains/custom-strain-cache';
 
 import { HeroPhotoSection } from './hero-photo-section';
-
-function useDebouncedValue<T>(value: T, delayMs: number): T {
-  const [debounced, setDebounced] = React.useState(value);
-
-  React.useEffect(() => {
-    const handle = setTimeout(() => setDebounced(value), delayMs);
-    return () => clearTimeout(handle);
-  }, [value, delayMs]);
-
-  return debounced;
-}
-
-type StrainSuggestion = Strain;
-
-type UseStrainSuggestionsResult = {
-  suggestions: StrainSuggestion[];
-  isFetching: boolean;
-  isLoading: boolean;
-  hasExactMatch: boolean;
-  trimmedQuery: string;
-};
-
-function useStrainSuggestions(query: string): UseStrainSuggestionsResult {
-  const trimmedQuery = query.trim();
-  const debouncedQuery = useDebouncedValue(trimmedQuery, 250);
-  const { data, isFetching, isLoading } = useStrainsInfiniteWithCache({
-    variables: {
-      searchQuery: debouncedQuery,
-      pageSize: 12,
-    },
-    enabled: true,
-  });
-
-  // Flatten all pages for full data set
-  const allStrains = React.useMemo<StrainSuggestion[]>(() => {
-    if (!data?.pages?.length) return [];
-    return data.pages.flatMap((page) => page.data || []);
-  }, [data?.pages]);
-
-  // Keep top 8 for display
-  const suggestions = React.useMemo<StrainSuggestion[]>(
-    () => allStrains.slice(0, 8),
-    [allStrains]
-  );
-
-  // Check FULL result set for exact match (fixes issue where match is beyond top 8)
-  const hasExactMatch = React.useMemo(() => {
-    const lower = trimmedQuery.toLowerCase();
-    return allStrains.some((s) => s.name.toLowerCase() === lower);
-  }, [allStrains, trimmedQuery]);
-
-  return {
-    suggestions,
-    isFetching,
-    isLoading,
-    hasExactMatch,
-    trimmedQuery,
-  };
-}
-
-type PlantStrainFieldProps = {
-  control: Control<PlantFormValues>;
-  setValue: UseFormSetValue<PlantFormValues>;
-  t: (key: string, options?: Record<string, string | number>) => string;
-};
-
-type StrainSuggestionsDropdownProps = {
-  isFetching: boolean;
-  isLoading: boolean;
-  onCreateCustom: () => void;
-  onSelect: (strain: StrainSuggestion) => void;
-  query: string;
-  showCreateCustom: boolean;
-  suggestions: StrainSuggestion[];
-  t: (key: string, options?: Record<string, string | number>) => string;
-  visible: boolean;
-};
-
-function StrainSuggestionsDropdown({
-  isFetching,
-  isLoading,
-  onCreateCustom,
-  onSelect,
-  query,
-  showCreateCustom,
-  suggestions,
-  t,
-  visible,
-}: StrainSuggestionsDropdownProps) {
-  if (!visible) return null;
-
-  if (isLoading || isFetching) {
-    return (
-      <View className="absolute inset-x-0 top-16 z-10 mt-2 rounded-2xl border border-neutral-200 bg-white shadow-lg dark:border-charcoal-700 dark:bg-charcoal-900">
-        <View className="flex-row items-center gap-2 px-4 py-3">
-          <ActivityIndicator size="small" />
-          <Text className="text-sm text-neutral-600 dark:text-neutral-400">
-            {t('plants.form.strain_searching')}
-          </Text>
-        </View>
-      </View>
-    );
-  }
-
-  const showEmpty = suggestions.length === 0 && !showCreateCustom;
-
-  return (
-    <View className="absolute inset-x-0 top-16 z-10 mt-2 rounded-2xl border border-neutral-200 bg-white shadow-lg dark:border-charcoal-700 dark:bg-charcoal-900">
-      {showEmpty && (
-        <View className="px-4 py-3">
-          <Text className="text-sm text-neutral-600 dark:text-neutral-400">
-            {t('plants.form.strain_no_results', { query })}
-          </Text>
-        </View>
-      )}
-
-      {suggestions.map((strain) => {
-        const derived = derivePlantDefaultsFromStrain(strain);
-        const isAutoflower = derived.photoperiodType === 'autoflower';
-
-        return (
-          <Pressable
-            key={strain.id}
-            onPress={() => onSelect(strain)}
-            className="flex-row items-center justify-between px-4 py-3 active:bg-neutral-100 dark:active:bg-neutral-800"
-            accessibilityRole="button"
-            accessibilityLabel={strain.name}
-            accessibilityHint={t('accessibility.common.select_option_hint', {
-              label: strain.name,
-            })}
-            testID={`strain-suggestion-${strain.id}`}
-          >
-            <View className="flex-1">
-              <Text className="text-base font-medium text-charcoal-900 dark:text-neutral-100">
-                {strain.name}
-              </Text>
-              <Text className="text-xs text-neutral-500 dark:text-neutral-400">
-                {t('plants.form.strain_race_label', { race: strain.race })}
-              </Text>
-            </View>
-            {isAutoflower && (
-              <Text className="rounded-full bg-primary-100 px-3 py-1 text-xs font-semibold text-primary-700 dark:bg-primary-900/30 dark:text-primary-200">
-                {t('plants.form.autoflower_badge')}
-              </Text>
-            )}
-          </Pressable>
-        );
-      })}
-
-      {showCreateCustom && (
-        <Pressable
-          onPress={onCreateCustom}
-          className="flex-row items-center justify-between border-t border-neutral-200 px-4 py-3 active:bg-neutral-100 dark:border-neutral-800 dark:active:bg-neutral-800"
-          accessibilityRole="button"
-          accessibilityLabel={t('plants.form.strain_create_custom', {
-            name: query,
-          })}
-          accessibilityHint={t('accessibility.common.select_option_hint', {
-            label: t('plants.form.strain_create_custom', { name: query }),
-          })}
-          testID="strain-suggestion-custom"
-        >
-          <View className="flex-1">
-            <Text className="text-base font-medium text-primary-700 dark:text-primary-300">
-              {t('plants.form.strain_create_custom', { name: query })}
-            </Text>
-            <Text className="text-xs text-neutral-500 dark:text-neutral-400">
-              {t('plants.form.strain_create_custom_hint')}
-            </Text>
-          </View>
-        </Pressable>
-      )}
-    </View>
-  );
-}
-
-// eslint-disable-next-line max-lines-per-function
-function PlantStrainField({ control, setValue, t }: PlantStrainFieldProps) {
-  const { field, fieldState } = useController({
-    control,
-    name: 'strain',
-  });
-  const [inputValue, setInputValue] = React.useState(field.value ?? '');
-  const [isFocused, setIsFocused] = React.useState(false);
-
-  const { hasExactMatch, isFetching, isLoading, suggestions, trimmedQuery } =
-    useStrainSuggestions(inputValue);
-
-  React.useEffect(() => {
-    if (field.value && field.value !== inputValue) {
-      setInputValue(field.value);
-    }
-  }, [field.value, inputValue]);
-
-  const clearStrainMetadata = React.useCallback(() => {
-    setValue('strainId', undefined, { shouldDirty: true });
-    setValue('strainSlug', undefined, { shouldDirty: true });
-    setValue('strainSource', undefined, { shouldDirty: true });
-    setValue('strainRace', undefined, { shouldDirty: true });
-  }, [setValue]);
-
-  const applyDerived = React.useCallback(
-    (strain: StrainSuggestion, source: 'api' | 'custom') => {
-      const derived = derivePlantDefaultsFromStrain(strain, { source });
-
-      setValue('strainId', derived.meta.strainId, { shouldDirty: true });
-      setValue('strainSlug', derived.meta.strainSlug, { shouldDirty: true });
-      setValue('strainSource', derived.meta.strainSource, {
-        shouldDirty: true,
-      });
-      setValue('strainRace', derived.meta.strainRace, { shouldDirty: true });
-
-      const photoperiodValue =
-        derived.photoperiodType ??
-        (source === 'custom' ? 'photoperiod' : undefined);
-      if (photoperiodValue) {
-        setValue('photoperiodType', photoperiodValue, { shouldDirty: true });
-      }
-
-      const geneticValue =
-        derived.geneticLean ?? (source === 'custom' ? 'balanced' : undefined);
-      if (geneticValue) {
-        setValue('geneticLean', geneticValue, { shouldDirty: true });
-      }
-
-      if (derived.environment) {
-        setValue('environment', derived.environment, { shouldDirty: true });
-      }
-    },
-    [setValue]
-  );
-
-  const handleSelect = React.useCallback(
-    (strain: StrainSuggestion) => {
-      field.onChange(strain.name);
-      setInputValue(strain.name);
-      applyDerived(strain, 'api');
-      setIsFocused(false);
-    },
-    [applyDerived, field]
-  );
-
-  const handleCreateCustom = React.useCallback(() => {
-    const name = trimmedQuery || inputValue;
-    if (!name) return;
-
-    const customStrain = buildCustomStrain(name);
-    // Fire-and-forget: submit for moderation so other users can find it later.
-    void saveCustomStrainToSupabase(customStrain);
-    field.onChange(customStrain.name);
-    setInputValue(customStrain.name);
-    applyDerived(customStrain, 'custom');
-    setIsFocused(false);
-  }, [applyDerived, field, inputValue, trimmedQuery]);
-
-  const showCreateCustom =
-    trimmedQuery.length > 0 && !hasExactMatch && !isLoading && !isFetching;
-  const showDropdown =
-    isFocused &&
-    (trimmedQuery.length > 0 || suggestions.length > 0 || showCreateCustom);
-
-  return (
-    <View className="relative">
-      <Input
-        value={inputValue}
-        onChangeText={(text) => {
-          setInputValue(text);
-          field.onChange(text);
-          clearStrainMetadata();
-        }}
-        onFocus={() => setIsFocused(true)}
-        onBlur={() => {
-          // Allow tap on suggestion to fire before closing
-          setTimeout(() => setIsFocused(false), 200);
-        }}
-        placeholder={t('plants.form.strain_placeholder')}
-        label={t('plants.form.strain_label')}
-        testID="plant-strain-input"
-        error={fieldState.error?.message}
-      />
-
-      <StrainSuggestionsDropdown
-        isFetching={isFetching}
-        isLoading={isLoading}
-        onCreateCustom={handleCreateCustom}
-        onSelect={handleSelect}
-        query={inputValue || trimmedQuery}
-        showCreateCustom={showCreateCustom}
-        suggestions={suggestions}
-        t={t}
-        visible={showDropdown}
-      />
-    </View>
-  );
-}
+import { useStrainPickerForPlantForm } from './use-strain-picker-for-plant-form';
 
 const STAGE_OPTIONS: { value: PlantStage; i18nKey: string; icon: string }[] = [
   {
@@ -600,13 +297,17 @@ function IdentitySection({
   control,
   startTypeOptions,
   setValue,
+  strainValue,
   t,
 }: {
   control: Control<PlantFormValues>;
   startTypeOptions: OptionType[];
   setValue: UseFormSetValue<PlantFormValues>;
+  strainValue?: string;
   t: (key: string) => string;
 }) {
+  const { handleStrainSelect } = useStrainPickerForPlantForm({ setValue });
+
   return (
     <FormSection
       icon="🌱"
@@ -623,7 +324,14 @@ function IdentitySection({
           testID="plant-name-input"
           chunky
         />
-        <PlantStrainField control={control} setValue={setValue} t={t} />
+        <StrainPicker
+          value={strainValue}
+          onSelectFull={handleStrainSelect}
+          enableCustomStrain
+          label={t('plants.form.strain_label')}
+          placeholder={t('plants.form.strain_placeholder')}
+          testID="plant-strain-picker"
+        />
         <SelectField
           control={control}
           name="startType"
@@ -817,14 +525,6 @@ function AdvancedSection({
             />
             <ControlledInput
               control={control}
-              name="potSize"
-              placeholder={t('plants.form.pot_size_placeholder')}
-              label={t('plants.form.pot_size_label')}
-              testID="plant-potSize-input"
-              chunky
-            />
-            <ControlledInput
-              control={control}
               name="height"
               placeholder={t('plants.form.height_placeholder')}
               label={t('plants.form.height_label')}
@@ -892,7 +592,11 @@ function buildSchema(t: (key: string) => string) {
       .trim()
       .min(1, t('plants.form.errors.name_required'))
       .max(120, t('plants.form.errors.name_length')),
-    strain: z.string().trim().max(120, t('plants.form.errors.strain_length')),
+    strain: z
+      .string()
+      .trim()
+      .max(120, t('plants.form.errors.strain_length'))
+      .optional(),
     strainId: z.string().trim().max(200).optional(),
     strainSlug: z.string().trim().max(200).optional(),
     strainSource: z.enum(['api', 'custom']).optional(),
@@ -984,6 +688,7 @@ function buildSchema(t: (key: string) => string) {
 type UsePlantFormControllerResult = {
   control: Control<PlantFormValues>;
   imageUrl: string | undefined;
+  strainValue: string | undefined;
   onPhotoCaptured: (photo: PlantPhotoStoreResult) => void;
   isSubmitting: boolean;
   handleFormSubmit: () => void;
@@ -1049,6 +754,7 @@ function usePlantFormController({
   return {
     control,
     imageUrl: watchedValues.imageUrl,
+    strainValue: watchedValues.strain,
     onPhotoCaptured,
     isSubmitting,
     handleFormSubmit,
@@ -1093,6 +799,7 @@ type FormSectionsProps = {
     spaceSize: OptionType[];
   };
   setValue: UseFormSetValue<PlantFormValues>;
+  strainValue?: string;
   t: (key: string) => string;
   onDelete?: () => void;
 };
@@ -1101,6 +808,7 @@ function FormSections({
   control,
   options,
   setValue,
+  strainValue,
   t,
   onDelete,
 }: FormSectionsProps): React.ReactElement {
@@ -1110,6 +818,7 @@ function FormSections({
         control={control}
         startTypeOptions={options.startType}
         setValue={setValue}
+        strainValue={strainValue}
         t={t}
       />
       <EnvironmentSection
@@ -1149,6 +858,7 @@ export function PlantForm({
   const {
     control,
     imageUrl,
+    strainValue,
     onPhotoCaptured,
     isSubmitting: formSubmitting,
     handleFormSubmit,
@@ -1227,6 +937,7 @@ export function PlantForm({
         control={control}
         options={options}
         setValue={setValue}
+        strainValue={strainValue}
         t={t}
         onDelete={onDelete}
       />
@@ -1254,6 +965,7 @@ export function PlantForm({
           control={control}
           options={options}
           setValue={setValue}
+          strainValue={strainValue}
           t={t}
           onDelete={onDelete}
         />

@@ -31,7 +31,7 @@ export function StrainScrollContent({
       <View className="h-hero justify-end px-6 pb-8">
         <View className="mb-2 flex-row gap-2">
           <BlurView intensity={80} className="rounded-full px-3 py-1">
-            <View className="rounded-full bg-white/20 px-3 py-1">
+            <View className="bg-white/20">
               <Text className="text-xs font-bold uppercase tracking-wider text-white">
                 {translate(`strains.race.${strain.race}`)}
               </Text>

@@ -5,7 +5,6 @@ import {
   type FlashListRef,
 } from '@shopify/flash-list';
 import { useNavigation, useRouter } from 'expo-router';
-import { useColorScheme } from 'nativewind';
 import React, { useLayoutEffect } from 'react';
 import { type ListRenderItemInfo, StyleSheet } from 'react-native';
 import Animated from 'react-native-reanimated';
@@ -22,8 +21,7 @@ import type {
   FavoritesSortBy,
   FavoritesSortDirection,
 } from '@/components/strains/favorites-sort-menu';
-import { FocusAwareStatusBar, Pressable, Text, View } from '@/components/ui';
-import colors from '@/components/ui/colors';
+import { FocusAwareStatusBar, GlassButton, Text, View } from '@/components/ui';
 import { ArrowLeft, Settings } from '@/components/ui/icons';
 import { translate } from '@/lib';
 import { useAnimatedScrollList } from '@/lib/animations/animated-scroll-list-provider';
@@ -176,56 +174,50 @@ function FavoriteItem({
 }
 
 type FavoritesHeaderProps = {
-  iconColor: string;
   onBack: () => void;
   onSort: () => void;
   isOffline: boolean;
 };
 
-function FavoritesHeader({
-  iconColor,
-  onBack,
-  onSort,
-  isOffline,
-}: FavoritesHeaderProps) {
+function FavoritesHeader({ onBack, onSort, isOffline }: FavoritesHeaderProps) {
   return (
     <View className="px-4 py-2">
       <View className="flex-row items-center pb-2">
-        <Pressable
+        <GlassButton
           onPress={onBack}
-          className="size-10 items-center justify-center rounded-full bg-white shadow-sm active:bg-white dark:bg-charcoal-900"
-          accessibilityRole="button"
+          size={40}
+          fallbackClassName="bg-neutral-200/80 dark:bg-charcoal-800"
           accessibilityLabel={translate('common.back')}
           accessibilityHint={translate('accessibility.common.back_hint')}
           testID="favorites-back-button"
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
           <ArrowLeft
-            color={iconColor}
-            width={16}
-            height={16}
+            width={20}
+            height={20}
             className="text-charcoal-900 dark:text-neutral-100"
           />
-        </Pressable>
+        </GlassButton>
       </View>
       <View className="flex-row items-center justify-between pb-4">
         <Text className="text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
           {translate('strains.favorites.title')}
         </Text>
-        <Pressable
+        <GlassButton
           onPress={onSort}
-          className="size-10 items-center justify-center rounded-full bg-white shadow-sm active:bg-white dark:bg-charcoal-900"
-          accessibilityRole="button"
+          size={40}
+          fallbackClassName="bg-neutral-200/80 dark:bg-charcoal-800"
           accessibilityLabel={translate('strains.favorites.sort.title')}
           accessibilityHint={translate('strains.favorites.sort.hint')}
           testID="favorites-sort-button"
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
           <Settings
-            color={iconColor}
-            width={20}
-            height={20}
-            className="text-neutral-900 dark:text-neutral-100"
+            width={22}
+            height={22}
+            className="text-charcoal-900 dark:text-neutral-100"
           />
-        </Pressable>
+        </GlassButton>
       </View>
       <StrainsOfflineBanner isVisible={isOffline} />
     </View>
@@ -249,9 +241,6 @@ export default function FavoritesScreen(): React.ReactElement {
   const router = useRouter();
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
-  const { colorScheme } = useColorScheme();
-  const isDark = colorScheme === 'dark';
-  const iconColor = isDark ? colors.white : colors.neutral[900];
 
   const favorites = useFavorites.use.getFavorites()();
   const sortMenu = useFavoritesSortMenu();
@@ -339,7 +328,6 @@ export default function FavoritesScreen(): React.ReactElement {
     >
       <FocusAwareStatusBar />
       <FavoritesHeader
-        iconColor={iconColor}
         onBack={handleBack}
         onSort={handleOpenSort}
         isOffline={isOffline}

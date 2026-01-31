@@ -54,7 +54,7 @@ export class InventoryItemModel extends Model {
   @readonly @date('updated_at') updatedAt!: Date;
 
   /** Soft delete timestamp for sync tombstones */
-  @date('deleted_at') deletedAt?: Date;
+  @date('deleted_at') deletedAt?: Date | null;
 
   /** Denormalized current stock level for quick low-stock checks */
   @field('current_stock') currentStock?: number;

@@ -43,6 +43,10 @@ function hasEvent(signals: TwinSignals, kind: string): boolean {
   return signals.events.some((event) => event.kind === kind);
 }
 
+/**
+ * Returns the payload of the first event matching the given kind.
+ * Assumes signals.events is sorted by occurredAt descending (newest first).
+ */
 function getLatestEventPayload(
   signals: TwinSignals,
   kind: string

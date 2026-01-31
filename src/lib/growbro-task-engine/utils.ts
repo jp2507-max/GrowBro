@@ -125,6 +125,11 @@ export function buildDtstartAtHour(
   timezone: string,
   hour: number
 ): { dtstartLocal: string; dtstartUtc: string } {
+  if (!Number.isInteger(hour) || hour < 0 || hour > 23) {
+    throw new Error(
+      `Invalid hour: ${hour}. Must be an integer between 0 and 23.`
+    );
+  }
   const dt = DateTime.fromJSDate(date, { zone: timezone }).set({
     hour,
     minute: 0,

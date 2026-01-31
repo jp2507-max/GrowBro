@@ -1,3 +1,4 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import React from 'react';
@@ -6,15 +7,39 @@ import type { EdgeInsets } from 'react-native-safe-area-context';
 
 import { GlassSurface } from '@/components/shared/glass-surface';
 import { GlassButton, Text, View } from '@/components/ui';
+import colors from '@/components/ui/colors';
 import { PlatformIcon, Settings as SettingsIcon } from '@/components/ui/icons';
 import { translate } from '@/lib/i18n';
 import type { TxKeyPath } from '@/lib/i18n/utils';
 import { getHeaderColors } from '@/lib/theme-utils';
 import { cn } from '@/lib/utils';
 
+// Gradient colors matching Stitch "Organic Tech" design
+const HEADER_GRADIENT_COLORS = {
+  light: [
+    colors.primary[600],
+    colors.primary[700],
+    colors.primary[800],
+  ] as const,
+  dark: [
+    '#0c0a09', // Deep charcoal base (charcoal-950)
+    '#0a1612', // Transitional deep forest
+    '#0f2b1d', // Rich forest green accent
+  ] as const,
+};
+
 const styles = StyleSheet.create({
   statsPill: {
     borderRadius: 999,
+  },
+  headerContainer: {
+    paddingHorizontal: 16,
+  },
+  headerContainerCompact: {
+    paddingBottom: 16,
+  },
+  headerContainerNormal: {
+    paddingBottom: 24,
   },
 });
 
@@ -42,7 +67,7 @@ type ScreenHeaderBaseProps = {
 
 /**
  * Base component for screen headers with consistent styling.
- * Uses theme-aware background color for proper theming support.
+ * Uses gradient background matching community header style.
  */
 export function ScreenHeaderBase({
   insets,
@@ -56,24 +81,34 @@ export function ScreenHeaderBase({
 }: ScreenHeaderBaseProps): React.ReactElement {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
-  const colors = getHeaderColors(isDark);
+  const headerColors = getHeaderColors(isDark);
+  const gradientColors = isDark
+    ? HEADER_GRADIENT_COLORS.dark
+    : HEADER_GRADIENT_COLORS.light;
 
   const paddingTop = compact ? HEADER_PADDING_TOP_COMPACT : HEADER_PADDING_TOP;
 
+  const borderStyle = showBottomBorder
+    ? {
+        borderBottomWidth: 1,
+        borderBottomColor: isDark
+          ? 'rgba(68, 64, 60, 1)'
+          : 'rgba(204, 235, 217, 1)',
+      }
+    : undefined;
+
   return (
-    <View
-      className={cn(
-        'z-0 px-4',
-        compact ? 'pb-4' : 'pb-6',
-        'shadow-lg',
-        showBottomBorder &&
-          'border-b border-neutral-200 dark:border-charcoal-700'
-      )}
-      style={{
-        paddingTop: insets.top + paddingTop,
-        backgroundColor: colors.background,
-      }}
+    <LinearGradient
+      colors={gradientColors}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
       testID={testID}
+      style={[
+        styles.headerContainer,
+        compact ? styles.headerContainerCompact : styles.headerContainerNormal,
+        { paddingTop: insets.top + paddingTop },
+        borderStyle,
+      ]}
     >
       {/* Top Row: Left content + Right icons */}
       {(topRowLeft || topRowRight) && (
@@ -90,7 +125,7 @@ export function ScreenHeaderBase({
             'font-bold tracking-tight',
             compact ? 'text-2xl' : 'text-3xl'
           )}
-          style={{ color: colors.text }}
+          style={{ color: headerColors.text }}
         >
           {title}
         </Text>
@@ -100,7 +135,7 @@ export function ScreenHeaderBase({
       {children && (
         <View className={compact ? 'mt-2' : 'mt-3'}>{children}</View>
       )}
-    </View>
+    </LinearGradient>
   );
 }
 
@@ -125,11 +160,7 @@ export function HeaderGreeting(): React.ReactElement {
     greeting = translate('home.greeting.night' as TxKeyPath);
   }
 
-  return (
-    <Text className="text-lg font-medium text-charcoal-900 dark:text-neutral-100">
-      {greeting}
-    </Text>
-  );
+  return <Text className="text-lg font-medium text-white/90">{greeting}</Text>;
 }
 
 /**

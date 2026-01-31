@@ -141,6 +141,19 @@
       "view_comments_hint": "Doppeltippen, um Kommentare zu diesem Beitrag anzuzeigen.",
       "view_strain_hint": "Öffnet Details für diese Sorte."
     },
+    "form": {
+      "input_with_value": "{{field}} Eingabe, aktueller Wert: {{value}} {{unit}}",
+      "input_without_value": "{{field}} Eingabe"
+    },
+    "harvest": {
+      "history_base": "Ernte in Phase {{stage}}, aktualisiert {{updatedAt}}",
+      "history_conflict": "Überprüfung erforderlich",
+      "history_dry_weight": "Trockengewicht {{weight}} Gramm",
+      "progress": "Erntefortschritt: Phase {{stage}}, {{completed}} von {{total}} Phasen abgeschlossen",
+      "stage_completed": "{{stage}} - abgeschlossen",
+      "stage_current": "{{stage}} - aktuelle Phase",
+      "stage_upcoming": "{{stage}} - bevorstehend"
+    },
     "home": {
       "activation_action_hint": "Doppeltippen, um {{action}}",
       "activation_dismiss_hint": "Doppeltippen, um die Aktivierungs-Checkliste auszublenden",
@@ -156,16 +169,16 @@
       "input_label": "{{label}}-Eingabe"
     },
     "nutrient": {
-      "access_denied": "[DE] Access Denied",
+      "access_denied": "Zugriff verweigert",
       "add_reading": "Messung hinzufügen",
       "add_reading_description": "pH- und EC-Werte manuell protokollieren",
       "atc_label": "ATC",
       "edit_reading": "Messung bearbeiten",
-      "error_loading_reading": "[DE] Error Loading Reading",
+      "error_loading_reading": "Fehler beim Laden der Messung",
       "load_error": "Messungen konnten nicht geladen werden",
       "reading_error": "Messung konnte nicht gespeichert werden",
       "reading_history": "Messverlauf",
-      "reading_not_found": "[DE] Reading Not Found",
+      "reading_not_found": "Messung nicht gefunden",
       "reading_saved": "Messung erfolgreich gespeichert",
       "reading_update_error": "Messung konnte nicht aktualisiert werden",
       "reading_updated": "Messung erfolgreich aktualisiert",
@@ -177,6 +190,10 @@
         "deficiency_generic": "Potenzieller Nährstoffmangel erkannt. Erwägen Sie eine Anpassung der Nährstoffmischung oder -frequenz.",
         "deficiency_with_nutrient": "Potenzieller {{nutrient}}-Mangel erkannt. Erwägen Sie eine Anpassung der Nährstoffmischung oder -frequenz."
       }
+    },
+    "phase": {
+      "status_active": "aktiv",
+      "status_inactive": "inaktiv"
     },
     "plant_hero_image": "Pflanzenbild",
     "plants": {
@@ -194,6 +211,26 @@
       "offline_banner_hint": "Zeigt gespeicherte Pflanzen im Offline-Modus an.",
       "open_detail_hint": "Öffnet die Pflanzendetails.",
       "search_hint": "Filtert die Pflanzenliste während der Eingabe."
+    },
+    "shift": {
+      "day_one": "Tag",
+      "day_other": "Tage",
+      "direction_backward": "rückwärts",
+      "direction_forward": "vorwärts"
+    },
+    "stage_action": {
+      "advance_hint": "Doppeltippen, um zu {{stage}} fortzuschreiten",
+      "advance_label": "Zu {{stage}} fortschreiten",
+      "default_hint": "Doppeltippen, um die Aktion auszuführen",
+      "default_label": "Phasenaktion",
+      "next_stage": "nächsten Phase",
+      "override_hint": "Doppeltippen, um zu einer späteren Phase zu springen",
+      "override_label": "Zu späterer Phase springen",
+      "revert_hint": "Doppeltippen, um zur vorherigen Phase zurückzukehren",
+      "revert_label": "Zur vorherigen Phase zurückkehren",
+      "undo_hint": "Doppeltippen, um die letzte Phasenänderung rückgängig zu machen",
+      "undo_label": "Letzte Phasenänderung rückgängig machen",
+      "undo_label_with_time": "Letzte Phasenänderung rückgängig machen ({{seconds}}s verbleibend)"
     },
     "strains": {
       "about_title": "Über diese Sorte",
@@ -255,6 +292,11 @@
       "inventory_hint": "Doppeltippen, um das Inventar zu öffnen.",
       "plants_hint": "Doppeltippen, um das Pflanzeninventar zu öffnen.",
       "strains_hint": "Doppeltippen, um Sorten zu durchsuchen."
+    },
+    "task": {
+      "status_completed": "abgeschlossen",
+      "status_pending": "ausstehend",
+      "status_skipped": "übersprungen"
     }
   },
   "appeals": {
@@ -750,6 +792,7 @@
     },
     "header": {
       "jump_to_today": "Zu heute springen",
+      "lifecycle_tracker": "LIFECYCLE TRACKER",
       "month_label": "{{month}} {{year}}",
       "subtitle": "Dein Zeitplan",
       "today": "Heute"
@@ -797,6 +840,7 @@
       "plan": "Geplant"
     },
     "targets_title": "Zielbereiche",
+    "task_card_hint": "Doppelt tippen zum Anzeigen von Aufgabendetails",
     "task_count": "{{count}} Aufgabe",
     "task_count_plural": "{{count}} Aufgaben",
     "task_detail": {
@@ -814,6 +858,7 @@
       "complete": "Als erledigt markieren",
       "complete_hint": "Doppeltippen, um diese Aufgabe als erledigt zu markieren",
       "completed": "Aufgabe erledigt",
+      "overdue": "Überfällig",
       "recurring": "Wiederkehrend",
       "task_hint": "Doppeltippen, um Aufgabendetails anzuzeigen"
     },
@@ -953,6 +998,13 @@
       "verify_button": "Alter verifizieren"
     },
     "cancel_comment_hint": "Bricht das Posten dieses Kommentars ab.",
+    "categories": {
+      "equipment": "Neues Setup",
+      "general": "Allgemein",
+      "grow_tips": "Grow-Tipp",
+      "harvest": "Erntefertig",
+      "problem": "Brauche Hilfe"
+    },
     "characters_over": "Zeichen über dem Limit",
     "classification": "Erkanntes Problem",
     "clear_filters": "Filter zurücksetzen",
@@ -1092,6 +1144,12 @@
     "view_author_profile_hint": "Doppeltippen, um das Profil dieses Benutzers zu öffnen.",
     "view_comments": "{{count}} Kommentare",
     "view_comments_hint": "Doppeltippen, um Kommentare zu diesem Beitrag anzuzeigen."
+  },
+  "communityPost": {
+    "errorDescription": "Community-Beitrag konnte nicht erstellt werden. Bitte versuche es erneut.",
+    "errorTitle": "Fehler",
+    "postAddError": "Fehler beim Hinzufügen des Beitrags",
+    "postAdded": "Beitrag erfolgreich hinzugefügt"
   },
   "community_post": {
     "error_description": "Community-Beitrag konnte nicht erstellt werden. Bitte versuche es erneut.",
@@ -1271,20 +1329,20 @@
   },
   "feed": {
     "add_post": {
-      "add_photo": "[DE] Add Photo",
-      "capture_photo": "[DE] Take Photo",
-      "content_label": "[DE] Content",
-      "content_placeholder": "[DE] Share your thoughts...",
-      "publish_button": "[DE] Publish Post",
-      "remove_photo": "[DE] Remove Photo",
-      "remove_photo_hint": "[DE] Remove this photo from your post",
-      "select_photo": "[DE] Choose from Library",
-      "select_strain": "[DE] Select Strain",
-      "strain_hint": "[DE] Tag your post with a strain",
-      "strain_label": "[DE] Strain (optional)",
+      "add_photo": "Foto hinzufügen",
+      "capture_photo": "Foto aufnehmen",
+      "content_label": "Inhalt",
+      "content_placeholder": "Teile deine Gedanken...",
+      "publish_button": "Beitrag veröffentlichen",
+      "remove_photo": "Foto entfernen",
+      "remove_photo_hint": "Dieses Foto aus deinem Beitrag entfernen",
+      "select_photo": "Aus Mediathek wählen",
+      "select_strain": "Sorte auswählen",
+      "strain_hint": "Tagge deinen Beitrag mit einer Sorte",
+      "strain_label": "Sorte (optional)",
       "title": "Neuer Beitrag",
-      "title_label": "[DE] Title",
-      "title_placeholder": "[DE] Give your post a title..."
+      "title_label": "Titel",
+      "title_placeholder": "Gib deinem Beitrag einen Titel..."
     },
     "attachment_image_hint": "Foto zum Beitrag hinzugefügt",
     "prefilled_images": "Vorgefüllte Bilder",
@@ -1812,6 +1870,25 @@
       "dismiss": "Ausblenden",
       "progress": "{{completed}} von {{total}} abgeschlossen",
       "title": "Erste Schritte mit GrowBro"
+    },
+    "cockpit": {
+      "day": "Tag {{day}}",
+      "due_time": "Fällig um {{time}}",
+      "environment": {
+        "greenhouse": "Gewächshaus",
+        "indoor": "Indoor",
+        "outdoor": "Outdoor"
+      },
+      "my_garden": "Mein Garten",
+      "needs_water": "Braucht Wasser",
+      "no_plants": "Noch keine Pflanzen. Füge deine erste Pflanze hinzu.",
+      "no_tasks_today": "Keine Aufgaben heute",
+      "pending_count": "{{count}} ausstehend",
+      "tasks_pending": "{{count}} Aufgaben brauchen Aufmerksamkeit",
+      "todays_focus": "Heute im Fokus",
+      "view_all": "Alle anzeigen",
+      "view_calendar": "Kalender öffnen",
+      "week": "Woche {{week}}"
     },
     "dashboard": {
       "quick_actions": "Schnellaktionen",
@@ -3721,9 +3798,12 @@
       "effects_label": "Effekte",
       "flavors_count": "{{count}} Aromen",
       "flavors_label": "Aromen",
+      "high_cbd": "Hoher CBD",
+      "race_all": "Alle",
       "race_label": "Typ",
       "remove_hint": "Entfernt diesen Filter",
       "remove_label": "Filter entfernen: {{label}}",
+      "tap_to_filter": "Tippen, um nach diesem Typ zu filtern",
       "thc_any": "Alle",
       "thc_high": "Hoch",
       "thc_label": "THC-Gehalt",
@@ -3748,6 +3828,17 @@
       "flowering_time": "Blütezeit",
       "yield": "Ertrag"
     },
+    "header": {
+      "catalog": "Katalog",
+      "discover": "ENTDECKE",
+      "strains": "SORTEN"
+    },
+    "hero": {
+      "accessibility_label": "Featured Sorte: {{name}}. Tippe für Details.",
+      "featured_label": "Sorte des Monats",
+      "top_rated": "TOP BEWERTET",
+      "view_details": "Details anzeigen"
+    },
     "no_results": "Keine Sorten gefunden",
     "offline_notice": "Gespeicherte Sorten werden angezeigt",
     "race": {
@@ -3767,6 +3858,8 @@
       "did_you_mean_label": "Meinten Sie {{suggestion}}?",
       "recent_searches": "Letzte Suchen"
     },
+    "search_button": "Sorten suchen",
+    "search_hint": "Öffnet Suche nach Sorten, Effekten oder Aromen",
     "search_placeholder": "Sorten suchen…",
     "search_placeholder_count": "Suche {{count}} Sorten…",
     "search_placeholder_count_one": "Suche {{count}} Sorte…",
@@ -4076,6 +4169,7 @@
       "title": "Stängelbruch prüfen"
     },
     "check_water_need": {
+      "description": "Prüfen, ob die oberen 2-3cm des Substrats trocken sind, bevor gegossen wird.",
       "description_coco": "Ca. {{min}}-{{max}}L – **NUR wenn die oberen 2-3cm Medium trocken sind!** Ablauf EC/pH prüfen.",
       "description_soil": "Ca. {{min}}-{{max}}L – **NUR wenn die oberen 2-3cm Erde trocken sind!** Bis leichtem Ablauf gießen.",
       "title": "Wasserbedarf prüfen"

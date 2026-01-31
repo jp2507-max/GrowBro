@@ -9,6 +9,7 @@
  * - 5.1: Generate items.csv, batches.csv, and movements.csv
  */
 
+import { Q } from '@nozbe/watermelondb';
 import { unparse } from 'papaparse';
 
 import { database } from '@/lib/watermelon';
@@ -57,8 +58,7 @@ async function exportItems(
 
   if (options.categories && options.categories.length > 0) {
     query = itemsCollection.query(
-      // @ts-expect-error - WatermelonDB typing limitations with Q.where
-      (q) => q.where('category', q.oneOf(options.categories))
+      Q.where('category', Q.oneOf(options.categories))
     );
   }
 
@@ -170,10 +170,8 @@ async function exportMovements(
   if (options.dateRange) {
     const { from, to } = options.dateRange;
     query = movementsCollection.query(
-      // @ts-expect-error - WatermelonDB typing limitations with Q.where
-      (q) => q.where('created_at', q.gte(from.getTime())),
-      // @ts-expect-error - WatermelonDB typing limitations with Q.where
-      (q) => q.where('created_at', q.lte(to.getTime()))
+      Q.where('created_at', Q.gte(from.getTime())),
+      Q.where('created_at', Q.lte(to.getTime()))
     );
   }
 

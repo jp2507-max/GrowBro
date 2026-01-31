@@ -235,10 +235,13 @@ function PlantCardProgress({
 }): React.ReactElement {
   return (
     <View className="px-4 pb-3">
-      <View className="h-1.5 w-full overflow-hidden rounded-full bg-neutral-100 dark:bg-neutral-800">
+      <View className="h-1.5 w-full overflow-hidden rounded-full bg-neutral-100 dark:bg-white/10">
         <View
-          className="h-full rounded-full bg-primary-600"
-          style={{ width: `${progress}%` }}
+          className="h-full rounded-full bg-primary-600 dark:bg-lime-400"
+          style={[
+            { width: `${progress}%` },
+            // Subtle glow effect in dark mode via shadow
+          ]}
           testID={`plant-card-${plantId}-progress`}
         />
       </View>
@@ -256,7 +259,7 @@ function PlantCardFooter({
 }): React.ReactElement {
   return (
     <View
-      className={`flex-row items-center justify-between px-4 py-3 ${needsAttention ? 'bg-terracotta-50 dark:bg-terracotta-900/20' : 'bg-neutral-50 dark:bg-charcoal-950'}`}
+      className={`flex-row items-center justify-between rounded-b-3xl px-4 py-3 ${needsAttention ? 'bg-terracotta-50 dark:bg-terracotta-500/15' : 'bg-neutral-50 dark:bg-transparent'}`}
     >
       {needsAttention ? (
         <>
@@ -339,7 +342,7 @@ function PlantCardContent({
       accessibilityHint={translate('accessibility.plants.open_detail_hint')}
       onPress={handlePress}
     >
-      <View className="overflow-hidden rounded-3xl border border-neutral-200 bg-white dark:border-charcoal-700 dark:bg-charcoal-900">
+      <View className="overflow-hidden rounded-3xl border border-neutral-200 bg-white dark:border-white/10 dark:bg-charcoal-900/80">
         <PlantCardHeader
           plant={plant}
           stageLabel={stageLabel}

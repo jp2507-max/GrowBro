@@ -671,6 +671,12 @@ interface ProvidersProps {
   children: React.ReactNode;
 }
 
+// Custom container for BottomSheetModalProvider to keep portal content
+// inside the existing navigation context tree.
+const BottomSheetPortalContainer = React.memo(
+  ({ children }: { children: React.ReactNode }) => <>{children}</>
+);
+
 function Providers({ children }: ProvidersProps): React.ReactElement {
   const theme = useThemeConfig();
   // Listen for device theme changes when user has 'system' mode selected
@@ -684,7 +690,9 @@ function Providers({ children }: ProvidersProps): React.ReactElement {
         <ThemeProvider value={theme}>
           <APIProvider>
             <DatabaseProvider database={database}>
-              <BottomSheetModalProvider>
+              <BottomSheetModalProvider
+                containerComponent={BottomSheetPortalContainer}
+              >
                 {children}
                 <FlashMessage
                   position="top"

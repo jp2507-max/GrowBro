@@ -55,17 +55,17 @@ function debounce<T extends (...args: unknown[]) => unknown>(
   func: T,
   wait: number
 ): Debounced<T> {
-  let timeout: ReturnType<typeof setTimeout>;
+  let timeout: ReturnType<typeof setTimeout> | undefined = undefined;
   let pendingReject: ((reason?: unknown) => void) | null = null;
 
-  const debounced = (...args: Parameters<T>) => {
+  const debounced: Debounced<T> = (...args: Parameters<T>) => {
     return new Promise<Awaited<ReturnType<T>>>((resolve, reject) => {
       if (pendingReject) {
         pendingReject(new DebouncedError());
         pendingReject = null;
       }
       pendingReject = reject;
-      clearTimeout(timeout);
+      if (timeout !== undefined) clearTimeout(timeout);
       timeout = setTimeout(async () => {
         try {
           const result = (await func(...args)) as Awaited<ReturnType<T>>;
@@ -84,7 +84,7 @@ function debounce<T extends (...args: unknown[]) => unknown>(
       pendingReject(new DebouncedError());
       pendingReject = null;
     }
-    clearTimeout(timeout);
+    if (timeout !== undefined) clearTimeout(timeout);
   };
 
   return debounced;
@@ -443,10 +443,7 @@ export default function CalendarScreen(): React.ReactElement {
   );
 
   return (
-    <View
-      className="flex-1 bg-neutral-50 dark:bg-charcoal-950"
-      testID="calendar-screen"
-    >
+    <View className="flex-1 bg-charcoal-950" testID="calendar-screen">
       <FocusAwareStatusBar />
       <CalendarHeader
         selectedDate={selectedDate}

@@ -103,18 +103,27 @@ async function loadTwinSignals(plantId: string): Promise<TwinSignals> {
     .query(
       Q.where('plant_id', plantId),
       Q.where('deleted_at', null),
-      Q.sortBy('occurred_at', Q.desc)
+      Q.sortBy('occurred_at', Q.desc),
+      Q.take(100) // Limit to most recent events
     )
     .fetch();
 
   const trichomeRows = await database
     .get<TrichomeAssessmentModel>('trichome_assessments')
-    .query(Q.where('plant_id', plantId), Q.sortBy('created_at', Q.desc))
+    .query(
+      Q.where('plant_id', plantId),
+      Q.sortBy('created_at', Q.desc),
+      Q.take(1)
+    )
     .fetch();
 
   const diagnosticRows = await database
     .get<DiagnosticResultModel>('diagnostic_results_v2')
-    .query(Q.where('plant_id', plantId), Q.sortBy('created_at', Q.desc))
+    .query(
+      Q.where('plant_id', plantId),
+      Q.sortBy('created_at', Q.desc),
+      Q.take(1)
+    )
     .fetch();
 
   return {
@@ -187,13 +196,25 @@ export class DigitalTwinTaskEngine {
       timezone: this.timezone,
     });
 
-    const intents: TaskIntent[] = [
-      ...getHydrologyIntents(state),
-      ...(await getNutritionIntents(state)),
-      ...getEnvironmentIntents(state),
-      ...getCuringIntents(state),
-      ...buildLegacyIntents(plant, this.timezone),
-    ];
+    const intents: TaskIntent[] = [];
+
+    const safeCollect = async (
+      name: string,
+      fn: () => TaskIntent[] | Promise<TaskIntent[]>
+    ): Promise<void> => {
+      try {
+        const result = await fn();
+        intents.push(...result);
+      } catch (error) {
+        console.warn(`[DigitalTwinTaskEngine] ${name} failed`, error);
+      }
+    };
+
+    await safeCollect('hydrology', () => getHydrologyIntents(state));
+    await safeCollect('nutrition', () => getNutritionIntents(state));
+    await safeCollect('environment', () => getEnvironmentIntents(state));
+    await safeCollect('curing', () => getCuringIntents(state));
+    await safeCollect('legacy', () => buildLegacyIntents(plant, this.timezone));
 
     const specs = intents.map(toSeriesSpec);
     await this.taskEngine.syncSchedulesForPlant(plant, specs);
@@ -208,7 +229,12 @@ export class DigitalTwinTaskEngine {
 export async function syncAllPlantsDigitalTwin(): Promise<void> {
   const plants = await database.get<PlantModel>('plants').query().fetch();
   const engine = new DigitalTwinTaskEngine();
-  for (const plant of plants) {
-    await engine.syncForPlant(toPlant(plant));
+
+  const BATCH_SIZE = 5;
+  for (let i = 0; i < plants.length; i += BATCH_SIZE) {
+    const batch = plants.slice(i, i + BATCH_SIZE);
+    await Promise.all(
+      batch.map((plant) => engine.syncForPlant(toPlant(plant)))
+    );
   }
 }

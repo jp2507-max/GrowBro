@@ -11,6 +11,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { Pressable, Text } from '@/components/ui';
+import colors from '@/components/ui/colors';
 import { useBottomTabBarHeight } from '@/lib/animations/use-bottom-tab-bar-height';
 import { haptics } from '@/lib/haptics';
 import { translate } from '@/lib/i18n';
@@ -70,7 +71,8 @@ export function AddPlantFab(): React.ReactElement {
   return (
     <Animated.View style={[styles.container, positionStyle, animatedStyle]}>
       <Pressable
-        className="size-14 items-center justify-center rounded-full bg-primary-600 shadow-xl active:bg-primary-700"
+        className="size-14 items-center justify-center rounded-full bg-primary-600 shadow-xl active:bg-primary-700 dark:bg-lime-400 dark:active:bg-lime-500"
+        style={styles.fabShadow}
         onPress={handlePress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
@@ -79,7 +81,9 @@ export function AddPlantFab(): React.ReactElement {
         accessibilityHint={translate('home.fab.hint' as TxKeyPath)}
         testID="add-plant-fab"
       >
-        <Text className="text-3xl font-light leading-8 text-white">+</Text>
+        <Text className="text-3xl font-light leading-8 text-white dark:text-charcoal-950">
+          +
+        </Text>
       </Pressable>
     </Animated.View>
   );
@@ -89,5 +93,13 @@ const styles = StyleSheet.create({
   container: {
     position: 'absolute',
     zIndex: 100,
+  },
+  fabShadow: {
+    // Neon-lime glow for dark mode using design tokens
+    shadowColor: colors.darkSurface.accent,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 8,
   },
 });

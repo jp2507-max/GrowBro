@@ -1,3 +1,5 @@
+import type { PostgrestError } from '@supabase/supabase-js';
+
 import {
   normalizeStrain,
   type RawApiStrain,
@@ -96,7 +98,7 @@ function buildStrainsQuery({
 
   if (searchQuery && searchQuery.length > 0) {
     // Escape special characters for PostgREST .or() and LIKE pattern
-    const escaped = searchQuery.replace(/[%_\,()]/g, '\\$&');
+    const escaped = searchQuery.replace(/[\\%_,()]/g, '\\$&');
     const pattern = `%${escaped}%`;
     query = query.or(`name.ilike.${pattern},slug.ilike.${pattern}`);
   }
@@ -109,16 +111,19 @@ function buildStrainsQuery({
 export async function withStrainTableFallback<T>(
   queryFn: (
     table: 'strains_public' | 'strain_cache'
-  ) => Promise<{ data: T; error: Error | null }>
-): Promise<{ data: T; error: Error | null }> {
+  ) => Promise<{ data: T; error: PostgrestError | null }>
+): Promise<{ data: T; error: PostgrestError | null }> {
   let result = await queryFn('strains_public');
-  if (
-    result.error &&
-    ((typeof result.error.message === 'string' &&
-      result.error.message.toLowerCase().includes('strains_public')) ||
-      (result.error as { code?: string }).code === 'PGRST116')
-  ) {
-    result = await queryFn('strain_cache');
+  if (result.error) {
+    const code = result.error.code;
+    const message = result.error.message?.toLowerCase() ?? '';
+    const details = result.error.details?.toLowerCase() ?? '';
+    const isMissingTable =
+      code === '42P01' ||
+      code === 'PGRST116' ||
+      message.includes('does not exist') ||
+      details.includes('schema cache');
+    if (isMissingTable) result = await queryFn('strain_cache');
   }
   return result;
 }
@@ -131,7 +136,12 @@ export async function fetchStrainsFromSupabase(
   const offset = page * pageSize;
 
   const result = await withStrainTableFallback(async (table) => {
-    const query = buildStrainsQuery({ table, params, offset, pageSize });
+    const query = buildStrainsQuery({
+      table,
+      params,
+      offset,
+      pageSize: pageSize + 1,
+    });
     return await query;
   });
 
@@ -142,11 +152,11 @@ export async function fetchStrainsFromSupabase(
   }
 
   const rows = (data ?? []) as SupabaseStrainRow[];
-  const strains = rows.map(mapSupabaseRowToStrain);
+  const hasMore = rows.length > pageSize;
+  const strains = rows.slice(0, pageSize).map(mapSupabaseRowToStrain);
 
   // Avoid expensive COUNT queries on every page.
-  // If the page is full, assume there might be more; if it's short, we're done.
-  const hasMore = strains.length === pageSize;
+  // Fetch pageSize+1 rows to detect if more pages exist without false positives.
 
   return {
     data: strains,

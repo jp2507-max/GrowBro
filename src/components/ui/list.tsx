@@ -249,10 +249,10 @@ function renderNativeList<ItemT>(
   }
 ): React.ReactElement {
   const {
-    data: ignoredData,
-    renderItem: ignoredRenderItem,
-    keyExtractor: ignoredKeyExtractor,
-    ListEmptyComponent: ignoredListEmptyComponent,
+    data: _data,
+    renderItem: _renderItem,
+    keyExtractor: _keyExtractor,
+    ListEmptyComponent: _ListEmptyComponent,
     ListFooterComponent,
     ref,
     onEndReachedThreshold,
@@ -264,13 +264,6 @@ function renderNativeList<ItemT>(
     mergedListStyle,
     ...rest
   } = props;
-
-  // `rest` comes from ListProps and may include fields we override below.
-  // Make sure we omit them to avoid duplicate prop warnings in TS.
-  void ignoredData;
-  void ignoredRenderItem;
-  void ignoredKeyExtractor;
-  void ignoredListEmptyComponent;
 
   return (
     <FlashList<ItemT>
@@ -416,8 +409,6 @@ function ListInner<ItemT>(
     renderItemResolved,
     keyExtractorResolved,
     ListEmptyComponentResolved,
-    mergedContentContainerStyle,
-    mergedListStyle,
   });
 }
 
@@ -463,7 +454,7 @@ export const ListEmptyState = React.memo(function ListEmptyState({
       className={`flex-1 items-center justify-center px-6 py-12 ${className ?? ''}`.trim()}
       testID="list-empty"
     >
-      <Text className="text-center text-lg font-semibold text-charcoal-50 dark:text-neutral-100">
+      <Text className="text-center text-lg font-semibold text-neutral-900 dark:text-neutral-100">
         {title}
       </Text>
       {body ? (
@@ -489,7 +480,7 @@ export const ListErrorState = React.memo(function ListErrorState({
       className={`flex-1 items-center justify-center px-6 py-12 ${className ?? ''}`.trim()}
       testID="list-error"
     >
-      <Text className="text-center text-lg font-semibold text-charcoal-50 dark:text-neutral-100">
+      <Text className="text-center text-lg font-semibold text-neutral-900 dark:text-neutral-100">
         {title}
       </Text>
       {body ? (

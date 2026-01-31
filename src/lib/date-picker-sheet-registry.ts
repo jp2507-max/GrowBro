@@ -12,14 +12,39 @@ const CLEANUP_INTERVAL_MS = 60000; // 1 minute
 const MAX_AGE_MS = 300000; // 5 minutes
 
 // Periodically clean up stale entries
-setInterval(() => {
-  const now = Date.now();
-  for (const [id, handler] of registry.entries()) {
-    if (now - handler.createdAt > MAX_AGE_MS) {
-      registry.delete(id);
+let cleanupInterval: NodeJS.Timeout | null = null;
+
+function startCleanup() {
+  if (cleanupInterval) return;
+  cleanupInterval = setInterval(() => {
+    const now = Date.now();
+    for (const [id, handler] of registry.entries()) {
+      if (now - handler.createdAt > MAX_AGE_MS) {
+        // Invoke onCancel before deletion to notify caller
+        if (typeof handler.onCancel === 'function') {
+          try {
+            handler.onCancel();
+          } catch (error) {
+            // Prevent errors from breaking cleanup
+            console.warn(
+              `[DatePickerRegistry] Error invoking onCancel for ${id}:`,
+              error
+            );
+          }
+        }
+        registry.delete(id);
+      }
     }
+  }, CLEANUP_INTERVAL_MS);
+}
+
+export function stopCleanup() {
+  if (cleanupInterval) {
+    clearInterval(cleanupInterval);
+    cleanupInterval = null;
   }
-}, CLEANUP_INTERVAL_MS);
+  registry.clear();
+}
 
 function createRequestId(): string {
   nextId += 1;
@@ -29,6 +54,7 @@ function createRequestId(): string {
 export function registerDatePickerSheetRequest(
   handlers: DatePickerSheetHandlers
 ): string {
+  startCleanup();
   const requestId = createRequestId();
   registry.set(requestId, { ...handlers, createdAt: Date.now() });
   return requestId;

@@ -60,7 +60,7 @@ async function getLegacyEncryptionKey(): Promise<string | null> {
     );
   } catch (error) {
     console.warn('[auth-storage] Legacy key lookup failed:', error);
-    return null;
+    throw error;
   }
 }
 

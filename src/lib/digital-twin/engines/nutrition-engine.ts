@@ -8,6 +8,7 @@ import {
 import i18n from '@/lib/i18n';
 import { IssueType } from '@/lib/nutrient-engine/types';
 import { database } from '@/lib/watermelon';
+import { type AdjustmentSuggestionModel } from '@/lib/watermelon-models/adjustment-suggestion';
 import type { AdjustmentSuggestion } from '@/types/ai-adjustments';
 
 import type { TaskIntent, TwinState } from '../twin-types';
@@ -71,7 +72,7 @@ function createAdjustmentSuggestion(params: {
 
   return database.write(async () => {
     const existing = await database
-      .get('adjustment_suggestions')
+      .get<AdjustmentSuggestionModel>('adjustment_suggestions')
       .query(
         Q.where('plant_id', params.plantId),
         Q.where('root_cause', params.rootCause),
@@ -83,28 +84,20 @@ function createAdjustmentSuggestion(params: {
       return;
     }
 
-    await database.get('adjustment_suggestions').create((record) => {
-      // @ts-expect-error - WatermelonDB model fields
-      record.plant_id = params.plantId;
-      // @ts-expect-error - WatermelonDB model fields
-      record.suggestion_type = params.suggestionType;
-      // @ts-expect-error - WatermelonDB model fields
-      record.root_cause = params.rootCause;
-      // @ts-expect-error - WatermelonDB model fields
-      record.reasoning = params.reasoning;
-      // @ts-expect-error - WatermelonDB model fields
-      record.affected_tasks = JSON.stringify([]);
-      // @ts-expect-error - WatermelonDB model fields
-      record.confidence = params.confidence;
-      // @ts-expect-error - WatermelonDB model fields
-      record.status = 'pending';
-      // @ts-expect-error - WatermelonDB model fields
-      record.expires_at = expiresAt;
-      // @ts-expect-error - WatermelonDB model fields
-      record.created_at = now;
-      // @ts-expect-error - WatermelonDB model fields
-      record.updated_at = now;
-    });
+    await database
+      .get<AdjustmentSuggestionModel>('adjustment_suggestions')
+      .create((record) => {
+        record.plantId = params.plantId;
+        record.suggestionType = params.suggestionType;
+        record.rootCause = params.rootCause;
+        record.reasoning = params.reasoning;
+        record.affectedTasks = [];
+        record.confidence = params.confidence;
+        record.status = 'pending';
+        record.expiresAt = expiresAt;
+        record.createdAt = now;
+        record.updatedAt = now;
+      });
   });
 }
 
@@ -201,7 +194,14 @@ export async function getNutritionIntents(
     }
   }
 
-  await maybeSuggestDeficiency(state);
+  try {
+    await maybeSuggestDeficiency(state);
+  } catch (error) {
+    console.warn(
+      '[nutrition-engine] Failed to suggest deficiency adjustment',
+      error
+    );
+  }
 
   return intents;
 }

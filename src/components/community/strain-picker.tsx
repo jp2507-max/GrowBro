@@ -1,350 +1,33 @@
-import {
-  BottomSheetFlatList,
-  useBottomSheetTimingConfigs,
-} from '@gorhom/bottom-sheet';
-import { useColorScheme } from 'nativewind';
+import { BottomSheetTextInput } from '@gorhom/bottom-sheet';
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Pressable, TextInput, View } from 'react-native';
-import Animated, {
-  ReduceMotion,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from 'react-native-reanimated';
+import { Pressable, type TextInput, View } from 'react-native';
 
 import type { Strain } from '@/api/strains/types';
 import { useStrainsInfiniteWithCache } from '@/api/strains/use-strains-infinite-with-cache';
-import { RaceBadge } from '@/components/strains/race-badge';
-import { OptimizedImage, Text } from '@/components/ui';
-import colors from '@/components/ui/colors';
-import { CaretDown, Leaf, Search } from '@/components/ui/icons';
+import { StrainPickerContent } from '@/components/community/strain-picker-content';
+import { Text } from '@/components/ui';
+import { CaretDown } from '@/components/ui/icons';
 import { Modal, useModal } from '@/components/ui/modal';
 import { haptics } from '@/lib/haptics';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
-import { translate } from '@/lib/i18n';
-
-type RgbColor = {
-  r: number;
-  g: number;
-  b: number;
-};
-
-function hexToRgb(hex: string): RgbColor {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return { r, g, b };
-}
-
-const listContentStyle = { gap: 8, paddingBottom: 20 };
-const PRIMARY_500 = colors.primary[500];
-const PRIMARY_500_RGB = hexToRgb(PRIMARY_500);
+import {
+  buildCustomStrain,
+  saveCustomStrainToSupabase,
+} from '@/lib/strains/custom-strain-cache';
 
 type StrainPickerProps = {
   value?: string;
-  onSelect: (strain: string | undefined) => void;
+  /** Callback with just the strain name (for backward compatibility with add-post) */
+  onSelect?: (strain: string | undefined) => void;
+  /** Callback with the full Strain object (for plant form use cases) */
+  onSelectFull?: (strain: Strain | undefined, source: 'api' | 'custom') => void;
+  /** Enable custom strain creation when no exact match is found */
+  enableCustomStrain?: boolean;
   label?: string;
   placeholder?: string;
   testID?: string;
 };
-
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
-// ---------------------------------------------------------------------------
-// StrainThumbnail - Contact-list style thumbnail with fallback
-// ---------------------------------------------------------------------------
-function StrainThumbnail({
-  strainId,
-  imageUrl,
-}: {
-  strainId: string;
-  imageUrl?: string;
-}) {
-  if (imageUrl) {
-    return (
-      <OptimizedImage
-        uri={imageUrl}
-        recyclingKey={strainId}
-        className="mr-3 size-10 rounded-full bg-neutral-100 dark:bg-charcoal-800"
-        contentFit="cover"
-      />
-    );
-  }
-
-  // Fallback: soft circle with Leaf icon
-  return (
-    <View className="mr-3 size-10 items-center justify-center rounded-full bg-primary-50 dark:bg-primary-900/30">
-      <Leaf width={18} height={18} color={colors.primary[600]} />
-    </View>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// StrainOption - Premium list item with thumbnail
-// ---------------------------------------------------------------------------
-function StrainOption({
-  strain,
-  selected,
-  onPress,
-}: {
-  strain: Strain;
-  selected: boolean;
-  onPress: () => void;
-}) {
-  const scale = useSharedValue(1);
-  const bgOpacity = useSharedValue(0);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.get() }],
-  }));
-
-  const animatedBgStyle = useAnimatedStyle(() => ({
-    backgroundColor: `rgba(${PRIMARY_500_RGB.r}, ${PRIMARY_500_RGB.g}, ${PRIMARY_500_RGB.b}, ${bgOpacity.get()})`,
-  }));
-
-  React.useEffect(() => {
-    scale.set(1);
-    bgOpacity.set(0);
-  }, [bgOpacity, scale, strain.id]);
-
-  const handlePressIn = React.useCallback((): void => {
-    scale.set(
-      withTiming(0.97, {
-        duration: 100,
-        reduceMotion: ReduceMotion.System,
-      })
-    );
-    bgOpacity.set(
-      withTiming(0.08, {
-        duration: 100,
-        reduceMotion: ReduceMotion.System,
-      })
-    );
-  }, [scale, bgOpacity]);
-
-  const handlePressOut = React.useCallback((): void => {
-    scale.set(
-      withTiming(1, {
-        duration: 150,
-        reduceMotion: ReduceMotion.System,
-      })
-    );
-    bgOpacity.set(
-      withTiming(0, {
-        duration: 150,
-        reduceMotion: ReduceMotion.System,
-      })
-    );
-  }, [scale, bgOpacity]);
-
-  const handlePress = React.useCallback(() => {
-    haptics.selection();
-    onPress();
-  }, [onPress]);
-
-  return (
-    <AnimatedPressable
-      style={[animatedStyle, !selected && animatedBgStyle]}
-      className={`flex-row items-center rounded-2xl p-4 ${
-        selected
-          ? 'border border-primary-600 bg-primary-100 dark:border-primary-400 dark:bg-primary-900/30'
-          : 'bg-neutral-50 dark:bg-white/5'
-      }`}
-      accessibilityLabel={strain.name}
-      accessibilityHint={translate('accessibility.common.select_option_hint', {
-        label: strain.name,
-      })}
-      accessibilityRole="menuitem"
-      accessibilityState={{ selected }}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      onPress={handlePress}
-    >
-      <StrainThumbnail strainId={strain.id} imageUrl={strain.imageUrl} />
-      <View className="flex-1 flex-row items-center gap-3">
-        <Text
-          className={`text-base ${
-            selected
-              ? 'font-bold text-primary-900 dark:text-primary-100'
-              : 'font-semibold text-neutral-800 dark:text-neutral-100'
-          }`}
-        >
-          {strain.name}
-        </Text>
-        <RaceBadge race={strain.race} />
-      </View>
-    </AnimatedPressable>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// StrainSearchInput - Polished search bar matching Create Post inputs
-// ---------------------------------------------------------------------------
-type StrainSearchInputProps = {
-  value: string;
-  onChangeText: (text: string) => void;
-  placeholder: string;
-  isFetching: boolean;
-  testID: string;
-};
-
-function StrainSearchInput({
-  value,
-  onChangeText,
-  placeholder,
-  isFetching,
-  testID,
-}: StrainSearchInputProps) {
-  const [isFocused, setIsFocused] = React.useState(false);
-  const { colorScheme } = useColorScheme();
-  const isDark = colorScheme === 'dark';
-
-  return (
-    <View className="mb-4">
-      <View
-        className={`flex-row items-center rounded-2xl px-4 py-3.5 ${
-          isFocused
-            ? 'border border-primary-500 bg-white shadow-sm dark:bg-charcoal-900'
-            : 'border border-transparent bg-neutral-100 dark:bg-white/5'
-        }`}
-      >
-        <Search size={18} className="mr-3 text-neutral-400" />
-        <TextInput
-          accessibilityLabel={translate(
-            'accessibility.strains.search_strains_label'
-          )}
-          accessibilityHint={translate(
-            'accessibility.strains.search_strains_hint'
-          )}
-          value={value}
-          onChangeText={onChangeText}
-          placeholder={placeholder}
-          placeholderTextColor={
-            isDark ? colors.neutral[500] : colors.neutral[400]
-          }
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-          testID={testID}
-          className="flex-1 text-base font-medium text-charcoal-900 dark:text-neutral-100"
-        />
-        {isFetching && (
-          <ActivityIndicator size="small" color={colors.primary[500]} />
-        )}
-      </View>
-    </View>
-  );
-}
-
-type StrainPickerModalProps = {
-  modal: ReturnType<typeof useModal>;
-  searchQuery: string;
-  setSearchQuery: React.Dispatch<React.SetStateAction<string>>;
-  setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  strains: Strain[];
-  value?: string;
-  isFetching: boolean;
-  onSelect: (strain: Strain) => void;
-  onClear: () => void;
-  onEndReached: () => void;
-  renderItem: ({ item }: { item: Strain }) => React.ReactElement;
-  glassSurfaceProps: {
-    glassEffectStyle: 'regular';
-    style: {
-      borderTopLeftRadius: number;
-      borderTopRightRadius: number;
-    };
-    fallbackClassName: string;
-  };
-  handleStyle: {
-    backgroundColor: string;
-    width: number;
-    height: number;
-    borderRadius: number;
-  };
-  testID: string;
-};
-
-function StrainPickerModal({
-  modal,
-  searchQuery,
-  setSearchQuery,
-  setIsOpen,
-  strains,
-  value,
-  isFetching,
-  onClear,
-  onEndReached,
-  renderItem,
-  glassSurfaceProps,
-  handleStyle,
-  testID,
-}: StrainPickerModalProps) {
-  const { t } = useTranslation();
-
-  const animationConfigs = useBottomSheetTimingConfigs({
-    duration: 150,
-  });
-
-  return (
-    <Modal
-      ref={modal.ref}
-      index={0}
-      snapPoints={['70%']}
-      handleIndicatorStyle={handleStyle}
-      useGlassSurface
-      glassSurfaceProps={glassSurfaceProps}
-      animationConfigs={animationConfigs}
-      enablePanDownToClose
-      onDismiss={() => {
-        setSearchQuery('');
-        setIsOpen(false);
-      }}
-    >
-      <View className="flex-1 px-4 pb-6">
-        <Text className="mb-4 text-center text-lg font-semibold text-charcoal-800 dark:text-neutral-100">
-          {t('feed.add_post.select_strain')}
-        </Text>
-
-        {/* Polished Search Bar - soft look matching Create Post inputs */}
-        <StrainSearchInput
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          placeholder={t('strains.search_placeholder')}
-          isFetching={isFetching}
-          testID={`${testID}-search`}
-        />
-
-        {value && (
-          <Pressable
-            accessibilityRole="button"
-            onPress={onClear}
-            className="mb-3 self-start rounded-full bg-neutral-100 px-4 py-2 dark:bg-white/10"
-            testID={`${testID}-clear`}
-          >
-            <Text className="text-sm font-medium text-neutral-600 dark:text-neutral-300">
-              {t('common.clear')} {value}
-            </Text>
-          </Pressable>
-        )}
-
-        <BottomSheetFlatList
-          data={strains}
-          keyExtractor={(item: Strain) => item.id}
-          renderItem={renderItem}
-          onEndReached={onEndReached}
-          onEndReachedThreshold={0.5}
-          contentContainerStyle={listContentStyle}
-          ListEmptyComponent={
-            <Text className="py-8 text-center text-neutral-500">
-              {searchQuery ? t('strains.no_results') : t('strains.empty_state')}
-            </Text>
-          }
-        />
-      </View>
-    </Modal>
-  );
-}
 
 type StrainPickerTriggerProps = {
   value?: string;
@@ -360,7 +43,7 @@ function StrainPickerTrigger({
   placeholder,
   onPress,
   testID,
-}: StrainPickerTriggerProps) {
+}: StrainPickerTriggerProps): React.ReactElement {
   const { t } = useTranslation();
   const displayValue = value || placeholder || t('feed.add_post.select_strain');
 
@@ -400,44 +83,20 @@ function StrainPickerTrigger({
   );
 }
 
-function useStrainPickerStyles(isDark: boolean) {
-  const glassSurfaceProps = React.useMemo(
-    () => ({
-      glassEffectStyle: 'regular' as const,
-      style: {
-        borderTopLeftRadius: 35,
-        borderTopRightRadius: 35,
-      },
-      fallbackClassName: 'bg-white dark:bg-charcoal-900',
-    }),
-    []
-  );
-
-  const handleStyle = React.useMemo(
-    () => ({
-      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.2)' : '#D4D4D4',
-      width: 48,
-      height: 6,
-      borderRadius: 3,
-    }),
-    [isDark]
-  );
-
-  return { glassSurfaceProps, handleStyle };
-}
-
 export function StrainPicker({
   value,
   onSelect,
+  onSelectFull,
+  enableCustomStrain = false,
   label,
   placeholder,
   testID = 'strain-picker',
-}: StrainPickerProps) {
+}: StrainPickerProps): React.ReactElement {
   const modal = useModal();
-  const { colorScheme } = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
+  const searchInputRef = React.useRef<TextInput>(null);
   const debouncedSearchQuery = useDebouncedValue(searchQuery.trim(), 250);
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isFetching } =
@@ -453,44 +112,64 @@ export function StrainPicker({
     () => data?.pages.flatMap((page) => page.data) ?? [],
     [data]
   );
-  const { glassSurfaceProps, handleStyle } = useStrainPickerStyles(isDark);
 
-  const handleOpen = React.useCallback(() => {
+  const trimmedQuery = searchQuery.trim();
+  const hasExactMatch = React.useMemo(() => {
+    const lower = trimmedQuery.toLowerCase();
+    return strains.some((s) => s.name.toLowerCase() === lower);
+  }, [strains, trimmedQuery]);
+
+  const showCreateCustom =
+    enableCustomStrain &&
+    trimmedQuery.length > 0 &&
+    !hasExactMatch &&
+    !isFetching;
+
+  const handleOpen = React.useCallback((): void => {
+    haptics.selection();
     setIsOpen(true);
     modal.present();
   }, [modal]);
 
+  const handleSearchFocus = React.useCallback((): void => {
+    modal.ref.current?.expand();
+  }, [modal.ref]);
+
+  const handleDismiss = React.useCallback((): void => {
+    setIsOpen(false);
+    setSearchQuery('');
+  }, []);
+
   const handleSelect = React.useCallback(
-    (strain: Strain) => {
-      onSelect(strain.name);
+    (strain: Strain, source: 'api' | 'custom'): void => {
+      onSelect?.(strain.name);
+      onSelectFull?.(strain, source);
       modal.dismiss();
       setSearchQuery('');
       setIsOpen(false);
     },
-    [onSelect, modal]
+    [modal, onSelect, onSelectFull]
   );
 
-  const handleClear = React.useCallback(() => {
-    onSelect(undefined);
+  const handleClear = React.useCallback((): void => {
+    onSelect?.(undefined);
+    onSelectFull?.(undefined, 'api');
     modal.dismiss();
     setSearchQuery('');
     setIsOpen(false);
-  }, [onSelect, modal]);
+  }, [modal, onSelect, onSelectFull]);
 
-  const handleEndReached = React.useCallback(() => {
+  const handleCreateCustom = React.useCallback((): void => {
+    const name = trimmedQuery;
+    if (!name) return;
+    const customStrain = buildCustomStrain(name);
+    void saveCustomStrainToSupabase(customStrain);
+    handleSelect(customStrain, 'custom');
+  }, [trimmedQuery, handleSelect]);
+
+  const handleEndReached = React.useCallback((): void => {
     if (hasNextPage && !isFetchingNextPage) fetchNextPage();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
-
-  const renderItem = React.useCallback(
-    ({ item }: { item: Strain }) => (
-      <StrainOption
-        strain={item}
-        selected={value === item.name}
-        onPress={() => handleSelect(item)}
-      />
-    ),
-    [value, handleSelect]
-  );
 
   return (
     <>
@@ -501,22 +180,57 @@ export function StrainPicker({
         onPress={handleOpen}
         testID={testID}
       />
-      <StrainPickerModal
-        modal={modal}
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        setIsOpen={setIsOpen}
-        strains={strains}
-        value={value}
-        isFetching={isFetching}
-        onSelect={handleSelect}
-        onClear={handleClear}
-        onEndReached={handleEndReached}
-        renderItem={renderItem}
-        glassSurfaceProps={glassSurfaceProps}
-        handleStyle={handleStyle}
-        testID={testID}
-      />
+      <Modal
+        ref={modal.ref}
+        snapPoints={['70%', '100%']}
+        enablePanDownToClose
+        onDismiss={handleDismiss}
+        useGlassSurface
+        keyboardBehavior="extend"
+        keyboardBlurBehavior="none"
+        android_keyboardInputMode="adjustResize"
+      >
+        <View className="flex-1">
+          <View className="mb-4 flex-row items-center justify-between px-4">
+            <Pressable
+              onPress={handleDismiss}
+              accessibilityRole="button"
+              accessibilityLabel={t('common.cancel')}
+              accessibilityHint={t('accessibility.modal.close_hint')}
+              hitSlop={20}
+            >
+              <Text className="text-base font-medium text-primary-600 dark:text-primary-400">
+                {t('common.cancel')}
+              </Text>
+            </Pressable>
+
+            <Text className="text-base font-semibold text-charcoal-800 dark:text-neutral-100">
+              {label || t('feed.add_post.select_strain')}
+            </Text>
+
+            <View className="w-[64px]" />
+          </View>
+
+          <StrainPickerContent
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            strains={strains}
+            value={value}
+            isFetching={isFetching}
+            showCreateCustom={showCreateCustom}
+            onSelect={(strain) => handleSelect(strain, 'api')}
+            onClear={handleClear}
+            onEndReached={handleEndReached}
+            onCreateCustom={enableCustomStrain ? handleCreateCustom : undefined}
+            showTitle={false}
+            inputComponent={BottomSheetTextInput}
+            useBottomSheetList
+            onSearchFocus={handleSearchFocus}
+            inputRef={searchInputRef}
+            testID={testID}
+          />
+        </View>
+      </Modal>
     </>
   );
 }

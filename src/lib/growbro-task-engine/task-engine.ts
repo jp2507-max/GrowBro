@@ -70,8 +70,11 @@ type SeriesDiff = {
 
 type DeleteTaskFn = (task: TaskModel, now: Date) => Promise<boolean>;
 
-function slugify(value: string): string {
-  return value
+function slugify(value: unknown): string {
+  if (typeof value !== 'string') return '';
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  return trimmed
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '_')
     .replace(/^_+|_+$/g, '');

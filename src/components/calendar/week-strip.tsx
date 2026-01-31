@@ -154,12 +154,12 @@ function DayPill({
       onPressOut={handlePressOut}
       style={[pillStyle, animatedStyle]}
       className={cn(
-        'mx-0.5 min-w-[44px] items-center rounded-[18px] px-2 py-3',
+        'mx-0.5 min-w-[52px] items-center rounded-[24px] px-2 py-4',
         item.isSelected
-          ? 'bg-primary-500'
+          ? 'bg-lime-400'
           : item.isToday
-            ? 'border-2 border-primary-400 bg-white/95 dark:border-primary-500 dark:bg-charcoal-800/95'
-            : 'bg-white/90 dark:bg-charcoal-800/80'
+            ? 'border border-lime-400/40 bg-white/10'
+            : 'border border-white/5 bg-white/5'
       )}
       accessibilityRole="button"
       accessibilityLabel={
@@ -172,38 +172,40 @@ function DayPill({
     >
       <Text
         className={cn(
-          'text-[10px] font-bold uppercase tracking-wider',
+          'text-[10px] font-semibold uppercase tracking-wider',
           item.isSelected
-            ? 'text-white/90'
+            ? 'text-charcoal-950'
             : item.isToday
-              ? 'text-primary-600 dark:text-primary-400'
-              : 'text-neutral-500 dark:text-neutral-400'
+              ? 'text-lime-400'
+              : 'text-white/50'
         )}
       >
-        {item.isToday ? todayLabel : item.dayOfWeek}
+        {item.dayOfWeek}
       </Text>
       <Text
         className={cn(
-          'mt-0.5 text-2xl font-black',
+          'mt-1 text-xl font-bold',
           item.isSelected
-            ? 'text-white'
+            ? 'text-charcoal-950'
             : item.isToday
-              ? 'text-primary-600 dark:text-primary-400'
-              : 'text-charcoal-900 dark:text-neutral-50'
+              ? 'text-white'
+              : 'text-white'
         )}
       >
         {item.dayOfMonth}
       </Text>
       {/* Task indicator dot */}
-      {item.taskCount > 0 && (
-        <View
-          className={cn(
-            'mt-1.5 size-1.5 rounded-full',
-            item.isSelected ? 'bg-white' : 'bg-primary-500 dark:bg-primary-400'
-          )}
-          testID={`task-indicator-${item.date.toFormat('yyyy-MM-dd')}`}
-        />
-      )}
+      <View
+        className={cn(
+          'mt-2 size-1.5 rounded-full',
+          item.taskCount > 0
+            ? item.isSelected
+              ? 'bg-charcoal-950'
+              : 'bg-lime-400'
+            : 'bg-transparent'
+        )}
+        testID={`task-indicator-${item.date.toFormat('yyyy-MM-dd')}`}
+      />
     </AnimatedPressable>
   );
 }
@@ -308,25 +310,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   defaultPill: {
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 2,
-      },
-    }),
+    // No shadow for default pills in Stitch design
   },
   todayPill: {
     ...Platform.select({
       ios: {
-        shadowColor: colors.primary[500],
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 6,
+        shadowColor: colors.neon.lime,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
       },
       android: {
         elevation: 3,
@@ -336,10 +328,10 @@ const styles = StyleSheet.create({
   selectedPill: {
     ...Platform.select({
       ios: {
-        shadowColor: colors.primary[500],
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.45,
-        shadowRadius: 14,
+        shadowColor: colors.neon.lime,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.6,
+        shadowRadius: 15,
       },
       android: {
         elevation: 8,

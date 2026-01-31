@@ -59,8 +59,9 @@ export function PlantActionHub({
 
   const hasTasks = tasks.length > 0;
   const productStage = toProductStage(plantStage);
-  const canHarvest =
-    productStage && HARVEST_ELIGIBLE_STAGES.includes(productStage);
+  const canHarvest = Boolean(
+    productStage && HARVEST_ELIGIBLE_STAGES.includes(productStage)
+  );
 
   return (
     <View className="gap-3 px-4">

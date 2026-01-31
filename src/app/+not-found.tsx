@@ -14,7 +14,12 @@ export default function NotFound() {
         {translate('errors.page_not_found.description')}
       </Text>
       <Link href="/" asChild>
-        <Text className="text-primary-800 dark:text-primary-300">
+        <Text
+          testID="not-found-go-home"
+          accessibilityRole="link"
+          accessibilityLabel={translate('common.go_home')}
+          className="text-primary-800 dark:text-primary-300"
+        >
           {translate('common.go_home')}
         </Text>
       </Link>

@@ -6,6 +6,8 @@ import { toPromise } from '@nozbe/watermelondb/utils/fp/Result';
 // src/lib/database/unsafe-sql-utils.ts
 // This ensures runSql() validation includes all available tables.
 import { migrations } from './watermelon-migrations';
+import { AdjustmentCooldownModel } from './watermelon-models/adjustment-cooldown';
+import { AdjustmentSuggestionModel } from './watermelon-models/adjustment-suggestion';
 import { AiSecondOpinionsQueueModel } from './watermelon-models/ai-second-opinions-queue';
 import { AISuggestionModel } from './watermelon-models/ai-suggestion';
 import {
@@ -38,6 +40,7 @@ import { OutboxModel } from './watermelon-models/outbox';
 import { OutboxNotificationActionModel } from './watermelon-models/outbox-notification-action';
 import { PhEcReadingModel } from './watermelon-models/ph-ec-reading';
 import { PlantModel } from './watermelon-models/plant';
+import { PlantAdjustmentPreferenceModel } from './watermelon-models/plant-adjustment-preference';
 import { PlantEventModel } from './watermelon-models/plant-event';
 import { PlantStageHistoryModel } from './watermelon-models/plant-stage-history';
 import { PlaybookModel } from './watermelon-models/playbook';
@@ -122,6 +125,9 @@ export const database = new Database({
     UndoDescriptorModel,
     OutboxNotificationActionModel,
     AISuggestionModel,
+    AdjustmentSuggestionModel,
+    AdjustmentCooldownModel,
+    PlantAdjustmentPreferenceModel,
     TrichomeAssessmentModel,
     // Harvest workflow models
     HarvestModel,

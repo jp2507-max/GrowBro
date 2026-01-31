@@ -169,7 +169,6 @@ export async function undoDeleteBatch(
 
     // Restore batch by clearing deleted_at
     await batch.update((b: InventoryBatchModel) => {
-      // @ts-expect-error - WatermelonDB doesn't expose deletedAt setter in types
       b.deletedAt = null;
     });
   });
@@ -268,7 +267,6 @@ export async function undoDeleteItem(
 
     // Restore item by clearing deleted_at
     await item.update((i: InventoryItemModel) => {
-      // @ts-expect-error - WatermelonDB doesn't expose deletedAt setter in types
       i.deletedAt = null;
     });
   });

@@ -1,130 +1,132 @@
 import { useRouter } from 'expo-router';
-import { useColorScheme } from 'nativewind';
-import React from 'react';
+import * as React from 'react';
 import { StyleSheet } from 'react-native';
 import type { EdgeInsets } from 'react-native-safe-area-context';
 
-import {
-  HeaderIconButton,
-  ScreenHeaderBase,
-} from '@/components/navigation/screen-header-base';
-import { GlassSurface } from '@/components/shared/glass-surface';
-import { Input, Text, View } from '@/components/ui';
+import { GlassButton, Pressable, Text, View } from '@/components/ui';
 import colors from '@/components/ui/colors';
-import { PlatformIcon, Rate, Settings } from '@/components/ui/icons';
+import { PlatformIcon, Rate, Search } from '@/components/ui/icons';
 import { haptics } from '@/lib/haptics';
 import { translate } from '@/lib/i18n';
 
-const styles = StyleSheet.create({
-  searchPill: {
-    borderRadius: 16,
-  },
-});
-
 type StrainsHeaderProps = {
   insets: EdgeInsets;
-  searchValue: string;
-  onSearchChange: (value: string) => void;
-  strainCount: number;
-  hasActiveFilters: boolean;
+  onSearchPress: () => void;
   onFiltersPress: () => void;
+  hasActiveFilters: boolean;
+  testID?: string;
 };
 
+/**
+ * Header for the strains discovery screen with search and favorites buttons.
+ */
 export function StrainsHeader({
   insets,
-  searchValue,
-  onSearchChange,
-  strainCount,
-  hasActiveFilters,
+  onSearchPress,
   onFiltersPress,
+  hasActiveFilters,
+  testID = 'strains-header',
 }: StrainsHeaderProps): React.ReactElement {
   const router = useRouter();
-  const { colorScheme } = useColorScheme();
-  const isDark = colorScheme === 'dark';
-  const iconColor = isDark ? colors.white : colors.neutral[900];
 
   const handleFavoritesPress = React.useCallback(() => {
     haptics.selection();
     router.push('/strains/favorites');
   }, [router]);
 
+  const handleSearchPress = React.useCallback(() => {
+    haptics.selection();
+    onSearchPress();
+  }, [onSearchPress]);
+
   const handleFiltersPress = React.useCallback(() => {
     haptics.selection();
     onFiltersPress();
   }, [onFiltersPress]);
 
+  const containerPaddingTop = insets.top > 0 ? 0 : 16;
+
   return (
-    <ScreenHeaderBase
-      insets={insets}
-      title=""
-      showBottomBorder={false}
-      topRowLeft={
-        <Text className="text-2xl font-bold text-white">
-          {translate('shared_header.strains.title')}
-        </Text>
-      }
-      topRowRight={
-        <View className="flex-row items-center gap-1">
-          <HeaderIconButton
-            icon={
-              <PlatformIcon
-                iosName="star"
-                size={20}
-                color={iconColor}
-                fallback={<Rate />}
+    <View
+      testID={testID}
+      style={[styles.container, { paddingTop: containerPaddingTop }]}
+      className="px-6 pb-4"
+    >
+      <View className="flex-row items-start justify-between">
+        <View className="flex-1">
+          <Text
+            style={styles.catalogLabel}
+            className="mb-1 text-xs font-medium uppercase tracking-widest opacity-80"
+          >
+            {translate('strains.header.catalog')}
+          </Text>
+          <Text className="text-3xl font-bold leading-none tracking-tight text-white">
+            {translate('strains.header.discover')}
+            {'\n'}
+            {translate('strains.header.strains')}
+          </Text>
+        </View>
+
+        <View className="flex-row items-center gap-2">
+          {hasActiveFilters && (
+            <Pressable
+              onPress={handleFiltersPress}
+              accessibilityRole="button"
+              accessibilityLabel={translate('strains.filters.button_label')}
+              accessibilityHint={translate('strains.filters.tap_to_filter')}
+              className="relative"
+            >
+              <View
+                style={styles.filterIndicator}
+                className="size-2 rounded-full"
               />
-            }
+            </Pressable>
+          )}
+
+          <GlassButton
             onPress={handleFavoritesPress}
+            size={48}
+            variant="circular"
             accessibilityLabel={translate('strains.favorites.title')}
             accessibilityHint={translate(
               'strains.favorites_accessibility_hint'
             )}
-            testID="strains-favorites-button"
-          />
-          <HeaderIconButton
-            icon={
-              <PlatformIcon
-                iosName="line.3.horizontal.decrease.circle"
-                size={20}
-                color={hasActiveFilters ? colors.primary[600] : iconColor}
-                fallback={<Settings />}
-              />
-            }
-            onPress={handleFiltersPress}
-            accessibilityLabel={translate('strains.filters.button_label')}
-            accessibilityHint={translate(
-              'accessibility.strains.open_filters_hint'
-            )}
-            testID="strains-filter-button"
-            isActive={hasActiveFilters}
-          />
+            testID={`${testID}-favorites-button`}
+            fallbackClassName="bg-white/5 border border-white/10"
+          >
+            <PlatformIcon
+              iosName="star"
+              size={22}
+              color={colors.white}
+              fallback={<Rate color={colors.white} size={22} />}
+            />
+          </GlassButton>
+
+          <GlassButton
+            onPress={handleSearchPress}
+            size={48}
+            variant="circular"
+            accessibilityLabel={translate('strains.search_button')}
+            accessibilityHint={translate('strains.search_hint')}
+            testID={`${testID}-search-button`}
+            fallbackClassName="bg-white/5 border border-white/10"
+          >
+            <Search color={colors.white} size={22} />
+          </GlassButton>
         </View>
-      }
-      testID="strains-header"
-    >
-      {/* Search Row - Glass Pill Container */}
-      <GlassSurface
-        glassEffectStyle="clear"
-        style={styles.searchPill}
-        fallbackClassName="bg-white/90 dark:bg-neutral-900/90"
-      >
-        <Input
-          value={searchValue}
-          onChangeText={onSearchChange}
-          placeholder={
-            strainCount > 0
-              ? translate('strains.search_placeholder_count', {
-                  count: strainCount,
-                })
-              : translate('strains.search_placeholder')
-          }
-          accessibilityLabel={translate('strains.search_placeholder')}
-          accessibilityHint={translate('accessibility.strains.search_hint')}
-          testID="strains-search-input"
-          className="h-12 border-0 bg-transparent font-medium"
-          placeholderTextColor={colors.neutral[400]}
-        />
-      </GlassSurface>
-    </ScreenHeaderBase>
+      </View>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {},
+  catalogLabel: { color: colors.neon.lime },
+  filterIndicator: {
+    backgroundColor: colors.neon.lime,
+    shadowColor: colors.neon.lime,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6,
+    shadowRadius: 4,
+  },
+});

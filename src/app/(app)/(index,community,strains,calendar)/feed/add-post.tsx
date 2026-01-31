@@ -280,8 +280,7 @@ function PostHeroPhotoSection({
                   className="text-primary-800 dark:text-primary-300"
                 />
                 <Text className="mt-3 font-medium text-primary-900/70 dark:text-primary-100/70">
-                  {translateDynamic('feed.add_post.add_photo') ||
-                    'Foto hinzufügen'}
+                  {t('feed.add_post.add_photo')}
                 </Text>
               </View>
             )}

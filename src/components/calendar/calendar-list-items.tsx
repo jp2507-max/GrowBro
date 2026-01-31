@@ -1,28 +1,37 @@
+import { DateTime } from 'luxon';
 import * as React from 'react';
 
 import { ActivityIndicator, Text, View } from '@/components/ui';
 import { translate } from '@/lib/i18n';
 import type { Task } from '@/types/calendar';
 
-import { DayTaskRow } from './day-task-row';
+import { TimelineTaskCard } from './timeline-task-card';
+
+// Local type for task categorization
+export type TaskType = 'watering' | 'feeding' | 'flush' | 'other';
+
+/**
+ * Formats a due time string for display (e.g., "08:00")
+ */
+function formatDueTime(dueAtLocal: string, _timezone?: string): string {
+  const dt = DateTime.fromISO(dueAtLocal);
+  return dt.isValid ? dt.toFormat('HH:mm') : '';
+}
 
 // -----------------------------------------------------------------------------
-// Item types for sectioned list
+// Item types for timeline list (Stitch design - no section headers)
 // -----------------------------------------------------------------------------
-
-export type SectionHeaderItem = {
-  type: 'section-header';
-  title: string;
-  count: number;
-  testID: string;
-};
 
 export type TaskItem = {
   type: 'task';
   task: Task;
-  isCompleted: boolean;
+  taskType: TaskType;
+  state: 'completed' | 'active' | 'pending' | 'future';
+  isFirst: boolean;
+  isLast: boolean;
   plantName?: string;
   plantImage?: string;
+  dueTime?: string;
 };
 
 export type EmptyStateItem = {
@@ -34,11 +43,7 @@ export type LoadingItem = {
   type: 'loading';
 };
 
-export type CalendarListItem =
-  | SectionHeaderItem
-  | TaskItem
-  | EmptyStateItem
-  | LoadingItem;
+export type CalendarListItem = TaskItem | EmptyStateItem | LoadingItem;
 
 // -----------------------------------------------------------------------------
 // Utility functions
@@ -46,17 +51,14 @@ export type CalendarListItem =
 
 export function getItemKey(item: CalendarListItem, index: number): string {
   switch (item.type) {
-    case 'section-header':
-      return `header-${item.testID}`;
     case 'task':
       return `task-${item.task.id}`;
     case 'empty':
       return `empty-${index}`;
     case 'loading':
       return `loading-${index}`;
-    default: {
+    default:
       return `unknown-${index}`;
-    }
   }
 }
 
@@ -68,45 +70,13 @@ export function getItemType(item: CalendarListItem): CalendarListItem['type'] {
 // List item components
 // -----------------------------------------------------------------------------
 
-function SectionHeader({
-  title,
-  count,
-  testID,
-}: {
-  title: string;
-  count: number;
-  testID: string;
-}): React.ReactElement {
-  return (
-    <View
-      className="flex-row items-center justify-between bg-neutral-50 pb-2 pt-4 dark:bg-charcoal-950"
-      testID={testID}
-      accessible={true}
-      accessibilityRole="header"
-      accessibilityLabel={`${title}, ${count} items`}
-      accessibilityHint="Section header"
-    >
-      <Text className="text-lg font-bold text-charcoal-900 dark:text-neutral-100">
-        {title}
-      </Text>
-      <View className="min-w-[28px] items-center rounded-full bg-primary-100 px-2.5 py-1 dark:bg-primary-900/40">
-        <Text className="text-sm font-bold text-primary-700 dark:text-primary-300">
-          {count}
-        </Text>
-      </View>
-    </View>
-  );
-}
-
 function EmptyState({ message }: { message: string }): React.ReactElement {
   return (
     <View
-      className="items-center justify-center py-8"
+      className="items-center justify-center py-12"
       testID="calendar-empty-state"
     >
-      <Text className="text-base text-neutral-600 dark:text-neutral-400">
-        {message}
-      </Text>
+      <Text className="text-base text-white/60">{message}</Text>
     </View>
   );
 }
@@ -130,7 +100,24 @@ export type PlantInfo = {
 };
 
 // -----------------------------------------------------------------------------
-// List data builder
+// Task type detection helper
+// -----------------------------------------------------------------------------
+
+function getTaskType(task: Task): TaskType {
+  const title = task.title.toLowerCase();
+  if (title.includes('water') || title.includes('wasser')) return 'watering';
+  if (
+    title.includes('feed') ||
+    title.includes('nährstoff') ||
+    title.includes('nutrient')
+  )
+    return 'feeding';
+  if (title.includes('flush') || title.includes('spül')) return 'flush';
+  return 'other';
+}
+
+// -----------------------------------------------------------------------------
+// List data builder - Stitch unified timeline (no section headers)
 // -----------------------------------------------------------------------------
 
 export type BuildCalendarListDataOptions = {
@@ -144,10 +131,7 @@ export function buildCalendarListData(
   options: BuildCalendarListDataOptions
 ): CalendarListItem[] {
   const { pendingTasks, completedTasks, isLoading, plantMap } = options;
-  const planTitle = translate('calendar.sections.plan');
-  const historyTitle = translate('calendar.sections.history');
-  const emptyPlanMessage = translate('calendar.sections.empty_plan');
-  const emptyHistoryMessage = translate('calendar.sections.empty_history');
+  const emptyMessage = translate('calendar.no_tasks_for_day');
 
   const items: CalendarListItem[] = [];
 
@@ -164,53 +148,63 @@ export function buildCalendarListData(
     };
   };
 
-  // Plan section
-  items.push({
-    type: 'section-header',
-    title: planTitle,
-    count: pendingTasks.length,
-    testID: 'calendar-plan-section-header',
-  });
+  // Combine all tasks into a unified timeline
+  // Order: pending first (top), active highlighted, then completed at bottom
+  const allTasks: {
+    task: Task;
+    isCompleted: boolean;
+    isActive: boolean;
+  }[] = [
+    // Pending tasks - the first one is "active"
+    ...pendingTasks.map((task, idx) => ({
+      task,
+      isCompleted: false,
+      isActive: idx === 0, // First pending task is active
+    })),
+    // Completed tasks
+    ...completedTasks.map((task) => ({
+      task,
+      isCompleted: true,
+      isActive: false,
+    })),
+  ];
 
-  if (pendingTasks.length === 0 && !isLoading) {
-    items.push({ type: 'empty', message: emptyPlanMessage });
-  } else if (pendingTasks.length > 0) {
-    for (const task of pendingTasks) {
-      const { plantName, plantImage } = getPlantInfoForTask(task);
-      items.push({
-        type: 'task',
-        task,
-        isCompleted: false,
-        plantName,
-        plantImage,
-      });
-    }
+  if (allTasks.length === 0 && !isLoading) {
+    items.push({ type: 'empty', message: emptyMessage });
+    return items;
   }
 
-  // History section
-  items.push({
-    type: 'section-header',
-    title: historyTitle,
-    count: completedTasks.length,
-    testID: 'calendar-history-section-header',
-  });
+  // Build timeline items with position metadata
+  for (let i = 0; i < allTasks.length; i++) {
+    const { task, isCompleted, isActive } = allTasks[i];
+    const { plantName, plantImage } = getPlantInfoForTask(task);
+    const taskType = getTaskType(task);
+    const dueTime = formatDueTime(task.dueAtLocal, task.timezone);
 
-  if (completedTasks.length === 0 && !isLoading) {
-    items.push({ type: 'empty', message: emptyHistoryMessage });
-  } else if (completedTasks.length > 0) {
-    for (const task of completedTasks) {
-      const { plantName, plantImage } = getPlantInfoForTask(task);
-      items.push({
-        type: 'task',
-        task,
-        isCompleted: true,
-        plantName,
-        plantImage,
-      });
+    // Determine task state for timeline styling
+    let state: 'completed' | 'active' | 'pending' | 'future';
+    if (isCompleted) {
+      state = 'completed';
+    } else if (isActive) {
+      state = 'active';
+    } else {
+      state = 'pending';
     }
+
+    items.push({
+      type: 'task',
+      task,
+      taskType,
+      state,
+      isFirst: i === 0,
+      isLast: i === allTasks.length - 1,
+      plantName,
+      plantImage,
+      dueTime,
+    });
   }
 
-  // Add single loading state at the end if loading globally
+  // Add loading state at end if loading
   if (isLoading) {
     items.push({ type: 'loading' });
   }
@@ -234,28 +228,19 @@ export function createRenderItem(
     item,
   }: RenderItemProps): React.ReactElement | null {
     switch (item.type) {
-      case 'section-header':
-        return (
-          <SectionHeader
-            title={item.title}
-            count={item.count}
-            testID={item.testID}
-          />
-        );
       case 'task':
         return (
-          <DayTaskRow
+          <TimelineTaskCard
             task={item.task}
+            taskType={item.taskType}
+            state={item.state}
             plantName={item.plantName}
-            plantImage={item.plantImage}
-            onComplete={handleCompleteTask}
-            onPress={handleTaskPress}
-            isCompleted={item.isCompleted}
-            testID={
-              item.isCompleted
-                ? `history-task-${item.task.id}`
-                : `plan-task-${item.task.id}`
-            }
+            dueTime={item.dueTime}
+            isFirst={item.isFirst}
+            isLast={item.isLast}
+            onPress={() => handleTaskPress?.(item.task)}
+            onComplete={() => handleCompleteTask(item.task)}
+            testID={`timeline-task-${item.task.id}`}
           />
         );
       case 'empty':

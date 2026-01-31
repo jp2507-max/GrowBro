@@ -20,6 +20,9 @@ module.exports = {
       spacing: {
         hero: '350px',
       },
+      height: {
+        hero: '350px',
+      },
     },
   },
   plugins: [],

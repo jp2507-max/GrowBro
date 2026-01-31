@@ -1,16 +1,19 @@
 import { useFocusEffect, useScrollToTop } from '@react-navigation/native';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import type { Strain } from '@/api';
 import type { StrainFilters } from '@/api/strains/types';
 import {
-  ActiveFiltersRow,
-  ComplianceBanner,
   FilterModal,
+  RaceFilterChips,
+  type RaceFilterValue,
+  StrainHeroCard,
+  StrainsGradientBackground,
   StrainsHeader,
-  StrainsListWithCache,
-  type StrainsListWithCacheProps,
+  StrainsList,
+  type StrainsListProps,
   StrainsOfflineBanner,
   useStrainFilters,
 } from '@/components/strains';
@@ -32,6 +35,7 @@ const LIST_BOTTOM_EXTRA = 24;
 
 export default function StrainsScreen(): React.ReactElement {
   const { listRef, scrollHandler, resetScrollState } = useAnimatedScrollList();
+  const insets = useSafeAreaInsets();
 
   useScrollToTop(
     listRef as React.RefObject<{
@@ -52,16 +56,16 @@ export default function StrainsScreen(): React.ReactElement {
   const analytics = useAnalytics();
   const hasAnalyticsConsent = useAnalyticsConsent();
   const filterModal = useStrainFilters();
-  const insets = useSafeAreaInsets();
-  const [searchValue, setSearchValue] = React.useState('');
+  const [searchValue] = React.useState('');
   const debouncedQuery = useDebouncedValue(searchValue, SEARCH_DEBOUNCE_MS);
   const [filters, setFilters] = React.useState<StrainFilters>({});
+  const [raceFilter, setRaceFilter] = useState<RaceFilterValue>('all');
   const [listState, setListState] = useState<StrainListState | null>(null);
+  const [featuredStrain, setFeaturedStrain] = useState<Strain | null>(null);
 
-  const resolvedCount = listState?.strains.length ?? 0;
   const resolvedOffline =
     listState?.isOffline ?? (!isConnected || !isInternetReachable);
-  const hasFilters = hasActiveFilters(filters);
+  const hasFilters = hasActiveFilters(filters) || raceFilter !== 'all';
 
   useStrainSearchAnalytics({
     analytics,
@@ -70,6 +74,24 @@ export default function StrainsScreen(): React.ReactElement {
     resolvedOffline,
     hasAnalyticsConsent,
   });
+
+  // Combine race filter with modal filters
+  const combinedFilters = useMemo((): StrainFilters => {
+    const combined: StrainFilters = { ...filters };
+
+    if (
+      raceFilter === 'indica' ||
+      raceFilter === 'sativa' ||
+      raceFilter === 'hybrid'
+    ) {
+      combined.race = raceFilter;
+    } else if (raceFilter === 'highCbd') {
+      combined.cbdMin = 10;
+    }
+    // 'all' doesn't add any race filter
+
+    return combined;
+  }, [filters, raceFilter]);
 
   const handleApplyFilters = React.useCallback(
     (newFilters: StrainFilters) => {
@@ -81,7 +103,14 @@ export default function StrainsScreen(): React.ReactElement {
 
   const handleClearFilters = React.useCallback(() => {
     setFilters({});
+    setRaceFilter('all');
     filterModal.closeFilters();
+  }, [filterModal]);
+
+  const handleSearchPress = React.useCallback(() => {
+    // TODO: Open search modal or navigate to search screen
+    // For now, use existing filter modal
+    filterModal.openFilters();
   }, [filterModal]);
 
   const listContentPadding = React.useMemo(
@@ -94,11 +123,7 @@ export default function StrainsScreen(): React.ReactElement {
   );
 
   const handleStateChange = useCallback(
-    (
-      state: Parameters<
-        NonNullable<StrainsListWithCacheProps['onStateChange']>
-      >[0]
-    ) => {
+    (state: Parameters<NonNullable<StrainsListProps['onStateChange']>>[0]) => {
       setListState({
         ...state,
         strains: { length: state.strains.length },
@@ -107,53 +132,80 @@ export default function StrainsScreen(): React.ReactElement {
     []
   );
 
-  return (
-    <View
-      className="flex-1 bg-neutral-50 dark:bg-charcoal-950"
-      testID="strains-screen"
-    >
-      <FocusAwareStatusBar />
-      <StrainsHeader
-        insets={insets}
-        searchValue={searchValue}
-        onSearchChange={setSearchValue}
-        strainCount={resolvedCount}
-        hasActiveFilters={hasFilters}
-        onFiltersPress={filterModal.openFilters}
-      />
+  const handleFeaturedStrainChange = useCallback((strain: Strain | null) => {
+    setFeaturedStrain(strain);
+  }, []);
 
-      <View
-        className="z-10 -mt-6 flex-1 rounded-t-[32px] bg-white shadow-xl dark:bg-charcoal-900"
-        accessible={true}
-        accessibilityLabel="Strains list section"
-        accessibilityHint="Browse and filter cannabis strains"
-      >
-        <View className="w-full items-center pb-2 pt-3">
-          <View className="h-1.5 w-12 rounded-full bg-neutral-200 dark:bg-white/20" />
+  // List header with hero card and filters
+  const ListHeader = useMemo(() => {
+    // Only show hero when not searching/filtering
+    const showHero =
+      !debouncedQuery && raceFilter === 'all' && !hasActiveFilters(filters);
+
+    return (
+      <View className="mb-4">
+        {/* Hero Card */}
+        {showHero && featuredStrain && (
+          <View className="mb-8 mt-4">
+            <StrainHeroCard strain={featuredStrain} />
+          </View>
+        )}
+
+        {/* Race Filter Chips */}
+        <View className="mb-2">
+          <RaceFilterChips value={raceFilter} onChange={setRaceFilter} />
         </View>
-        <View className="px-4">
-          <ActiveFiltersRow filters={filters} onFilterChange={setFilters} />
+
+        {/* Offline Banner */}
+        <View className="px-5">
           <StrainsOfflineBanner isVisible={resolvedOffline} />
         </View>
-        <ComplianceBanner />
-        <StrainsListWithCache
-          searchQuery={debouncedQuery}
-          filters={filters}
-          onScroll={scrollHandler}
-          listRef={listRef}
-          contentContainerStyle={listContentStyle}
-          testID="strains-list"
-          onStateChange={handleStateChange}
-        />
       </View>
+    );
+  }, [debouncedQuery, raceFilter, filters, featuredStrain, resolvedOffline]);
+
+  // Determine if we should skip the first item (when showing hero)
+  const skipFirstItems = useMemo(() => {
+    const showHero =
+      !debouncedQuery && raceFilter === 'all' && !hasActiveFilters(filters);
+    return showHero ? 1 : 0;
+  }, [debouncedQuery, raceFilter, filters]);
+
+  return (
+    <StrainsGradientBackground testID="strains-screen">
+      <FocusAwareStatusBar style="light" />
+
+      {/* Header */}
+      <StrainsHeader
+        insets={insets}
+        onSearchPress={handleSearchPress}
+        onFiltersPress={filterModal.openFilters}
+        hasActiveFilters={hasFilters}
+      />
+
+      {/* Strains List */}
+      <StrainsList
+        searchQuery={debouncedQuery}
+        filters={combinedFilters}
+        skipFirstItems={skipFirstItems}
+        onScroll={scrollHandler}
+        listRef={listRef}
+        contentContainerStyle={listContentStyle}
+        testID="strains-list"
+        onStateChange={handleStateChange}
+        onFeaturedStrainChange={handleFeaturedStrainChange}
+        ListHeaderComponent={ListHeader}
+      />
+
+      {/* Filter Modal */}
       <FilterModal
         ref={filterModal.ref}
         filters={filters}
         onApply={handleApplyFilters}
         onClear={handleClearFilters}
       />
-    </View>
+    </StrainsGradientBackground>
   );
 }
 
-const styles = StyleSheet.create({ listContentContainer: { paddingTop: 8 } });
+const styles = StyleSheet.create({ listContentContainer: { paddingTop: 0 } });
