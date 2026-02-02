@@ -47,7 +47,7 @@ type FeedbackFormData = z.infer<typeof feedbackSchema>;
 // eslint-disable-next-line max-lines-per-function -- Complex form screen
 export default function FeedbackScreen() {
   const router = useRouter();
-  const user = useAuth.use.user();
+  const user = useAuth((s) => s.user);
   const { isInternetReachable } = useNetworkStatus();
   const [isSubmitting, setIsSubmitting] = useState(false);
 

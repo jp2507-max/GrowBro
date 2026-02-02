@@ -12,9 +12,16 @@ const CLEANUP_INTERVAL_MS = 60000; // 1 minute
 const MAX_AGE_MS = 300000; // 5 minutes
 
 // Periodically clean up stale entries
-let cleanupInterval: NodeJS.Timeout | null = null;
+let cleanupInterval: ReturnType<typeof setInterval> | null = null;
 
-function startCleanup() {
+function maybeStopCleanup() {
+  if (registry.size === 0 && cleanupInterval) {
+    clearInterval(cleanupInterval);
+    cleanupInterval = null;
+  }
+}
+
+function ensureCleanupRunning() {
   if (cleanupInterval) return;
   cleanupInterval = setInterval(() => {
     const now = Date.now();
@@ -35,6 +42,7 @@ function startCleanup() {
         registry.delete(id);
       }
     }
+    maybeStopCleanup();
   }, CLEANUP_INTERVAL_MS);
 }
 
@@ -54,7 +62,7 @@ function createRequestId(): string {
 export function registerDatePickerSheetRequest(
   handlers: DatePickerSheetHandlers
 ): string {
-  startCleanup();
+  ensureCleanupRunning();
   const requestId = createRequestId();
   registry.set(requestId, { ...handlers, createdAt: Date.now() });
   return requestId;
@@ -68,6 +76,7 @@ export function resolveDatePickerSheetRequest(
   if (!handlers) return;
   registry.delete(requestId);
   handlers.onResolve(date);
+  maybeStopCleanup();
 }
 
 export function cancelDatePickerSheetRequest(requestId: string): void {
@@ -75,4 +84,5 @@ export function cancelDatePickerSheetRequest(requestId: string): void {
   if (!handlers) return;
   registry.delete(requestId);
   handlers.onCancel();
+  maybeStopCleanup();
 }

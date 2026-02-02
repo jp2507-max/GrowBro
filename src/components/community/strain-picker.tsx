@@ -21,7 +21,10 @@ type StrainPickerProps = {
   /** Callback with just the strain name (for backward compatibility with add-post) */
   onSelect?: (strain: string | undefined) => void;
   /** Callback with the full Strain object (for plant form use cases) */
-  onSelectFull?: (strain: Strain | undefined, source: 'api' | 'custom') => void;
+  onSelectFull?: (
+    strain: Strain | undefined,
+    source?: 'api' | 'custom'
+  ) => void;
   /** Enable custom strain creation when no exact match is found */
   enableCustomStrain?: boolean;
   label?: string;
@@ -153,7 +156,7 @@ export function StrainPicker({
 
   const handleClear = React.useCallback((): void => {
     onSelect?.(undefined);
-    onSelectFull?.(undefined, 'api');
+    onSelectFull?.(undefined);
     modal.dismiss();
     setSearchQuery('');
     setIsOpen(false);

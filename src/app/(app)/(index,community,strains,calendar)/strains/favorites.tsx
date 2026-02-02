@@ -31,7 +31,7 @@ import { getMediumFlashListConfig } from '@/lib/flashlist-config';
 import { haptics } from '@/lib/haptics';
 import { useNetworkStatus } from '@/lib/hooks';
 import { parsePercentageRange } from '@/lib/strains/normalization';
-import { useFavorites } from '@/lib/strains/use-favorites';
+import { useFavoritesStore } from '@/lib/strains/use-favorites';
 import type { FavoriteStrain } from '@/types/strains';
 
 const LIST_BOTTOM_EXTRA = 16;
@@ -242,7 +242,10 @@ export default function FavoritesScreen(): React.ReactElement {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
 
-  const favorites = useFavorites.use.getFavorites()();
+  // Select the getFavorites function and call it to get the list
+  // The function is stable, and Zustand will re-render when favorites change
+  const getFavorites = useFavoritesStore((s) => s.getFavorites);
+  const favorites = getFavorites();
   const sortMenu = useFavoritesSortMenu();
 
   const isOffline = !isConnected || !isInternetReachable;

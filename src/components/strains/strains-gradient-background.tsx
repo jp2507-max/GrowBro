@@ -4,7 +4,7 @@ import type { StyleProp, ViewStyle } from 'react-native';
 import { StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { View } from '@/components/ui';
+import { colors, View } from '@/components/ui';
 
 type StrainsGradientBackgroundProps = {
   children: React.ReactNode;
@@ -34,7 +34,7 @@ export function StrainsGradientBackground({
   return (
     <View style={[styles.container, style]} testID={testID}>
       <LinearGradient
-        colors={['#181d14', '#0d1f12', '#050a04']}
+        colors={[colors.strains.dark, colors.strains.mid, colors.strains.deep]}
         locations={[0, 0.5, 1]}
         start={{ x: 0, y: 0 }}
         end={{ x: 0.4, y: 1 }}

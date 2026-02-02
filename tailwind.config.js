@@ -19,9 +19,11 @@ module.exports = {
       },
       spacing: {
         hero: '350px',
+        'hero-lg': '45%',
       },
       height: {
         hero: '350px',
+        'hero-lg': '45%',
       },
     },
   },

@@ -95,6 +95,8 @@ function useAssessmentPrefill({
   const mountedRef = React.useRef(true);
 
   useEffect(() => {
+    mountedRef.current = true;
+
     if (applied) return;
 
     const source = params.source;

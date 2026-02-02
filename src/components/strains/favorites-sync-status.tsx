@@ -8,7 +8,7 @@ import { ActivityIndicator, View } from 'react-native';
 import { colors, Pressable, Text } from '@/components/ui';
 import { translate } from '@/lib/i18n/utils';
 import { getPendingSyncCount } from '@/lib/strains/favorites-sync-queue';
-import { useFavorites } from '@/lib/strains/use-favorites';
+import { useFavoritesStore } from '@/lib/strains/use-favorites';
 
 interface FavoritesSyncStatusProps {
   testID?: string;
@@ -17,9 +17,9 @@ interface FavoritesSyncStatusProps {
 export function FavoritesSyncStatus({
   testID = 'favorites-sync-status',
 }: FavoritesSyncStatusProps) {
-  const isSyncing = useFavorites.use.isSyncing();
-  const syncError = useFavorites.use.syncError();
-  const fullSync = useFavorites.use.fullSync();
+  const isSyncing = useFavoritesStore((s) => s.isSyncing);
+  const syncError = useFavoritesStore((s) => s.syncError);
+  const fullSync = useFavoritesStore((s) => s.fullSync);
   const [pendingCount, setPendingCount] = useState(0);
 
   useEffect(() => {

@@ -36,7 +36,6 @@ import {
   SDKGate,
   setAnalyticsClient,
   startAgeGateSession,
-  useAgeGate,
   useAuth,
   useIsFirstTime,
   useSystemThemeListener,
@@ -51,6 +50,7 @@ import {
 import { updateActivity } from '@/lib/auth/session-timeout';
 import { useDeepLinking } from '@/lib/auth/use-deep-linking';
 import { removeToken } from '@/lib/auth/utils';
+import { useAgeGateStore } from '@/lib/compliance/age-gate';
 import {
   checkLegalVersionBumps,
   hydrateLegalAcceptances,
@@ -63,7 +63,7 @@ import {
   ONBOARDING_VERSION,
   resetOnboardingState,
   shouldShowOnboarding,
-  useOnboardingState,
+  useOnboardingStateStore,
 } from '@/lib/compliance/onboarding-state';
 import { trackOnboardingStart } from '@/lib/compliance/onboarding-telemetry';
 import { useRootStartup } from '@/lib/hooks/use-root-startup';
@@ -398,16 +398,11 @@ function usePhotoJanitorSetup(isI18nReady: boolean): void {
 function RootLayout(): React.ReactElement {
   const [isFirstTime] = useIsFirstTime();
 
-  // Zustand createSelectors pattern: .status() calls ARE hooks, but react-compiler
-  // misinterprets `useX.propertySelector` as referencing hooks as values.
-  // eslint-disable-next-line react-compiler/react-compiler
-  const ageGateStatus = useAgeGate.status();
-  // eslint-disable-next-line react-compiler/react-compiler
-  const sessionId = useAgeGate.sessionId();
-  // eslint-disable-next-line react-compiler/react-compiler
-  const onboardingStatus = useOnboardingState.status();
-  // eslint-disable-next-line react-compiler/react-compiler
-  const currentOnboardingStep = useOnboardingState.currentStep();
+  // Direct selectors for React Compiler compatibility
+  const ageGateStatus = useAgeGateStore((s) => s.status);
+  const sessionId = useAgeGateStore((s) => s.sessionId);
+  const onboardingStatus = useOnboardingStateStore((s) => s.status);
+  const currentOnboardingStep = useOnboardingStateStore((s) => s.currentStep);
 
   const [isI18nReady, setIsI18nReady] = React.useState(false);
   const [isAuthReady, setIsAuthReady] = React.useState(false);
@@ -674,7 +669,9 @@ interface ProvidersProps {
 // Custom container for BottomSheetModalProvider to keep portal content
 // inside the existing navigation context tree.
 const BottomSheetPortalContainer = React.memo(
-  ({ children }: { children: React.ReactNode }) => <>{children}</>
+  ({ children }: { children: React.ReactNode }): React.ReactElement => (
+    <>{children}</>
+  )
 );
 
 function Providers({ children }: ProvidersProps): React.ReactElement {

@@ -355,6 +355,13 @@ const _useAgeGate = create<AgeGateStoreState>((set, get) =>
 
 const ageGateStore = createSelectors(_useAgeGate);
 
+/**
+ * Base store hook for direct selectors: `useAgeGateStore((s) => s.status)`
+ * Preferred over property selectors for React Compiler compatibility.
+ */
+export const useAgeGateStore = _useAgeGate;
+
+/** @deprecated Use `useAgeGateStore((s) => s.field)` for React Compiler compatibility */
 export const useAgeGate = ageGateStore.use;
 
 export function hydrateAgeGate(): void {

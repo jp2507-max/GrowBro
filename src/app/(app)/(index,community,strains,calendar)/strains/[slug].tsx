@@ -15,6 +15,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useStrain } from '@/api/strains/use-strain';
+import { THCBadge } from '@/components/strains';
 import { FavoriteButtonConnected } from '@/components/strains/favorite-button-connected';
 import { RaceBadge } from '@/components/strains/race-badge';
 import { StrainDetailSkeleton } from '@/components/strains/strain-detail-skeleton';
@@ -26,7 +27,6 @@ import {
   Leaf,
   Scale,
   Share as ShareIcon,
-  Smile,
   Sprout,
 } from '@/components/ui/icons';
 import { ListErrorState } from '@/components/ui/list';
@@ -97,6 +97,15 @@ async function shareStrain(strain: Strain) {
   }
 }
 
+const SectionHeader = ({ title }: { title: string }): React.ReactElement => (
+  <View className="mb-3 flex-row items-center gap-2">
+    <View className="h-5 w-1 rounded-full bg-neon-lime shadow-[0_0_8px_#94fa2e]" />
+    <Text className="text-xl font-bold text-neutral-900 dark:text-white">
+      {title}
+    </Text>
+  </View>
+);
+
 const EffectsFlavorsSection = ({
   strain,
 }: {
@@ -105,26 +114,26 @@ const EffectsFlavorsSection = ({
   return (
     <Animated.View
       entering={FadeIn.delay(400).springify().reduceMotion(ReduceMotion.System)}
-      className="mt-8 px-6 pb-20"
+      className="mt-8 space-y-6 px-6 pb-6"
     >
       {strain.effects && strain.effects.length > 0 && (
-        <View className="mb-8" testID="strain-effects">
-          <Text className="mb-4 text-lg font-bold text-neutral-900 dark:text-white">
-            {translate('strains.detail.effects')}
-          </Text>
-          <View className="flex-row flex-wrap">
-            {strain.effects.map((effect) => (
+        <View testID="strain-effects">
+          <SectionHeader title={translate('strains.detail.effects')} />
+          <View className="flex-row flex-wrap gap-2">
+            {strain.effects.map((effect, index) => (
               <View
                 key={effect.name}
-                className="mb-3 mr-3 flex-row items-center rounded-full border border-primary-200 bg-primary-100 px-5 py-3 dark:border-primary-700 dark:bg-primary-900/40"
+                className={`rounded-xl border px-5 py-2.5 ${
+                  index === 0
+                    ? 'border-neon-lime/30 bg-white/5'
+                    : 'border-white/10 bg-white/5'
+                }`}
               >
-                <Smile
-                  width={18}
-                  height={18}
-                  color={colors.ink[700]}
-                  className="mr-2"
-                />
-                <Text className="text-sm font-bold text-primary-900 dark:text-primary-100">
+                <Text
+                  className={`text-sm font-semibold ${
+                    index === 0 ? 'text-neon-lime' : 'text-white'
+                  }`}
+                >
                   {effect.name}
                 </Text>
               </View>
@@ -135,24 +144,15 @@ const EffectsFlavorsSection = ({
 
       {strain.flavors && strain.flavors.length > 0 && (
         <View testID="strain-flavors">
-          <Text className="mb-4 text-lg font-bold text-neutral-900 dark:text-white">
-            {translate('strains.detail.flavors')}
-          </Text>
-          <View className="flex-row flex-wrap">
+          <SectionHeader title={translate('strains.detail.flavors')} />
+          <View className="flex-row flex-wrap gap-2">
             {strain.flavors.map((flavor) => (
               <View
                 key={flavor.name}
-                className="mb-3 mr-3 flex-row items-center rounded-full border border-primary-200 bg-primary-100 px-5 py-3 dark:border-primary-700 dark:bg-primary-900/40"
+                className="flex-row items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2"
               >
-                <Leaf
-                  width={18}
-                  height={18}
-                  color={colors.ink[700]}
-                  className="mr-2"
-                />
-                <Text className="text-sm font-bold text-primary-900 dark:text-primary-100">
-                  {flavor.name}
-                </Text>
+                <Leaf width={16} height={16} color={colors.neutral[400]} />
+                <Text className="text-sm text-white/80">{flavor.name}</Text>
               </View>
             ))}
           </View>
@@ -161,6 +161,33 @@ const EffectsFlavorsSection = ({
     </Animated.View>
   );
 };
+
+const StatsCard = ({
+  icon: Icon,
+  value,
+  label,
+}: {
+  icon: React.ComponentType<{ width: number; height: number; color: string }>;
+  value: string;
+  label: string;
+}): React.ReactElement => (
+  <View className="flex-1 items-center justify-center gap-2 rounded-2xl border border-white/5 bg-gradient-to-b from-white/5 to-white/[0.01] p-3 shadow-[0_4px_20px_-5px_rgba(0,0,0,0.3)]">
+    <View className="size-10 items-center justify-center rounded-full border border-neon-lime/20 bg-neon-lime/10 shadow-[0_0_10px_rgba(148,250,46,0.1)]">
+      <Icon width={20} height={20} color={colors.neon.lime} />
+    </View>
+    <View className="items-center">
+      <Text
+        className="text-[10px] font-bold uppercase tracking-wider text-white/40"
+        numberOfLines={1}
+      >
+        {label}
+      </Text>
+      <Text className="text-sm font-bold text-white" numberOfLines={1}>
+        {value}
+      </Text>
+    </View>
+  </View>
+);
 
 const HardFactsGrid = ({ strain }: { strain: Strain }): React.ReactElement => {
   const floweringTime =
@@ -185,80 +212,33 @@ const HardFactsGrid = ({ strain }: { strain: Strain }): React.ReactElement => {
           : translate('common.na');
 
   return (
-    <View className="my-8 flex-row justify-between gap-3 px-4">
-      <View className="flex-1 items-center justify-center rounded-2xl bg-primary-50 p-4 dark:bg-primary-900/40">
-        <Calendar
-          width={24}
-          height={24}
-          color={colors.primary[700]}
-          className="mb-2"
-        />
-        <Text
-          className="text-center text-lg font-bold text-neutral-900 dark:text-white"
-          numberOfLines={1}
-        >
-          {floweringTime}
-        </Text>
-        <Text
-          className="mt-1 text-[11px] font-extrabold uppercase tracking-widest text-primary-900/60 dark:text-primary-300/70"
-          numberOfLines={1}
-          adjustsFontSizeToFit
-        >
-          {translate('strains.hard_facts.flowering_time')}
-        </Text>
-      </View>
-
-      <View className="flex-1 items-center justify-center rounded-2xl bg-primary-50 p-4 dark:bg-primary-900/40">
-        <Scale
-          width={24}
-          height={24}
-          color={colors.ink[700]}
-          className="mb-2"
-        />
-        <Text
-          className="text-center text-lg font-bold text-neutral-900 dark:text-white"
-          numberOfLines={1}
-        >
-          {yieldRating}
-        </Text>
-        <Text
-          className="mt-1 text-[11px] font-extrabold uppercase tracking-widest text-primary-900/60 dark:text-primary-300/70"
-          numberOfLines={1}
-          adjustsFontSizeToFit
-        >
-          {translate('strains.hard_facts.yield')}
-        </Text>
-      </View>
-
-      <View className="flex-1 items-center justify-center rounded-2xl bg-primary-50 p-4 dark:bg-primary-900/40">
-        <Sprout
-          width={24}
-          height={24}
-          color={colors.primary[700]}
-          className="mb-2"
-        />
-        <Text
-          className="text-center text-lg font-bold text-neutral-900 dark:text-white"
-          numberOfLines={1}
-        >
-          {difficulty}
-        </Text>
-        <Text
-          className="mt-1 text-[11px] font-extrabold uppercase tracking-widest text-primary-900/60 dark:text-primary-300/70"
-          numberOfLines={1}
-          adjustsFontSizeToFit
-        >
-          {translate('strains.hard_facts.cultivation')}
-        </Text>
-      </View>
+    <View className="my-6 flex-row gap-3 px-6">
+      <StatsCard
+        icon={Calendar}
+        value={floweringTime}
+        label={translate('strains.hard_facts.flowering_time')}
+      />
+      <StatsCard
+        icon={Scale}
+        value={yieldRating}
+        label={translate('strains.hard_facts.yield')}
+      />
+      <StatsCard
+        icon={Sprout}
+        value={difficulty}
+        label={translate('strains.hard_facts.cultivation')}
+      />
     </View>
   );
 };
 
-const PremiumTagsRow = ({ strain }: { strain: Strain }): React.ReactElement => {
+const BadgesRow = ({ strain }: { strain: Strain }): React.ReactElement => {
   return (
-    <View className="px-5 pt-2">
-      <RaceBadge race={strain.race} variant="premium" />
+    <View className="flex-row items-center gap-3">
+      <RaceBadge race={strain.race} variant="neon" />
+      {strain.thc_display && (
+        <THCBadge thc={`THC ${strain.thc_display}`} variant="outline" />
+      )}
     </View>
   );
 };
@@ -330,27 +310,21 @@ const StrainContentSheet = ({
 }: {
   strain: Strain;
 }): React.ReactElement => (
-  <View className="-mt-6 min-h-screen rounded-t-sheet bg-white pb-20 pt-4 shadow-2xl dark:bg-charcoal-900">
-    <View className="mb-4 w-full items-center">
-      <View className="h-1.5 w-12 rounded-full bg-neutral-200 dark:bg-white/20" />
-    </View>
-    <PremiumTagsRow strain={strain} />
+  <View className="rounded-t-3xl bg-charcoal-950 pb-8 pt-6">
     <Animated.View
       entering={FadeIn.delay(200).springify().reduceMotion(ReduceMotion.System)}
     >
       <HardFactsGrid strain={strain} />
     </Animated.View>
-    <View className="px-6 pb-6">
-      <Text className="mb-4 text-xl font-bold text-neutral-900 dark:text-white">
-        {translate('strains.detail.about')}
-      </Text>
+    <View className="mt-6 px-6">
+      <SectionHeader title={translate('strains.detail.about')} />
       {strain.description?.map((paragraph, index) => (
         <Animated.Text
           key={index}
           entering={FadeIn.delay(300 + index * 100)
             .springify()
             .reduceMotion(ReduceMotion.System)}
-          className="mb-4 text-lg leading-8 text-neutral-600 dark:text-neutral-300"
+          className="mb-4 text-base leading-relaxed text-white/70"
         >
           {paragraph}
         </Animated.Text>
@@ -414,21 +388,15 @@ const StrainScrollContent = ({
 }: StrainContentProps): React.ReactElement => (
   <Animated.ScrollView
     className="z-10 flex-1"
-    contentContainerClassName="pb-10"
+    contentContainerClassName="pb-20 flex-grow"
     showsVerticalScrollIndicator={false}
     onScroll={scrollHandler}
     scrollEventThrottle={16}
     bounces={false}
   >
-    <View className="h-hero justify-end px-6 pb-8">
-      <View className="mb-2 flex-row gap-2">
-        <View className="rounded-full bg-white/20 px-3 py-1 backdrop-blur-md">
-          <Text className="text-xs font-bold uppercase tracking-wider text-white">
-            {translate(`strains.race.${strain.race}`)}
-          </Text>
-        </View>
-      </View>
-      <Text className="text-4xl font-extrabold text-white shadow-sm">
+    <View className="h-[380px] justify-end px-6 pb-6">
+      <BadgesRow strain={strain} />
+      <Text className="mt-3 text-4xl font-bold tracking-tight text-white">
         {strain.name}
       </Text>
     </View>
@@ -531,7 +499,7 @@ export default function StrainDetailsScreen(): React.ReactElement {
       {/* --- 1. FIXED BACKGROUND HEADER (Absolute) --- */}
       <View className="absolute inset-x-0 top-0 z-0 h-[450px] bg-neutral-900">
         <AnimatedImage
-          className="size-full opacity-90"
+          className="size-full"
           contentFit="cover"
           sharedTransitionTag={strainImageTag(strain.slug)}
           {...imageProps}

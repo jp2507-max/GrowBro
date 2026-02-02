@@ -262,8 +262,10 @@ function useCalendarData(
 
   useEffect(() => {
     isEnabledRef.current = isEnabled;
-    if (!isEnabled) setIsLoading(false);
-    if (!isEnabled) requestIdRef.current += 1;
+    if (!isEnabled) {
+      setIsLoading(false);
+      requestIdRef.current += 1;
+    }
   }, [isEnabled]);
 
   // Derive range and day millis

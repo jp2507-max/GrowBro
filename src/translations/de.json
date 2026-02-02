@@ -766,6 +766,11 @@
     "verifying_email": "E-Mail wird verifiziert..."
   },
   "calendar": {
+    "contextChips": {
+      "light18h": "18 Std. Licht",
+      "vegStageWk4": "Veg Phase (Woche 4)",
+      "waterDay": "Gießtag"
+    },
     "day_counter": "TAG {{day}} / {{total}}",
     "day_counter_label": "TAG",
     "day_counter_separator": "/",
@@ -846,13 +851,15 @@
     "task_detail": {
       "category": "Kategorie",
       "complete": "Erledigen",
+      "complete_hint": "Doppeltippen, um die Aufgabe als erledigt zu markieren",
       "delete": "Löschen",
       "delete_confirm": "Bist du sicher, dass du diese Aufgabe löschen möchtest?",
       "description": "Beschreibung",
       "edit": "Bearbeiten",
       "no_description": "Keine Beschreibung",
       "time": "Uhrzeit",
-      "title": "Aufgabendetails"
+      "title": "Aufgabendetails",
+      "view_hint": "Doppeltippen, um Aufgabendetails anzuzeigen"
     },
     "task_row": {
       "complete": "Als erledigt markieren",
@@ -861,6 +868,9 @@
       "overdue": "Überfällig",
       "recurring": "Wiederkehrend",
       "task_hint": "Doppeltippen, um Aufgabendetails anzuzeigen"
+    },
+    "timeline": {
+      "task_fallback": "Aufgabe"
     },
     "today": "Heute",
     "tomorrow": "Morgen",

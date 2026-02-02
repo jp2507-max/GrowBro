@@ -9,6 +9,7 @@ import { GlassSurface } from '@/components/shared/glass-surface';
 import { GlassButton, Text, View } from '@/components/ui';
 import colors from '@/components/ui/colors';
 import { PlatformIcon, Settings as SettingsIcon } from '@/components/ui/icons';
+import { getTimeBasedGreeting } from '@/lib/greeting';
 import { translate } from '@/lib/i18n';
 import type { TxKeyPath } from '@/lib/i18n/utils';
 import { getHeaderColors } from '@/lib/theme-utils';
@@ -147,18 +148,7 @@ export function ScreenHeaderBase({
  * Time-based greeting text for Home screen
  */
 export function HeaderGreeting(): React.ReactElement {
-  const hour = new Date().getHours();
-  let greeting: string;
-
-  if (hour >= 5 && hour < 12) {
-    greeting = translate('home.greeting.morning' as TxKeyPath);
-  } else if (hour >= 12 && hour < 17) {
-    greeting = translate('home.greeting.afternoon' as TxKeyPath);
-  } else if (hour >= 17 && hour < 21) {
-    greeting = translate('home.greeting.evening' as TxKeyPath);
-  } else {
-    greeting = translate('home.greeting.night' as TxKeyPath);
-  }
+  const greeting = getTimeBasedGreeting();
 
   return <Text className="text-lg font-medium text-white/90">{greeting}</Text>;
 }
@@ -173,7 +163,7 @@ export function HeaderSettingsButton(): React.ReactElement {
   );
 
   const { colorScheme } = useColorScheme();
-  const colors = getHeaderColors(colorScheme === 'dark');
+  const headerColors = getHeaderColors(colorScheme === 'dark');
 
   return (
     <GlassButton
@@ -186,7 +176,7 @@ export function HeaderSettingsButton(): React.ReactElement {
       <PlatformIcon
         iosName="gearshape"
         size={20}
-        color={colors.text}
+        color={headerColors.text}
         fallback={<SettingsIcon />}
       />
     </GlassButton>

@@ -62,7 +62,7 @@ function getDisplayTitle(task: Task): string {
     return lastPart.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
   }
 
-  return 'Task';
+  return translate('calendar.timeline.task_fallback');
 }
 
 // -----------------------------------------------------------------------------
@@ -86,24 +86,30 @@ function TaskCardTitle({
         className={cn(
           'flex-1 text-lg font-bold',
           isCompleted
-            ? 'text-white/60 line-through'
+            ? 'text-neutral-600 dark:text-white/60 line-through'
             : isActive
-              ? 'text-lime-400'
-              : 'text-white'
+              ? 'text-primary-800 dark:text-primary-300'
+              : 'text-charcoal-900 dark:text-neutral-100'
         )}
         numberOfLines={2}
       >
         {title}
       </Text>
-      {dueTime && <Text className="ml-2 text-sm text-white/50">{dueTime}</Text>}
+      {dueTime && (
+        <Text className="ml-2 text-sm text-neutral-500 dark:text-white/50">
+          {dueTime}
+        </Text>
+      )}
     </View>
   );
 }
 
 function PlantBadge({ plantName }: { plantName: string }): React.ReactElement {
   return (
-    <View className="mt-2 self-start rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5">
-      <Text className="text-xs text-white/70">{plantName}</Text>
+    <View className="mt-2 self-start rounded-full border border-neutral-200 bg-neutral-100 px-2.5 py-0.5 dark:border-white/10 dark:bg-white/5">
+      <Text className="text-xs text-neutral-700 dark:text-white/70">
+        {plantName}
+      </Text>
     </View>
   );
 }
@@ -120,7 +126,7 @@ function ActiveTaskActions({
         className="items-center rounded-xl bg-lime-400 py-3"
         accessibilityRole="button"
         accessibilityLabel={translate('calendar.task_detail.complete')}
-        accessibilityHint="Double tap to mark this task as complete"
+        accessibilityHint={translate('calendar.task_detail.complete_hint')}
       >
         <Text className="text-sm font-bold text-charcoal-950">
           {translate('calendar.task_detail.complete')}
@@ -205,12 +211,12 @@ export function TimelineTaskCard({
           isCompleted && 'opacity-50',
           isFuture && 'border-dashed',
           isActive
-            ? 'border border-lime-400/50 bg-white/10'
-            : 'border border-white/10 bg-white/5'
+            ? 'border border-primary-200 bg-primary-50 dark:border-primary-300/50 dark:bg-white/10'
+            : 'border border-neutral-200 bg-white dark:border-white/10 dark:bg-white/5'
         )}
         accessibilityRole="button"
         accessibilityLabel={getDisplayTitle(task)}
-        accessibilityHint="Double tap to view task details"
+        accessibilityHint={translate('calendar.task_detail.view_hint')}
         accessibilityState={{ selected: isActive }}
       >
         <TaskCardTitle
@@ -220,7 +226,10 @@ export function TimelineTaskCard({
           isActive={isActive}
         />
         {task.description && !isCompleted && (
-          <Text className="mt-1 text-sm text-white/60" numberOfLines={2}>
+          <Text
+            className="mt-1 text-sm text-neutral-600 dark:text-white/60"
+            numberOfLines={2}
+          >
             {task.description}
           </Text>
         )}

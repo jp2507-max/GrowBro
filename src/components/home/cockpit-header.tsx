@@ -1,17 +1,15 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
 import { DateTime } from 'luxon';
 import { useColorScheme } from 'nativewind';
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import type { EdgeInsets } from 'react-native-safe-area-context';
 
-import { GlassButton, Text, View } from '@/components/ui';
+import { HeaderSettingsButton } from '@/components/navigation/screen-header-base';
+import { Text, View } from '@/components/ui';
 import colors from '@/components/ui/colors';
-import { PlatformIcon, Settings as SettingsIcon } from '@/components/ui/icons';
 import { useAuth } from '@/lib/auth';
-import { translate } from '@/lib/i18n';
-import type { TxKeyPath } from '@/lib/i18n/utils';
+import { getTimeBasedGreeting } from '@/lib/greeting';
 import { fetchProfileFromBackend } from '@/lib/sync/profile-sync';
 import { getHeaderColors } from '@/lib/theme-utils';
 
@@ -48,7 +46,7 @@ type CockpitHeaderProps = {
 };
 
 function useDisplayName(): string | null {
-  const user = useAuth.use.user();
+  const user = useAuth((s) => s.user);
   const [displayName, setDisplayName] = React.useState<string | null>(null);
 
   React.useEffect(() => {
@@ -80,50 +78,9 @@ function useDisplayName(): string | null {
   return displayName;
 }
 
-function getTimeBasedGreeting(): string {
-  const hour = new Date().getHours();
-
-  if (hour >= 5 && hour < 12) {
-    return translate('home.greeting.morning' as TxKeyPath);
-  } else if (hour >= 12 && hour < 17) {
-    return translate('home.greeting.afternoon' as TxKeyPath);
-  } else if (hour >= 17 && hour < 21) {
-    return translate('home.greeting.evening' as TxKeyPath);
-  } else {
-    return translate('home.greeting.night' as TxKeyPath);
-  }
-}
-
 function formatCurrentDate(): string {
   const now = DateTime.local();
   return now.toFormat('EEEE, MMM d');
-}
-
-function SettingsButton(): React.ReactElement {
-  const settingsLabel = translate('home.open_settings' as TxKeyPath);
-  const settingsHint = translate(
-    'accessibility.home.open_settings_hint' as TxKeyPath
-  );
-
-  const { colorScheme } = useColorScheme();
-  const headerColors = getHeaderColors(colorScheme === 'dark');
-
-  return (
-    <GlassButton
-      onPress={() => router.push('/settings')}
-      accessibilityLabel={settingsLabel}
-      accessibilityHint={settingsHint}
-      fallbackClassName="bg-white/20 dark:bg-black/20"
-      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-    >
-      <PlatformIcon
-        iosName="gearshape"
-        size={20}
-        color={headerColors.text}
-        fallback={<SettingsIcon />}
-      />
-    </GlassButton>
-  );
 }
 
 export function CockpitHeader({
@@ -167,7 +124,7 @@ export function CockpitHeader({
         >
           {dateString}
         </Text>
-        <SettingsButton />
+        <HeaderSettingsButton />
       </View>
 
       {/* Greeting */}

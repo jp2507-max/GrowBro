@@ -15,7 +15,7 @@ import {
 import type { NotificationSnapshot } from '@/lib/notifications/notification-storage';
 import {
   type NotificationCenterStatus,
-  useNotificationCenter,
+  useNotificationCenterStore,
 } from '@/lib/notifications/use-notification-center';
 import { openLinkInBrowser } from '@/lib/utils';
 
@@ -537,18 +537,18 @@ type NotificationCenterSelectors = {
 };
 
 function useNotificationCenterSelectors(): NotificationCenterSelectors {
-  const status = useNotificationCenter.use.status();
-  const error = useNotificationCenter.use.error();
-  const items = useNotificationCenter.use.items();
-  const includeArchived = useNotificationCenter.use.includeArchived();
-  const unreadCount = useNotificationCenter.use.unreadCount();
-  const isLoadingMore = useNotificationCenter.use.isLoadingMore();
-  const initialize = useNotificationCenter.use.initialize();
-  const refresh = useNotificationCenter.use.refresh();
-  const loadMore = useNotificationCenter.use.loadMore();
-  const toggleArchived = useNotificationCenter.use.toggleArchived();
-  const markAsRead = useNotificationCenter.use.markAsRead();
-  const markAllAsRead = useNotificationCenter.use.markAllAsRead();
+  const status = useNotificationCenterStore((s) => s.status);
+  const error = useNotificationCenterStore((s) => s.error);
+  const items = useNotificationCenterStore((s) => s.items);
+  const includeArchived = useNotificationCenterStore((s) => s.includeArchived);
+  const unreadCount = useNotificationCenterStore((s) => s.unreadCount);
+  const isLoadingMore = useNotificationCenterStore((s) => s.isLoadingMore);
+  const initialize = useNotificationCenterStore((s) => s.initialize);
+  const refresh = useNotificationCenterStore((s) => s.refresh);
+  const loadMore = useNotificationCenterStore((s) => s.loadMore);
+  const toggleArchived = useNotificationCenterStore((s) => s.toggleArchived);
+  const markAsRead = useNotificationCenterStore((s) => s.markAsRead);
+  const markAllAsRead = useNotificationCenterStore((s) => s.markAllAsRead);
 
   return {
     status,

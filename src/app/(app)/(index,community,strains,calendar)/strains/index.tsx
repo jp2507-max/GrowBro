@@ -136,13 +136,15 @@ export default function StrainsScreen(): React.ReactElement {
     setFeaturedStrain(strain);
   }, []);
 
-  // List header with hero card and filters
-  const ListHeader = useMemo(() => {
-    // Only show hero when not searching/filtering
-    const showHero =
-      !debouncedQuery && raceFilter === 'all' && !hasActiveFilters(filters);
+  // Determine if we should show hero (only when not searching/filtering)
+  const showHero = useMemo(
+    () => !debouncedQuery && raceFilter === 'all' && !hasActiveFilters(filters),
+    [debouncedQuery, raceFilter, filters]
+  );
 
-    return (
+  // List header with hero card and filters
+  const ListHeader = useMemo(
+    () => (
       <View className="mb-4">
         {/* Hero Card */}
         {showHero && featuredStrain && (
@@ -161,15 +163,12 @@ export default function StrainsScreen(): React.ReactElement {
           <StrainsOfflineBanner isVisible={resolvedOffline} />
         </View>
       </View>
-    );
-  }, [debouncedQuery, raceFilter, filters, featuredStrain, resolvedOffline]);
+    ),
+    [showHero, featuredStrain, raceFilter, resolvedOffline]
+  );
 
   // Determine if we should skip the first item (when showing hero)
-  const skipFirstItems = useMemo(() => {
-    const showHero =
-      !debouncedQuery && raceFilter === 'all' && !hasActiveFilters(filters);
-    return showHero ? 1 : 0;
-  }, [debouncedQuery, raceFilter, filters]);
+  const skipFirstItems = showHero ? 1 : 0;
 
   return (
     <StrainsGradientBackground testID="strains-screen">

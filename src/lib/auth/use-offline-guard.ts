@@ -28,7 +28,7 @@ import { useAuth } from './index';
  * ```
  */
 export function useOfflineGuard(isSensitiveOp: boolean = false) {
-  const offlineMode = useAuth.use.offlineMode();
+  const offlineMode = useAuth((s) => s.offlineMode);
 
   return (): boolean => {
     const isBlocked = shouldBlockMutation(offlineMode);

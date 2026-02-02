@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet } from 'react-native';
 
 import type { Plant } from '@/api';
 import {
+  CARD_GAP,
   CARD_WIDTH,
   CockpitPlantCard,
 } from '@/components/home/cockpit-plant-card';
@@ -81,7 +82,7 @@ export function MyGardenSection({
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          snapToInterval={CARD_WIDTH + 12}
+          snapToInterval={CARD_WIDTH + CARD_GAP}
           decelerationRate="fast"
           contentContainerStyle={styles.carouselContent}
           testID="my-garden-carousel"

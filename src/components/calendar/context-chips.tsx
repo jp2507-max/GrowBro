@@ -1,15 +1,16 @@
 import * as React from 'react';
-import { ScrollView } from 'react-native';
 
-import { Text, View } from '@/components/ui';
+import { ScrollView, Text, View } from '@/components/ui';
 import colors from '@/components/ui/colors';
 import { Droplet, Leaf, Lightbulb } from '@/components/ui/icons';
+import type { TxKeyPath } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
 type ContextChip = {
   id: string;
   icon: 'water' | 'leaf' | 'light';
-  label: string;
+  label?: string;
+  labelTx?: TxKeyPath;
   color: 'primary' | 'teal' | 'muted';
 };
 
@@ -19,9 +20,24 @@ type ContextChipsProps = {
 };
 
 const DEFAULT_CHIPS: ContextChip[] = [
-  { id: 'water', icon: 'water', label: 'Water Day', color: 'primary' },
-  { id: 'veg', icon: 'leaf', label: 'Veg Stage (Wk 4)', color: 'teal' },
-  { id: 'light', icon: 'light', label: '18h Light', color: 'muted' },
+  {
+    id: 'water',
+    icon: 'water',
+    labelTx: 'calendar.contextChips.waterDay',
+    color: 'primary',
+  },
+  {
+    id: 'veg',
+    icon: 'leaf',
+    labelTx: 'calendar.contextChips.vegStageWk4',
+    color: 'teal',
+  },
+  {
+    id: 'light',
+    icon: 'light',
+    labelTx: 'calendar.contextChips.light18h',
+    color: 'muted',
+  },
 ];
 
 function ChipIcon({
@@ -65,7 +81,10 @@ function Chip({ chip }: { chip: ContextChip }): React.ReactElement {
       testID={`context-chip-${chip.id}`}
     >
       <ChipIcon icon={chip.icon} color={chip.color} />
-      <Text className={cn('text-xs font-medium', textColorClass)}>
+      <Text
+        className={cn('text-xs font-medium', textColorClass)}
+        tx={chip.labelTx}
+      >
         {chip.label}
       </Text>
     </View>

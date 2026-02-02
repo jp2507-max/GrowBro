@@ -154,7 +154,7 @@ function DayPill({
       onPressOut={handlePressOut}
       style={[pillStyle, animatedStyle]}
       className={cn(
-        'mx-0.5 min-w-[52px] items-center rounded-[24px] px-2 py-4',
+        'items-center mx-0.5 px-2 py-4 min-w-[52px] rounded-[24px]',
         item.isSelected
           ? 'bg-lime-400'
           : item.isToday

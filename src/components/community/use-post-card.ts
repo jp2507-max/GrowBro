@@ -5,6 +5,7 @@
  * to reduce function length.
  */
 
+import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { useRouter } from 'expo-router';
 import React from 'react';
 
@@ -26,15 +27,32 @@ type UsePostCardOptions = {
   onCardPressIn?: (postId: number | string) => void;
 };
 
+type UsePostCardReturn = {
+  postId: number | string;
+  postUserId: string;
+  displayUsername: string;
+  avatarUrl: string | null;
+  isOwnPost: boolean;
+  animatedStyle: ReturnType<typeof useCardAnimation>['animatedStyle'];
+  onPressOut: () => void;
+  handlePressIn: () => void;
+  handleCommentPress: () => void;
+  handleSharePress: () => Promise<void>;
+  relativeTime: string;
+  optionsSheetRef: React.RefObject<BottomSheetModal>;
+  handleDeleteConfirm: () => Promise<void>;
+  deleteMutation: ReturnType<typeof useDeletePost>;
+};
+
 export function usePostCard({
   post,
   onDelete,
   displayUsernameOverride,
   onCardPressIn,
-}: UsePostCardOptions) {
+}: UsePostCardOptions): UsePostCardReturn {
   const router = useRouter();
-  const authStatus = useAuth.use.status();
-  const currentUserId = useAuth.use.user()?.id ?? null;
+  const authStatus = useAuth((s) => s.status);
+  const currentUserId = useAuth((s) => s.user?.id ?? null);
 
   const normalizedPost = React.useMemo(() => normalizePostUserId(post), [post]);
   const postUserId =
@@ -66,7 +84,7 @@ export function usePostCard({
   const avatarUrl = userProfile?.avatar_url ?? null;
 
   const isOwnPost =
-    authStatus !== 'idle' &&
+    authStatus === 'signIn' &&
     currentUserId !== null &&
     postUserId === currentUserId;
 
@@ -89,9 +107,9 @@ export function usePostCard({
     [router, postId]
   );
 
-  const relativeTime = formatRelativeTimeTranslated(
-    post.created_at,
-    'common.time_ago'
+  const relativeTime = React.useMemo(
+    () => formatRelativeTimeTranslated(post.created_at, 'common.time_ago'),
+    [post.created_at]
   );
 
   return {

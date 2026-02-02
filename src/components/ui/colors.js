@@ -213,4 +213,11 @@ module.exports = {
     teal: '#2efac6', // Teal accent for timeline connections
     tealDim: '#1ec9a0', // Teal pressed state
   },
+
+  // Strains gradient colors
+  strains: {
+    dark: '#181d14', // dark forest
+    mid: '#0d1f12', // mid forest
+    deep: '#050a04', // deep black
+  },
 };

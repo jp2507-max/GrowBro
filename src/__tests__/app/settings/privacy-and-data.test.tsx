@@ -15,8 +15,13 @@ jest.mock('@/lib/auth', () => {
   const actual = jest.requireActual('@/lib/auth');
   return {
     ...actual,
-    // The selector hook call (useAuth.use.signOut()) returns the action function.
-    useAuth: { use: { signOut: () => mockSignOutAction } },
+    // Mock direct selector: useAuth((s) => s.signOut) returns the action function.
+    useAuth: jest.fn((selector) => {
+      if (typeof selector === 'function') {
+        return selector({ signOut: mockSignOutAction });
+      }
+      return { signOut: mockSignOutAction };
+    }),
   };
 });
 

@@ -4,7 +4,7 @@ import { AppState, InteractionManager } from 'react-native';
 import { ActivityIndicator, Text, View } from '@/components/ui';
 import { translate } from '@/lib';
 import { getItem } from '@/lib/storage';
-import { useSyncState } from '@/lib/sync/sync-state';
+import { useSyncStateStore } from '@/lib/sync/sync-state';
 import { getPendingChangesCount } from '@/lib/sync-engine';
 import { cn } from '@/lib/utils';
 
@@ -29,7 +29,7 @@ export function SyncStatus({
   className,
   testID,
 }: Props): React.ReactElement | null {
-  const syncInFlight = useSyncState.use.syncInFlight();
+  const syncInFlight = useSyncStateStore((s) => s.syncInFlight);
   const [pendingCount, setPendingCount] = React.useState<number>(0);
   const [lastSyncMs, setLastSyncMs] = React.useState<number | null>(
     getItem<number>('sync.lastPulledAt')

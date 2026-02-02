@@ -48,10 +48,10 @@ function usePlantsData(isEnabled: boolean): UsePlantsDataResult {
     isLoading,
     isError,
     refetch,
-  } as const;
+  };
 }
 
-export default function Feed() {
+export default function Feed(): React.ReactElement {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const isFocused = useIsFocused();

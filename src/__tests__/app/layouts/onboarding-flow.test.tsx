@@ -20,21 +20,49 @@ jest.mock('expo-router', () => ({
   })),
 }));
 
-jest.mock('@/lib/compliance/age-gate', () => ({
-  useAgeGate: {
-    status: jest.fn(() => 'not-verified'),
-  },
-  verifyAgeGate: jest.fn(),
-  startAgeGateSession: jest.fn(),
-}));
+jest.mock('@/lib/compliance/age-gate', () => {
+  // Create a mock store function that supports direct selectors
+  const mockStatusValue = { current: 'not-verified' };
 
-jest.mock('@/lib/compliance/onboarding-state', () => ({
-  useOnboardingState: {
-    currentStep: jest.fn(() => 'age-gate'),
-    completedSteps: jest.fn(() => []),
-  },
-  completeOnboardingStep: jest.fn(),
-}));
+  const mockStore: any = jest.fn((selector) => {
+    if (typeof selector === 'function') {
+      return selector({ status: mockStatusValue.current });
+    }
+    return { status: mockStatusValue.current };
+  });
+  // Attach status setter for test manipulation
+  mockStore.mockStatus = (value: string) => {
+    mockStatusValue.current = value;
+  };
+  return {
+    useAgeGateStore: mockStore,
+    verifyAgeGate: jest.fn(),
+    startAgeGateSession: jest.fn(),
+  };
+});
+
+jest.mock('@/lib/compliance/onboarding-state', () => {
+  // Create a mock store function that supports direct selectors
+  const mockState = { currentStep: 'age-gate', completedSteps: [] as string[] };
+
+  const mockStore: any = jest.fn((selector) => {
+    if (typeof selector === 'function') {
+      return selector(mockState);
+    }
+    return mockState;
+  });
+  // Attach setters for test manipulation
+  mockStore.mockCurrentStep = (value: string) => {
+    mockState.currentStep = value;
+  };
+  mockStore.mockCompletedSteps = (value: string[]) => {
+    mockState.completedSteps = value;
+  };
+  return {
+    useOnboardingStateStore: mockStore,
+    completeOnboardingStep: jest.fn(),
+  };
+});
 
 jest.mock('@/lib/compliance/legal-acceptances', () => ({
   acceptAllLegalDocuments: jest.fn(),
@@ -263,14 +291,17 @@ describe('Onboarding Flow Integration', () => {
 
   describe('State Persistence and Resume Logic', () => {
     test('navigates to app if age already verified and legal confirmed', async () => {
-      const { useAgeGate } = require('@/lib/compliance/age-gate');
+      const { useAgeGateStore } = require('@/lib/compliance/age-gate');
       const {
-        useOnboardingState,
+        useOnboardingStateStore,
       } = require('@/lib/compliance/onboarding-state');
       const { useRouter } = require('expo-router');
 
-      useAgeGate.status.mockReturnValue('verified');
-      useOnboardingState.currentStep.mockReturnValue('consent-modal');
+      // Update mock state via the store's mockStatus/mockCurrentStep
+      (useAgeGateStore as { mockStatus: jest.Mock }).mockStatus('verified');
+      (
+        useOnboardingStateStore as { mockCurrentStep: jest.Mock }
+      ).mockCurrentStep('consent-modal');
 
       const mockRouter = { replace: jest.fn() };
       useRouter.mockReturnValue(mockRouter);
@@ -283,13 +314,15 @@ describe('Onboarding Flow Integration', () => {
     });
 
     test('stays on age gate if not verified', async () => {
-      const { useAgeGate } = require('@/lib/compliance/age-gate');
+      const { useAgeGateStore } = require('@/lib/compliance/age-gate');
       const {
-        useOnboardingState,
+        useOnboardingStateStore,
       } = require('@/lib/compliance/onboarding-state');
 
-      useAgeGate.status.mockReturnValue('not-verified');
-      useOnboardingState.currentStep.mockReturnValue('age-gate');
+      (useAgeGateStore as { mockStatus: jest.Mock }).mockStatus('not-verified');
+      (
+        useOnboardingStateStore as { mockCurrentStep: jest.Mock }
+      ).mockCurrentStep('age-gate');
 
       setup(<AgeGateScreen />);
 
@@ -300,14 +333,18 @@ describe('Onboarding Flow Integration', () => {
     });
 
     test('resumes from legal confirmation if age verified but legal not confirmed', async () => {
-      const { useAgeGate } = require('@/lib/compliance/age-gate');
+      const { useAgeGateStore } = require('@/lib/compliance/age-gate');
       const {
-        useOnboardingState,
+        useOnboardingStateStore,
       } = require('@/lib/compliance/onboarding-state');
 
-      useAgeGate.status.mockReturnValue('verified');
-      useOnboardingState.currentStep.mockReturnValue('legal-confirmation');
-      useOnboardingState.completedSteps.mockReturnValue(['age-gate']);
+      (useAgeGateStore as { mockStatus: jest.Mock }).mockStatus('verified');
+      (
+        useOnboardingStateStore as { mockCurrentStep: jest.Mock }
+      ).mockCurrentStep('legal-confirmation');
+      (
+        useOnboardingStateStore as { mockCompletedSteps: jest.Mock }
+      ).mockCompletedSteps(['age-gate']);
 
       setup(<AgeGateScreen />);
 

@@ -76,7 +76,9 @@ function EmptyState({ message }: { message: string }): React.ReactElement {
       className="items-center justify-center py-12"
       testID="calendar-empty-state"
     >
-      <Text className="text-base text-white/60">{message}</Text>
+      <Text className="text-base text-neutral-600 dark:text-neutral-400">
+        {message}
+      </Text>
     </View>
   );
 }

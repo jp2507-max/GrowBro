@@ -22,6 +22,13 @@ const _useSyncState = create<SyncState>((set) => ({
   },
 }));
 
+/**
+ * Base store hook for direct selectors: `useSyncStateStore((s) => s.syncInFlight)`
+ * Preferred over property selectors for React Compiler compatibility.
+ */
+export const useSyncStateStore = _useSyncState;
+
+/** @deprecated Use `useSyncStateStore((s) => s.field)` for React Compiler compatibility */
 export const useSyncState = createSelectors(_useSyncState);
 
 export function getSyncState(): SyncState {

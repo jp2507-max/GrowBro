@@ -2,7 +2,7 @@ import * as React from 'react';
 
 import { useStrain } from '@/api';
 import { FavoriteButton as BaseFavoriteButton } from '@/components/strains/favorite-button';
-import { useFavorites } from '@/lib/strains/use-favorites';
+import { useFavoritesStore } from '@/lib/strains/use-favorites';
 import type { Strain } from '@/types/strains';
 
 type Props = {
@@ -27,12 +27,12 @@ export const FavoriteButtonConnected = React.memo<Props>(
     });
     const strain = strainProp ?? fetchedStrain;
 
-    const isHydrated = useFavorites((state) => state.isHydrated);
-    const hydrate = useFavorites.use.hydrate();
-    const addFavorite = useFavorites.use.addFavorite();
-    const removeFavorite = useFavorites.use.removeFavorite();
+    const isHydrated = useFavoritesStore((s) => s.isHydrated);
+    const hydrate = useFavoritesStore((s) => s.hydrate);
+    const addFavorite = useFavoritesStore((s) => s.addFavorite);
+    const removeFavorite = useFavoritesStore((s) => s.removeFavorite);
     const slug = strain?.slug;
-    const isFav = useFavorites(
+    const isFav = useFavoritesStore(
       React.useCallback(
         (state) =>
           Boolean(
@@ -56,7 +56,7 @@ export const FavoriteButtonConnected = React.memo<Props>(
         if (!strain) return;
         void addFavorite(strain);
       } else {
-        const state = useFavorites.getState().favorites;
+        const state = useFavoritesStore.getState().favorites;
         const favoriteById = state[strainId];
         const favoriteBySlug = slug ? state[slug] : undefined;
         const targetId = favoriteById?.id ?? favoriteBySlug?.id ?? strainId;

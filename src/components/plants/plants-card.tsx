@@ -238,10 +238,7 @@ function PlantCardProgress({
       <View className="h-1.5 w-full overflow-hidden rounded-full bg-neutral-100 dark:bg-white/10">
         <View
           className="h-full rounded-full bg-primary-600 dark:bg-lime-400"
-          style={[
-            { width: `${progress}%` },
-            // Subtle glow effect in dark mode via shadow
-          ]}
+          style={{ width: `${progress}%` }}
           testID={`plant-card-${plantId}-progress`}
         />
       </View>

@@ -54,6 +54,11 @@ const styles = StyleSheet.create({
     shadowRadius: 24,
     elevation: 8,
   },
+  categoryBadge: {
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
 });
 
 const GRADIENT_COLORS = [
@@ -108,7 +113,7 @@ const CategoryBadge = React.memo(function CategoryBadge({
   return (
     <GlassSurface
       glassEffectStyle="clear"
-      style={{ borderRadius: 12, paddingHorizontal: 10, paddingVertical: 6 }}
+      style={styles.categoryBadge}
       fallbackClassName="bg-neon-lime/90"
     >
       <View className="flex-row items-center gap-1.5">

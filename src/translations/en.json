@@ -766,6 +766,12 @@
     "verifying_email": "Verifying email..."
   },
   "calendar": {
+    "contextChips": {
+      "light18h": "18h Light",
+      "vegStageWk4": "Veg Stage (Wk 4)",
+      "waterDay": "Water Day"
+    },
+
     "day_counter": "DAY {{day}} / {{total}}",
     "day_counter_label": "DAY",
     "day_counter_separator": "/",
@@ -846,13 +852,15 @@
     "task_detail": {
       "category": "Category",
       "complete": "Complete",
+      "complete_hint": "Double tap to mark this task as complete",
       "delete": "Delete",
       "delete_confirm": "Are you sure you want to delete this task?",
       "description": "Description",
       "edit": "Edit",
       "no_description": "No description",
       "time": "Time",
-      "title": "Task Details"
+      "title": "Task Details",
+      "view_hint": "Double tap to view task details"
     },
     "task_row": {
       "complete": "Mark as complete",
@@ -861,6 +869,9 @@
       "overdue": "Overdue",
       "recurring": "Recurring",
       "task_hint": "Double-tap to view task details"
+    },
+    "timeline": {
+      "task_fallback": "Task"
     },
     "today": "Today",
     "tomorrow": "Tomorrow",

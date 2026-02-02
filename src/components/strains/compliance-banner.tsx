@@ -4,12 +4,14 @@ import { Text, View } from '@/components/ui';
 import { translate } from '@/lib';
 import {
   initializeRegionalCompliance,
-  useRegionalCompliance,
+  useRegionalComplianceStore,
 } from '@/lib/compliance/regional-compliance';
 
 export function ComplianceBanner(): React.ReactElement | null {
-  const mode = useRegionalCompliance.use.mode();
-  const isRestricted = useRegionalCompliance.use.isRestricted();
+  const mode = useRegionalComplianceStore((state) => state.mode);
+  const isRestricted = useRegionalComplianceStore(
+    (state) => state.isRestricted
+  );
 
   React.useEffect(() => {
     initializeRegionalCompliance();

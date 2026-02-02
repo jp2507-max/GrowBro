@@ -140,7 +140,7 @@ export function CalendarHeader({
   taskCounts,
 }: CalendarHeaderProps): React.ReactElement {
   const monthPickerModal = useMonthPickerModal();
-  const today = DateTime.now().startOf('day');
+  const today = React.useMemo(() => DateTime.now().startOf('day'), []);
   const isSelectedToday = selectedDate.hasSame(today, 'day');
 
   const handleMonthPickerOpen = React.useCallback(() => {

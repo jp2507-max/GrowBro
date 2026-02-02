@@ -109,7 +109,13 @@ export default function StrainPickerFormSheet(): React.ReactElement {
     if (!name) return;
 
     const customStrain = buildCustomStrain(name);
-    void saveCustomStrainToSupabase(customStrain);
+    saveCustomStrainToSupabase(customStrain).catch((error) => {
+      console.warn(
+        '[StrainPickerFormSheet] Failed to persist custom strain:',
+        error
+      );
+      // Optionally show a toast or other user feedback
+    });
     handleSelect(customStrain, 'custom');
   }, [trimmedQuery, handleSelect]);
 

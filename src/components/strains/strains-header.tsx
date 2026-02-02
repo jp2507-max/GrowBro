@@ -49,7 +49,7 @@ export function StrainsHeader({
   return (
     <View
       testID={testID}
-      style={[styles.container, { paddingTop: containerPaddingTop }]}
+      style={{ paddingTop: containerPaddingTop }}
       className="px-6 pb-4"
     >
       <View className="flex-row items-start justify-between">
@@ -120,7 +120,6 @@ export function StrainsHeader({
 }
 
 const styles = StyleSheet.create({
-  container: {},
   catalogLabel: { color: colors.neon.lime },
   filterIndicator: {
     backgroundColor: colors.neon.lime,

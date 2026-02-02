@@ -141,7 +141,12 @@ export function StrainsList({
     onStateChange
   );
 
+  const lastFeaturedIdRef = React.useRef<string | null>(null);
+
   React.useEffect(() => {
+    const featuredId = strains.length > 0 ? strains[0].id : null;
+    if (featuredId === lastFeaturedIdRef.current) return;
+    lastFeaturedIdRef.current = featuredId;
     onFeaturedStrainChange?.(strains.length > 0 ? strains[0] : null);
   }, [strains, onFeaturedStrainChange]);
 

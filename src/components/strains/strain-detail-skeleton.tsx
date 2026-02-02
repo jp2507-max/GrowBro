@@ -1,7 +1,7 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import * as React from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { GlassSurface } from '@/components/shared/glass-surface';
 import { GlassButton, View } from '@/components/ui';
 import { ArrowLeft } from '@/components/ui/icons';
 import { haptics } from '@/lib/haptics';
@@ -15,11 +15,32 @@ type Props = {
 function SkeletonChips() {
   return (
     <>
-      <View className="h-7 w-20 rounded-full bg-neutral-200 dark:bg-neutral-800" />
-      <View className="h-7 w-24 rounded-full bg-neutral-200 dark:bg-neutral-800" />
-      <View className="h-7 w-16 rounded-full bg-neutral-200 dark:bg-neutral-800" />
-      <View className="h-7 w-20 rounded-full bg-neutral-200 dark:bg-neutral-800" />
+      <View className="h-8 w-20 rounded-lg bg-white/10" />
+      <View className="h-8 w-24 rounded-lg bg-white/10" />
+      <View className="h-8 w-16 rounded-lg bg-white/10" />
+      <View className="h-8 w-20 rounded-lg bg-white/10" />
     </>
+  );
+}
+
+function StatsCardSkeleton() {
+  return (
+    <View className="flex-1 items-center justify-center gap-2 rounded-2xl border border-white/5 bg-white/5 p-3">
+      <View className="size-10 rounded-full bg-white/10" />
+      <View className="items-center gap-1">
+        <View className="h-3 w-12 rounded bg-white/10" />
+        <View className="h-4 w-16 rounded bg-white/10" />
+      </View>
+    </View>
+  );
+}
+
+function SectionHeaderSkeleton() {
+  return (
+    <View className="mb-3 flex-row items-center gap-2">
+      <View className="h-5 w-1 rounded-full bg-white/20" />
+      <View className="h-5 w-24 rounded bg-white/20" />
+    </View>
   );
 }
 
@@ -30,106 +51,84 @@ export function StrainDetailSkeleton({
   const insets = useSafeAreaInsets();
 
   return (
-    <View
-      className="flex-1 bg-white dark:bg-neutral-950"
-      testID="strain-detail-skeleton"
-    >
+    <View className="flex-1 bg-charcoal-950" testID="strain-detail-skeleton">
       {/* Hero Image Skeleton */}
-      <View className="relative h-96 w-full bg-neutral-200 dark:bg-neutral-800">
-        {!hideHeader && (
-          /* Header Actions Overlay */
-          <View
-            className="absolute inset-x-0 top-0 z-10 flex-row items-center justify-between px-4"
-            style={{ paddingTop: insets.top + 8 }}
-          >
-            <GlassButton
-              onPress={() => {
-                haptics.selection();
-                onBack();
-              }}
-              accessibilityLabel={translate('accessibility.common.go_back')}
-              accessibilityHint={translate('strains.detail.back_hint')}
-              testID="back-button"
-              fallbackClassName="bg-black/20"
-            >
-              <ArrowLeft color="white" width={24} height={24} />
-            </GlassButton>
-
-            {/* Placeholder for action buttons */}
-            <View className="flex-row gap-2">
-              <View className="size-10 rounded-full bg-black/20" />
-              <View className="size-10 rounded-full bg-black/20" />
-            </View>
-          </View>
-        )}
-
-        {/* Title Overlay with GlassSurface */}
-        <View className="absolute inset-x-0 bottom-0">
-          <GlassSurface
-            glassEffectStyle="regular"
-            fallbackClassName="bg-black/60"
-          >
-            <View className="px-5 pb-9 pt-16">
-              {/* Title skeleton */}
-              <View className="mb-3 h-10 w-3/4 rounded-lg bg-white/20" />
-
-              {/* Badge skeletons */}
-              <View className="flex-row flex-wrap gap-2">
-                <View className="h-6 w-20 rounded-full bg-white/20" />
-                <View className="h-6 w-16 rounded-full bg-white/20" />
-                <View className="h-6 w-24 rounded-full bg-white/20" />
-              </View>
-            </View>
-          </GlassSurface>
-        </View>
+      <View className="absolute inset-x-0 top-0 z-0 h-[450px] bg-neutral-800">
+        <LinearGradient
+          colors={['transparent', 'rgba(0,0,0,0.4)', 'rgba(0,0,0,0.95)']}
+          locations={[0, 0.5, 1]}
+          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+        />
       </View>
 
-      {/* Content Skeleton */}
-      <View className="px-5 pt-6">
-        {/* Description skeleton lines */}
-        <View className="mb-4 h-5 w-full rounded bg-neutral-200 dark:bg-neutral-800" />
-        <View className="mb-4 h-5 w-11/12 rounded bg-neutral-200 dark:bg-neutral-800" />
-        <View className="mb-4 h-5 w-4/5 rounded bg-neutral-200 dark:bg-neutral-800" />
+      {!hideHeader && (
+        <View
+          className="absolute inset-x-0 top-0 z-20 flex-row items-center justify-between px-4"
+          style={{ paddingTop: insets.top + 8 }}
+        >
+          <GlassButton
+            onPress={() => {
+              haptics.selection();
+              onBack();
+            }}
+            accessibilityLabel={translate('accessibility.common.go_back')}
+            accessibilityHint={translate('strains.detail.back_hint')}
+            testID="back-button"
+            fallbackClassName="bg-black/30"
+          >
+            <ArrowLeft color="white" width={24} height={24} />
+          </GlassButton>
 
-        {/* Grow Info Card Skeleton */}
-        <View className="mt-6 rounded-2xl bg-neutral-50 p-5 dark:bg-neutral-900">
-          {/* Section title skeleton */}
-          <View className="mb-4 h-6 w-32 rounded bg-neutral-200 dark:bg-neutral-700" />
-
-          {/* Stats rows */}
-          <View className="flex-row flex-wrap gap-y-4">
-            <View className="w-1/2 pr-2">
-              <View className="mb-1 h-4 w-20 rounded bg-neutral-200 dark:bg-neutral-700" />
-              <View className="h-5 w-24 rounded bg-neutral-200 dark:bg-neutral-700" />
-            </View>
-
-            <View className="w-1/2 pl-2">
-              <View className="mb-1 h-4 w-16 rounded bg-neutral-200 dark:bg-neutral-700" />
-              <View className="h-5 w-20 rounded bg-neutral-200 dark:bg-neutral-700" />
-            </View>
-
-            <View className="w-1/2 pr-2">
-              <View className="mb-1 h-4 w-14 rounded bg-neutral-200 dark:bg-neutral-700" />
-              <View className="h-5 w-16 rounded bg-neutral-200 dark:bg-neutral-700" />
-            </View>
+          <View className="flex-row gap-3">
+            <View className="size-10 rounded-full bg-white/15" />
+            <View className="size-10 rounded-full bg-white/15" />
           </View>
         </View>
+      )}
 
-        {/* Effects/Flavors Chip Skeletons */}
-        <View className="mt-8">
-          {/* Effects section */}
-          <View className="mb-6">
-            <View className="mb-3 h-6 w-20 rounded bg-neutral-200 dark:bg-neutral-700" />
+      {/* Content */}
+      <View className="z-10 flex-1 pt-[320px]">
+        {/* Badges and title */}
+        <View className="px-6 pb-6">
+          <View className="mb-3 flex-row gap-3">
+            <View className="h-6 w-16 rounded-full bg-neon-lime/30" />
+            <View className="h-6 w-20 rounded-full border border-white/20" />
+          </View>
+          <View className="h-10 w-3/4 rounded-lg bg-white/20" />
+        </View>
+
+        {/* Content Sheet with solid background */}
+        <View className="rounded-t-3xl bg-charcoal-950 pb-8 pt-6">
+          {/* Stats Grid Skeleton */}
+          <View className="flex-row gap-3 px-6">
+            <StatsCardSkeleton />
+            <StatsCardSkeleton />
+            <StatsCardSkeleton />
+          </View>
+
+          {/* About Section Skeleton */}
+          <View className="mt-6 px-6">
+            <SectionHeaderSkeleton />
+            <View className="mb-3 h-4 w-full rounded bg-white/10" />
+            <View className="mb-3 h-4 w-11/12 rounded bg-white/10" />
+            <View className="mb-3 h-4 w-4/5 rounded bg-white/10" />
+          </View>
+
+          {/* Effects Section Skeleton */}
+          <View className="mt-6 px-6">
+            <SectionHeaderSkeleton />
             <View className="flex-row flex-wrap gap-2">
               <SkeletonChips />
             </View>
           </View>
 
-          {/* Flavors section */}
-          <View>
-            <View className="mb-3 h-6 w-20 rounded bg-neutral-200 dark:bg-neutral-700" />
+          {/* Aromas Section Skeleton */}
+          <View className="mt-6 px-6">
+            <SectionHeaderSkeleton />
             <View className="flex-row flex-wrap gap-2">
-              <SkeletonChips />
+              <View className="h-7 w-16 rounded-full bg-white/10" />
+              <View className="h-7 w-20 rounded-full bg-white/10" />
+              <View className="w-18 h-7 rounded-full bg-white/10" />
             </View>
           </View>
         </View>

@@ -309,8 +309,8 @@ const MIN_REFRESH_INTERVAL = 30000; // 30 seconds minimum between refreshes
 export function useSessionAutoRefresh(
   refreshBeforeExpiry: number = 5 * 60 * 1000
 ): void {
-  const session = useAuth.use.session();
-  const status = useAuth.use.status();
+  const session = useAuth((s) => s.session);
+  const status = useAuth((s) => s.status);
   // Use a ref to track last refresh time per hook instance to avoid
   // global state race conditions when multiple instances or rapid navigation occurs
   const lastRefreshTimeRef = React.useRef(0);
@@ -413,6 +413,107 @@ export function useOfflineModeMonitor(checkInterval: number = 60 * 1000): void {
   }, [checkInterval]);
 }
 
+type SessionRevocationChannel = ReturnType<typeof supabase.channel>;
+
+type RealtimeSessionRefs = {
+  sessionKeyRef: React.MutableRefObject<string | null>;
+  userIdRef: React.MutableRefObject<string | null>;
+  refreshTokenRef: React.MutableRefObject<string | null>;
+  channelRef: React.MutableRefObject<SessionRevocationChannel | null>;
+  isActiveRef: React.MutableRefObject<boolean>;
+};
+
+function cleanupRevocationChannel(
+  channelRef: RealtimeSessionRefs['channelRef']
+): void {
+  if (!channelRef.current) return;
+  supabase.removeChannel(channelRef.current);
+  channelRef.current = null;
+}
+
+function updateSessionKeyForRevocation(
+  refreshToken: string | null,
+  refs: RealtimeSessionRefs
+): void {
+  refs.sessionKeyRef.current = null;
+  if (!refreshToken) return;
+
+  deriveSessionKey(refreshToken)
+    .then((key) => {
+      if (!refs.isActiveRef.current) return;
+      refs.sessionKeyRef.current = key || null;
+    })
+    .catch(() => {
+      if (!refs.isActiveRef.current) return;
+      refs.sessionKeyRef.current = null;
+    });
+}
+
+function setupRevocationChannel(
+  userId: string | null,
+  refs: RealtimeSessionRefs
+): void {
+  cleanupRevocationChannel(refs.channelRef);
+  if (!userId) return;
+
+  refs.channelRef.current = supabase
+    .channel(`session-revocation-${userId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'user_sessions',
+        filter: `user_id=eq.${userId}`,
+      },
+      (payload: SupabaseRealtimePayload) => {
+        const sessionKey = refs.sessionKeyRef.current;
+        if (!sessionKey) return;
+
+        const newRecord = payload.new as {
+          session_key?: string;
+          revoked_at?: string | null;
+        } | null;
+        const oldRecord = payload.old as {
+          revoked_at?: string | null;
+        } | null;
+
+        if (
+          newRecord?.session_key === sessionKey &&
+          newRecord.revoked_at &&
+          !oldRecord?.revoked_at
+        ) {
+          console.log(
+            '[RealtimeSessionRevocation] Session revoked, signing out'
+          );
+          const { signOut } = useAuth.getState();
+          signOut().catch((err) =>
+            console.error('[RealtimeSessionRevocation] Sign out error:', err)
+          );
+        }
+      }
+    )
+    .subscribe();
+}
+
+function handleAuthStateForRevocation(
+  state: ReturnType<typeof useAuth.getState>,
+  refs: RealtimeSessionRefs
+): void {
+  const nextUserId = state.session?.user?.id ?? null;
+  const nextRefreshToken = state.session?.refresh_token ?? null;
+
+  if (nextRefreshToken !== refs.refreshTokenRef.current) {
+    refs.refreshTokenRef.current = nextRefreshToken;
+    updateSessionKeyForRevocation(nextRefreshToken, refs);
+  }
+
+  if (nextUserId !== refs.userIdRef.current) {
+    refs.userIdRef.current = nextUserId;
+    setupRevocationChannel(nextUserId, refs);
+  }
+}
+
 /**
  * Hook for real-time session revocation monitoring
  *
@@ -420,81 +521,33 @@ export function useOfflineModeMonitor(checkInterval: number = 60 * 1000): void {
  * Provides immediate revocation enforcement when the app is online.
  */
 export function useRealtimeSessionRevocation(): void {
-  // Opt out of React Compiler for this hook - it incorrectly transforms the
-  // Zustand selector pattern and useEffect dependency arrays, causing
-  // "Cannot read property 'length' of undefined" in areHookInputsEqual
-  'use no memo';
-
-  const session = useAuth.use.session();
-  const userId = session?.user?.id ?? null;
-  const refreshToken = session?.refresh_token ?? null;
   const sessionKeyRef = React.useRef<string | null>(null);
+  const userIdRef = React.useRef<string | null>(null);
+  const refreshTokenRef = React.useRef<string | null>(null);
+  const channelRef = React.useRef<ReturnType<typeof supabase.channel> | null>(
+    null
+  );
+  const isActiveRef = React.useRef(true);
 
   useEffect(() => {
-    let isActive = true;
-    sessionKeyRef.current = null;
+    isActiveRef.current = true;
+    const refs: RealtimeSessionRefs = {
+      sessionKeyRef,
+      userIdRef,
+      refreshTokenRef,
+      channelRef,
+      isActiveRef,
+    };
 
-    if (!refreshToken) return () => {};
-
-    deriveSessionKey(refreshToken)
-      .then((key) => {
-        if (!isActive) return;
-        sessionKeyRef.current = key || null;
-      })
-      .catch(() => {
-        if (!isActive) return;
-        sessionKeyRef.current = null;
-      });
+    handleAuthStateForRevocation(useAuth.getState(), refs);
+    const unsubscribe = useAuth.subscribe((state) => {
+      handleAuthStateForRevocation(state, refs);
+    });
 
     return () => {
-      isActive = false;
+      isActiveRef.current = false;
+      unsubscribe();
+      cleanupRevocationChannel(channelRef);
     };
-  }, [refreshToken]);
-
-  useEffect(() => {
-    if (!userId) return undefined;
-
-    const channel = supabase
-      .channel(`session-revocation-${userId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'user_sessions',
-          filter: `user_id=eq.${userId}`,
-        },
-        (payload: SupabaseRealtimePayload) => {
-          const sessionKey = sessionKeyRef.current;
-          if (!sessionKey) return;
-
-          const newRecord = payload.new as {
-            session_key?: string;
-            revoked_at?: string | null;
-          } | null;
-          const oldRecord = payload.old as {
-            revoked_at?: string | null;
-          } | null;
-
-          if (
-            newRecord?.session_key === sessionKey &&
-            newRecord.revoked_at &&
-            !oldRecord?.revoked_at
-          ) {
-            console.log(
-              '[RealtimeSessionRevocation] Session revoked, signing out'
-            );
-            const { signOut } = useAuth.getState();
-            signOut().catch((err) =>
-              console.error('[RealtimeSessionRevocation] Sign out error:', err)
-            );
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [userId]);
+  }, []);
 }

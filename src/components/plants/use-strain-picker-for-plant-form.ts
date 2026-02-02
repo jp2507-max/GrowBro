@@ -8,14 +8,13 @@ import type { PlantFormValues } from './plant-form';
 
 type UseStrainPickerForPlantFormOptions = {
   setValue: UseFormSetValue<PlantFormValues>;
-  currentValue?: string;
 };
 
 type UseStrainPickerForPlantFormResult = {
   /** Handler for StrainPicker's onSelectFull callback */
   handleStrainSelect: (
     strain: Strain | undefined,
-    source: 'api' | 'custom'
+    source?: 'api' | 'custom'
   ) => void;
 };
 
@@ -71,8 +70,8 @@ export function useStrainPickerForPlantForm({
   );
 
   const handleStrainSelect = useCallback(
-    (strain: Strain | undefined, source: 'api' | 'custom') => {
-      if (strain) {
+    (strain: Strain | undefined, source?: 'api' | 'custom') => {
+      if (strain && source) {
         applyDerivedValues(strain, source);
       } else {
         clearStrainMetadata();

@@ -13,24 +13,25 @@ type UseCardInteractionsOptions = {
   deleteMutation: ReturnType<typeof useDeletePost>;
 };
 
+type UseCardInteractionsReturn = {
+  optionsSheetRef: React.RefObject<BottomSheetModal | null>;
+  handleDeleteConfirm: () => Promise<void>;
+};
+
 export function useCardInteractions({
   postId,
   onDelete,
   deleteMutation,
-}: UseCardInteractionsOptions) {
+}: UseCardInteractionsOptions): UseCardInteractionsReturn {
   const optionsSheetRef = React.useRef<BottomSheetModal>(null);
 
   const handleDeleteConfirm = React.useCallback(async () => {
-    try {
-      const result = await deleteMutation.mutateAsync({
-        postId: String(postId),
-      });
-      optionsSheetRef.current?.dismiss();
-      if (result?.undo_expires_at) {
-        onDelete?.(postId, result.undo_expires_at);
-      }
-    } catch {
-      // Error handled by mutation
+    const result = await deleteMutation.mutateAsync({
+      postId: String(postId),
+    });
+    optionsSheetRef.current?.dismiss();
+    if (result?.undo_expires_at) {
+      onDelete?.(postId, result.undo_expires_at);
     }
   }, [deleteMutation, postId, onDelete]);
 

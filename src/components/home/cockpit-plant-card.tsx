@@ -18,7 +18,7 @@ import {
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 export const CARD_WIDTH = SCREEN_WIDTH * 0.85;
-const CARD_GAP = 12;
+export const CARD_GAP = 12;
 
 export type CockpitPlantCardProps = {
   plant: Plant;

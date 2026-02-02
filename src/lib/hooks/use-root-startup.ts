@@ -139,7 +139,7 @@ function createMetricsManager(start: number) {
 }
 
 function useSyncAndMetrics(): void {
-  const authStatus = useAuth.use.status();
+  const authStatus = useAuth((s) => s.status);
   const registrationRef = React.useRef<Promise<void> | null>(null);
 
   React.useEffect(() => {

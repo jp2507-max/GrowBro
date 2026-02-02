@@ -339,6 +339,13 @@ const _useOnboardingState = create<OnboardingStoreState>((set, get) =>
 
 const onboardingStateStore = createSelectors(_useOnboardingState);
 
+/**
+ * Base store hook for direct selectors: `useOnboardingStateStore((s) => s.status)`
+ * Preferred over property selectors for React Compiler compatibility.
+ */
+export const useOnboardingStateStore = _useOnboardingState;
+
+/** @deprecated Use `useOnboardingStateStore((s) => s.field)` for React Compiler compatibility */
 export const useOnboardingState = onboardingStateStore.use;
 
 export function hydrateOnboardingState(): void {

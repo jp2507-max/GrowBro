@@ -316,6 +316,13 @@ const _useLegalAcceptances = create<LegalAcceptancesStoreState>((set, get) =>
 
 const legalAcceptancesStore = createSelectors(_useLegalAcceptances);
 
+/**
+ * Base store hook for direct selectors: `useLegalAcceptancesStore((s) => s.acceptances)`
+ * Preferred over property selectors for React Compiler compatibility.
+ */
+export const useLegalAcceptancesStore = _useLegalAcceptances;
+
+/** @deprecated Use `useLegalAcceptancesStore((s) => s.field)` for React Compiler compatibility */
 export const useLegalAcceptances = legalAcceptancesStore.use;
 export { legalAcceptancesStore };
 

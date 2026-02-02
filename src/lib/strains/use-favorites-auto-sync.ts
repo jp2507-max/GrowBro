@@ -6,9 +6,9 @@ import { useEffect, useRef, useState } from 'react';
 import { InteractionManager } from 'react-native';
 
 import { useNetworkStatus } from '@/lib/hooks/use-network-status';
-import { useSyncState } from '@/lib/sync/sync-state';
+import { useSyncStateStore } from '@/lib/sync/sync-state';
 
-import { useFavorites } from './use-favorites';
+import { useFavoritesStore } from './use-favorites';
 
 /**
  * Hook that automatically syncs favorites when:
@@ -32,10 +32,10 @@ export function useFavoritesAutoSync(
 ): FavoritesAutoSyncState {
   const { enabled = true } = options;
   const { isInternetReachable } = useNetworkStatus();
-  const fullSync = useFavorites.use.fullSync();
-  const isSyncing = useFavorites.use.isSyncing();
-  const syncError = useFavorites.use.syncError();
-  const pipelineInFlight = useSyncState.use.pipelineInFlight();
+  const fullSync = useFavoritesStore((s) => s.fullSync);
+  const isSyncing = useFavoritesStore((s) => s.isSyncing);
+  const syncError = useFavoritesStore((s) => s.syncError);
+  const pipelineInFlight = useSyncStateStore((s) => s.pipelineInFlight);
   const wasOfflineRef = useRef(!isInternetReachable);
   const isSyncScheduledRef = useRef(false);
   const pendingOnlineSyncRef = useRef(false);

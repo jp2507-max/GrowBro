@@ -53,7 +53,7 @@ type BugReportFormData = z.infer<typeof bugReportSchema>;
 // eslint-disable-next-line max-lines-per-function -- Complex form screen
 export default function ReportBugScreen() {
   const router = useRouter();
-  const user = useAuth.use.user();
+  const user = useAuth((s) => s.user);
   const { isInternetReachable } = useNetworkStatus();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [diagnostics, setDiagnostics] = useState<BugDiagnostics | null>(null);

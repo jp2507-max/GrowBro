@@ -406,6 +406,13 @@ const _useFavorites = create<FavoritesState>((set, get) => ({
   },
 }));
 
+/**
+ * Base store hook for direct selectors: `useFavoritesStore((s) => s.favorites)`
+ * Preferred over property selectors for React Compiler compatibility.
+ */
+export const useFavoritesStore = _useFavorites;
+
+/** Wrapped with createSelectors for property access. Use direct selectors when possible. */
 export const useFavorites = createSelectors(_useFavorites);
 
 export function getFavoritesState(): FavoritesState {

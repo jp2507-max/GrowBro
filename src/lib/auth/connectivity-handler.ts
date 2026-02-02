@@ -24,7 +24,7 @@ import { sessionManager } from './session-manager';
  * 4. Flushes queued operations (handled by WatermelonDB sync)
  */
 export function useConnectivityHandler(): void {
-  const offlineMode = useAuth.use.offlineMode();
+  const offlineMode = useAuth((s) => s.offlineMode);
 
   useEffect(() => {
     let unsubscribe: (() => void) | null = null;

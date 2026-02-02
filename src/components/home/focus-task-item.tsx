@@ -73,7 +73,7 @@ function TaskCheckbox({
     <Pressable
       onPress={handlePress}
       className={cn(
-        'size-6 items-center justify-center rounded-full border-2',
+        'items-center justify-center size-6 rounded-full border-2',
         'border-primary-500 bg-transparent dark:border-primary-400'
       )}
       accessibilityRole="checkbox"
@@ -151,6 +151,7 @@ function FocusTaskItemComponent({
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       style={[styles.card, animatedStyle]}
+      // Dark mode uses translucent white for heavy glass effect
       className="flex-row items-center gap-4 rounded-xl border border-neutral-200 bg-white p-4 dark:border-white/15 dark:bg-white/[0.07]"
       accessibilityRole="button"
       accessibilityLabel={`${task.title}${location ? `, ${location}` : ''}`}

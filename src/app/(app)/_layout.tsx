@@ -6,20 +6,19 @@ import { Platform } from 'react-native';
 import { LegalUpdateBanner } from '@/components/settings/legal-update-banner';
 import { RestoreAccountBanner } from '@/components/settings/restore-account-banner';
 import { View } from '@/components/ui';
-import { useAgeGate, useAuth, useIsFirstTime } from '@/lib';
+import { useAuth, useIsFirstTime } from '@/lib';
 import { AnimatedScrollListProvider } from '@/lib/animations/animated-scroll-list-provider';
 import { useCommunitySync } from '@/lib/community/use-community-sync';
+import { useAgeGateStore } from '@/lib/compliance/age-gate';
 import { checkLegalVersionBumps } from '@/lib/compliance/legal-acceptances';
 import { usePendingDeletion } from '@/lib/hooks/use-pending-deletion';
 import { translate } from '@/lib/i18n';
 
 function useTabLayoutRedirects() {
-  const status = useAuth.use.status();
+  const status = useAuth((s) => s.status);
   const [isFirstTime] = useIsFirstTime();
-  // Zustand createSelectors pattern: .status() calls ARE hooks, but react-compiler
-  // misinterprets `useX.propertySelector` as referencing hooks as values.
-  // eslint-disable-next-line react-compiler/react-compiler
-  const ageGateStatus = useAgeGate.status();
+  // Direct selector for React Compiler compatibility
+  const ageGateStatus = useAgeGateStore((s) => s.status);
 
   // IMPORTANT: Age gate must be checked BEFORE onboarding to ensure compliance
   // Users must verify age before seeing any app content, including onboarding
@@ -38,7 +37,7 @@ function useTabLayoutRedirects() {
 }
 
 function useSplashScreenHide() {
-  const status = useAuth.use.status();
+  const status = useAuth((s) => s.status);
   const hideSplash = React.useCallback(async () => {
     await SplashScreen.hideAsync();
   }, []);
