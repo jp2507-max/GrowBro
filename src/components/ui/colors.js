@@ -220,4 +220,14 @@ module.exports = {
     mid: '#0d1f12', // mid forest
     deep: '#050a04', // deep black
   },
+
+  // Cockpit/Dashboard header gradient colors
+  cockpit: {
+    gradient: {
+      start: '#1a1a1a', // Stitch gradient start
+      mid: '#151a14', // Mid - smoother transition
+      end: '#112b18', // End - slightly lighter to blend with body
+      final: '#0f2e1a', // Final - exact match with charcoal-950
+    },
+  },
 };

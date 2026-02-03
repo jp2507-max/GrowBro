@@ -23,6 +23,7 @@ export default function ModalsLayout(): React.ReactElement {
         name="trichome-helper"
         options={{ presentation: 'modal' }}
       />
+      <Stack.Screen name="plant-settings" options={{ presentation: 'modal' }} />
     </Stack>
   );
 }

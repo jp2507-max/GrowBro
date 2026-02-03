@@ -43,6 +43,7 @@ export * from './sliders-horizontal';
 export * from './smile';
 export * from './sprout';
 export * from './style';
+export * from './sun';
 export * from './support';
 export * from './top-dress';
 export * from './trash';

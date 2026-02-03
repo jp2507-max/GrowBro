@@ -5,6 +5,7 @@
  */
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import * as Sentry from '@sentry/react-native';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
@@ -79,10 +80,18 @@ export default function ReportBugScreen() {
   useEffect(() => {
     void (async () => {
       const collected = await collectDiagnostics();
-      collected.networkStatus =
-        isInternetReachable === false ? 'offline' : 'online';
       setDiagnostics(collected);
     })();
+  }, []);
+
+  // Update network status separately when it changes
+  useEffect(() => {
+    setDiagnostics((prev) => {
+      if (!prev) return prev;
+      const status = isInternetReachable === false ? 'offline' : 'online';
+      if (prev.networkStatus === status) return prev;
+      return { ...prev, networkStatus: status };
+    });
   }, [isInternetReachable]);
 
   const onSubmit = async (data: BugReportFormData) => {
@@ -136,6 +145,10 @@ export default function ReportBugScreen() {
       }
     } catch (error) {
       console.error('Failed to submit bug report:', error);
+      Sentry.captureException(error, {
+        tags: { feature: 'bug-report' },
+        extra: { category: data.category },
+      });
       Alert.alert(
         translate('settings.support.report_bug.error_title'),
         translate('settings.support.report_bug.error_message')
@@ -269,7 +282,7 @@ export default function ReportBugScreen() {
             </View>
 
             {/* Include Diagnostics Toggle */}
-            <View className="mb-4 rounded-lg border border-neutral-200 bg-white p-4 dark:border-charcoal-700 dark:bg-charcoal-900">
+            <View className="mb-4 rounded-lg border border-neutral-200 bg-white p-4 dark:border-white/10 dark:bg-charcoal-900">
               <View className="mb-2 flex-row items-center justify-between">
                 <Text className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
                   {translate('settings.support.report_bug.include_diagnostics')}

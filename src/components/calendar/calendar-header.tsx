@@ -122,7 +122,7 @@ function TodayButton({
       className="rounded-full border border-lime-400/30 bg-lime-400/10 px-3 py-1.5"
       accessibilityRole="button"
       accessibilityLabel={translate('calendar.header.jump_to_today')}
-      accessibilityHint="Jumps to current date"
+      accessibilityHint={translate('accessibility.calendar.jump_to_today_hint')}
       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       testID="calendar-today-button"
     >

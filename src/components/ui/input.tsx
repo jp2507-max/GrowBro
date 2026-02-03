@@ -28,6 +28,9 @@ const inputTv = tv({
       'mb-2 ml-1 text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400',
     input:
       'mt-0 rounded-2xl border-2 border-neutral-200 bg-white px-5 py-4 font-inter text-base font-medium leading-5 text-charcoal-900 dark:border-white/10 dark:bg-white/10 dark:text-neutral-100',
+    inputWrapper: 'relative',
+    suffix:
+      'absolute right-3 top-1/2 -translate-y-1/2 text-xs text-neutral-400 dark:text-white/30',
   },
 
   variants: {
@@ -52,12 +55,18 @@ const inputTv = tv({
         input: 'text-lg',
       },
     },
+    hasSuffix: {
+      true: {
+        input: 'pr-14 text-center',
+      },
+    },
   },
   defaultVariants: {
     focused: false,
     error: false,
     disabled: false,
     chunky: false,
+    hasSuffix: false,
   },
 });
 
@@ -67,6 +76,8 @@ export interface NInputProps extends TextInputProps {
   error?: string;
   errorTx?: string;
   chunky?: boolean;
+  /** Suffix text displayed at the end of the input (e.g., "HRS", "GAL") */
+  suffix?: string;
 }
 
 type TRule<T extends FieldValues> =
@@ -88,7 +99,8 @@ interface ControlledInputProps<T extends FieldValues>
     InputControllerType<T> {}
 
 export const Input = React.forwardRef<NTextInput, NInputProps>((props, ref) => {
-  const { label, error, errorTx, testID, chunky, ...inputProps } = props;
+  const { label, error, errorTx, testID, chunky, suffix, ...inputProps } =
+    props;
   const {
     accessibilityLabel: inputAccessibilityLabel,
     accessibilityHint: inputAccessibilityHint,
@@ -107,8 +119,28 @@ export const Input = React.forwardRef<NTextInput, NInputProps>((props, ref) => {
         focused: isFocussed,
         disabled: Boolean(props.disabled),
         chunky: Boolean(chunky),
+        hasSuffix: Boolean(suffix),
       }),
-    [error, errorTx, isFocussed, props.disabled, chunky]
+    [error, errorTx, isFocussed, props.disabled, chunky, suffix]
+  );
+
+  const inputElement = (
+    <NTextInput
+      testID={testID}
+      ref={ref}
+      placeholderTextColor={colors.neutral[400]}
+      className={cn(styles.input(), className)}
+      onBlur={onBlur}
+      onFocus={onFocus}
+      accessibilityLabel={inputAccessibilityLabel ?? label ?? undefined}
+      accessibilityHint={inputAccessibilityHint ?? 'Double tap to edit text'}
+      {...restInputProps}
+      style={StyleSheet.flatten([
+        { writingDirection: I18nManager.isRTL ? 'rtl' : 'ltr' },
+        { textAlign: suffix ? 'center' : I18nManager.isRTL ? 'right' : 'left' },
+        restInputProps.style,
+      ])}
+    />
   );
 
   return (
@@ -121,22 +153,14 @@ export const Input = React.forwardRef<NTextInput, NInputProps>((props, ref) => {
           {label}
         </Text>
       )}
-      <NTextInput
-        testID={testID}
-        ref={ref}
-        placeholderTextColor={colors.neutral[400]}
-        className={cn(styles.input(), className)}
-        onBlur={onBlur}
-        onFocus={onFocus}
-        accessibilityLabel={inputAccessibilityLabel ?? label ?? undefined}
-        accessibilityHint={inputAccessibilityHint ?? 'Double tap to edit text'}
-        {...restInputProps}
-        style={StyleSheet.flatten([
-          { writingDirection: I18nManager.isRTL ? 'rtl' : 'ltr' },
-          { textAlign: I18nManager.isRTL ? 'right' : 'left' },
-          restInputProps.style,
-        ])}
-      />
+      {suffix ? (
+        <View className={styles.inputWrapper()}>
+          {inputElement}
+          <Text className={styles.suffix()}>{suffix}</Text>
+        </View>
+      ) : (
+        inputElement
+      )}
       {(errorTx || error) && (
         <Text
           testID={testID ? `${testID}-error` : undefined}
@@ -153,7 +177,7 @@ export const Input = React.forwardRef<NTextInput, NInputProps>((props, ref) => {
 export function ControlledInput<T extends FieldValues>(
   props: ControlledInputProps<T>
 ): React.ReactElement {
-  const { name, control, rules, ...inputProps } = props;
+  const { name, control, rules, suffix, ...inputProps } = props;
 
   const { field, fieldState } = useController({ control, name, rules });
   return (
@@ -162,6 +186,7 @@ export function ControlledInput<T extends FieldValues>(
       autoCapitalize="none"
       onChangeText={field.onChange}
       value={(field.value as string) || ''}
+      suffix={suffix}
       {...inputProps}
       errorTx={fieldState.error?.message}
     />

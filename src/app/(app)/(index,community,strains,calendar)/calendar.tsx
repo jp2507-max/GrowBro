@@ -218,7 +218,7 @@ function useTaskDerivations(
 } {
   const taskCounts = useMemo(
     () => buildTaskCounts([...tasks.pending, ...tasks.completed]),
-    [tasks]
+    [tasks.pending, tasks.completed]
   );
 
   const { dayPendingTasks, dayCompletedTasks } = useMemo(() => {
@@ -445,7 +445,10 @@ export default function CalendarScreen(): React.ReactElement {
   );
 
   return (
-    <View className="flex-1 bg-charcoal-950" testID="calendar-screen">
+    <View
+      className="flex-1 bg-neutral-50 dark:bg-charcoal-950"
+      testID="calendar-screen"
+    >
       <FocusAwareStatusBar />
       <CalendarHeader
         selectedDate={selectedDate}

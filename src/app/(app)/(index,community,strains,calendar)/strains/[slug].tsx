@@ -19,7 +19,14 @@ import { THCBadge } from '@/components/strains';
 import { FavoriteButtonConnected } from '@/components/strains/favorite-button-connected';
 import { RaceBadge } from '@/components/strains/race-badge';
 import { StrainDetailSkeleton } from '@/components/strains/strain-detail-skeleton';
-import { GlassButton, Image, Pressable, Text, View } from '@/components/ui';
+import {
+  GlassButton,
+  Image,
+  Pressable,
+  SectionHeader,
+  Text,
+  View,
+} from '@/components/ui';
 import colors from '@/components/ui/colors';
 import {
   ArrowLeft,
@@ -96,15 +103,6 @@ async function shareStrain(strain: Strain) {
     }
   }
 }
-
-const SectionHeader = ({ title }: { title: string }): React.ReactElement => (
-  <View className="mb-3 flex-row items-center gap-2">
-    <View className="h-5 w-1 rounded-full bg-neon-lime shadow-[0_0_8px_#94fa2e]" />
-    <Text className="text-xl font-bold text-neutral-900 dark:text-white">
-      {title}
-    </Text>
-  </View>
-);
 
 const EffectsFlavorsSection = ({
   strain,

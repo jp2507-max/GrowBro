@@ -1,8 +1,9 @@
 import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import { DateTime } from 'luxon';
 import { useColorScheme } from 'nativewind';
 import React from 'react';
-import { Dimensions, Platform, StyleSheet } from 'react-native';
+import { Platform, StyleSheet, useWindowDimensions } from 'react-native';
 
 import type { Plant, PlantEnvironment } from '@/api';
 import { OptimizedImage, Pressable, Text, View } from '@/components/ui';
@@ -16,8 +17,7 @@ import {
   toProductStage,
 } from '@/lib/plants/product-stage';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-export const CARD_WIDTH = SCREEN_WIDTH * 0.85;
+export const CARD_WIDTH_RATIO = 0.85;
 export const CARD_GAP = 12;
 
 export type CockpitPlantCardProps = {
@@ -84,7 +84,6 @@ function calculateProgress(stage?: ProductPlantStage): number {
 
 const cardStyles = StyleSheet.create({
   card: {
-    width: CARD_WIDTH,
     marginRight: CARD_GAP,
     borderRadius: 24,
     overflow: 'hidden',
@@ -161,12 +160,15 @@ function PlantHeroImage({ plant }: { plant: Plant }): React.ReactElement {
           testID={`cockpit-card-${plant.id}-image`}
         />
       ) : (
-        <View
-          className="size-full items-center justify-center bg-gradient-to-br from-primary-900/40 to-charcoal-900"
+        <LinearGradient
+          colors={['rgba(20, 83, 45, 0.4)', '#1a1a1a']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          className="size-full items-center justify-center"
           testID={`cockpit-card-${plant.id}-placeholder`}
         >
           <Text className="text-6xl">🌱</Text>
-        </View>
+        </LinearGradient>
       )}
     </View>
   );
@@ -205,9 +207,11 @@ function ProgressBar({ progress }: { progress: number }): React.ReactElement {
 
   return (
     <View style={cardStyles.progressBar} className="w-full bg-white/10">
-      <View
+      <LinearGradient
+        colors={['rgba(34, 197, 94, 0.6)', 'rgba(74, 222, 128, 1)']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
         style={[cardStyles.progressFill, { width: `${widthPercent}%` }]}
-        className="bg-gradient-to-r from-primary-500/60 to-primary-400"
       />
     </View>
   );
@@ -270,6 +274,9 @@ export function CockpitPlantCard({
   needsAttention = false,
   testID,
 }: CockpitPlantCardProps): React.ReactElement {
+  const { width: screenWidth } = useWindowDimensions();
+  const cardWidth = screenWidth * CARD_WIDTH_RATIO;
+
   const handlePress = React.useCallback(() => {
     haptics.selection();
     onPress(plant.id);
@@ -310,7 +317,13 @@ export function CockpitPlantCard({
 
   const accessibilityLabel = React.useMemo(
     () =>
-      [displayName, environmentLabel, weekNumber ? `Week ${weekNumber}` : null]
+      [
+        displayName,
+        environmentLabel,
+        weekNumber
+          ? translate('home.cockpit.week' as TxKeyPath, { week: weekNumber })
+          : null,
+      ]
         .filter(Boolean)
         .join(', '),
     [displayName, environmentLabel, weekNumber]
@@ -318,7 +331,7 @@ export function CockpitPlantCard({
 
   return (
     <Pressable
-      style={[cardStyles.card, cardStyles.shadow]}
+      style={[{ width: cardWidth }, cardStyles.shadow]}
       className="active:scale-[0.98] active:opacity-95"
       testID={testID ?? `cockpit-card-${plant.id}`}
       accessibilityRole="button"

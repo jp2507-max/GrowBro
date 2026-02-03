@@ -33,10 +33,43 @@ import { hasActiveFilters } from '@/lib/strains/filter-utils';
 
 const LIST_BOTTOM_EXTRA = 24;
 
+type StrainsListHeaderProps = {
+  featuredStrain: Strain | null;
+  raceFilter: RaceFilterValue;
+  resolvedOffline: boolean;
+  showHero: boolean;
+  onRaceChange: (value: RaceFilterValue) => void;
+};
+
+function StrainsListHeader({
+  featuredStrain,
+  raceFilter,
+  resolvedOffline,
+  showHero,
+  onRaceChange,
+}: StrainsListHeaderProps): React.ReactElement {
+  return (
+    <View className="mb-4">
+      {showHero && featuredStrain && (
+        <View className="mb-8 mt-4">
+          <StrainHeroCard strain={featuredStrain} />
+        </View>
+      )}
+
+      <View className="mb-2">
+        <RaceFilterChips value={raceFilter} onChange={onRaceChange} />
+      </View>
+
+      <View className="px-5">
+        <StrainsOfflineBanner isVisible={resolvedOffline} />
+      </View>
+    </View>
+  );
+}
+
 export default function StrainsScreen(): React.ReactElement {
   const { listRef, scrollHandler, resetScrollState } = useAnimatedScrollList();
   const insets = useSafeAreaInsets();
-
   useScrollToTop(
     listRef as React.RefObject<{
       scrollToOffset: (params: { offset?: number; animated?: boolean }) => void;
@@ -62,11 +95,9 @@ export default function StrainsScreen(): React.ReactElement {
   const [raceFilter, setRaceFilter] = useState<RaceFilterValue>('all');
   const [listState, setListState] = useState<StrainListState | null>(null);
   const [featuredStrain, setFeaturedStrain] = useState<Strain | null>(null);
-
   const resolvedOffline =
     listState?.isOffline ?? (!isConnected || !isInternetReachable);
   const hasFilters = hasActiveFilters(filters) || raceFilter !== 'all';
-
   useStrainSearchAnalytics({
     analytics,
     debouncedQuery,
@@ -74,8 +105,6 @@ export default function StrainsScreen(): React.ReactElement {
     resolvedOffline,
     hasAnalyticsConsent,
   });
-
-  // Combine race filter with modal filters
   const combinedFilters = useMemo((): StrainFilters => {
     const combined: StrainFilters = { ...filters };
 
@@ -92,7 +121,6 @@ export default function StrainsScreen(): React.ReactElement {
 
     return combined;
   }, [filters, raceFilter]);
-
   const handleApplyFilters = React.useCallback(
     (newFilters: StrainFilters) => {
       setFilters(newFilters);
@@ -106,13 +134,9 @@ export default function StrainsScreen(): React.ReactElement {
     setRaceFilter('all');
     filterModal.closeFilters();
   }, [filterModal]);
-
   const handleSearchPress = React.useCallback(() => {
-    // TODO: Open search modal or navigate to search screen
-    // For now, use existing filter modal
     filterModal.openFilters();
   }, [filterModal]);
-
   const listContentPadding = React.useMemo(
     () => ({ paddingBottom: grossHeight + LIST_BOTTOM_EXTRA }),
     [grossHeight]
@@ -131,58 +155,36 @@ export default function StrainsScreen(): React.ReactElement {
     },
     []
   );
-
   const handleFeaturedStrainChange = useCallback((strain: Strain | null) => {
     setFeaturedStrain(strain);
   }, []);
-
-  // Determine if we should show hero (only when not searching/filtering)
   const showHero = useMemo(
     () => !debouncedQuery && raceFilter === 'all' && !hasActiveFilters(filters),
     [debouncedQuery, raceFilter, filters]
   );
-
-  // List header with hero card and filters
-  const ListHeader = useMemo(
+  const listHeader = useMemo(
     () => (
-      <View className="mb-4">
-        {/* Hero Card */}
-        {showHero && featuredStrain && (
-          <View className="mb-8 mt-4">
-            <StrainHeroCard strain={featuredStrain} />
-          </View>
-        )}
-
-        {/* Race Filter Chips */}
-        <View className="mb-2">
-          <RaceFilterChips value={raceFilter} onChange={setRaceFilter} />
-        </View>
-
-        {/* Offline Banner */}
-        <View className="px-5">
-          <StrainsOfflineBanner isVisible={resolvedOffline} />
-        </View>
-      </View>
+      <StrainsListHeader
+        featuredStrain={featuredStrain}
+        raceFilter={raceFilter}
+        resolvedOffline={resolvedOffline}
+        showHero={showHero}
+        onRaceChange={setRaceFilter}
+      />
     ),
-    [showHero, featuredStrain, raceFilter, resolvedOffline]
+    [featuredStrain, raceFilter, resolvedOffline, showHero]
   );
-
-  // Determine if we should skip the first item (when showing hero)
   const skipFirstItems = showHero ? 1 : 0;
 
   return (
     <StrainsGradientBackground testID="strains-screen">
       <FocusAwareStatusBar style="light" />
-
-      {/* Header */}
       <StrainsHeader
         insets={insets}
         onSearchPress={handleSearchPress}
         onFiltersPress={filterModal.openFilters}
         hasActiveFilters={hasFilters}
       />
-
-      {/* Strains List */}
       <StrainsList
         searchQuery={debouncedQuery}
         filters={combinedFilters}
@@ -193,10 +195,8 @@ export default function StrainsScreen(): React.ReactElement {
         testID="strains-list"
         onStateChange={handleStateChange}
         onFeaturedStrainChange={handleFeaturedStrainChange}
-        ListHeaderComponent={ListHeader}
+        ListHeaderComponent={listHeader}
       />
-
-      {/* Filter Modal */}
       <FilterModal
         ref={filterModal.ref}
         filters={filters}

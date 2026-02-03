@@ -20,6 +20,10 @@ type CardAnimationReturn = {
   onPressOut: () => void;
 };
 
+/**
+ * Press animation for post cards.
+ * @param _postId - Reserved for future per-card animation customization
+ */
 export function useCardAnimation(
   _postId: number | string
 ): CardAnimationReturn {

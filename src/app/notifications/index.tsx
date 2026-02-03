@@ -2,6 +2,7 @@ import { FlashList } from '@shopify/flash-list';
 import { type Href, useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
 import { RefreshControl, StyleSheet } from 'react-native';
+import { useShallow } from 'zustand/react/shallow';
 
 import { NotificationRow } from '@/components/notifications/notification-row';
 import { NotificationSectionHeader } from '@/components/notifications/notification-section-header';
@@ -537,33 +538,22 @@ type NotificationCenterSelectors = {
 };
 
 function useNotificationCenterSelectors(): NotificationCenterSelectors {
-  const status = useNotificationCenterStore((s) => s.status);
-  const error = useNotificationCenterStore((s) => s.error);
-  const items = useNotificationCenterStore((s) => s.items);
-  const includeArchived = useNotificationCenterStore((s) => s.includeArchived);
-  const unreadCount = useNotificationCenterStore((s) => s.unreadCount);
-  const isLoadingMore = useNotificationCenterStore((s) => s.isLoadingMore);
-  const initialize = useNotificationCenterStore((s) => s.initialize);
-  const refresh = useNotificationCenterStore((s) => s.refresh);
-  const loadMore = useNotificationCenterStore((s) => s.loadMore);
-  const toggleArchived = useNotificationCenterStore((s) => s.toggleArchived);
-  const markAsRead = useNotificationCenterStore((s) => s.markAsRead);
-  const markAllAsRead = useNotificationCenterStore((s) => s.markAllAsRead);
-
-  return {
-    status,
-    error,
-    items,
-    includeArchived,
-    unreadCount,
-    isLoadingMore,
-    initialize,
-    refresh,
-    loadMore,
-    toggleArchived,
-    markAsRead,
-    markAllAsRead,
-  };
+  return useNotificationCenterStore(
+    useShallow((s) => ({
+      status: s.status,
+      error: s.error,
+      items: s.items,
+      includeArchived: s.includeArchived,
+      unreadCount: s.unreadCount,
+      isLoadingMore: s.isLoadingMore,
+      initialize: s.initialize,
+      refresh: s.refresh,
+      loadMore: s.loadMore,
+      toggleArchived: s.toggleArchived,
+      markAsRead: s.markAsRead,
+      markAllAsRead: s.markAllAsRead,
+    }))
+  );
 }
 
 type NotificationDerivedState = {

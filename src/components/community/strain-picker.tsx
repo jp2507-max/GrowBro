@@ -4,17 +4,11 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, type TextInput, View } from 'react-native';
 
 import type { Strain } from '@/api/strains/types';
-import { useStrainsInfiniteWithCache } from '@/api/strains/use-strains-infinite-with-cache';
 import { StrainPickerContent } from '@/components/community/strain-picker-content';
-import { Text } from '@/components/ui';
+import { useStrainPicker } from '@/components/community/use-strain-picker';
+import { SheetHeader, Text } from '@/components/ui';
 import { CaretDown } from '@/components/ui/icons';
 import { Modal, useModal } from '@/components/ui/modal';
-import { haptics } from '@/lib/haptics';
-import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
-import {
-  buildCustomStrain,
-  saveCustomStrainToSupabase,
-} from '@/lib/strains/custom-strain-cache';
 
 type StrainPickerProps = {
   value?: string;
@@ -96,83 +90,35 @@ export function StrainPicker({
   testID = 'strain-picker',
 }: StrainPickerProps): React.ReactElement {
   const modal = useModal();
-  const { t } = useTranslation();
-  const [isOpen, setIsOpen] = React.useState(false);
-  const [searchQuery, setSearchQuery] = React.useState('');
   const searchInputRef = React.useRef<TextInput>(null);
-  const debouncedSearchQuery = useDebouncedValue(searchQuery.trim(), 250);
+  const {
+    t,
+    isOpen,
+    searchQuery,
+    setSearchQuery,
+    strains,
+    showCreateCustom,
+    isFetching,
+    handleOpen,
+    handleSearchFocus,
+    handleDismiss,
+    handleSelect,
+    handleClear,
+    handleCreateCustom,
+    handleEndReached,
+  } = useStrainPicker({
+    enableCustomStrain,
+    onSelect,
+    onSelectFull,
+    modalDismiss: modal.dismiss,
+    modalExpand: () => modal.ref.current?.expand(),
+  });
 
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isFetching } =
-    useStrainsInfiniteWithCache({
-      variables: {
-        searchQuery: debouncedSearchQuery || undefined,
-        pageSize: 20,
-      },
-      enabled: isOpen,
-    });
-
-  const strains = React.useMemo(
-    () => data?.pages.flatMap((page) => page.data) ?? [],
-    [data]
-  );
-
-  const trimmedQuery = searchQuery.trim();
-  const hasExactMatch = React.useMemo(() => {
-    const lower = trimmedQuery.toLowerCase();
-    return strains.some((s) => s.name.toLowerCase() === lower);
-  }, [strains, trimmedQuery]);
-
-  const showCreateCustom =
-    enableCustomStrain &&
-    trimmedQuery.length > 0 &&
-    !hasExactMatch &&
-    !isFetching;
-
-  const handleOpen = React.useCallback((): void => {
-    haptics.selection();
-    setIsOpen(true);
-    modal.present();
-  }, [modal]);
-
-  const handleSearchFocus = React.useCallback((): void => {
-    modal.ref.current?.expand();
-  }, [modal.ref]);
-
-  const handleDismiss = React.useCallback((): void => {
-    setIsOpen(false);
-    setSearchQuery('');
-  }, []);
-
-  const handleSelect = React.useCallback(
-    (strain: Strain, source: 'api' | 'custom'): void => {
-      onSelect?.(strain.name);
-      onSelectFull?.(strain, source);
-      modal.dismiss();
-      setSearchQuery('');
-      setIsOpen(false);
-    },
-    [modal, onSelect, onSelectFull]
-  );
-
-  const handleClear = React.useCallback((): void => {
-    onSelect?.(undefined);
-    onSelectFull?.(undefined);
-    modal.dismiss();
-    setSearchQuery('');
-    setIsOpen(false);
-  }, [modal, onSelect, onSelectFull]);
-
-  const handleCreateCustom = React.useCallback((): void => {
-    const name = trimmedQuery;
-    if (!name) return;
-    const customStrain = buildCustomStrain(name);
-    void saveCustomStrainToSupabase(customStrain);
-    handleSelect(customStrain, 'custom');
-  }, [trimmedQuery, handleSelect]);
-
-  const handleEndReached = React.useCallback((): void => {
-    if (hasNextPage && !isFetchingNextPage) fetchNextPage();
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+  React.useEffect(() => {
+    if (isOpen) {
+      modal.present();
+    }
+  }, [isOpen, modal]);
 
   return (
     <>
@@ -194,25 +140,10 @@ export function StrainPicker({
         android_keyboardInputMode="adjustResize"
       >
         <View className="flex-1">
-          <View className="mb-4 flex-row items-center justify-between px-4">
-            <Pressable
-              onPress={handleDismiss}
-              accessibilityRole="button"
-              accessibilityLabel={t('common.cancel')}
-              accessibilityHint={t('accessibility.modal.close_hint')}
-              hitSlop={20}
-            >
-              <Text className="text-base font-medium text-primary-600 dark:text-primary-400">
-                {t('common.cancel')}
-              </Text>
-            </Pressable>
-
-            <Text className="text-base font-semibold text-charcoal-800 dark:text-neutral-100">
-              {label || t('feed.add_post.select_strain')}
-            </Text>
-
-            <View className="w-[64px]" />
-          </View>
+          <SheetHeader
+            title={label || t('feed.add_post.select_strain')}
+            onCancel={handleDismiss}
+          />
 
           <StrainPickerContent
             searchQuery={searchQuery}

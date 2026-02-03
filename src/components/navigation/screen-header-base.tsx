@@ -23,9 +23,9 @@ const HEADER_GRADIENT_COLORS = {
     colors.primary[800],
   ] as const,
   dark: [
-    '#0c0a09', // Deep charcoal base (charcoal-950)
-    '#0a1612', // Transitional deep forest
-    '#0f2b1d', // Rich forest green accent
+    colors.charcoal[950],
+    colors.charcoal[900],
+    colors.primary[950],
   ] as const,
 };
 

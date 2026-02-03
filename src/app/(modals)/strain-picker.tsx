@@ -1,15 +1,16 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 
 import type { Strain } from '@/api/strains/types';
 import { useStrainsInfiniteWithCache } from '@/api/strains/use-strains-infinite-with-cache';
 import { StrainPickerContent } from '@/components/community/strain-picker-content';
 import { GlassSurface } from '@/components/shared/glass-surface';
-import { Text } from '@/components/ui/text';
+import { SheetHeader } from '@/components/ui';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
+import { showErrorToast } from '@/lib/settings/toast-utils';
 import {
   cancelStrainPickerRequest,
   resolveStrainPickerRequest,
@@ -114,7 +115,9 @@ export default function StrainPickerFormSheet(): React.ReactElement {
         '[StrainPickerFormSheet] Failed to persist custom strain:',
         error
       );
-      // Optionally show a toast or other user feedback
+      showErrorToast({
+        message: 'Failed to save custom strain. Try again.',
+      });
     });
     handleSelect(customStrain, 'custom');
   }, [trimmedQuery, handleSelect]);
@@ -134,25 +137,10 @@ export default function StrainPickerFormSheet(): React.ReactElement {
         style={[StyleSheet.absoluteFillObject, styles.glassSurface]}
       />
       <View style={styles.content}>
-        <View className="mb-4 flex-row items-center justify-between px-4">
-          <Pressable
-            onPress={handleCancel}
-            accessibilityRole="button"
-            accessibilityLabel={t('common.cancel')}
-            accessibilityHint={t('accessibility.modal.close_hint')}
-            hitSlop={20}
-          >
-            <Text className="text-base font-medium text-primary-600 dark:text-primary-400">
-              {t('common.cancel')}
-            </Text>
-          </Pressable>
-
-          <Text className="text-base font-semibold text-charcoal-800 dark:text-neutral-100">
-            {title || t('feed.add_post.select_strain')}
-          </Text>
-
-          <View className="w-[64px]" />
-        </View>
+        <SheetHeader
+          title={title || t('feed.add_post.select_strain')}
+          onCancel={handleCancel}
+        />
 
         <StrainPickerContent
           searchQuery={searchQuery}

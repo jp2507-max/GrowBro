@@ -43,7 +43,7 @@ export type StrainPickerContentProps = {
   inputComponent?: ComponentType<TextInputProps>;
   useBottomSheetList?: boolean;
   onSearchFocus?: () => void;
-  inputRef?: React.RefObject<TextInput>;
+  inputRef?: React.RefObject<TextInput | null>;
   testID: string;
 };
 
@@ -53,7 +53,7 @@ type RgbColor = {
   b: number;
 };
 
-const listContentStyle = { gap: 8, paddingBottom: 20 };
+const listContentStyle = { gap: 8, paddingBottom: 24 };
 const PRIMARY_500 = colors.primary[500];
 const PRIMARY_500_RGB = hexToRgb(PRIMARY_500);
 
@@ -203,7 +203,7 @@ function StrainSearchInput({
   isFetching: boolean;
   inputComponent?: ComponentType<TextInputProps>;
   onFocus?: () => void;
-  inputRef?: React.RefObject<TextInput>;
+  inputRef?: React.RefObject<TextInput | null>;
   testID: string;
 }): React.ReactElement {
   const [isFocused, setIsFocused] = React.useState(false);
@@ -435,7 +435,7 @@ export function StrainPickerContent({
       renderItem={renderItem}
       onEndReached={onEndReached}
       onEndReachedThreshold={0.5}
-      contentContainerStyle={[listContentStyle, { paddingBottom: 24 }]}
+      contentContainerStyle={listContentStyle}
       ListHeaderComponent={listHeader}
       ListFooterComponent={listFooter}
       onTouchStart={Keyboard.dismiss}

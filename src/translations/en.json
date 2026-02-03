@@ -157,6 +157,11 @@
     "home": {
       "activation_action_hint": "Double-tap to {{action}}",
       "activation_dismiss_hint": "Double-tap to dismiss the activation checklist",
+      "cockpit": {
+        "day": "Day {{day}}",
+        "needs_water": "Needs water",
+        "week": "Week {{week}}"
+      },
       "open_settings_hint": "Opens the Settings screen.",
       "quick_action_hint": "Opens the {{action}} quick action.",
       "share_update_hint": "Opens the Create Post screen."
@@ -771,7 +776,6 @@
       "vegStageWk4": "Veg Stage (Wk 4)",
       "waterDay": "Water Day"
     },
-
     "day_counter": "DAY {{day}} / {{total}}",
     "day_counter_label": "DAY",
     "day_counter_separator": "/",
@@ -946,6 +950,7 @@
     "na": "N/A",
     "no": "No",
     "not_selected": "not selected",
+    "now": "Now",
     "null": "null",
     "off": "OFF",
     "offline_mode": "Offline Mode",
@@ -2571,21 +2576,29 @@
       "percent_complete": "{{percent}}% Complete"
     },
     "detail": {
-      "action_hub_title": "Daily digest",
+      "action_hub_title": "Daily Action Center",
+      "advanced_settings_title": "Advanced Settings",
       "all_good_message": "All good – No tasks today.",
+      "day_count": "Day {{count}}",
       "no_tasks": "No pending tasks",
       "nutrient_section": {
         "empty": "No pH/EC readings yet",
         "latest": "Latest reading",
-        "log_reading": "Log Reading",
+        "log_reading": "Record Measurement",
         "title": "pH/EC Readings",
         "view_all": "View All"
       },
       "start_harvest": "Start Harvest",
-      "stats_day": "Day",
+      "stats_day": "Age",
+      "stats_empty_desc": "Log PH and EC levels consistently to optimize your yield.",
+      "stats_empty_title": "No measurements recorded",
       "stats_height": "Height",
+      "stats_history": "History",
+      "stats_next_feed": "Next Feed",
       "stats_phase": "Phase",
+      "stats_title": "Stats",
       "strain_profile_link": "Strain Profile & Details",
+      "tasks_remaining": "{{count}} Remaining",
       "water_needed": "Watering Needed"
     },
     "empty_state": "No plants in your inventory",
@@ -2602,6 +2615,7 @@
       "completion": "{{percent}}% Complete",
       "create_cta": "Create plant",
       "create_title": "New Plant",
+      "current_phase_label": "Current Phase",
       "default_water_desc": "Quick reminder to water after transplanting.",
       "default_water_title": "Water this plant",
       "delete_button": "Delete Plant",
@@ -2627,6 +2641,10 @@
         "strain_length": "Strain must be under 120 characters",
         "strain_required": "Strain is required"
       },
+      "expected_yield_label": "Expected Yield",
+      "expected_yield_placeholder": "Estimate in grams",
+      "expert_mode_desc": "Show detailed technical inputs",
+      "expert_mode_label": "Expert Mode",
       "genetic": {
         "balanced": "Balanced hybrid",
         "indica": "Indica-dominant",
@@ -2646,6 +2664,9 @@
       "height_placeholder": "e.g., 45 cm",
       "invalid_id": "Invalid Plant ID",
       "keep_adding": "Keep adding plants",
+      "lean_label": "Lean",
+      "light_cycle_label": "Light Cycle",
+      "light_cycle_suffix": "HRS",
       "light_hours_label": "Hours of light",
       "light_hours_placeholder": "e.g., 18",
       "light_schedule_label": "Light schedule",
@@ -2674,14 +2695,16 @@
       "photoperiod_placeholder": "Photoperiod or autoflower",
       "planted_at_label": "Planted on (optional)",
       "planted_at_placeholder": "YYYY-MM-DD",
-      "pot_size_label": "Pot size",
+      "pot_size_label": "Pot Size",
       "pot_size_placeholder": "e.g., 3 gal / 11 L",
+      "pot_size_suffix": "GAL",
       "save": "Save",
       "save_cta": "Save changes",
       "section": {
         "advanced": "Advanced",
         "care": "Care",
         "environment": "Environment",
+        "environment_care": "Environment & Care",
         "identity": "Identity",
         "photo": "Photo"
       },

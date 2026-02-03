@@ -1,5 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import * as React from 'react';
+import { StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { GlassButton, View } from '@/components/ui';
@@ -11,6 +12,10 @@ type Props = {
   onBack: () => void;
   hideHeader?: boolean;
 };
+
+const styles = StyleSheet.create({
+  gradientFill: StyleSheet.absoluteFillObject,
+});
 
 function SkeletonChips() {
   return (
@@ -57,7 +62,7 @@ export function StrainDetailSkeleton({
         <LinearGradient
           colors={['transparent', 'rgba(0,0,0,0.4)', 'rgba(0,0,0,0.95)']}
           locations={[0, 0.5, 1]}
-          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+          style={styles.gradientFill}
         />
       </View>
 
@@ -128,7 +133,7 @@ export function StrainDetailSkeleton({
             <View className="flex-row flex-wrap gap-2">
               <View className="h-7 w-16 rounded-full bg-white/10" />
               <View className="h-7 w-20 rounded-full bg-white/10" />
-              <View className="w-18 h-7 rounded-full bg-white/10" />
+              <View className="h-7 w-[4.5rem] rounded-full bg-white/10" />
             </View>
           </View>
         </View>

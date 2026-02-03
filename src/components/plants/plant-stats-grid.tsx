@@ -4,63 +4,94 @@ import { useTranslation } from 'react-i18next';
 
 import type { Plant } from '@/api/plants/types';
 import { Text, View } from '@/components/ui';
+import colors from '@/components/ui/colors';
+import { Droplet, Sprout } from '@/components/ui/icons';
 import {
   getProductStageLabelKey,
   toProductStage,
 } from '@/lib/plants/product-stage';
 
-type PlantStatsGridProps = {
+export type PlantStatsGridProps = {
   plant: Plant;
+  nextFeedHours?: number | null;
 };
 
 /**
- * Sleek horizontal stats row - "Cockpit Style"
- * Displays Day count and Phase with vertical dividers.
+ * Glassmorphic stats grid - 3-column card layout
+ * Displays Day count, Phase icon, and Next Feed with special teal styling.
  */
 export function PlantStatsGrid({
   plant,
+  nextFeedHours,
 }: PlantStatsGridProps): React.ReactElement {
   const { t } = useTranslation();
 
   // Calculate days since planted
   const dayCount = React.useMemo(() => {
-    if (!plant.plantedAt) return '—';
+    if (!plant.plantedAt) return null;
     const plantedDate = DateTime.fromISO(plant.plantedAt);
-    if (!plantedDate.isValid) return '—';
+    if (!plantedDate.isValid) return null;
     const days = Math.floor(DateTime.now().diff(plantedDate, 'days').days);
-    return days >= 0 ? days : '—';
+    return days >= 0 ? days : null;
   }, [plant.plantedAt]);
 
-  // Get phase from stage
-  const phase = React.useMemo(() => {
+  // Get phase label
+  const phaseLabel = React.useMemo(() => {
     const productStage = toProductStage(plant.stage);
-    if (!productStage) return '—';
-    return t(getProductStageLabelKey(productStage));
-  }, [plant.stage, t]);
+    if (!productStage) return null;
+    return getProductStageLabelKey(productStage);
+  }, [plant.stage]);
+
+  // Format next feed string
+  const nextFeedLabel = React.useMemo(() => {
+    if (nextFeedHours === undefined || nextFeedHours === null) return '—';
+    if (nextFeedHours === 0) return t('common.now');
+    return `${nextFeedHours}h`;
+  }, [nextFeedHours, t]);
 
   return (
-    <View className="mx-4 flex-row items-center justify-between border-b border-neutral-200 py-6 dark:border-white/10">
-      {/* Stat 1: Day */}
-      <View className="flex-1 items-center">
-        <Text className="mb-1 text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+    <View className="flex-row gap-3 px-4">
+      {/* Stat 1: Age/Day */}
+      <View className="flex-1 items-center justify-center rounded-2xl border border-white/5 bg-white/5 p-3">
+        <Text className="mb-1 text-xs font-medium uppercase text-neutral-400">
           {t('plants.detail.stats_day')}
         </Text>
-        <Text className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
-          {dayCount}
+        <Text className="text-xl font-bold text-white">
+          {dayCount !== null
+            ? t('plants.detail.day_count', { count: dayCount })
+            : '—'}
         </Text>
       </View>
 
-      {/* Divider */}
-      <View className="h-8 w-px bg-neutral-200 dark:bg-white/10" />
-
-      {/* Stat 2: Phase */}
-      <View className="flex-1 items-center">
-        <Text className="mb-1 text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+      {/* Stat 2: Phase - shows icon and phase name */}
+      <View className="flex-1 items-center justify-center rounded-2xl border border-white/5 bg-white/5 p-3">
+        <Text className="mb-1 text-xs font-medium uppercase text-neutral-400">
           {t('plants.detail.stats_phase')}
         </Text>
-        <Text className="text-xl font-bold text-primary-600 dark:text-primary-400">
-          {phase}
+        {phaseLabel ? (
+          <View className="flex-row items-center gap-1.5">
+            <Sprout color={colors.primary[400]} size={18} />
+            <Text
+              className="text-sm font-semibold text-primary-400"
+              numberOfLines={1}
+            >
+              {t(phaseLabel)}
+            </Text>
+          </View>
+        ) : (
+          <Text className="text-xl font-bold text-white">—</Text>
+        )}
+      </View>
+
+      {/* Stat 3: Next Feed - always highlighted with accent */}
+      <View className="flex-1 items-center justify-center overflow-hidden rounded-2xl border border-sky-500/30 bg-sky-500/10 p-3">
+        <Text className="mb-1 text-xs font-bold uppercase text-sky-400">
+          {t('plants.detail.stats_next_feed')}
         </Text>
+        <View className="flex-row items-center gap-1.5">
+          <Droplet color={colors.sky[400]} size={20} />
+          <Text className="text-xl font-bold text-white">{nextFeedLabel}</Text>
+        </View>
       </View>
     </View>
   );

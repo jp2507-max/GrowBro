@@ -19,7 +19,13 @@ import type { Post as ApiPost } from '@/api/posts';
 import { GlassSurface } from '@/components/shared/glass-surface';
 import { Image, Pressable, Text, View } from '@/components/ui';
 import colors from '@/components/ui/colors';
-import { Leaf, Lightbulb, PlatformIcon } from '@/components/ui/icons';
+import {
+  HelpCircle,
+  Leaf,
+  Lightbulb,
+  MessageCircle,
+  PlatformIcon,
+} from '@/components/ui/icons';
 import {
   communityPostHeroTag,
   sharedTransitionStyle,
@@ -100,7 +106,13 @@ const CategoryBadge = React.memo(function CategoryBadge({
   const config = CATEGORY_BADGE_CONFIG[category];
   if (!config) return null;
 
-  const IconComponent = config.icon === 'leaf' ? Leaf : Lightbulb;
+  const iconFallbackMap = {
+    leaf: Leaf,
+    lightbulb: Lightbulb,
+    'help.circle': HelpCircle,
+    chat: MessageCircle,
+  } as const;
+  const IconComponent = iconFallbackMap[config.icon];
   const iosIconName =
     config.icon === 'leaf'
       ? 'leaf.fill'
@@ -137,8 +149,15 @@ const PostCardContent = React.memo(function PostCardContent({
 }: {
   post: ApiPost;
 }) {
-  const formatCount = (n: number) =>
-    n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n);
+  const numberFormatter = React.useMemo(
+    () =>
+      new Intl.NumberFormat(undefined, {
+        notation: 'compact',
+        maximumFractionDigits: 1,
+      }),
+    []
+  );
+  const formatCount = (n: number) => numberFormatter.format(n);
 
   const category = post.category as CommunityPostCategory | undefined;
 
@@ -247,7 +266,7 @@ function PostCardComponent({
   displayUsername: displayUsernameOverride,
   enableSharedTransition = true,
   onCardPressIn,
-  testID = 'post-card',
+  testID,
 }: PostCardProps): React.ReactElement {
   const {
     postId,
@@ -270,6 +289,8 @@ function PostCardComponent({
     onCardPressIn,
   });
 
+  const resolvedTestID = testID ?? `post-card-${postId}`;
+
   return (
     <>
       <Animated.View style={animatedStyle}>
@@ -283,7 +304,7 @@ function PostCardComponent({
               translate('accessibility.community.post_fallback' as TxKeyPath)
             }
             accessibilityRole="link"
-            testID={testID}
+            testID={resolvedTestID}
             onPressIn={handlePressIn}
             onPressOut={onPressOut}
           >
@@ -297,7 +318,7 @@ function PostCardComponent({
                   postId={String(postId)}
                   displayUsername={displayUsername}
                   enableTransition={enableSharedTransition}
-                  testID={`${testID}-image`}
+                  testID={`${resolvedTestID}-image`}
                 />
                 <LinearGradient
                   colors={GRADIENT_COLORS}
@@ -311,10 +332,10 @@ function PostCardComponent({
                     userId={postUserId}
                     displayUsername={displayUsername}
                     avatarUrl={avatarUrl}
-                    testID={`${testID}-avatar`}
+                    testID={`${resolvedTestID}-avatar`}
                   />
                 </View>
-                <View className="absolute right-4" style={{ top: '35%' }}>
+                <View className="absolute right-4 top-1/3">
                   <PostCardActions
                     postId={String(postId)}
                     likeCount={post.like_count ?? 0}
@@ -322,7 +343,7 @@ function PostCardComponent({
                     commentCount={post.comment_count ?? 0}
                     onCommentPress={handleCommentPress}
                     onSharePress={handleSharePress}
-                    testID={`${testID}-actions`}
+                    testID={`${resolvedTestID}-actions`}
                   />
                 </View>
                 <View className="absolute bottom-0 left-0 right-16 p-4">

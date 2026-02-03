@@ -7,6 +7,7 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 
+import type { TaskType } from '@/components/calendar/calendar-list-items';
 import { TimelineNode } from '@/components/calendar/timeline-node';
 import { Text, View } from '@/components/ui';
 import colors from '@/components/ui/colors';
@@ -14,8 +15,6 @@ import { haptics } from '@/lib/haptics';
 import { translate } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import type { Task } from '@/types/calendar';
-
-import type { TaskType } from './calendar-list-items';
 
 type TimelineTaskCardState = 'completed' | 'active' | 'pending' | 'future';
 
@@ -159,6 +158,7 @@ export function TimelineTaskCard({
   const isCompleted = state === 'completed';
   const isActive = state === 'active';
   const isFuture = state === 'future';
+  const pressableTestId = testID ? `${testID}-pressable` : undefined;
 
   const handlePressIn = React.useCallback(() => {
     haptics.selection();
@@ -202,6 +202,7 @@ export function TimelineTaskCard({
       </View>
 
       <AnimatedPressable
+        testID={pressableTestId}
         onPress={onPress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}

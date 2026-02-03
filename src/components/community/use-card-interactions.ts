@@ -23,15 +23,18 @@ export function useCardInteractions({
   onDelete,
   deleteMutation,
 }: UseCardInteractionsOptions): UseCardInteractionsReturn {
-  const optionsSheetRef = React.useRef<BottomSheetModal>(null);
+  const optionsSheetRef = React.useRef<BottomSheetModal | null>(null);
 
   const handleDeleteConfirm = React.useCallback(async () => {
-    const result = await deleteMutation.mutateAsync({
-      postId: String(postId),
-    });
-    optionsSheetRef.current?.dismiss();
-    if (result?.undo_expires_at) {
-      onDelete?.(postId, result.undo_expires_at);
+    try {
+      const result = await deleteMutation.mutateAsync({
+        postId: String(postId),
+      });
+      if (result?.undo_expires_at) {
+        onDelete?.(postId, result.undo_expires_at);
+      }
+    } finally {
+      optionsSheetRef.current?.dismiss();
     }
   }, [deleteMutation, postId, onDelete]);
 

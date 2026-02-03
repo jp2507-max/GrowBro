@@ -10,6 +10,7 @@ import { Text, View } from '@/components/ui';
 import colors from '@/components/ui/colors';
 import { useAuth } from '@/lib/auth';
 import { getTimeBasedGreeting } from '@/lib/greeting';
+import i18n from '@/lib/i18n';
 import { fetchProfileFromBackend } from '@/lib/sync/profile-sync';
 import { getHeaderColors } from '@/lib/theme-utils';
 
@@ -20,10 +21,10 @@ const HEADER_GRADIENT_COLORS = {
     colors.primary[800],
   ] as const,
   dark: [
-    '#1a1a1a', // Stitch gradient start
-    '#151a14', // Mid - smoother transition
-    '#112b18', // End - slightly lighter to blend with body
-    '#0f2e1a', // Final - exact match with charcoal-950
+    colors.cockpit.gradient.start,
+    colors.cockpit.gradient.mid,
+    colors.cockpit.gradient.end,
+    colors.cockpit.gradient.final,
   ] as const,
 };
 
@@ -47,24 +48,27 @@ type CockpitHeaderProps = {
 
 function useDisplayName(): string | null {
   const user = useAuth((s) => s.user);
+  const userId = user?.id;
   const [displayName, setDisplayName] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    if (!user?.id) {
+    if (!userId) {
       setDisplayName(null);
       return;
     }
 
     let cancelled = false;
+    setDisplayName(null);
 
     async function loadProfile() {
       try {
-        const profile = await fetchProfileFromBackend(user!.id);
-        if (!cancelled && profile?.displayName) {
-          setDisplayName(profile.displayName);
+        const profile = await fetchProfileFromBackend(userId!);
+        if (!cancelled) {
+          setDisplayName(profile?.displayName ?? null);
         }
       } catch (error) {
         console.error('[cockpit-header] Failed to load profile:', error);
+        setDisplayName(null);
       }
     }
 
@@ -73,14 +77,15 @@ function useDisplayName(): string | null {
     return () => {
       cancelled = true;
     };
-  }, [user?.id]);
+  }, [userId]);
 
   return displayName;
 }
 
 function formatCurrentDate(): string {
-  const now = DateTime.local();
-  return now.toFormat('EEEE, MMM d');
+  return DateTime.local()
+    .setLocale(i18n.language)
+    .toLocaleString(DateTime.DATE_FULL);
 }
 
 export function CockpitHeader({
@@ -119,7 +124,7 @@ export function CockpitHeader({
       {/* Date Row */}
       <View className="flex-row items-center justify-between">
         <Text
-          className="text-sm font-medium text-white/70"
+          className="text-sm font-medium text-white/70 dark:text-white/70"
           testID="cockpit-header-date"
         >
           {dateString}

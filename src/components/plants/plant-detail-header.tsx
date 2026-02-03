@@ -1,12 +1,12 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { StyleSheet } from 'react-native';
 
 import type { Plant } from '@/api/plants/types';
-import { GlassButton, Image, Pressable, Text, View } from '@/components/ui';
+import { Image, Pressable, Text, View } from '@/components/ui';
 import colors from '@/components/ui/colors';
-import { ArrowLeft } from '@/components/ui/icons';
+import { Sun } from '@/components/ui/icons';
 import { usePlantPhotoSync } from '@/lib/plants/plant-photo-sync';
 import {
   getProductStageLabelKey,
@@ -15,23 +15,30 @@ import {
 
 type PlantDetailHeaderProps = {
   plant: Plant;
-  onBack: () => void;
   /** Optional callback for editing the plant photo (tap on image area) */
   onEditPhoto?: () => void;
 };
 
+const styles = StyleSheet.create({
+  stageBadgeShadow: {
+    shadowColor: colors.terracotta[500],
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+});
+
 /**
  * Premium Organic hero header for the plant detail screen.
- * Full-width image with gradient overlay, plant name, and strain info.
- * Optionally supports photo editing via onEditPhoto callback.
+ * Full-width image with gradient overlay, stage badge, and strain/name info.
+ * Back button is handled by parent sticky header.
  */
 export function PlantDetailHeader({
   plant,
-  onBack,
   onEditPhoto,
 }: PlantDetailHeaderProps): React.ReactElement {
   const { t } = useTranslation();
-  const insets = useSafeAreaInsets();
 
   // Auto-sync plant photo from remote if missing locally
   const { resolvedLocalUri } = usePlantPhotoSync(plant);
@@ -39,8 +46,18 @@ export function PlantDetailHeader({
     ? { uri: resolvedLocalUri }
     : require('../../../assets/icon.png');
 
+  // Get stage label
+  const stageLabel = React.useMemo(() => {
+    const productStage = toProductStage(plant.stage);
+    if (!productStage) return null;
+    return t(getProductStageLabelKey(productStage));
+  }, [plant.stage, t]);
+
+  // Display name: prefer strain, fallback to plant name
+  const displayName = plant.strain || plant.name;
+
   return (
-    <View className="relative h-80 w-full bg-neutral-100 dark:bg-neutral-800">
+    <View className="relative w-full" style={{ aspectRatio: 4 / 3 }}>
       {/* Hero Image - tappable when onEditPhoto is provided */}
       <Pressable
         onPress={onEditPhoto}
@@ -65,73 +82,36 @@ export function PlantDetailHeader({
         />
       </Pressable>
 
-      {/* Edit Photo Button - shown when onEditPhoto is provided */}
-      {onEditPhoto && (
-        <View className="absolute right-4 z-20" style={{ top: insets.top + 8 }}>
-          <Pressable
-            onPress={onEditPhoto}
-            className="size-10 items-center justify-center rounded-full bg-black/30 active:bg-black/50"
-            accessibilityRole="button"
-            accessibilityLabel={t('plants.form.edit_photo')}
-            accessibilityHint={t('harvest.photo.choose_source')}
-            testID="plant-edit-photo-button"
-          >
-            <Text className="text-lg">✏️</Text>
-          </Pressable>
-        </View>
-      )}
-
-      {/* Back Button - floating on image */}
-      <View className="absolute left-4 z-20" style={{ top: insets.top + 8 }}>
-        <GlassButton
-          onPress={onBack}
-          accessibilityLabel={t('accessibility.common.go_back')}
-          accessibilityHint={t('accessibility.common.return_to_previous')}
-          testID="plant-detail-back-button"
-          fallbackClassName="bg-black/30"
-        >
-          <ArrowLeft color="#fff" width={22} height={22} />
-        </GlassButton>
-      </View>
-
       {/* Gradient Overlay with Plant Info */}
       <View className="absolute inset-x-0 bottom-0">
         <LinearGradient
           colors={[
             'transparent',
-            `${colors.primary[950]}B3`, // 70% opacity
-            `${colors.primary[950]}E6`, // 90% opacity
+            `${colors.charcoal[950]}80`, // 50% opacity
+            `${colors.charcoal[950]}CC`, // 80% opacity
+            colors.charcoal[950], // 100% opacity
           ]}
-          locations={[0, 0.4, 1]}
+          locations={[0, 0.3, 0.6, 1]}
           className="w-full"
         >
-          <View className="px-5 pb-10 pt-16">
-            {/* Strain Label (above name) */}
-            {plant.strain ? (
-              <Text className="mb-1 text-xs font-bold uppercase tracking-widest text-white/70">
-                {plant.strain}
-              </Text>
+          <View className="gap-3 px-6 pb-6 pt-20">
+            {/* Stage Badge - Glowing Orange Pill */}
+            {stageLabel ? (
+              <View
+                className="flex-row items-center gap-2 self-start rounded-full border border-terracotta-500/50 bg-terracotta-500/20 px-3 py-1.5"
+                style={styles.stageBadgeShadow}
+              >
+                <Sun color={colors.terracotta[400]} size={18} />
+                <Text className="text-xs font-bold uppercase tracking-wider text-terracotta-400">
+                  {stageLabel}
+                </Text>
+              </View>
             ) : null}
 
-            {/* Plant Name */}
-            <Text className="text-4xl font-extrabold text-white">
-              {plant.name}
+            {/* Strain/Plant Name - Large Display */}
+            <Text className="text-4xl font-extrabold tracking-tight text-white">
+              {displayName}
             </Text>
-
-            {/* Stage Badge Row */}
-            <View className="mt-2 flex-row flex-wrap items-center gap-2">
-              {plant.stage ? (
-                <View className="rounded-full bg-terracotta-500/80 px-3 py-1">
-                  <Text className="text-sm font-medium text-white">
-                    {(() => {
-                      const productStage = toProductStage(plant.stage);
-                      if (!productStage) return t('common.na');
-                      return t(getProductStageLabelKey(productStage));
-                    })()}
-                  </Text>
-                </View>
-              ) : null}
-            </View>
           </View>
         </LinearGradient>
       </View>

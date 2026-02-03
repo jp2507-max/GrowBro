@@ -315,33 +315,31 @@ function IdentitySection({
       delay={100}
       testID="identity-section"
     >
-      <View className="gap-3 rounded-2xl bg-white p-4 dark:bg-charcoal-900">
-        <ControlledInput
-          control={control}
-          name="name"
-          placeholder={t('plants.form.name_placeholder')}
-          label={t('plants.form.name_label')}
-          testID="plant-name-input"
-          chunky
-        />
-        <StrainPicker
-          value={strainValue}
-          onSelectFull={handleStrainSelect}
-          enableCustomStrain
-          label={t('plants.form.strain_label')}
-          placeholder={t('plants.form.strain_placeholder')}
-          testID="plant-strain-picker"
-        />
-        <SelectField
-          control={control}
-          name="startType"
-          label={t('plants.form.start_type_label')}
-          placeholder={t('plants.form.start_type_placeholder')}
-          options={startTypeOptions}
-          testID="plant-startType-select"
-          chunky
-        />
-      </View>
+      <ControlledInput
+        control={control}
+        name="name"
+        placeholder={t('plants.form.name_placeholder')}
+        label={t('plants.form.name_label')}
+        testID="plant-name-input"
+        chunky
+      />
+      <StrainPicker
+        value={strainValue}
+        onSelectFull={handleStrainSelect}
+        enableCustomStrain
+        label={t('plants.form.strain_label')}
+        placeholder={t('plants.form.strain_placeholder')}
+        testID="plant-strain-picker"
+      />
+      <SelectField
+        control={control}
+        name="startType"
+        label={t('plants.form.start_type_label')}
+        placeholder={t('plants.form.start_type_placeholder')}
+        options={startTypeOptions}
+        testID="plant-startType-select"
+        chunky
+      />
     </FormSection>
   );
 }
@@ -364,34 +362,32 @@ function EnvironmentSection({
       delay={200}
       testID="environment-section"
     >
-      <View className="gap-3 rounded-2xl bg-white p-4 dark:bg-charcoal-900">
-        <SelectField
-          control={control}
-          name="environment"
-          label={t('plants.form.environment_label')}
-          placeholder={t('plants.form.environment_placeholder')}
-          options={environmentOptions}
-          testID="plant-environment-select"
-          chunky
-        />
-        <SelectField
-          control={control}
-          name="photoperiodType"
-          label={t('plants.form.genetics_label')}
-          placeholder={t('plants.form.genetics_placeholder')}
-          options={photoperiodOptions}
-          testID="plant-photoperiod-select"
-          chunky
-        />
-        <ControlledDatePicker
-          control={control}
-          name="plantedAt"
-          placeholder={t('plants.form.planted_at_placeholder')}
-          label={t('plants.form.planted_at_label')}
-          testID="plant-plantedAt-picker"
-          maximumDate={new Date()}
-        />
-      </View>
+      <SelectField
+        control={control}
+        name="environment"
+        label={t('plants.form.environment_label')}
+        placeholder={t('plants.form.environment_placeholder')}
+        options={environmentOptions}
+        testID="plant-environment-select"
+        chunky
+      />
+      <SelectField
+        control={control}
+        name="photoperiodType"
+        label={t('plants.form.genetics_label')}
+        placeholder={t('plants.form.genetics_placeholder')}
+        options={photoperiodOptions}
+        testID="plant-photoperiod-select"
+        chunky
+      />
+      <ControlledDatePicker
+        control={control}
+        name="plantedAt"
+        placeholder={t('plants.form.planted_at_placeholder')}
+        label={t('plants.form.planted_at_label')}
+        testID="plant-plantedAt-picker"
+        maximumDate={new Date()}
+      />
     </FormSection>
   );
 }
@@ -412,26 +408,146 @@ function CareSection({
       delay={300}
       testID="care-section"
     >
-      <View className="gap-3 rounded-2xl bg-white p-4 dark:bg-charcoal-900">
-        <SelectField
-          control={control}
-          name="medium"
-          label={t('plants.form.medium_label')}
-          placeholder={t('plants.form.medium_placeholder')}
-          options={mediumOptions}
-          testID="plant-medium-select"
-          chunky
-        />
-        <ControlledInput
-          control={control}
-          name="potSize"
-          placeholder={t('plants.form.pot_size_placeholder')}
-          label={t('plants.form.pot_size_label')}
-          testID="plant-potSize-input"
-          chunky
-        />
-      </View>
+      <SelectField
+        control={control}
+        name="medium"
+        label={t('plants.form.medium_label')}
+        placeholder={t('plants.form.medium_placeholder')}
+        options={mediumOptions}
+        testID="plant-medium-select"
+        chunky
+      />
+      <ControlledInput
+        control={control}
+        name="potSize"
+        placeholder={t('plants.form.pot_size_placeholder')}
+        label={t('plants.form.pot_size_label')}
+        testID="plant-potSize-input"
+        chunky
+      />
     </FormSection>
+  );
+}
+
+function TrainingPreferences({
+  selected,
+  onToggle,
+  t,
+}: {
+  selected: TrainingPreference[];
+  onToggle: (pref: TrainingPreference) => void;
+  t: (key: string) => string;
+}): React.ReactElement {
+  return (
+    <View className="gap-2">
+      <Text className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+        {t('plants.form.training_prefs_label')}
+      </Text>
+      <Text className="text-xs text-neutral-500 dark:text-neutral-400">
+        {t('plants.form.training_prefs_hint')}
+      </Text>
+      <View className="gap-2">
+        {TRAINING_PREF_OPTIONS.map((pref) => (
+          <Checkbox
+            key={pref.value}
+            checked={selected.includes(pref.value)}
+            onChange={() => onToggle(pref.value)}
+            label={t(pref.i18nKey)}
+            testID={`training-pref-${pref.value}`}
+            accessibilityLabel={t(pref.i18nKey)}
+          />
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function AdvancedFields({
+  control,
+  stageOptions,
+  geneticOptions,
+  spaceSizeOptions,
+  trainingPrefs,
+  onToggleTrainingPref,
+  t,
+}: {
+  control: Control<PlantFormValues>;
+  stageOptions: OptionType[];
+  geneticOptions: OptionType[];
+  spaceSizeOptions: OptionType[];
+  trainingPrefs: TrainingPreference[];
+  onToggleTrainingPref: (pref: TrainingPreference) => void;
+  t: (key: string) => string;
+}): React.ReactElement {
+  return (
+    <View className="gap-3">
+      <SelectField
+        control={control}
+        name="stage"
+        label={t('plants.form.stage_label')}
+        placeholder={t('plants.form.stage_placeholder')}
+        options={stageOptions}
+        testID="plant-stage-select"
+        chunky
+      />
+      <SelectField
+        control={control}
+        name="geneticLean"
+        label={t('plants.form.genetic_label')}
+        placeholder={t('plants.form.genetic_placeholder')}
+        options={geneticOptions}
+        testID="plant-genetic-select"
+        chunky
+      />
+      <SelectField
+        control={control}
+        name="spaceSize"
+        label={t('plants.form.space_size_label')}
+        placeholder={t('plants.form.space_size_placeholder')}
+        options={spaceSizeOptions}
+        testID="plant-spaceSize-select"
+        chunky
+      />
+      <ControlledInput
+        control={control}
+        name="height"
+        placeholder={t('plants.form.height_placeholder')}
+        label={t('plants.form.height_label')}
+        keyboardType="numeric"
+        testID="plant-height-input"
+        chunky
+      />
+      <ControlledInput
+        control={control}
+        name="lightSchedule"
+        placeholder={t('plants.form.light_schedule_placeholder')}
+        label={t('plants.form.light_schedule_label')}
+        testID="plant-lightSchedule-input"
+      />
+      <ControlledInput
+        control={control}
+        name="lightHours"
+        placeholder={t('plants.form.light_hours_placeholder')}
+        label={t('plants.form.light_hours_label')}
+        keyboardType="numeric"
+        testID="plant-lightHours-input"
+      />
+      <ControlledInput
+        control={control}
+        name="notes"
+        placeholder={t('plants.form.notes_placeholder')}
+        label={t('plants.form.notes_label')}
+        multiline
+        numberOfLines={3}
+        testID="plant-notes-input"
+        chunky
+      />
+      <TrainingPreferences
+        selected={trainingPrefs}
+        onToggle={onToggleTrainingPref}
+        t={t}
+      />
+    </View>
   );
 }
 
@@ -451,17 +567,21 @@ function AdvancedSection({
   t: (key: string) => string;
 }) {
   const advancedMode = useWatch({ control, name: 'advancedMode' }) ?? false;
-  const trainingPrefs = useWatch({ control, name: 'trainingPrefs' }) ?? [];
+  const trainingPrefs = useWatch({ control, name: 'trainingPrefs' });
+  const resolvedTrainingPrefs = React.useMemo(
+    () => trainingPrefs ?? [],
+    [trainingPrefs]
+  );
 
   const toggleTrainingPref = React.useCallback(
     (pref: TrainingPreference) => {
-      const updated = trainingPrefs.includes(pref)
-        ? trainingPrefs.filter((item) => item !== pref)
-        : [...trainingPrefs, pref];
+      const updated = resolvedTrainingPrefs.includes(pref)
+        ? resolvedTrainingPrefs.filter((item) => item !== pref)
+        : [...resolvedTrainingPrefs, pref];
 
       setValue('trainingPrefs', updated, { shouldDirty: true });
     },
-    [setValue, trainingPrefs]
+    [resolvedTrainingPrefs, setValue]
   );
 
   return (
@@ -471,116 +591,39 @@ function AdvancedSection({
       delay={400}
       testID="advanced-section"
     >
-      <View className="gap-3 rounded-2xl bg-white p-4 dark:bg-charcoal-900">
-        <View className="flex-row items-center justify-between">
-          <View className="flex-1 pr-3">
-            <Text className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
-              {t('plants.form.advanced_mode_label')}
-            </Text>
-            <Text className="text-xs text-neutral-500 dark:text-neutral-400">
-              {t('plants.form.advanced_mode_hint')}
-            </Text>
-          </View>
-          <Controller
-            control={control}
-            name="advancedMode"
-            render={({ field: { value, onChange } }) => (
-              <Switch
-                value={Boolean(value)}
-                onValueChange={(val) => onChange(val)}
-                testID="plant-advanced-mode-switch"
-              />
-            )}
-          />
+      <View className="flex-row items-center justify-between">
+        <View className="flex-1 pr-3">
+          <Text className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
+            {t('plants.form.advanced_mode_label')}
+          </Text>
+          <Text className="text-xs text-neutral-500 dark:text-neutral-400">
+            {t('plants.form.advanced_mode_hint')}
+          </Text>
         </View>
-
-        {advancedMode ? (
-          <View className="gap-3">
-            <SelectField
-              control={control}
-              name="stage"
-              label={t('plants.form.stage_label')}
-              placeholder={t('plants.form.stage_placeholder')}
-              options={stageOptions}
-              testID="plant-stage-select"
-              chunky
+        <Controller
+          control={control}
+          name="advancedMode"
+          render={({ field: { value, onChange } }) => (
+            <Switch
+              value={Boolean(value)}
+              onValueChange={(val) => onChange(val)}
+              testID="plant-advanced-mode-switch"
             />
-            <SelectField
-              control={control}
-              name="geneticLean"
-              label={t('plants.form.genetic_label')}
-              placeholder={t('plants.form.genetic_placeholder')}
-              options={geneticOptions}
-              testID="plant-genetic-select"
-              chunky
-            />
-            <SelectField
-              control={control}
-              name="spaceSize"
-              label={t('plants.form.space_size_label')}
-              placeholder={t('plants.form.space_size_placeholder')}
-              options={spaceSizeOptions}
-              testID="plant-spaceSize-select"
-              chunky
-            />
-            <ControlledInput
-              control={control}
-              name="height"
-              placeholder={t('plants.form.height_placeholder')}
-              label={t('plants.form.height_label')}
-              keyboardType="numeric"
-              // Expected in cm, stored as unitless number
-              testID="plant-height-input"
-              chunky
-            />
-            <ControlledInput
-              control={control}
-              name="lightSchedule"
-              placeholder={t('plants.form.light_schedule_placeholder')}
-              label={t('plants.form.light_schedule_label')}
-              testID="plant-lightSchedule-input"
-            />
-            <ControlledInput
-              control={control}
-              name="lightHours"
-              placeholder={t('plants.form.light_hours_placeholder')}
-              label={t('plants.form.light_hours_label')}
-              keyboardType="numeric"
-              testID="plant-lightHours-input"
-            />
-            <ControlledInput
-              control={control}
-              name="notes"
-              placeholder={t('plants.form.notes_placeholder')}
-              label={t('plants.form.notes_label')}
-              multiline
-              numberOfLines={3}
-              testID="plant-notes-input"
-              chunky
-            />
-            <View className="gap-2">
-              <Text className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-                {t('plants.form.training_prefs_label')}
-              </Text>
-              <Text className="text-xs text-neutral-500 dark:text-neutral-400">
-                {t('plants.form.training_prefs_hint')}
-              </Text>
-              <View className="gap-2">
-                {TRAINING_PREF_OPTIONS.map((pref) => (
-                  <Checkbox
-                    key={pref.value}
-                    checked={trainingPrefs.includes(pref.value)}
-                    onChange={() => toggleTrainingPref(pref.value)}
-                    label={t(pref.i18nKey)}
-                    testID={`training-pref-${pref.value}`}
-                    accessibilityLabel={t(pref.i18nKey)}
-                  />
-                ))}
-              </View>
-            </View>
-          </View>
-        ) : null}
+          )}
+        />
       </View>
+
+      {advancedMode ? (
+        <AdvancedFields
+          control={control}
+          stageOptions={stageOptions}
+          geneticOptions={geneticOptions}
+          spaceSizeOptions={spaceSizeOptions}
+          trainingPrefs={resolvedTrainingPrefs}
+          onToggleTrainingPref={toggleTrainingPref}
+          t={t}
+        />
+      ) : null}
     </FormSection>
   );
 }
@@ -770,16 +813,16 @@ type DeletePlantButtonProps = {
 
 function DeletePlantButton({ onDelete, t }: DeletePlantButtonProps) {
   return (
-    <View className="mb-4 mt-10 px-4 pb-24">
+    <View className="mt-6">
       <Pressable
         onPress={onDelete}
         accessibilityRole="button"
         accessibilityLabel={t('plants.form.delete_button')}
         accessibilityHint={t('plants.form.delete_confirm_body')}
         testID="delete-plant-button"
-        className="items-center justify-center rounded-xl border border-red-500/30 bg-red-500/10 p-4 active:bg-red-500/20 dark:border-red-400/40 dark:bg-red-500/20"
+        className="h-12 items-center justify-center rounded-xl border border-danger-400/30 bg-danger-500/10 active:scale-95 active:bg-danger-500/20"
       >
-        <Text className="font-medium text-red-600 dark:text-red-400">
+        <Text className="text-sm font-bold text-danger-400">
           {t('plants.form.delete_button')}
         </Text>
       </Pressable>
@@ -841,6 +884,37 @@ function FormSections({
   );
 }
 
+function usePlantFormOptions({
+  showAdvancedEnvironment,
+  showAdvancedMedium,
+  t,
+}: {
+  showAdvancedEnvironment: boolean;
+  showAdvancedMedium: boolean;
+  t: (key: string) => string;
+}) {
+  return React.useMemo(
+    () => ({
+      stage: toOptions(STAGE_OPTIONS, t),
+      startType: toOptions(START_TYPE_OPTIONS, t),
+      photoperiod: toOptions(PHOTOPERIOD_OPTIONS, t),
+      environment: toOptions(
+        showAdvancedEnvironment
+          ? ENVIRONMENT_OPTIONS_ADVANCED
+          : ENVIRONMENT_OPTIONS_BASE,
+        t
+      ),
+      genetic: toOptions(GENETIC_OPTIONS, t),
+      medium: toOptions(
+        showAdvancedMedium ? MEDIUM_OPTIONS_ADVANCED : MEDIUM_OPTIONS_BASE,
+        t
+      ),
+      spaceSize: toOptions(SPACE_SIZE_OPTIONS, t),
+    }),
+    [showAdvancedEnvironment, showAdvancedMedium, t]
+  );
+}
+
 export function PlantForm({
   defaultValues,
   onSubmit,
@@ -880,10 +954,6 @@ export function PlantForm({
   const submitRef = React.useRef(handleFormSubmit);
   submitRef.current = handleFormSubmit;
   const stableSubmit = React.useCallback(() => submitRef.current(), []);
-
-  // Stabilize parent-provided callback to avoid effect re-running when parent
-  // passes an inline function. Caller may still pass a memoized callback, but
-  // using a ref here avoids unnecessary effect triggers.
   const onPhotoInfoRef = React.useRef(onPhotoInfo);
   onPhotoInfoRef.current = onPhotoInfo;
 
@@ -899,27 +969,11 @@ export function PlantForm({
     () => onPhotoInfoRef.current?.({ imageUrl, onPhotoCaptured }),
     [imageUrl, onPhotoCaptured]
   );
-
-  const options = React.useMemo(
-    () => ({
-      stage: toOptions(STAGE_OPTIONS, t),
-      startType: toOptions(START_TYPE_OPTIONS, t),
-      photoperiod: toOptions(PHOTOPERIOD_OPTIONS, t),
-      environment: toOptions(
-        showAdvancedEnvironment
-          ? ENVIRONMENT_OPTIONS_ADVANCED
-          : ENVIRONMENT_OPTIONS_BASE,
-        t
-      ),
-      genetic: toOptions(GENETIC_OPTIONS, t),
-      medium: toOptions(
-        showAdvancedMedium ? MEDIUM_OPTIONS_ADVANCED : MEDIUM_OPTIONS_BASE,
-        t
-      ),
-      spaceSize: toOptions(SPACE_SIZE_OPTIONS, t),
-    }),
-    [showAdvancedEnvironment, showAdvancedMedium, t]
-  );
+  const options = usePlantFormOptions({
+    showAdvancedEnvironment,
+    showAdvancedMedium,
+    t,
+  });
 
   const scrollContentStyle = React.useMemo(
     () => ({
@@ -930,7 +984,6 @@ export function PlantForm({
   );
 
   const isDisabled = isSubmitting || formSubmitting;
-
   if (renderAsFragment) {
     return (
       <FormSections
@@ -943,7 +996,6 @@ export function PlantForm({
       />
     );
   }
-
   return (
     <View className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
       <ScrollView

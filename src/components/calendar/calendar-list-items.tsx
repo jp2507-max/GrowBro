@@ -1,11 +1,10 @@
 import { DateTime } from 'luxon';
 import * as React from 'react';
 
+import { TimelineTaskCard } from '@/components/calendar/timeline-task-card';
 import { ActivityIndicator, Text, View } from '@/components/ui';
 import { translate } from '@/lib/i18n';
 import type { Task } from '@/types/calendar';
-
-import { TimelineTaskCard } from './timeline-task-card';
 
 // Local type for task categorization
 export type TaskType = 'watering' | 'feeding' | 'flush' | 'other';
@@ -13,8 +12,9 @@ export type TaskType = 'watering' | 'feeding' | 'flush' | 'other';
 /**
  * Formats a due time string for display (e.g., "08:00")
  */
-function formatDueTime(dueAtLocal: string, _timezone?: string): string {
-  const dt = DateTime.fromISO(dueAtLocal);
+function formatDueTime(dueAtLocal: string, timezone?: string): string {
+  const zone = timezone ?? DateTime.local().zoneName ?? 'UTC';
+  const dt = DateTime.fromISO(dueAtLocal, { zone });
   return dt.isValid ? dt.toFormat('HH:mm') : '';
 }
 

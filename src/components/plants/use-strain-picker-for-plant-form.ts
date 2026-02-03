@@ -71,8 +71,8 @@ export function useStrainPickerForPlantForm({
 
   const handleStrainSelect = useCallback(
     (strain: Strain | undefined, source?: 'api' | 'custom') => {
-      if (strain && source) {
-        applyDerivedValues(strain, source);
+      if (strain) {
+        applyDerivedValues(strain, source ?? 'api');
       } else {
         clearStrainMetadata();
       }

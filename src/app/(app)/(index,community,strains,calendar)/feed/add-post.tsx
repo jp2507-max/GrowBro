@@ -28,6 +28,7 @@ import {
   View,
 } from '@/components/ui';
 import { Camera } from '@/components/ui/icons';
+import { useBottomTabBarHeight } from '@/lib/animations/use-bottom-tab-bar-height';
 import { generateCommunityPostPrefill } from '@/lib/assessment/community-post-prefill';
 import { getAssessmentSession } from '@/lib/assessment/current-assessment-store';
 import { COMMUNITY_HELP_CATEGORY } from '@/lib/community/post-categories';
@@ -464,6 +465,7 @@ export default function AddPost(): React.JSX.Element {
   const router = useRouter();
   const params = useLocalSearchParams();
   const insets = useSafeAreaInsets();
+  const { grossHeight } = useBottomTabBarHeight();
   const translatedHint = translateDynamic('assessment.community.cta_hint');
   const { handleSubmit, setValue, watch } = useForm<FormType>({
     resolver: zodResolver(schema),
@@ -562,7 +564,7 @@ export default function AddPost(): React.JSX.Element {
             onPhotoPress={handlePhotoPress}
             isPending={isPending}
             onSubmit={handleSubmit(onSubmit)}
-            bottomInset={insets.bottom}
+            bottomInset={grossHeight}
           />
         </View>
       </View>

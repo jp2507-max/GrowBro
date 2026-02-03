@@ -157,6 +157,11 @@
     "home": {
       "activation_action_hint": "Doppeltippen, um {{action}}",
       "activation_dismiss_hint": "Doppeltippen, um die Aktivierungs-Checkliste auszublenden",
+      "cockpit": {
+        "day": "Tag {{day}}",
+        "needs_water": "Braucht Wasser",
+        "week": "Woche {{week}}"
+      },
       "open_settings_hint": "Öffnet die Einstellungen.",
       "quick_action_hint": "Öffnet die Schnellaktion {{action}}.",
       "share_update_hint": "Öffnet den Bildschirm zum Erstellen eines Beitrags."
@@ -945,6 +950,7 @@
     "na": "k.A.",
     "no": "Nein",
     "not_selected": "nicht ausgewählt",
+    "now": "Jetzt",
     "null": "null",
     "off": "AUS",
     "offline_mode": "Offline-Modus",
@@ -2570,8 +2576,10 @@
       "percent_complete": "{{percent}}% Abgeschlossen"
     },
     "detail": {
-      "action_hub_title": "Tagesübersicht",
+      "action_hub_title": "Tägliche Aktionen",
+      "advanced_settings_title": "Erweiterte Einstellungen",
       "all_good_message": "Alles im grünen Bereich – Keine Aufgaben heute.",
+      "day_count": "Tag {{count}}",
       "no_tasks": "Keine anstehenden Aufgaben",
       "nutrient_section": {
         "empty": "Noch keine pH/EC-Messungen",
@@ -2581,10 +2589,16 @@
         "view_all": "Alle anzeigen"
       },
       "start_harvest": "Ernte starten",
-      "stats_day": "Tag",
+      "stats_day": "Alter",
+      "stats_empty_desc": "Erfasse pH- und EC-Werte regelmäßig, um deinen Ertrag zu optimieren.",
+      "stats_empty_title": "Keine Messungen erfasst",
       "stats_height": "Höhe",
+      "stats_history": "Verlauf",
+      "stats_next_feed": "Nächste Fütterung",
       "stats_phase": "Phase",
+      "stats_title": "Statistiken",
       "strain_profile_link": "Sortenprofil & Details",
+      "tasks_remaining": "{{count}} Übrig",
       "water_needed": "Gießen nötig"
     },
     "empty_state": "Keine Pflanzen in deinem Inventar",
@@ -2601,6 +2615,7 @@
       "completion": "{{percent}}% Abgeschlossen",
       "create_cta": "Pflanze erstellen",
       "create_title": "Neue Pflanze",
+      "current_phase_label": "Aktuelle Phase",
       "default_water_desc": "Kurze Erinnerung zum Gießen nach dem Umtopfen.",
       "default_water_title": "Diese Pflanze gießen",
       "delete_button": "Pflanze löschen",
@@ -2626,6 +2641,10 @@
         "strain_length": "Strain muss unter 120 Zeichen bleiben",
         "strain_required": "Strain ist erforderlich"
       },
+      "expected_yield_label": "Erwarteter Ertrag",
+      "expected_yield_placeholder": "Schätzung in Gramm",
+      "expert_mode_desc": "Zeigt detaillierte technische Eingaben",
+      "expert_mode_label": "Expertenmodus",
       "genetic": {
         "balanced": "Ausgewogener Hybrid",
         "indica": "Indica-dominant",
@@ -2645,6 +2664,9 @@
       "height_placeholder": "z. B. 45 cm",
       "invalid_id": "Ungültige Pflanzen-ID",
       "keep_adding": "Weitere Pflanzen hinzufügen",
+      "lean_label": "Tendenz",
+      "light_cycle_label": "Lichtzyklus",
+      "light_cycle_suffix": "Std",
       "light_hours_label": "Lichtstunden",
       "light_hours_placeholder": "z. B. 18",
       "light_schedule_label": "Lichtzyklus",
@@ -2675,12 +2697,14 @@
       "planted_at_placeholder": "JJJJ-MM-TT",
       "pot_size_label": "Topfgröße",
       "pot_size_placeholder": "z. B. 11 L / 3 gal",
+      "pot_size_suffix": "L",
       "save": "Speichern",
       "save_cta": "Änderungen speichern",
       "section": {
         "advanced": "Erweitert",
         "care": "Pflege",
         "environment": "Umgebung",
+        "environment_care": "Umgebung & Pflege",
         "identity": "Identität",
         "photo": "Foto"
       },

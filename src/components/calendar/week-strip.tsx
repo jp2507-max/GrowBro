@@ -162,10 +162,7 @@ function DayPill({
             : 'border border-white/5 bg-white/5'
       )}
       accessibilityRole="button"
-      accessibilityLabel={
-        item.date.toFormat('EEEE, MMMM d') +
-        (item.isToday ? ', ' + todayLabel : '')
-      }
+      accessibilityLabel={`${item.date.toFormat('EEEE, MMMM d')}${item.isToday ? `, ${todayLabel}` : ''}`}
       accessibilityHint={translate('calendar.week_strip.select_day_hint')}
       accessibilityState={{ selected: item.isSelected }}
       testID={'week-strip-day-' + item.date.toFormat('yyyy-MM-dd')}
@@ -185,28 +182,41 @@ function DayPill({
       <Text
         className={cn(
           'mt-1 text-xl font-bold',
-          item.isSelected
-            ? 'text-charcoal-950'
-            : item.isToday
-              ? 'text-white'
-              : 'text-white'
+          item.isSelected ? 'text-charcoal-950' : 'text-white'
         )}
       >
         {item.dayOfMonth}
       </Text>
-      {/* Task indicator dot */}
-      <View
-        className={cn(
-          'mt-2 size-1.5 rounded-full',
-          item.taskCount > 0
-            ? item.isSelected
-              ? 'bg-charcoal-950'
-              : 'bg-lime-400'
-            : 'bg-transparent'
-        )}
-        testID={`task-indicator-${item.date.toFormat('yyyy-MM-dd')}`}
+      <TaskIndicator
+        taskCount={item.taskCount}
+        isSelected={item.isSelected}
+        dateKey={item.date.toFormat('yyyy-MM-dd')}
       />
     </AnimatedPressable>
+  );
+}
+
+function TaskIndicator({
+  taskCount,
+  isSelected,
+  dateKey,
+}: {
+  taskCount: number;
+  isSelected: boolean;
+  dateKey: string;
+}) {
+  return (
+    <View
+      className={cn(
+        'mt-2 size-1.5 rounded-full',
+        taskCount > 0
+          ? isSelected
+            ? 'bg-charcoal-950'
+            : 'bg-lime-400'
+          : 'bg-transparent'
+      )}
+      testID={`task-indicator-${dateKey}`}
+    />
   );
 }
 
