@@ -98,7 +98,7 @@ export function StrainsHeader({
               iosName="star"
               size={22}
               color={colors.white}
-              fallback={<Rate color={colors.white} size={22} />}
+              fallback={<Rate color={colors.white} width={22} height={22} />}
             />
           </GlassButton>
 

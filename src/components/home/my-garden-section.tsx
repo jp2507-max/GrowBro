@@ -1,11 +1,11 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
+import { ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
 
 import type { Plant } from '@/api';
 import {
   CARD_GAP,
-  CARD_WIDTH,
+  CARD_WIDTH_RATIO,
   CockpitPlantCard,
 } from '@/components/home/cockpit-plant-card';
 import { Pressable, Text, View } from '@/components/ui';
@@ -66,6 +66,9 @@ export function MyGardenSection({
   attentionMap = {},
   isLoading = false,
 }: MyGardenSectionProps): React.ReactElement {
+  const { width } = useWindowDimensions();
+  const cardWidth = width * CARD_WIDTH_RATIO;
+
   return (
     <View testID="my-garden-section">
       <SectionHeader />
@@ -82,7 +85,7 @@ export function MyGardenSection({
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          snapToInterval={CARD_WIDTH + CARD_GAP}
+          snapToInterval={cardWidth + CARD_GAP}
           decelerationRate="fast"
           contentContainerStyle={styles.carouselContent}
           testID="my-garden-carousel"

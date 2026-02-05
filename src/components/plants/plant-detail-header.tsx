@@ -101,7 +101,7 @@ export function PlantDetailHeader({
                 className="flex-row items-center gap-2 self-start rounded-full border border-terracotta-500/50 bg-terracotta-500/20 px-3 py-1.5"
                 style={styles.stageBadgeShadow}
               >
-                <Sun color={colors.terracotta[400]} size={18} />
+                <Sun color={colors.terracotta[400]} width={18} height={18} />
                 <Text className="text-xs font-bold uppercase tracking-wider text-terracotta-400">
                   {stageLabel}
                 </Text>

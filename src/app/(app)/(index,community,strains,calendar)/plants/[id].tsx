@@ -113,6 +113,15 @@ export default function PlantDetailScreen(): React.ReactElement | null {
     });
   }, [plantId, router]);
 
+  const handleCheckInPress = React.useCallback(() => {
+    if (!plantId) return;
+    haptics.selection();
+    router.push({
+      pathname: '/(modals)/plant-check-in',
+      params: { plantId },
+    });
+  }, [plantId, router]);
+
   if (!plantId) {
     return (
       <PlantErrorView
@@ -151,6 +160,7 @@ export default function PlantDetailScreen(): React.ReactElement | null {
         onHarvestPress={handleHarvestPress}
         onAdvancedSettings={handleAdvancedSettings}
         onEditPhoto={photoInfo ? handleEditPhoto : undefined}
+        onCheckInPress={handleCheckInPress}
       />
     </>
   );

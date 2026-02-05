@@ -28,6 +28,12 @@ export default defineConfig([
     'dist/*',
     'package/dist',
     'node_modules',
+    '.agent/',
+    '.codex/',
+    '.cursor/',
+    '.gemini/',
+    '.windsurf/',
+    '.github/skills/',
     '__tests__/',
     'coverage',
     '.expo',
@@ -176,6 +182,15 @@ export default defineConfig([
         project: undefined,
         sourceType: 'module',
       },
+    },
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+    },
+  },
+  {
+    files: ['**/*.d.ts'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
     },
   },
   {

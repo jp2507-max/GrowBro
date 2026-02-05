@@ -40,6 +40,28 @@ interface IntegratedFeedProps {
   testID?: string;
 }
 
+function handleViewableItemsChange(
+  viewableItems: ViewToken[],
+  filteredPosts: ApiPost[]
+): void {
+  const visiblePosts = viewableItems
+    .map((item) => item.item as ApiPost | undefined)
+    .filter((item): item is ApiPost => Boolean(item));
+
+  const indices = viewableItems
+    .map((item) => (typeof item.index === 'number' ? item.index : -1))
+    .filter((index) => index >= 0);
+
+  const maxIndex = indices.length > 0 ? Math.max(...indices) : -1;
+  const nextPosts =
+    maxIndex >= 0 ? filteredPosts.slice(maxIndex + 1, maxIndex + 1 + 6) : [];
+
+  const uris = getCommunityPrefetchUris([...visiblePosts, ...nextPosts]);
+  if (uris.length > 0) {
+    prefetchCommunityImages(uris);
+  }
+}
+
 export function IntegratedFeed({
   posts,
   isLoading = false,
@@ -93,24 +115,7 @@ export function IntegratedFeed({
 
   const handleViewableItemsChanged = useCallback(
     ({ viewableItems }: { viewableItems: ViewToken[] }) => {
-      const visiblePosts = viewableItems
-        .map((item) => item.item as ApiPost | undefined)
-        .filter((item): item is ApiPost => Boolean(item));
-
-      const indices = viewableItems
-        .map((item) => (typeof item.index === 'number' ? item.index : -1))
-        .filter((index) => index >= 0);
-
-      const maxIndex = indices.length > 0 ? Math.max(...indices) : -1;
-      const nextPosts =
-        maxIndex >= 0
-          ? filteredPosts.slice(maxIndex + 1, maxIndex + 1 + 6)
-          : [];
-
-      const uris = getCommunityPrefetchUris([...visiblePosts, ...nextPosts]);
-      if (uris.length > 0) {
-        prefetchCommunityImages(uris);
-      }
+      handleViewableItemsChange(viewableItems, filteredPosts);
     },
     [filteredPosts]
   );

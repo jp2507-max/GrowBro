@@ -1,3 +1,4 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable } from 'react-native';
@@ -28,6 +29,8 @@ type ActionHubProps = {
   onTaskPress?: (taskId: string) => void;
   /** Called when harvest button is pressed */
   onHarvestPress?: () => void;
+  /** Called when plant check-in CTA is pressed */
+  onCheckInPress?: () => void;
 };
 
 /**
@@ -197,6 +200,42 @@ function ActionHubSuccessCard({
   );
 }
 
+function ActionHubCheckInCard({
+  onPress,
+  t,
+}: {
+  onPress: () => void;
+  t: (key: string) => string;
+}): React.ReactElement {
+  return (
+    <Pressable
+      onPress={onPress}
+      className="flex-row items-center justify-between rounded-2xl border border-white/10 bg-white/5 p-4 active:bg-white/10"
+      accessibilityRole="button"
+      accessibilityLabel={t('plants.detail.check_in.title')}
+      accessibilityHint={t('accessibility.common.opens_screen_hint', {
+        label: t('plants.detail.check_in.title'),
+      })}
+      testID="plant-check-in-cta"
+    >
+      <View className="flex-1 pr-4">
+        <Text className="text-base font-semibold text-white">
+          {t('plants.detail.check_in.title')}
+        </Text>
+        <Text className="mt-1 text-sm text-neutral-400" numberOfLines={2}>
+          {t('plants.detail.check_in.subtitle')}
+        </Text>
+      </View>
+
+      <View className="rounded-full bg-primary-500/20 px-3 py-1.5">
+        <Text className="text-xs font-semibold text-primary-300">
+          {t('plants.detail.check_in.cta')}
+        </Text>
+      </View>
+    </Pressable>
+  );
+}
+
 function ActionHubHarvestButton({
   onHarvestPress,
   t,
@@ -205,20 +244,27 @@ function ActionHubHarvestButton({
   t: (key: string) => string;
 }): React.ReactElement {
   return (
-    <Button
-      variant="default"
-      className="h-auto w-full rounded-2xl bg-gradient-to-r from-lime-500 to-lime-600 py-4 shadow-lg shadow-lime-900/20 active:opacity-90"
-      textClassName="text-white text-lg font-bold"
-      onPress={onHarvestPress}
-      testID="action-start-harvest"
+    <LinearGradient
+      colors={[colors.lime[500], colors.lime[600]]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 0 }}
+      className="w-full rounded-2xl"
     >
-      <View className="flex-row items-center justify-center gap-2">
-        <Leaf color={colors.white} width={20} height={20} />
-        <Text className="text-lg font-bold text-white">
-          {t('plants.detail.start_harvest')}
-        </Text>
-      </View>
-    </Button>
+      <Button
+        variant="default"
+        className="h-auto w-full rounded-2xl bg-transparent py-4 shadow-lg shadow-lime-900/20 active:opacity-90"
+        textClassName="text-white text-lg font-bold"
+        onPress={onHarvestPress}
+        testID="action-start-harvest"
+      >
+        <View className="flex-row items-center justify-center gap-2">
+          <Leaf color={colors.white} width={20} height={20} />
+          <Text className="text-lg font-bold text-white">
+            {t('plants.detail.start_harvest')}
+          </Text>
+        </View>
+      </Button>
+    </LinearGradient>
   );
 }
 
@@ -228,11 +274,12 @@ export function PlantActionHub({
   tasks = [],
   onTaskPress,
   onHarvestPress,
+  onCheckInPress,
 }: ActionHubProps): React.ReactElement {
   const { t } = useTranslation();
 
   const hasTasks = tasks.length > 0;
-  const remainingCount = tasks.filter((t) => !t.completed).length;
+  const remainingCount = tasks.filter((task) => !task.completed).length;
   const productStage = toProductStage(plantStage);
   const canHarvest = Boolean(
     productStage && HARVEST_ELIGIBLE_STAGES.includes(productStage)
@@ -251,6 +298,10 @@ export function PlantActionHub({
       ) : (
         <ActionHubSuccessCard t={t} />
       )}
+
+      {onCheckInPress ? (
+        <ActionHubCheckInCard onPress={onCheckInPress} t={t} />
+      ) : null}
 
       {canHarvest && onHarvestPress ? (
         <ActionHubHarvestButton onHarvestPress={onHarvestPress} t={t} />

@@ -39,7 +39,7 @@ type UsePostCardReturn = {
   handleCommentPress: () => void;
   handleSharePress: () => Promise<void>;
   relativeTime: string;
-  optionsSheetRef: React.RefObject<BottomSheetModal>;
+  optionsSheetRef: React.RefObject<BottomSheetModal | null>;
   handleDeleteConfirm: () => Promise<void>;
   deleteMutation: ReturnType<typeof useDeletePost>;
 };

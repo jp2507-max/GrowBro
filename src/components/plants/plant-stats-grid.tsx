@@ -70,7 +70,7 @@ export function PlantStatsGrid({
         </Text>
         {phaseLabel ? (
           <View className="flex-row items-center gap-1.5">
-            <Sprout color={colors.primary[400]} size={18} />
+            <Sprout color={colors.primary[400]} width={18} height={18} />
             <Text
               className="text-sm font-semibold text-primary-400"
               numberOfLines={1}
@@ -89,7 +89,7 @@ export function PlantStatsGrid({
           {t('plants.detail.stats_next_feed')}
         </Text>
         <View className="flex-row items-center gap-1.5">
-          <Droplet color={colors.sky[400]} size={20} />
+          <Droplet color={colors.sky[400]} width={20} height={20} />
           <Text className="text-xl font-bold text-white">{nextFeedLabel}</Text>
         </View>
       </View>

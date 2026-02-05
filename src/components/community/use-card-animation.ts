@@ -1,6 +1,7 @@
 /**
  * useCardAnimation - Press animation for post cards
  */
+import React from 'react';
 import {
   ReduceMotion,
   useAnimatedStyle,
@@ -33,13 +34,13 @@ export function useCardAnimation(
     transform: [{ scale: scale.value }],
   }));
 
-  const onPressIn = () => {
+  const onPressIn = React.useCallback(() => {
     scale.value = withSpring(0.97, SPRING_CONFIG);
-  };
+  }, [scale]);
 
-  const onPressOut = () => {
+  const onPressOut = React.useCallback(() => {
     scale.value = withSpring(1, SPRING_CONFIG);
-  };
+  }, [scale]);
 
   return { animatedStyle, onPressIn, onPressOut };
 }

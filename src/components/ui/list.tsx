@@ -41,6 +41,49 @@ type ListProps<ItemT> = Omit<FlashListProps<ItemT>, 'estimatedItemSize'> & {
   readonly strings?: Partial<ListStrings>;
 };
 
+type ListRestProps<ItemT> = Omit<
+  ListProps<ItemT>,
+  | 'data'
+  | 'renderItem'
+  | 'ListEmptyComponent'
+  | 'ListFooterComponent'
+  | 'ListSkeletonComponent'
+  | 'keyExtractor'
+  | 'onRetry'
+  | 'error'
+  | 'isLoading'
+  | 'isSkeletonTimedOut'
+  | 'strings'
+  | 'drawDistance'
+  | 'removeClippedSubviews'
+  | 'scrollEventThrottle'
+  | 'contentContainerStyle'
+  | 'style'
+>;
+
+type ListDerivedState<ItemT> = {
+  readonly resolvedStrings: ListStrings;
+  readonly showSkeleton: boolean;
+  readonly showError: boolean;
+  readonly isEmpty: boolean;
+  readonly isJest: boolean;
+  readonly itemCount: number;
+  readonly listData: readonly ItemT[];
+  readonly renderItemResolved: (
+    info: ListRenderItemInfo<ItemT>
+  ) => React.ReactElement | null;
+  readonly keyExtractorResolved: (item: ItemT, index: number) => string;
+  readonly ListEmptyComponentResolved: () => React.ReactElement;
+};
+
+type ListLayoutConfig = {
+  readonly mergedContentContainerStyle: ViewStyle;
+  readonly mergedListStyle: ViewStyle;
+  readonly resolvedDrawDistance: number;
+  readonly resolvedRemoveClippedSubviews: boolean;
+  readonly resolvedScrollEventThrottle: number;
+};
+
 type ListStateBaseProps = {
   readonly title: string;
   readonly body?: string;
@@ -175,6 +218,170 @@ function renderEmptyContent({
   return <ListEmptyState title={strings.emptyTitle} body={strings.emptyBody} />;
 }
 
+function useListDerivedState<ItemT>({
+  data,
+  renderItem,
+  ListEmptyComponent,
+  ListSkeletonComponent,
+  keyExtractor,
+  onRetry,
+  error,
+  isLoading,
+  isSkeletonTimedOut,
+  strings,
+}: ListProps<ItemT>): ListDerivedState<ItemT> {
+  const { t } = useTranslation();
+  const resolvedStrings = useMemo(
+    () => resolveStrings(t, strings),
+    [strings, t]
+  );
+  const showSkeleton = Boolean(isLoading && !isSkeletonTimedOut);
+  const showError = Boolean(error);
+  const isEmpty = !data || data.length === 0;
+  const isJest = Boolean(process?.env?.JEST_WORKER_ID);
+  const itemCount = showSkeleton ? SKELETON_PLACEHOLDERS : (data?.length ?? 0);
+  const Skeleton = useMemo(
+    () => ListSkeletonComponent ?? DefaultListSkeleton,
+    [ListSkeletonComponent]
+  );
+  const listData = useMemo(
+    () => buildListData(showSkeleton, data),
+    [data, showSkeleton]
+  );
+  const keyExtractorResolved = useCallback(
+    (item: ItemT, index: number) =>
+      showSkeleton
+        ? `skeleton-${index}`
+        : (keyExtractor ?? fallbackKeyExtractor)(item, index),
+    [keyExtractor, showSkeleton]
+  );
+  const renderItemResolved = useCallback(
+    (info: ListRenderItemInfo<ItemT>) => {
+      if (showSkeleton) return <Skeleton index={info.index} />;
+      return renderItem?.(info) ?? null;
+    },
+    [renderItem, showSkeleton, Skeleton]
+  );
+  const ListEmptyComponentResolved = useCallback(
+    () =>
+      renderEmptyContent({
+        hasError: showSkeleton ? false : showError,
+        strings: resolvedStrings,
+        onRetry,
+        ListEmptyComponent,
+      }),
+    [showSkeleton, showError, resolvedStrings, onRetry, ListEmptyComponent]
+  );
+
+  return {
+    resolvedStrings,
+    showSkeleton,
+    showError,
+    isEmpty,
+    isJest,
+    itemCount,
+    listData,
+    renderItemResolved,
+    keyExtractorResolved,
+    ListEmptyComponentResolved,
+  };
+}
+
+function useListLayoutConfig({
+  itemCount,
+  drawDistance,
+  removeClippedSubviews,
+  scrollEventThrottle,
+  contentContainerStyle,
+  style,
+}: {
+  itemCount: number;
+  drawDistance?: number;
+  removeClippedSubviews?: boolean;
+  scrollEventThrottle?: number;
+  contentContainerStyle?: StyleProp<ViewStyle>;
+  style?: StyleProp<ViewStyle>;
+}): ListLayoutConfig {
+  const theme = useThemeConfig();
+  const flashListConfig = useMemo(
+    () =>
+      itemCount >= 100
+        ? getOptimizedFlashListConfig()
+        : getMediumFlashListConfig(),
+    [itemCount]
+  );
+  const resolvedDrawDistance = drawDistance ?? flashListConfig.drawDistance;
+  const resolvedRemoveClippedSubviews =
+    removeClippedSubviews ?? flashListConfig.removeClippedSubviews;
+  const resolvedScrollEventThrottle =
+    scrollEventThrottle ?? flashListConfig.scrollEventThrottle;
+  const mergedContentContainerStyle = useMemo(
+    () => mergeContentStyle(contentContainerStyle as StyleProp<ViewStyle>),
+    [contentContainerStyle]
+  );
+  const mergedListStyle = useMemo(
+    () =>
+      mergeListStyle(style as StyleProp<ViewStyle>, theme.colors.background),
+    [style, theme.colors.background]
+  );
+
+  return {
+    mergedContentContainerStyle,
+    mergedListStyle,
+    resolvedDrawDistance,
+    resolvedRemoveClippedSubviews,
+    resolvedScrollEventThrottle,
+  };
+}
+
+function buildSharedProps<ItemT>(params: {
+  data: ListProps<ItemT>['data'];
+  renderItem: ListProps<ItemT>['renderItem'];
+  ListEmptyComponent: ListProps<ItemT>['ListEmptyComponent'];
+  ListFooterComponent: ListProps<ItemT>['ListFooterComponent'];
+  ListSkeletonComponent: ListProps<ItemT>['ListSkeletonComponent'];
+  keyExtractor: ListProps<ItemT>['keyExtractor'];
+  onRetry: ListProps<ItemT>['onRetry'];
+  error: ListProps<ItemT>['error'];
+  isLoading: ListProps<ItemT>['isLoading'];
+  isSkeletonTimedOut: ListProps<ItemT>['isSkeletonTimedOut'];
+  strings: ListStrings;
+  showSkeleton: boolean;
+  showError: boolean;
+  drawDistance: number;
+  removeClippedSubviews: boolean;
+  scrollEventThrottle: number;
+  contentContainerStyle: ViewStyle;
+  style: ViewStyle;
+  restProps: ListRestProps<ItemT>;
+}): ListProps<ItemT> & {
+  readonly strings: ListStrings;
+  readonly showSkeleton: boolean;
+  readonly showError: boolean;
+} {
+  return {
+    data: params.data,
+    renderItem: params.renderItem,
+    ListEmptyComponent: params.ListEmptyComponent,
+    ListFooterComponent: params.ListFooterComponent,
+    ListSkeletonComponent: params.ListSkeletonComponent,
+    keyExtractor: params.keyExtractor,
+    onRetry: params.onRetry,
+    error: params.error,
+    isLoading: params.isLoading,
+    isSkeletonTimedOut: params.isSkeletonTimedOut,
+    strings: params.strings,
+    showSkeleton: params.showSkeleton,
+    showError: params.showError,
+    drawDistance: params.drawDistance,
+    removeClippedSubviews: params.removeClippedSubviews,
+    scrollEventThrottle: params.scrollEventThrottle,
+    contentContainerStyle: params.contentContainerStyle,
+    style: params.style,
+    ...params.restProps,
+  };
+}
+
 function renderJestList<ItemT>(
   props: ListProps<ItemT> & {
     readonly strings: ListStrings;
@@ -307,76 +514,27 @@ function ListInner<ItemT>(
   }: ListProps<ItemT>,
   ref: React.ForwardedRef<FlashListRef<ItemT>>
 ): React.ReactElement {
-  const { t } = useTranslation();
-  const theme = useThemeConfig();
-  const resolvedStrings = useMemo(
-    () => resolveStrings(t, strings),
-    [strings, t]
-  );
-  const showSkeleton = Boolean(isLoading && !isSkeletonTimedOut);
-  const showError = Boolean(error);
-  const isEmpty = !data || data.length === 0;
-  const isJest = Boolean(process?.env?.JEST_WORKER_ID);
-  const itemCount = showSkeleton ? SKELETON_PLACEHOLDERS : (data?.length ?? 0);
-  const flashListConfig = useMemo(
-    () =>
-      itemCount >= 100
-        ? getOptimizedFlashListConfig()
-        : getMediumFlashListConfig(),
-    [itemCount]
-  );
-  const resolvedDrawDistance = drawDistance ?? flashListConfig.drawDistance;
-  const resolvedRemoveClippedSubviews =
-    removeClippedSubviews ?? flashListConfig.removeClippedSubviews;
-  const resolvedScrollEventThrottle =
-    scrollEventThrottle ?? flashListConfig.scrollEventThrottle;
-  const Skeleton = useMemo(
-    () => ListSkeletonComponent ?? DefaultListSkeleton,
-    [ListSkeletonComponent]
-  );
-  const listData = useMemo(
-    () => buildListData(showSkeleton, data),
-    [data, showSkeleton]
-  );
-  const keyExtractorResolved = useCallback(
-    (item: ItemT, index: number) =>
-      showSkeleton
-        ? `skeleton-${index}`
-        : (keyExtractor ?? fallbackKeyExtractor)(item, index),
-    [keyExtractor, showSkeleton]
-  );
-  const renderItemResolved = useCallback(
-    (info: ListRenderItemInfo<ItemT>) => {
-      if (showSkeleton) return <Skeleton index={info.index} />;
-      return renderItem?.(info) ?? null;
-    },
-    [renderItem, showSkeleton, Skeleton]
-  );
-  const ListEmptyComponentResolved = useCallback(
-    () =>
-      renderEmptyContent({
-        hasError: showSkeleton ? false : showError,
-        strings: resolvedStrings,
-        onRetry,
-        ListEmptyComponent,
-      }),
-    [showSkeleton, showError, resolvedStrings, onRetry, ListEmptyComponent]
-  );
-  const mergedContentContainerStyle = useMemo(
-    () => mergeContentStyle(contentContainerStyle as StyleProp<ViewStyle>),
-    [contentContainerStyle]
-  );
-  const mergedListStyle = useMemo(
-    () =>
-      mergeListStyle(style as StyleProp<ViewStyle>, theme.colors.background),
-    [style, theme.colors.background]
-  );
-
-  const sharedProps: ListProps<ItemT> & {
-    readonly strings: ListStrings;
-    readonly showSkeleton: boolean;
-    readonly showError: boolean;
-  } = {
+  const derivedState = useListDerivedState({
+    data,
+    renderItem,
+    ListEmptyComponent,
+    ListSkeletonComponent,
+    keyExtractor,
+    onRetry,
+    error,
+    isLoading,
+    isSkeletonTimedOut,
+    strings,
+  });
+  const layoutConfig = useListLayoutConfig({
+    itemCount: derivedState.itemCount,
+    drawDistance,
+    removeClippedSubviews,
+    scrollEventThrottle,
+    contentContainerStyle,
+    style,
+  });
+  const sharedProps = buildSharedProps({
     data,
     renderItem,
     ListEmptyComponent,
@@ -387,28 +545,30 @@ function ListInner<ItemT>(
     error,
     isLoading,
     isSkeletonTimedOut,
-    strings: resolvedStrings,
-    showSkeleton,
-    showError,
-    drawDistance: resolvedDrawDistance,
-    removeClippedSubviews: resolvedRemoveClippedSubviews,
-    scrollEventThrottle: resolvedScrollEventThrottle,
-    contentContainerStyle: mergedContentContainerStyle,
-    style: mergedListStyle,
-    ...rest,
-  };
+    strings: derivedState.resolvedStrings,
+    showSkeleton: derivedState.showSkeleton,
+    showError: derivedState.showError,
+    drawDistance: layoutConfig.resolvedDrawDistance,
+    removeClippedSubviews: layoutConfig.resolvedRemoveClippedSubviews,
+    scrollEventThrottle: layoutConfig.resolvedScrollEventThrottle,
+    contentContainerStyle: layoutConfig.mergedContentContainerStyle,
+    style: layoutConfig.mergedListStyle,
+    restProps: rest,
+  });
 
-  if (isJest) {
-    return renderJestList({ ...sharedProps, isEmpty });
+  if (derivedState.isJest) {
+    return renderJestList({ ...sharedProps, isEmpty: derivedState.isEmpty });
   }
 
   return renderNativeList({
     ...sharedProps,
     ref,
-    listData,
-    renderItemResolved,
-    keyExtractorResolved,
-    ListEmptyComponentResolved,
+    listData: derivedState.listData,
+    renderItemResolved: derivedState.renderItemResolved,
+    keyExtractorResolved: derivedState.keyExtractorResolved,
+    ListEmptyComponentResolved: derivedState.ListEmptyComponentResolved,
+    mergedContentContainerStyle: layoutConfig.mergedContentContainerStyle,
+    mergedListStyle: layoutConfig.mergedListStyle,
   });
 }
 

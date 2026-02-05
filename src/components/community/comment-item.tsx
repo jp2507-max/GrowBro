@@ -1,13 +1,11 @@
 /**
  * CommentItem component
  *
- * Displays a single comment with:
- * - Pending/failed/confirmed state indicators
- * - Retry/cancel actions for failed comments
- * - Author information and timestamp
- * - Profile navigation on author tap
- * - Optimized with React.memo
- * - Enhanced accessibility
+ * Premium glass-effect comment card with:
+ * - Avatar, username, timestamp
+ * - Comment text
+ * - Reply button
+ * - Pending/failed state indicators
  */
 
 import { useRouter } from 'expo-router';
@@ -15,7 +13,7 @@ import React from 'react';
 import { ActivityIndicator } from 'react-native';
 
 import { Pressable, Text, View } from '@/components/ui';
-import { translate } from '@/lib/i18n';
+import { translate, type TxKeyPath } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import type { PostComment } from '@/types/community';
 
@@ -91,15 +89,10 @@ type CommentAvatarProps = {
 };
 
 function getAvatarInitial(displayName: string): string {
-  // Guard against null/undefined and trim whitespace
   const trimmed = displayName?.trim() || '';
-
-  // Return fallback character if empty after trimming
   if (!trimmed) {
     return '?';
   }
-
-  // Return first character in uppercase
   return trimmed.charAt(0).toUpperCase();
 }
 
@@ -120,8 +113,8 @@ function CommentAvatar({ displayName, onPress }: CommentAvatarProps) {
         'accessibility.community.view_author_profile_hint'
       )}
     >
-      <View className="size-9 items-center justify-center rounded-full bg-primary-100 dark:bg-primary-900/50">
-        <Text className="text-sm font-bold text-primary-700 dark:text-primary-300">
+      <View className="size-10 items-center justify-center rounded-full bg-charcoal-700 dark:bg-charcoal-800">
+        <Text className="text-sm font-bold text-neutral-300 dark:text-neutral-400">
           {avatarInitial}
         </Text>
       </View>
@@ -147,14 +140,15 @@ function CommentItemComponent({
     [comment.user_id]
   );
 
+  // Glass-effect card styling
   const containerClasses = cn(
-    'mb-4 flex-row items-start',
+    'mb-4 rounded-2xl border border-white/10 bg-white/5 p-4',
     isFailed && 'opacity-80',
     isPending && !isFailed && 'opacity-60',
     shouldHighlight &&
       !isFailed &&
       !isPending &&
-      'bg-primary-50/50 dark:bg-primary-950/20 -mx-2 px-2 py-1 rounded-lg'
+      'border-lime-500/30 bg-lime-500/10'
   );
 
   const handleAuthorPress = React.useCallback(() => {
@@ -179,60 +173,59 @@ function CommentItemComponent({
           : undefined
       }
     >
-      {/* Avatar */}
-      <CommentAvatar displayName={displayName} onPress={handleAuthorPress} />
-
-      {/* Content Column */}
-      <View className="ml-3 flex-1">
-        {/* Row 1: Name + Time */}
-        <View className="flex-row items-center">
+      {/* Header: Avatar + Name + Time */}
+      <View className="mb-2 flex-row items-center">
+        <CommentAvatar displayName={displayName} onPress={handleAuthorPress} />
+        <View className="ml-3 flex-1">
           <Text
-            className="text-sm font-bold text-neutral-900 dark:text-neutral-50"
+            className="text-sm font-semibold text-neutral-900 dark:text-white"
             testID={`${testID}-author`}
           >
             {displayName}
           </Text>
           {formattedDate && (
             <Text
-              className="ml-2 text-xs text-neutral-600 dark:text-neutral-400"
+              className="text-xs text-neutral-500 dark:text-neutral-500"
               testID={`${testID}-date`}
             >
               {formattedDate}
             </Text>
           )}
-          {isPending && (
-            <View className="ml-2 flex-row items-center gap-1">
-              <ActivityIndicator size="small" testID={`${testID}-loading`} />
-              <Text className="text-xs text-neutral-600 dark:text-neutral-400">
-                {translate('community.posting')}
-              </Text>
-            </View>
-          )}
         </View>
-
-        {/* Row 2: Comment Text */}
-        <Text
-          className="mt-0.5 text-sm leading-snug text-neutral-700 dark:text-neutral-300"
-          testID={`${testID}-body`}
-        >
-          {comment.body}
-        </Text>
-
-        {/* Failed Actions */}
-        {isFailed && (
-          <FailedActions
-            onRetry={onRetry}
-            onCancel={onCancel}
-            testID={testID}
-          />
+        {isPending && (
+          <View className="flex-row items-center gap-1">
+            <ActivityIndicator size="small" testID={`${testID}-loading`} />
+            <Text className="text-xs text-neutral-500 dark:text-neutral-400">
+              {translate('community.posting')}
+            </Text>
+          </View>
         )}
       </View>
+
+      {/* Comment Text */}
+      <Text
+        className="mb-3 text-sm leading-relaxed text-neutral-700 dark:text-neutral-300"
+        testID={`${testID}-body`}
+      >
+        {comment.body}
+      </Text>
+
+      {/* Reply Button */}
+      {status === 'processed' && (
+        <Text className="self-start text-xs font-medium text-neutral-500">
+          {translate('community.reply' as TxKeyPath)}
+        </Text>
+      )}
+
+      {/* Failed Actions */}
+      {isFailed && (
+        <FailedActions onRetry={onRetry} onCancel={onCancel} testID={testID} />
+      )}
     </Pressable>
   );
 }
 
 // Memoize CommentItem to prevent unnecessary re-renders
-// Only re-render if comment data, status, or callbacks change
 export const CommentItem = React.memo(
   CommentItemComponent,
   (prevProps, nextProps) => {

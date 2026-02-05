@@ -89,6 +89,9 @@ export function StrainPicker({
   placeholder,
   testID = 'strain-picker',
 }: StrainPickerProps): React.ReactElement {
+  const InputComponent = BottomSheetTextInput as React.ComponentType<
+    React.ComponentProps<typeof BottomSheetTextInput>
+  >;
   const modal = useModal();
   const searchInputRef = React.useRef<TextInput>(null);
   const {
@@ -157,7 +160,7 @@ export function StrainPicker({
             onEndReached={handleEndReached}
             onCreateCustom={enableCustomStrain ? handleCreateCustom : undefined}
             showTitle={false}
-            inputComponent={BottomSheetTextInput}
+            inputComponent={InputComponent}
             useBottomSheetList
             onSearchFocus={handleSearchFocus}
             inputRef={searchInputRef}

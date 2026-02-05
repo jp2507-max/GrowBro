@@ -140,8 +140,10 @@ export function CalendarHeader({
   taskCounts,
 }: CalendarHeaderProps): React.ReactElement {
   const monthPickerModal = useMonthPickerModal();
-  const today = React.useMemo(() => DateTime.now().startOf('day'), []);
-  const isSelectedToday = selectedDate.hasSame(today, 'day');
+  const isSelectedToday = selectedDate.hasSame(
+    DateTime.now().startOf('day'),
+    'day'
+  );
 
   const handleMonthPickerOpen = React.useCallback(() => {
     monthPickerModal.present();
@@ -155,8 +157,8 @@ export function CalendarHeader({
   );
 
   const handleJumpToToday = React.useCallback(() => {
-    onDateSelect(today);
-  }, [onDateSelect, today]);
+    onDateSelect(DateTime.now().startOf('day'));
+  }, [onDateSelect]);
 
   return (
     <>

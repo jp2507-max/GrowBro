@@ -1,6 +1,6 @@
 import { useFocusEffect, useScrollToTop } from '@react-navigation/native';
 import React, { useCallback, useMemo, useState } from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, type TextInput } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { Strain } from '@/api';
@@ -9,6 +9,7 @@ import {
   FilterModal,
   RaceFilterChips,
   type RaceFilterValue,
+  SearchInput,
   StrainHeroCard,
   StrainsGradientBackground,
   StrainsHeader,
@@ -38,7 +39,10 @@ type StrainsListHeaderProps = {
   raceFilter: RaceFilterValue;
   resolvedOffline: boolean;
   showHero: boolean;
+  searchValue: string;
+  searchInputRef: React.RefObject<TextInput | null>;
   onRaceChange: (value: RaceFilterValue) => void;
+  onSearchChange: (value: string) => void;
 };
 
 function StrainsListHeader({
@@ -46,7 +50,10 @@ function StrainsListHeader({
   raceFilter,
   resolvedOffline,
   showHero,
+  searchValue,
+  searchInputRef,
   onRaceChange,
+  onSearchChange,
 }: StrainsListHeaderProps): React.ReactElement {
   return (
     <View className="mb-4">
@@ -55,6 +62,15 @@ function StrainsListHeader({
           <StrainHeroCard strain={featuredStrain} />
         </View>
       )}
+
+      <View className="px-5">
+        <SearchInput
+          value={searchValue}
+          onChangeText={onSearchChange}
+          inputRef={searchInputRef}
+          testID="strains-search-input"
+        />
+      </View>
 
       <View className="mb-2">
         <RaceFilterChips value={raceFilter} onChange={onRaceChange} />
@@ -89,7 +105,8 @@ export default function StrainsScreen(): React.ReactElement {
   const analytics = useAnalytics();
   const hasAnalyticsConsent = useAnalyticsConsent();
   const filterModal = useStrainFilters();
-  const [searchValue] = React.useState('');
+  const [searchValue, setSearchValue] = React.useState('');
+  const searchInputRef = React.useRef<TextInput | null>(null);
   const debouncedQuery = useDebouncedValue(searchValue, SEARCH_DEBOUNCE_MS);
   const [filters, setFilters] = React.useState<StrainFilters>({});
   const [raceFilter, setRaceFilter] = useState<RaceFilterValue>('all');
@@ -122,21 +139,24 @@ export default function StrainsScreen(): React.ReactElement {
     return combined;
   }, [filters, raceFilter]);
   const handleApplyFilters = React.useCallback(
-    (newFilters: StrainFilters) => {
+    (newFilters: StrainFilters): void => {
       setFilters(newFilters);
       filterModal.closeFilters();
     },
     [filterModal]
   );
 
-  const handleClearFilters = React.useCallback(() => {
+  const handleClearFilters = React.useCallback((): void => {
     setFilters({});
     setRaceFilter('all');
     filterModal.closeFilters();
   }, [filterModal]);
-  const handleSearchPress = React.useCallback(() => {
-    filterModal.openFilters();
-  }, [filterModal]);
+  const handleSearchPress = React.useCallback((): void => {
+    searchInputRef.current?.focus();
+  }, []);
+  const handleSearchChange = React.useCallback((value: string): void => {
+    setSearchValue(value);
+  }, []);
   const listContentPadding = React.useMemo(
     () => ({ paddingBottom: grossHeight + LIST_BOTTOM_EXTRA }),
     [grossHeight]
@@ -147,7 +167,9 @@ export default function StrainsScreen(): React.ReactElement {
   );
 
   const handleStateChange = useCallback(
-    (state: Parameters<NonNullable<StrainsListProps['onStateChange']>>[0]) => {
+    (
+      state: Parameters<NonNullable<StrainsListProps['onStateChange']>>[0]
+    ): void => {
       setListState({
         ...state,
         strains: { length: state.strains.length },
@@ -155,24 +177,15 @@ export default function StrainsScreen(): React.ReactElement {
     },
     []
   );
-  const handleFeaturedStrainChange = useCallback((strain: Strain | null) => {
-    setFeaturedStrain(strain);
-  }, []);
+  const handleFeaturedStrainChange = useCallback(
+    (strain: Strain | null): void => {
+      setFeaturedStrain(strain);
+    },
+    []
+  );
   const showHero = useMemo(
     () => !debouncedQuery && raceFilter === 'all' && !hasActiveFilters(filters),
     [debouncedQuery, raceFilter, filters]
-  );
-  const listHeader = useMemo(
-    () => (
-      <StrainsListHeader
-        featuredStrain={featuredStrain}
-        raceFilter={raceFilter}
-        resolvedOffline={resolvedOffline}
-        showHero={showHero}
-        onRaceChange={setRaceFilter}
-      />
-    ),
-    [featuredStrain, raceFilter, resolvedOffline, showHero]
   );
   const skipFirstItems = showHero ? 1 : 0;
 
@@ -195,7 +208,18 @@ export default function StrainsScreen(): React.ReactElement {
         testID="strains-list"
         onStateChange={handleStateChange}
         onFeaturedStrainChange={handleFeaturedStrainChange}
-        ListHeaderComponent={listHeader}
+        ListHeaderComponent={
+          <StrainsListHeader
+            featuredStrain={featuredStrain}
+            raceFilter={raceFilter}
+            resolvedOffline={resolvedOffline}
+            showHero={showHero}
+            searchValue={searchValue}
+            searchInputRef={searchInputRef}
+            onRaceChange={setRaceFilter}
+            onSearchChange={handleSearchChange}
+          />
+        }
       />
       <FilterModal
         ref={filterModal.ref}

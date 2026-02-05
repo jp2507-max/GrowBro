@@ -78,6 +78,7 @@ function usePlantSubmit({
             height: values.height,
             notes: values.notes,
             imageUrl: values.imageUrl,
+            startType: values.startType ?? 'seed',
           },
           { userId: userId ?? undefined }
         );

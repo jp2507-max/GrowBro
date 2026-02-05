@@ -67,9 +67,10 @@ function useStrainPickerActions({
   }, [modalExpand]);
 
   const handleDismiss = React.useCallback((): void => {
+    modalDismiss();
     setIsOpen(false);
     setSearchQuery('');
-  }, [setIsOpen, setSearchQuery]);
+  }, [modalDismiss, setIsOpen, setSearchQuery]);
 
   const handleSelect = React.useCallback(
     (strain: Strain, source: 'api' | 'custom'): void => {
@@ -115,13 +116,33 @@ function useStrainPickerActions({
   };
 }
 
+type UseStrainPickerResult = {
+  t: ReturnType<typeof useTranslation>['t'];
+  isOpen: boolean;
+  searchQuery: string;
+  setSearchQuery: React.Dispatch<React.SetStateAction<string>>;
+  debouncedSearchQuery: string;
+  strains: Strain[];
+  trimmedQuery: string;
+  hasExactMatch: boolean;
+  showCreateCustom: boolean;
+  isFetching: boolean;
+  handleOpen: () => void;
+  handleSearchFocus: () => void;
+  handleDismiss: () => void;
+  handleSelect: (strain: Strain, source: 'api' | 'custom') => void;
+  handleClear: () => void;
+  handleCreateCustom: () => void;
+  handleEndReached: () => void;
+};
+
 export function useStrainPicker({
   enableCustomStrain,
   onSelect,
   onSelectFull,
   modalDismiss,
   modalExpand,
-}: UseStrainPickerOptions) {
+}: UseStrainPickerOptions): UseStrainPickerResult {
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');

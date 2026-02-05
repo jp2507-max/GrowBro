@@ -79,7 +79,10 @@ function usePlantSettingsSave({
   queryClient,
   router,
   t,
-}: PlantSettingsSaveArgs) {
+}: PlantSettingsSaveArgs): {
+  handleSave: (values: PlantFormValues) => Promise<void>;
+  isSaving: boolean;
+} {
   const [isSaving, setIsSaving] = React.useState(false);
 
   const handleSave = React.useCallback(
@@ -147,8 +150,9 @@ function PlantSettingsHeader({
         accessibilityRole="button"
         accessibilityLabel={t('common.back')}
         accessibilityHint={t('accessibility.common.back_hint')}
+        testID="plant-settings-back"
       >
-        <ArrowLeft size={20} color={colors.white} />
+        <ArrowLeft color={colors.white} />
       </Pressable>
 
       <Text className="text-lg font-bold tracking-tight text-neutral-900 dark:text-white">
@@ -162,9 +166,10 @@ function PlantSettingsHeader({
         accessibilityRole="button"
         accessibilityLabel={t('common.save')}
         accessibilityHint={t('accessibility.common.saves_changes')}
+        testID="plant-settings-save"
       >
-        <Text className="text-base font-bold text-primary-500">
-          {isSaving ? '...' : t('common.save')}
+        <Text className="text-base font-bold text-primary-800 dark:text-primary-300">
+          {isSaving ? t('common.saving') : t('common.save')}
         </Text>
       </Pressable>
     </View>
@@ -180,10 +185,11 @@ export default function PlantSettingsModal(): React.ReactElement {
 
   const plantId = React.useMemo(() => (id ? String(id) : null), [id]);
 
-  const { data: plant, isLoading } = usePlant(
-    { id: plantId ?? '' },
-    { enabled: Boolean(plantId) }
-  );
+  const {
+    data: plant,
+    isLoading,
+    isError,
+  } = usePlant({ id: plantId ?? '' }, { enabled: Boolean(plantId) });
 
   const { handlePhotoInfo } = usePlantPhotoEditor({
     plantId,
@@ -241,10 +247,31 @@ export default function PlantSettingsModal(): React.ReactElement {
     [plant]
   );
 
-  if (!plantId || isLoading || !plant) {
+  if (isLoading) {
     return (
       <View className="flex-1 items-center justify-center bg-neutral-50 dark:bg-charcoal-950">
         <ActivityIndicator />
+      </View>
+    );
+  }
+
+  if (!plantId || isError || !plant) {
+    return (
+      <View className="flex-1 items-center justify-center bg-neutral-50 dark:bg-charcoal-950">
+        <Text className="text-base font-semibold text-neutral-900 dark:text-neutral-50">
+          {t('plants.form.error_title')}
+        </Text>
+        <Pressable
+          onPress={() => router.back()}
+          className="mt-3 rounded-full bg-neutral-200 px-4 py-2 dark:bg-white/10"
+          accessibilityRole="button"
+          accessibilityLabel={t('common.back')}
+          accessibilityHint={t('accessibility.common.back_hint')}
+        >
+          <Text className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">
+            {t('common.back')}
+          </Text>
+        </Pressable>
       </View>
     );
   }

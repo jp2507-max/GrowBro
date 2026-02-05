@@ -20,6 +20,16 @@ import {
 export const CARD_WIDTH_RATIO = 0.85;
 export const CARD_GAP = 12;
 
+const STAGE_WEIGHTS: Record<ProductPlantStage, number> = {
+  germination: 0.05,
+  seedling: 0.15,
+  vegetative: 0.35,
+  flowering: 0.7,
+  drying: 0.85,
+  curing: 0.95,
+  completed: 1.0,
+};
+
 export type CockpitPlantCardProps = {
   plant: Plant;
   onPress: (id: string) => void;
@@ -68,18 +78,8 @@ function calculateWeekNumber(plantedAt?: string): number | null {
 }
 
 function calculateProgress(stage?: ProductPlantStage): number {
-  const stageWeights: Record<ProductPlantStage, number> = {
-    germination: 0.05,
-    seedling: 0.15,
-    vegetative: 0.35,
-    flowering: 0.7,
-    drying: 0.85,
-    curing: 0.95,
-    completed: 1.0,
-  };
-
   if (!stage) return 0.1;
-  return stageWeights[stage] ?? 0.1;
+  return STAGE_WEIGHTS[stage] ?? 0.1;
 }
 
 const cardStyles = StyleSheet.create({
@@ -138,7 +138,7 @@ function GlassBadge({
   }
 
   return (
-    <View className="flex-row items-center gap-1.5 rounded-full bg-black/40 px-3 py-1.5">
+    <View className="flex-row items-center gap-1.5 rounded-full bg-white/20 px-3 py-1.5 dark:bg-black/40">
       {children}
     </View>
   );
@@ -148,7 +148,10 @@ function PlantHeroImage({ plant }: { plant: Plant }): React.ReactElement {
   const { resolvedLocalUri, thumbnailUrl } = usePlantPhotoSync(plant);
 
   return (
-    <View style={cardStyles.imageContainer} className="bg-neutral-800">
+    <View
+      style={cardStyles.imageContainer}
+      className="bg-neutral-200 dark:bg-neutral-800"
+    >
       {resolvedLocalUri ? (
         <OptimizedImage
           uri={resolvedLocalUri}
@@ -183,8 +186,8 @@ function DayBadge({
 
   return (
     <GlassBadge>
-      <View className="size-2 rounded-full bg-primary-400" />
-      <Text className="text-xs font-bold text-white">
+      <View className="size-2 rounded-full bg-primary-500 dark:bg-primary-400" />
+      <Text className="text-xs font-bold text-neutral-900 dark:text-white">
         {translate('home.cockpit.day' as TxKeyPath, { day: dayNumber })}
       </Text>
     </GlassBadge>
@@ -193,9 +196,9 @@ function DayBadge({
 
 function AttentionBadge(): React.ReactElement {
   return (
-    <View className="flex-row items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 shadow-lg">
+    <View className="flex-row items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 shadow-lg dark:bg-primary-400">
       <Text className="text-sm">💧</Text>
-      <Text className="text-xs font-bold text-charcoal-900">
+      <Text className="text-xs font-bold text-neutral-900 dark:text-neutral-900">
         {translate('home.cockpit.needs_water' as TxKeyPath)}
       </Text>
     </View>
@@ -206,7 +209,10 @@ function ProgressBar({ progress }: { progress: number }): React.ReactElement {
   const widthPercent = Math.min(100, Math.max(5, progress * 100));
 
   return (
-    <View style={cardStyles.progressBar} className="w-full bg-white/10">
+    <View
+      style={cardStyles.progressBar}
+      className="w-full bg-neutral-200 dark:bg-white/10"
+    >
       <LinearGradient
         colors={['rgba(34, 197, 94, 0.6)', 'rgba(74, 222, 128, 1)']}
         start={{ x: 0, y: 0 }}
@@ -237,10 +243,13 @@ function CardFooter({
       {/* Title Row */}
       <View className="flex-row items-start justify-between">
         <View className="flex-1">
-          <Text className="text-xl font-bold text-white" numberOfLines={1}>
+          <Text
+            className="text-xl font-bold text-neutral-900 dark:text-white"
+            numberOfLines={1}
+          >
             {displayName}
           </Text>
-          <Text className="mt-0.5 text-sm text-white/50">
+          <Text className="mt-0.5 text-sm text-neutral-500 dark:text-white/50">
             {environmentLabel}
           </Text>
         </View>
@@ -248,14 +257,16 @@ function CardFooter({
         {/* Week / Stage */}
         <View className="items-end">
           {weekNumber && (
-            <Text className="text-sm font-bold text-primary-400">
+            <Text className="text-sm font-bold text-primary-600 dark:text-primary-400">
               {translate('home.cockpit.week' as TxKeyPath, {
                 week: weekNumber,
               })}
             </Text>
           )}
           {stageLabel && (
-            <Text className="text-xs text-white/50">{stageLabel}</Text>
+            <Text className="text-xs text-neutral-500 dark:text-white/50">
+              {stageLabel}
+            </Text>
           )}
         </View>
       </View>
@@ -287,15 +298,8 @@ export function CockpitPlantCard({
     [plant.stage]
   );
 
-  const dayNumber = React.useMemo(
-    () => calculateDayNumber(plant.plantedAt),
-    [plant.plantedAt]
-  );
-
-  const weekNumber = React.useMemo(
-    () => calculateWeekNumber(plant.plantedAt),
-    [plant.plantedAt]
-  );
+  const dayNumber = calculateDayNumber(plant.plantedAt);
+  const weekNumber = calculateWeekNumber(plant.plantedAt);
 
   const progress = React.useMemo(
     () => calculateProgress(productStage),
@@ -341,7 +345,7 @@ export function CockpitPlantCard({
     >
       <View
         style={cardStyles.glassCard}
-        className="overflow-hidden rounded-3xl bg-white/5 p-3"
+        className="overflow-hidden rounded-3xl bg-white/80 p-3 dark:bg-white/5"
       >
         {/* Hero Image with Floating Badges */}
         <View className="relative">

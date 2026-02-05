@@ -83,6 +83,15 @@ jest.mock('expo-glass-effect', () => {
   };
 });
 
+// mock: expo-symbols (native module not available in Jest)
+jest.mock('expo-symbols', () => {
+  return {
+    __esModule: true,
+    SymbolView: ({ children }: { children?: React.ReactNode }) =>
+      children ?? null,
+  };
+});
+
 // Note: WatermelonDB is mocked via moduleNameMapper and __mocks__ folder.
 
 // mock: react-native-reanimated to avoid native timers/threads in tests

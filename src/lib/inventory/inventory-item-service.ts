@@ -59,7 +59,7 @@ export function modelToInventoryItem(model: InventoryItemModel): InventoryItem {
     userId: model.userId,
     createdAt: model.createdAt,
     updatedAt: model.updatedAt,
-    deletedAt: model.deletedAt,
+    deletedAt: model.deletedAt ?? undefined,
   };
 }
 

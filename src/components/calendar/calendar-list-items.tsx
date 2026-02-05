@@ -106,6 +106,18 @@ export type PlantInfo = {
 // -----------------------------------------------------------------------------
 
 function getTaskType(task: Task): TaskType {
+  // Prefer engineKey for reliable type detection
+  const engineKey = (
+    task.metadata?.engineKey as string | undefined
+  )?.toLowerCase();
+  if (engineKey) {
+    if (engineKey.includes('hydrology') || engineKey.includes('water'))
+      return 'watering';
+    if (engineKey.includes('nutrition') || engineKey.includes('feed'))
+      return 'feeding';
+    if (engineKey.includes('flush')) return 'flush';
+  }
+  // Fallback to title-based detection
   const title = task.title.toLowerCase();
   if (title.includes('water') || title.includes('wasser')) return 'watering';
   if (
@@ -190,7 +202,12 @@ export function buildCalendarListData(
     } else if (isActive) {
       state = 'active';
     } else {
-      state = 'pending';
+      // Check if task is future-dated
+      const due = new Date(task.dueAtLocal);
+      const now = new Date();
+      const isFuture = isFinite(due.getTime()) && due.getTime() > now.getTime();
+
+      state = isFuture ? 'future' : 'pending';
     }
 
     items.push({

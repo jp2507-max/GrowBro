@@ -9,9 +9,9 @@ import type {
   PlantMetadata,
   PlantStage,
   PlantStartType,
-  Race,
   TrainingPreference,
 } from '@/api/plants/types';
+import type { Race } from '@/api/strains/types';
 import { getOptionalAuthenticatedUserId } from '@/lib/auth';
 import { createPlantFromForm, toPlant } from '@/lib/plants/plant-service';
 import { requestPlantsPush } from '@/lib/plants/plants-sync';

@@ -47,7 +47,7 @@ function buildItemWithStock(
     userId: rawItem.userId,
     createdAt: rawItem.createdAt,
     updatedAt: rawItem.updatedAt,
-    deletedAt: rawItem.deletedAt,
+    deletedAt: rawItem.deletedAt ?? undefined,
     currentStock: 0, // TODO
     unitCost: 0, // TODO
     totalValue: 0, // TODO
@@ -72,7 +72,7 @@ function buildBatchWithStatus(
     userId: batch.userId,
     createdAt: batch.createdAt,
     updatedAt: batch.updatedAt,
-    deletedAt: batch.deletedAt,
+    deletedAt: batch.deletedAt ?? undefined,
     isExpired: false, // TODO: Calculate
     daysToExpiry: undefined, // TODO: Calculate
     isExcludedFromPicking: false, // TODO: Calculate

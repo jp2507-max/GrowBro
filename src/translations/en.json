@@ -91,6 +91,7 @@
       "loadingHint": "Content is loading, please wait",
       "loading_label": "Loading",
       "opens_screen_hint": "Opens the {{label}} screen.",
+      "read_only_hint": "Read-only information.",
       "refresh_hint": "Refreshes the current content.",
       "reset_date_hint": "Clears the selected date.",
       "retry": "Retry",
@@ -125,6 +126,7 @@
       "post_image_hint": "Part of the post content.",
       "post_options": "Post options",
       "post_options_hint": "Double-tap to view post options.",
+      "reply_hint": "Opens the reply input for this comment.",
       "retry_comment_hint": "Retries posting this comment.",
       "retry_sync": "Retry sync",
       "share": "Share this post",
@@ -936,6 +938,7 @@
     "cancel": "Cancel",
     "clear": "Clear",
     "close": "Close",
+    "close_screen": "Closes this screen",
     "confirm": "Confirm",
     "continue": "Continue",
     "delete": "Delete",
@@ -965,6 +968,7 @@
     "retry": "Retry",
     "save": "Save",
     "saving": "Saving...",
+    "select": "Select...",
     "select_date": "Select date",
     "selected": "selected",
     "time_ago": {
@@ -987,6 +991,7 @@
       }
     },
     "undo": "Undo",
+    "unsure": "Not sure",
     "yes": "Yes"
   },
   "community": {
@@ -1055,6 +1060,7 @@
     "delete_post_hint": "Double-tap to delete this post. You will have 15 seconds to undo.",
     "discovery_empty_body": "Try a different search or clear your filters.",
     "discovery_empty_title": "No results",
+    "discussion": "Discussion",
     "empty_state": "No posts yet. Be the first to share!",
     "empty_state_educational": {
       "moderation_guidance": "All posts are reviewed to ensure a safe, educational community. Avoid commerce, illegal content, or personal attacks.",
@@ -1066,6 +1072,7 @@
     "filter_photos_only": "Photos only",
     "filters_hint": "Opens filters and sorting",
     "filters_label": "Filters",
+    "follow": "Follow",
     "footer": "What do you think? Any advice appreciated!",
     "header": "🌱 Need help with plant diagnosis",
     "health": "Community health",
@@ -1136,6 +1143,7 @@
     "reply": "Reply",
     "retry_comment_hint": "Retries posting this comment.",
     "retry_sync": "Retry sync",
+    "save": "Save",
     "scheme": "growbro://feed",
     "search_clear_hint": "Clears the search text",
     "search_hint": "Filters posts as you type.",
@@ -1145,6 +1153,7 @@
       "help_station": "Help Station",
       "showcase": "Showcase"
     },
+    "share": "Share",
     "share_post_message": "Check out this post on GrowBro: {{url}}",
     "share_post_title": "Share Post",
     "sort_label": "Sort",
@@ -1153,6 +1162,7 @@
     "subtitle": "Discover the latest grow updates from the community.",
     "symptoms": "Symptoms:",
     "title": "Community",
+    "top_rated": "Top Rated",
     "undo_dismiss_hint": "Dismiss the undo snackbar and cancel the action",
     "undo_expires": "Undo expires in {{seconds}}s",
     "unlike_failed": "Failed to unlike post",
@@ -1956,6 +1966,11 @@
       "label": "Tasks for today"
     }
   },
+  "hydrology": {
+    "adjustments": {
+      "repeated_dryness": "We’ve seen dryness reported {{count}} times recently. Consider increasing watering frequency or reviewing your schedule."
+    }
+  },
   "inputs": {
     "accept_terms_label": "Accept terms and conditions",
     "checkbox_label": "Checkbox",
@@ -2579,6 +2594,33 @@
       "action_hub_title": "Daily Action Center",
       "advanced_settings_title": "Advanced Settings",
       "all_good_message": "All good – No tasks today.",
+      "check_in": {
+        "cta": "Check in",
+        "disclaimer": "ⓘ Educational guidance only. If symptoms persist or worsen, consider measuring pH/EC and reviewing climate (temp/humidity).",
+        "dryness": {
+          "subtitle": "Answer a few quick questions. We’ll add safe next steps and adapt upcoming tasks.",
+          "title": "Feels too dry"
+        },
+        "note": {
+          "label": "Notes (optional)",
+          "placeholder": "Anything else you noticed? (e.g. droop, leaf curl, heat, dry air)"
+        },
+        "severity": {
+          "label": "How bad is it?",
+          "mild": "Mild",
+          "moderate": "Moderate",
+          "severe": "Severe"
+        },
+        "submit": "Save check-in",
+        "subtitle": "Tell us what you’re seeing so we can adapt your next tasks.",
+        "title": "Plant check-in",
+        "top_dry": {
+          "label": "Is the top 2–3 cm of the medium dry?"
+        },
+        "watered_last_12h": {
+          "label": "Have you watered in the last 12 hours?"
+        }
+      },
       "day_count": "Day {{count}}",
       "no_tasks": "No pending tasks",
       "nutrient_section": {
@@ -3886,6 +3928,7 @@
     "results_count_other": "{{count}} strains",
     "results_count_zero": "No strains",
     "retry": "Retry",
+    "save_failed": "Failed to save custom strain. Try again.",
     "search": {
       "clear_all": "Clear All",
       "did_you_mean_hint": "Applies suggested search term",
@@ -4238,6 +4281,12 @@
     "ipm_preventative": {
       "description": "Inspect leaves and stems for pests (undersides too). Wipe down surfaces and keep the grow area clean.",
       "title": "Preventative IPM Check"
+    },
+    "outcome": {
+      "all_good": "All good",
+      "still_dry": "Still dry",
+      "subtitle": "If your plant still feels dry, log a quick check-in so we can adapt your next tasks.",
+      "title": "Did this help?"
     },
     "reorder_error": "Failed to reorder tasks. Please try again.",
     "reordered": "Tasks reordered",

@@ -35,7 +35,7 @@ export function FormSection({
       </View>
 
       {/* Section Content - Glass card styling with green contrast */}
-      <View className="gap-4 rounded-2xl border border-neutral-200 bg-white p-5 dark:border-white/10 dark:bg-white/[0.06]">
+      <View className="gap-4 rounded-2xl border border-neutral-200 bg-white p-5 dark:border-white/10 dark:bg-charcoal-900">
         {children}
       </View>
     </Animated.View>

@@ -2,6 +2,7 @@ import * as React from 'react';
 import {
   ActivityIndicator,
   Pressable,
+  StyleSheet,
   TextInput,
   useColorScheme,
 } from 'react-native';
@@ -11,6 +12,13 @@ import { View } from '@/components/ui';
 import colors from '@/components/ui/colors';
 import { Settings, X } from '@/components/ui/icons';
 import { translate } from '@/lib/i18n';
+
+const styles = StyleSheet.create({
+  glassSurface: {
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+});
 
 type CommunitySearchBarProps = {
   value: string;
@@ -43,7 +51,7 @@ export function CommunitySearchBar({
         <View className="relative flex-1">
           <GlassSurface
             glassEffectStyle="clear"
-            style={{ borderRadius: 16, overflow: 'hidden' }}
+            style={styles.glassSurface}
             fallbackClassName="bg-white/90 dark:bg-neutral-900/90"
           >
             <TextInput

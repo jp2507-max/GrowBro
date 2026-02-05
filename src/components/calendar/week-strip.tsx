@@ -156,10 +156,10 @@ function DayPill({
       className={cn(
         'items-center mx-0.5 px-2 py-4 min-w-[52px] rounded-[24px]',
         item.isSelected
-          ? 'bg-lime-400'
+          ? 'bg-neutral-200 dark:bg-lime-400'
           : item.isToday
-            ? 'border border-lime-400/40 bg-white/10'
-            : 'border border-white/5 bg-white/5'
+            ? 'border border-neutral-200 dark:border-lime-400/40 bg-neutral-50 dark:bg-white/10'
+            : 'border border-neutral-200 dark:border-white/5 bg-neutral-100 dark:bg-white/5'
       )}
       accessibilityRole="button"
       accessibilityLabel={`${item.date.toFormat('EEEE, MMMM d')}${item.isToday ? `, ${todayLabel}` : ''}`}
@@ -171,10 +171,10 @@ function DayPill({
         className={cn(
           'text-[10px] font-semibold uppercase tracking-wider',
           item.isSelected
-            ? 'text-charcoal-950'
+            ? 'text-neutral-900 dark:text-charcoal-950'
             : item.isToday
-              ? 'text-lime-400'
-              : 'text-white/50'
+              ? 'text-neutral-900 dark:text-lime-400'
+              : 'text-neutral-600 dark:text-white/50'
         )}
       >
         {item.dayOfWeek}
@@ -182,7 +182,9 @@ function DayPill({
       <Text
         className={cn(
           'mt-1 text-xl font-bold',
-          item.isSelected ? 'text-charcoal-950' : 'text-white'
+          item.isSelected
+            ? 'text-neutral-900 dark:text-charcoal-950'
+            : 'text-neutral-900 dark:text-white'
         )}
       >
         {item.dayOfMonth}
@@ -204,15 +206,15 @@ function TaskIndicator({
   taskCount: number;
   isSelected: boolean;
   dateKey: string;
-}) {
+}): React.ReactElement {
   return (
     <View
       className={cn(
         'mt-2 size-1.5 rounded-full',
         taskCount > 0
           ? isSelected
-            ? 'bg-charcoal-950'
-            : 'bg-lime-400'
+            ? 'bg-neutral-900 dark:bg-charcoal-950'
+            : 'bg-neutral-400 dark:bg-lime-400'
           : 'bg-transparent'
       )}
       testID={`task-indicator-${dateKey}`}

@@ -1,5 +1,5 @@
 /**
- * PostDetailHeroImage - Hero image with shared element transition
+ * PostDetailHeroImage - Full-bleed hero image with gradient overlay
  */
 
 import * as React from 'react';
@@ -18,7 +18,7 @@ const AnimatedImage = Animated.createAnimatedComponent(Image);
 
 const styles = StyleSheet.create({
   heroImage: {
-    aspectRatio: 4 / 3,
+    aspectRatio: 16 / 9,
     width: '100%',
   },
 });
@@ -54,7 +54,7 @@ export function PostDetailHeroImage({
   }, [mediaUri, thumbnailUri, resizedUri, blurhash, thumbhash]);
 
   return (
-    <View className="mb-4 overflow-hidden rounded-2xl shadow-sm">
+    <View className="relative w-full overflow-hidden bg-charcoal-800">
       <AnimatedImage
         className="w-full"
         style={styles.heroImage}
@@ -70,6 +70,8 @@ export function PostDetailHeroImage({
         )}
         {...imageProps}
       />
+      {/* Gradient overlay for text readability */}
+      <View className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-charcoal-900 via-charcoal-900/60 to-transparent" />
     </View>
   );
 }

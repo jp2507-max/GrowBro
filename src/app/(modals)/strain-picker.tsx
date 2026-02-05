@@ -115,12 +115,10 @@ export default function StrainPickerFormSheet(): React.ReactElement {
         '[StrainPickerFormSheet] Failed to persist custom strain:',
         error
       );
-      showErrorToast({
-        message: 'Failed to save custom strain. Try again.',
-      });
+      showErrorToast(t('strains.save_failed'));
     });
     handleSelect(customStrain, 'custom');
-  }, [trimmedQuery, handleSelect]);
+  }, [trimmedQuery, handleSelect, t]);
 
   const handleEndReached = React.useCallback((): void => {
     if (hasNextPage && !isFetchingNextPage) fetchNextPage();

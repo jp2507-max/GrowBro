@@ -21,6 +21,7 @@ type PlantDetailDashboardProps = {
   onHarvestPress: () => void;
   onAdvancedSettings: () => void;
   onEditPhoto?: () => void;
+  onCheckInPress?: () => void;
 };
 
 export function PlantDetailDashboard({
@@ -32,6 +33,7 @@ export function PlantDetailDashboard({
   onHarvestPress,
   onAdvancedSettings,
   onEditPhoto,
+  onCheckInPress,
 }: PlantDetailDashboardProps): React.ReactElement {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -55,7 +57,7 @@ export function PlantDetailDashboard({
           accessibilityHint={t('accessibility.common.back_hint')}
           testID="plant-detail-back-button"
         >
-          <ArrowLeft color={colors.white} size={24} />
+          <ArrowLeft color={colors.white} width={24} height={24} />
         </Pressable>
 
         {/* Plant Name */}
@@ -72,7 +74,7 @@ export function PlantDetailDashboard({
           })}
           testID="plant-settings-button"
         >
-          <Settings color={colors.white} size={24} />
+          <Settings color={colors.white} width={24} height={24} />
         </Pressable>
       </View>
 
@@ -99,6 +101,7 @@ export function PlantDetailDashboard({
             tasks={tasks}
             onTaskPress={onTaskPress}
             onHarvestPress={onHarvestPress}
+            onCheckInPress={onCheckInPress}
           />
         </View>
       </ScrollView>

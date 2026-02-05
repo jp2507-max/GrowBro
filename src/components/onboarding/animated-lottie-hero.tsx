@@ -13,6 +13,7 @@ import Animated, {
   cancelAnimation,
   Easing,
   ReduceMotion,
+  type SharedValue,
   useAnimatedStyle,
   useSharedValue,
   // @ts-ignore - Reanimated 4.x type exports issue
@@ -41,6 +42,76 @@ type AnimatedLottieHeroProps = {
   testID?: string;
 };
 
+function startHeroAnimations(params: {
+  translateY: SharedValue<number>;
+  scale: SharedValue<number>;
+  opacity: SharedValue<number>;
+  glowOpacity: SharedValue<number>;
+}): void {
+  const { translateY, scale, opacity, glowOpacity } = params;
+
+  opacity.set(
+    withTiming(1, {
+      duration: 600,
+      easing: Easing.out(Easing.ease),
+      reduceMotion: ReduceMotion.System,
+    })
+  );
+
+  scale.set(
+    withSpring(1, {
+      damping: 20,
+      stiffness: 80,
+      mass: 1,
+      reduceMotion: ReduceMotion.System,
+    })
+  );
+
+  translateY.set(
+    withDelay(
+      400,
+      withRepeat(
+        withSequence(
+          withTiming(-6, {
+            duration: 2500,
+            easing: Easing.inOut(Easing.sin),
+            reduceMotion: ReduceMotion.System,
+          }),
+          withTiming(0, {
+            duration: 2500,
+            easing: Easing.inOut(Easing.sin),
+            reduceMotion: ReduceMotion.System,
+          })
+        ),
+        -1,
+        false
+      )
+    )
+  );
+
+  glowOpacity.set(
+    withDelay(
+      500,
+      withRepeat(
+        withSequence(
+          withTiming(0.4, {
+            duration: 2000,
+            easing: Easing.inOut(Easing.ease),
+            reduceMotion: ReduceMotion.System,
+          }),
+          withTiming(0.2, {
+            duration: 2000,
+            easing: Easing.inOut(Easing.ease),
+            reduceMotion: ReduceMotion.System,
+          })
+        ),
+        -1,
+        false
+      )
+    )
+  );
+}
+
 export function AnimatedLottieHero({
   animation,
   testID = 'animated-lottie-hero',
@@ -67,70 +138,7 @@ export function AnimatedLottieHero({
       return;
     }
 
-    // Gentle fade in
-    opacity.set(
-      withTiming(1, {
-        duration: 600,
-        easing: Easing.out(Easing.ease),
-        reduceMotion: ReduceMotion.System,
-      })
-    );
-
-    // Soft entrance scale
-    scale.set(
-      withSpring(1, {
-        damping: 20,
-        stiffness: 80,
-        mass: 1,
-        reduceMotion: ReduceMotion.System,
-      })
-    );
-
-    // Gentle continuous float animation
-    translateY.set(
-      withDelay(
-        400,
-        withRepeat(
-          withSequence(
-            withTiming(-6, {
-              duration: 2500,
-              easing: Easing.inOut(Easing.sin),
-              reduceMotion: ReduceMotion.System,
-            }),
-            withTiming(0, {
-              duration: 2500,
-              easing: Easing.inOut(Easing.sin),
-              reduceMotion: ReduceMotion.System,
-            })
-          ),
-          -1,
-          false
-        )
-      )
-    );
-
-    // Pulsing glow
-    glowOpacity.set(
-      withDelay(
-        500,
-        withRepeat(
-          withSequence(
-            withTiming(0.4, {
-              duration: 2000,
-              easing: Easing.inOut(Easing.ease),
-              reduceMotion: ReduceMotion.System,
-            }),
-            withTiming(0.2, {
-              duration: 2000,
-              easing: Easing.inOut(Easing.ease),
-              reduceMotion: ReduceMotion.System,
-            })
-          ),
-          -1,
-          false
-        )
-      )
-    );
+    startHeroAnimations({ translateY, scale, opacity, glowOpacity });
 
     return () => {
       cancelAnimation(translateY);

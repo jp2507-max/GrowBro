@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable } from 'react-native';
 import Animated, {
   ReduceMotion,
   useAnimatedStyle,
@@ -33,7 +33,15 @@ type TimelineTaskCardProps = {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-function getCardShadow(state: TimelineTaskCardState): object {
+type CardShadowStyle = {
+  shadowColor?: string;
+  shadowOffset?: { width: number; height: number };
+  shadowOpacity?: number;
+  shadowRadius?: number;
+  elevation?: number;
+};
+
+function getCardShadow(state: TimelineTaskCardState): CardShadowStyle {
   if (state === 'active') {
     return {
       shadowColor: colors.neon.lime,
@@ -206,7 +214,7 @@ export function TimelineTaskCard({
         onPress={onPress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
-        style={[styles.card, getCardShadow(state), animatedStyle]}
+        style={[getCardShadow(state), animatedStyle]}
         className={cn(
           'flex-1 ml-2 mb-4 rounded-2xl p-5',
           isCompleted && 'opacity-50',
@@ -240,7 +248,3 @@ export function TimelineTaskCard({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  card: {},
-});

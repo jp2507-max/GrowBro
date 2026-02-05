@@ -18,6 +18,12 @@ export default function NotFound() {
           testID="not-found-go-home"
           accessibilityRole="link"
           accessibilityLabel={translate('common.go_home')}
+          accessibilityHint={translate(
+            'accessibility.common.opens_screen_hint',
+            {
+              label: translate('tabs.home'),
+            }
+          )}
           className="text-primary-800 dark:text-primary-300"
         >
           {translate('common.go_home')}

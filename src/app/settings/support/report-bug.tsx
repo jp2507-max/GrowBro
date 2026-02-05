@@ -86,13 +86,11 @@ export default function ReportBugScreen() {
 
   // Update network status separately when it changes
   useEffect(() => {
-    setDiagnostics((prev) => {
-      if (!prev) return prev;
-      const status = isInternetReachable === false ? 'offline' : 'online';
-      if (prev.networkStatus === status) return prev;
-      return { ...prev, networkStatus: status };
-    });
-  }, [isInternetReachable]);
+    if (!diagnostics) return;
+    const status = isInternetReachable === false ? 'offline' : 'online';
+    if (diagnostics.networkStatus === status) return;
+    setDiagnostics({ ...diagnostics, networkStatus: status });
+  }, [diagnostics, isInternetReachable]);
 
   const onSubmit = async (data: BugReportFormData) => {
     if (!diagnostics) {

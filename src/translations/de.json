@@ -87,10 +87,11 @@
       "confirm_date_hint": "Bestätigt das ausgewählte Datum.",
       "expand_section_hint": "Doppeltippen, um den Abschnitt zu erweitern",
       "go_back": "Zurück",
-      "loading": "Lädt...",
-      "loadingHint": "Inhalt lädt, bitte warten",
+      "loading": "Lädt",
+      "loadingHint": "Inhalt wird geladen, bitte warten",
       "loading_label": "Lädt",
-      "opens_screen_hint": "Öffnet den {{label}}-Bildschirm.",
+      "opens_screen_hint": "Öffnet den Bildschirm {{label}}.",
+      "read_only_hint": "Nur-Lese-Information.",
       "refresh_hint": "Aktualisiert den aktuellen Inhalt.",
       "reset_date_hint": "Löscht das ausgewählte Datum.",
       "retry": "Wiederholen",
@@ -125,6 +126,7 @@
       "post_image_hint": "Teil des Beitragsinhalts.",
       "post_options": "Beitragsoptionen",
       "post_options_hint": "Doppeltippen, um Beitragsoptionen anzuzeigen.",
+      "reply_hint": "Öffnet das Antwort-Eingabefeld für diesen Kommentar.",
       "retry_comment_hint": "Versucht erneut, diesen Kommentar zu posten.",
       "retry_sync": "Synchronisation wiederholen",
       "share": "Diesen Beitrag teilen",
@@ -936,6 +938,7 @@
     "cancel": "Abbrechen",
     "clear": "Löschen",
     "close": "Schließen",
+    "close_screen": "Schließt diesen Bildschirm",
     "confirm": "Bestätigen",
     "continue": "Fortfahren",
     "delete": "Löschen",
@@ -965,6 +968,7 @@
     "retry": "Wiederholen",
     "save": "Speichern",
     "saving": "Speichert...",
+    "select": "Auswählen...",
     "select_date": "Datum wählen",
     "selected": "ausgewählt",
     "time_ago": {
@@ -987,6 +991,7 @@
       }
     },
     "undo": "Rückgängig",
+    "unsure": "Unsicher",
     "yes": "Ja"
   },
   "community": {
@@ -1055,6 +1060,7 @@
     "delete_post_hint": "Doppeltippen, um diesen Beitrag zu löschen. Du hast 15 Sekunden Zeit zum Rückgängig machen.",
     "discovery_empty_body": "Passe deine Suche an oder lösche die Filter.",
     "discovery_empty_title": "Keine Ergebnisse",
+    "discussion": "Diskussion",
     "empty_state": "Noch keine Beiträge. Sei die oder der Erste!",
     "empty_state_educational": {
       "moderation_guidance": "Alle Beiträge werden überprüft, um eine sichere, bildungsorientierte Community zu gewährleisten. Vermeide Handel, illegale Inhalte oder persönliche Angriffe.",
@@ -1066,6 +1072,7 @@
     "filter_photos_only": "Nur Fotos",
     "filters_hint": "Öffnet Filter und Sortierung",
     "filters_label": "Filter",
+    "follow": "Folgen",
     "footer": "Was meinst du? Jeder Rat ist willkommen!",
     "header": "🌱 Hilfe bei Pflanzendiagnose benötigt",
     "health": "Community-Gesundheit",
@@ -1136,6 +1143,7 @@
     "reply": "Antwort",
     "retry_comment_hint": "Versucht erneut, diesen Kommentar zu posten.",
     "retry_sync": "Synchronisation wiederholen",
+    "save": "Speichern",
     "scheme": "growbro://feed",
     "search_clear_hint": "Suchtext löschen",
     "search_hint": "Filtert Beiträge beim Tippen.",
@@ -1145,6 +1153,7 @@
       "help_station": "Hilfe-Station",
       "showcase": "Galerie"
     },
+    "share": "Teilen",
     "share_post_message": "Schau dir diesen Beitrag auf GrowBro an: {{url}}",
     "share_post_title": "Beitrag teilen",
     "sort_label": "Sortieren",
@@ -1153,6 +1162,7 @@
     "subtitle": "Entdecke die neuesten Updates aus der Community.",
     "symptoms": "Symptome:",
     "title": "Community",
+    "top_rated": "Top bewertet",
     "undo_dismiss_hint": "Die Rückgängig-Snackbar schließen und die Aktion abbrechen",
     "undo_expires": "Rückgängigmachen läuft in {{seconds}}s ab",
     "unlike_failed": "Gefällt mir konnte nicht entfernt werden",
@@ -1956,6 +1966,11 @@
       "label": "Aufgaben für heute"
     }
   },
+  "hydrology": {
+    "adjustments": {
+      "repeated_dryness": "In letzter Zeit wurde {{count}}-mal Trockenheit gemeldet. Erwäge, die Gießfrequenz zu erhöhen oder den Plan zu überprüfen."
+    }
+  },
   "inputs": {
     "accept_terms_label": "Nutzungsbedingungen akzeptieren",
     "checkbox_label": "Kontrollkästchen",
@@ -2579,6 +2594,33 @@
       "action_hub_title": "Tägliche Aktionen",
       "advanced_settings_title": "Erweiterte Einstellungen",
       "all_good_message": "Alles im grünen Bereich – Keine Aufgaben heute.",
+      "check_in": {
+        "cta": "Check-in",
+        "disclaimer": "ⓘ Nur zu Bildungszwecken. Wenn die Symptome anhalten oder schlimmer werden, miss ggf. pH/EC und überprüfe das Klima (Temperatur/Luftfeuchte).",
+        "dryness": {
+          "subtitle": "Beantworte ein paar kurze Fragen. Wir fügen sichere nächste Schritte hinzu und passen kommende Aufgaben an.",
+          "title": "Fühlt sich zu trocken an"
+        },
+        "note": {
+          "label": "Notizen (optional)",
+          "placeholder": "Noch etwas aufgefallen? (z.B. Hängen, Blattkräuseln, Hitze, trockene Luft)"
+        },
+        "severity": {
+          "label": "Wie schlimm ist es?",
+          "mild": "Leicht",
+          "moderate": "Mittel",
+          "severe": "Stark"
+        },
+        "submit": "Check-in speichern",
+        "subtitle": "Sag uns, was du siehst, damit wir deine nächsten Aufgaben anpassen können.",
+        "title": "Pflanzen Check-in",
+        "top_dry": {
+          "label": "Sind die obersten 2–3 cm vom Medium trocken?"
+        },
+        "watered_last_12h": {
+          "label": "Hast du in den letzten 12 Stunden gegossen?"
+        }
+      },
       "day_count": "Tag {{count}}",
       "no_tasks": "Keine anstehenden Aufgaben",
       "nutrient_section": {
@@ -3886,6 +3928,7 @@
     "results_count_other": "{{count}} Sorten",
     "results_count_zero": "Keine Sorten",
     "retry": "Erneut versuchen",
+    "save_failed": "Benutzerdefinierte Sorte konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.",
     "search": {
       "clear_all": "Alle löschen",
       "did_you_mean_hint": "Wendet den vorgeschlagenen Suchbegriff an",
@@ -4238,6 +4281,12 @@
     "ipm_preventative": {
       "description": "Blätter und Stängel auf Schädlinge prüfen (auch Unterseiten). Flächen abwischen und Growbereich sauber halten.",
       "title": "Vorbeugender IPM-Check"
+    },
+    "outcome": {
+      "all_good": "Alles gut",
+      "still_dry": "Noch trocken",
+      "subtitle": "Wenn deine Pflanze sich weiterhin trocken anfühlt, logge einen kurzen Check-in, damit wir deine nächsten Aufgaben anpassen können.",
+      "title": "Hat das geholfen?"
     },
     "reorder_error": "Neuordnung fehlgeschlagen. Bitte erneut versuchen.",
     "reordered": "Aufgaben neu geordnet",

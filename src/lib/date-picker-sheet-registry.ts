@@ -24,6 +24,11 @@ function maybeStopCleanup() {
 function ensureCleanupRunning() {
   if (cleanupInterval) return;
   cleanupInterval = setInterval(() => {
+    if (registry.size === 0) {
+      maybeStopCleanup();
+      return;
+    }
+
     const now = Date.now();
     for (const [id, handler] of registry.entries()) {
       if (now - handler.createdAt > MAX_AGE_MS) {

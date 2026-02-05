@@ -11,7 +11,6 @@
  */
 
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import { Platform, StyleSheet } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
@@ -30,10 +29,10 @@ import { PostDetailLoadingState } from '@/components/community/post-detail-loadi
 import { usePostDetailState } from '@/components/community/use-post-detail-state';
 import { usePostSharing } from '@/components/community/use-post-sharing';
 import { FocusAwareStatusBar, View } from '@/components/ui';
+import { useBottomTabBarHeight } from '@/lib/animations/use-bottom-tab-bar-height';
 import { normalizePostUserId } from '@/lib/community/post-utils';
 import { formatRelativeTimeTranslated } from '@/lib/datetime/format-relative-time';
 import { haptics } from '@/lib/haptics';
-import { getHeaderColors } from '@/lib/theme-utils';
 import type { Post } from '@/types/community';
 
 const styles = StyleSheet.create({
@@ -44,9 +43,7 @@ export default function PostDetailScreen(): React.ReactElement {
   const local = useLocalSearchParams<{ id: string; commentId?: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { colorScheme } = useColorScheme();
-  const isDark = colorScheme === 'dark';
-  const headerColors = getHeaderColors(isDark);
+  const { grossHeight: tabBarHeight } = useBottomTabBarHeight();
 
   // @ts-ignore - Reanimated 4.x: Animated.ScrollView type not exposed properly
   const scrollViewRef = useAnimatedRef<Animated.ScrollView>();
@@ -121,7 +118,7 @@ export default function PostDetailScreen(): React.ReactElement {
   } as Post;
 
   return (
-    <View className="flex-1 bg-neutral-50 dark:bg-charcoal-950">
+    <View className="flex-1 bg-charcoal-950">
       <Stack.Screen options={{ headerShown: false }} />
       <FocusAwareStatusBar />
 
@@ -130,17 +127,12 @@ export default function PostDetailScreen(): React.ReactElement {
         style={styles.flex1}
         keyboardVerticalOffset={0}
       >
-        <PostDetailHeader
-          onBack={() => router.back()}
-          topInset={insets.top}
-          headerColors={headerColors}
-        />
+        <PostDetailHeader onBack={() => router.back()} topInset={insets.top} />
 
         <PostDetailContent
           post={postForComponent}
           displayUsername={displayUsername}
           relativeTime={relativeTime}
-          isDark={isDark}
           hasImage={hasImage}
           commentBody={commentBody}
           setCommentBody={setCommentBody}
@@ -149,7 +141,7 @@ export default function PostDetailScreen(): React.ReactElement {
           comments={comments}
           isLoadingComments={isLoadingComments}
           highlightedCommentId={highlightedCommentId}
-          bottomInset={insets.bottom}
+          bottomInset={tabBarHeight}
           commentInputRef={commentInputRef}
           scrollViewRef={scrollViewRef}
           onAuthorPress={handleAuthorPress}

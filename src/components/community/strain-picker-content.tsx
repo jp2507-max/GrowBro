@@ -1,11 +1,12 @@
 import { BottomSheetFlatList } from '@gorhom/bottom-sheet';
 import { useColorScheme } from 'nativewind';
+import type { ComponentType } from 'react';
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
-  type ComponentType,
   FlatList,
+  type FlatListProps,
   Keyboard,
   Platform,
   Pressable,
@@ -52,6 +53,8 @@ type RgbColor = {
   g: number;
   b: number;
 };
+
+type SearchInputComponent = ComponentType<TextInputProps>;
 
 const listContentStyle = { gap: 8, paddingBottom: 24 };
 const PRIMARY_500 = colors.primary[500];
@@ -201,7 +204,7 @@ function StrainSearchInput({
   onChangeText: (text: string) => void;
   placeholder: string;
   isFetching: boolean;
-  inputComponent?: ComponentType<TextInputProps>;
+  inputComponent?: SearchInputComponent;
   onFocus?: () => void;
   inputRef?: React.RefObject<TextInput | null>;
   testID: string;
@@ -239,37 +242,38 @@ function StrainSearchInput({
     };
   }, [isFocused, isDark]);
 
-  const Input = InputComponent || TextInput;
+  const handleFocus = React.useCallback(() => {
+    setIsFocused(true);
+    onFocus?.();
+  }, [onFocus]);
+
+  const handleBlur = React.useCallback(() => {
+    setIsFocused(false);
+  }, []);
+
+  const focusInput = React.useCallback(() => {
+    inputRef?.current?.focus();
+  }, [inputRef]);
 
   return (
     <View className="mb-4">
       <View
         className={containerClassName}
         style={containerStyle}
-        onTouchStart={() => inputRef?.current?.focus()}
+        onTouchStart={focusInput}
       >
         <Search size={18} className="mr-3 text-neutral-400" />
-        <Input
-          accessibilityLabel={translate(
-            'accessibility.strains.search_strains_label'
-          )}
-          accessibilityHint={translate(
-            'accessibility.strains.search_strains_hint'
-          )}
+        <SearchInputField
+          inputComponent={InputComponent}
+          inputRef={inputRef}
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
-          placeholderTextColor={
-            isDark ? colors.neutral[500] : colors.neutral[400]
-          }
-          onFocus={() => {
-            setIsFocused(true);
-            onFocus?.();
-          }}
-          onBlur={() => setIsFocused(false)}
+          isDark={isDark}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
           testID={testID}
           className={inputClassName}
-          ref={inputRef}
         />
         {isFetching && (
           <ActivityIndicator size="small" color={colors.primary[500]} />
@@ -277,6 +281,50 @@ function StrainSearchInput({
       </View>
     </View>
   );
+}
+
+function SearchInputField({
+  inputComponent,
+  inputRef,
+  value,
+  onChangeText,
+  placeholder,
+  isDark,
+  onFocus,
+  onBlur,
+  testID,
+  className,
+}: {
+  inputComponent?: SearchInputComponent;
+  inputRef?: React.RefObject<TextInput | null>;
+  value: string;
+  onChangeText: (text: string) => void;
+  placeholder: string;
+  isDark: boolean;
+  onFocus: () => void;
+  onBlur: () => void;
+  testID: string;
+  className: string;
+}): React.ReactElement {
+  const baseProps = {
+    accessibilityLabel: translate('accessibility.strains.search_strains_label'),
+    accessibilityHint: translate('accessibility.strains.search_strains_hint'),
+    value,
+    onChangeText,
+    placeholder,
+    placeholderTextColor: isDark ? colors.neutral[500] : colors.neutral[400],
+    onFocus,
+    onBlur,
+    testID,
+    className,
+  };
+
+  if (inputComponent) {
+    const InputComponent = inputComponent;
+    return <InputComponent {...baseProps} />;
+  }
+
+  return <TextInput {...baseProps} ref={inputRef} />;
 }
 
 function CreateCustomStrainOption({
@@ -369,7 +417,9 @@ export function StrainPickerContent({
   testID,
 }: StrainPickerContentProps): React.ReactElement {
   const { t } = useTranslation();
-  const ListComponent = useBottomSheetList ? BottomSheetFlatList : FlatList;
+  const ListComponent: ComponentType<FlatListProps<Strain>> = useBottomSheetList
+    ? BottomSheetFlatList
+    : FlatList;
 
   const renderItem = React.useCallback(
     ({ item }: { item: Strain }) => (

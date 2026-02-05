@@ -2,6 +2,7 @@ export * from './alert-circle';
 export * from './arrow-left';
 export * from './arrow-right';
 export * from './bell';
+export * from './bookmark';
 export * from './bug';
 export * from './calendar';
 export * from './camera';

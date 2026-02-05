@@ -1,5 +1,4 @@
-import { type Race } from '@/api/strains/types';
-
+import type { Race } from '@/api/strains/types';
 export type { Race } from '@/api/strains/types';
 
 export type PlantStage =

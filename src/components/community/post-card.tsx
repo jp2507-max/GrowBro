@@ -12,7 +12,7 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { Link } from 'expo-router';
 import React from 'react';
-import { Dimensions, StyleSheet } from 'react-native';
+import { StyleSheet, useWindowDimensions } from 'react-native';
 import Animated from 'react-native-reanimated';
 
 import type { Post as ApiPost } from '@/api/posts';
@@ -41,14 +41,8 @@ import { usePostCard } from './use-post-card';
 
 const AnimatedImage = Animated.createAnimatedComponent(Image);
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const CARD_WIDTH = SCREEN_WIDTH - 32;
-const CARD_HEIGHT = CARD_WIDTH * 1.25;
-
 const styles = StyleSheet.create({
   card: {
-    width: CARD_WIDTH,
-    height: CARD_HEIGHT,
     borderRadius: 24,
     overflow: 'hidden',
   },
@@ -268,6 +262,9 @@ function PostCardComponent({
   onCardPressIn,
   testID,
 }: PostCardProps): React.ReactElement {
+  const { width: screenWidth } = useWindowDimensions();
+  const cardWidth = screenWidth - 32;
+  const cardHeight = cardWidth * 1.25;
   const {
     postId,
     postUserId,
@@ -310,7 +307,7 @@ function PostCardComponent({
           >
             <View className="mx-4 mb-6" style={styles.shadow}>
               <View
-                style={styles.card}
+                style={[styles.card, { width: cardWidth, height: cardHeight }]}
                 className="bg-charcoal-800 dark:bg-charcoal-900"
               >
                 <PostCardImage
@@ -378,5 +375,7 @@ export const PostCard = React.memo(
     prev.post.strain === next.post.strain &&
     prev.onDelete === next.onDelete &&
     prev.displayUsername === next.displayUsername &&
-    prev.enableSharedTransition === next.enableSharedTransition
+    prev.enableSharedTransition === next.enableSharedTransition &&
+    prev.onCardPressIn === next.onCardPressIn &&
+    prev.testID === next.testID
 );

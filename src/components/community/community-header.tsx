@@ -50,6 +50,16 @@ const styles = StyleSheet.create({
   segmentedControl: {
     height: 44,
   },
+  segmentedFont: {
+    color: 'rgba(255, 255, 255, 0.6)',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  segmentedFontActive: {
+    color: colors.primary[900],
+    fontSize: 14,
+    fontWeight: '700',
+  },
   segmentedWrapper: {
     borderRadius: 22,
     overflow: 'hidden',
@@ -177,16 +187,8 @@ export function CommunityHeader({
               style={styles.segmentedControl}
               backgroundColor="transparent"
               tintColor={colors.white}
-              fontStyle={{
-                color: 'rgba(255, 255, 255, 0.6)',
-                fontSize: 14,
-                fontWeight: '500',
-              }}
-              activeFontStyle={{
-                color: colors.primary[900],
-                fontSize: 14,
-                fontWeight: '700',
-              }}
+              fontStyle={styles.segmentedFont}
+              activeFontStyle={styles.segmentedFontActive}
               appearance={Platform.OS === 'ios' ? 'light' : undefined}
             />
           </GlassSurface>

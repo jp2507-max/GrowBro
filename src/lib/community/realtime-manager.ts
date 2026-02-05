@@ -155,72 +155,27 @@ export class RealtimeConnectionManager {
   }
 
   /**
-   * Set up postgres_changes subscriptions on the channel
+   * Set up Broadcast subscriptions on the channel.
+   * Database triggers send events via realtime.send() - more reliable than postgres_changes with RLS.
    */
   private setupSubscriptions(): void {
     if (!this.channel) return;
 
-    if (this.postIdFilter) {
-      this.channel.on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'posts',
-          filter: `id=eq.${this.postIdFilter}`,
-        },
-        (payload) => {
-          this.handlePostChange(payload);
-        }
-      );
-    } else {
-      this.channel.on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'posts',
-        },
-        (payload) => {
-          this.handlePostChange(payload);
-        }
-      );
-    }
+    // Subscribe to post changes via Broadcast
+    this.channel.on('broadcast', { event: 'post_change' }, (payload) => {
+      this.handlePostChange(payload.payload as SupabaseRealtimePayload);
+    });
 
     // Only subscribe to comments/likes when viewing a specific post.
     // For the feed view, post counters (like_count/comment_count) are updated on the post
     // row via triggers, so subscribing to the entire comments/likes tables would be noisy.
     if (this.postIdFilter) {
-      const commentConfig: {
-        event: '*';
-        schema: 'public';
-        table: 'post_comments';
-        filter: string;
-      } = {
-        event: '*',
-        schema: 'public',
-        table: 'post_comments',
-        filter: `post_id=eq.${this.postIdFilter}`,
-      };
-
-      this.channel.on('postgres_changes', commentConfig, (payload) => {
-        this.handleCommentChange(payload);
+      this.channel.on('broadcast', { event: 'comment_change' }, (payload) => {
+        this.handleCommentChange(payload.payload as SupabaseRealtimePayload);
       });
 
-      const likeConfig: {
-        event: '*';
-        schema: 'public';
-        table: 'post_likes';
-        filter: string;
-      } = {
-        event: '*',
-        schema: 'public',
-        table: 'post_likes',
-        filter: `post_id=eq.${this.postIdFilter}`,
-      };
-
-      this.channel.on('postgres_changes', likeConfig, (payload) => {
-        this.handleLikeChange(payload);
+      this.channel.on('broadcast', { event: 'like_change' }, (payload) => {
+        this.handleLikeChange(payload.payload as SupabaseRealtimePayload);
       });
     }
   }

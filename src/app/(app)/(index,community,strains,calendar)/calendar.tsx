@@ -1,5 +1,6 @@
 import { Q } from '@nozbe/watermelondb';
 import { useIsFocused } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 import { DateTime } from 'luxon';
 import React, {
   useCallback,
@@ -22,6 +23,10 @@ import {
   TaskDetailModal,
   useTaskDetailModal,
 } from '@/components/calendar/task-detail-modal';
+import {
+  TaskOutcomeModal,
+  type TaskOutcomeModalRef,
+} from '@/components/tasks/task-outcome-modal';
 import { FocusAwareStatusBar, List, View } from '@/components/ui';
 import { useBottomTabBarHeight } from '@/lib/animations/use-bottom-tab-bar-height';
 import {
@@ -30,6 +35,10 @@ import {
   getCompletedTasksByDateRange,
   getTasksByDateRange,
 } from '@/lib/task-manager';
+import {
+  getTaskOutcomeCheckInParams,
+  shouldPromptTaskOutcome,
+} from '@/lib/task-outcome';
 import { database } from '@/lib/watermelon';
 import type { PlantModel } from '@/lib/watermelon-models/plant';
 import type { Task } from '@/types/calendar';
@@ -358,6 +367,7 @@ function useCalendarData(
 // -----------------------------------------------------------------------------
 
 export default function CalendarScreen(): React.ReactElement {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const isFocused = useIsFocused();
   const { grossHeight } = useBottomTabBarHeight();
@@ -378,6 +388,8 @@ export default function CalendarScreen(): React.ReactElement {
   const { ref: taskDetailModalRef, present: presentTaskDetail } =
     useTaskDetailModal();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const taskOutcomeModalRef = useRef<TaskOutcomeModalRef | null>(null);
+  const [taskOutcomeTask, setTaskOutcomeTask] = useState<Task | null>(null);
 
   const onDateSelect = useCallback((date: DateTime) => {
     setSelectedDate(date.startOf('day'));
@@ -400,6 +412,10 @@ export default function CalendarScreen(): React.ReactElement {
           await completeTask(task.id);
         }
         await refetch();
+        if (shouldPromptTaskOutcome(task)) {
+          setTaskOutcomeTask(task);
+          taskOutcomeModalRef.current?.present();
+        }
       } catch (error) {
         console.error('[CalendarScreen] Failed to complete task:', error);
       }
@@ -418,6 +434,19 @@ export default function CalendarScreen(): React.ReactElement {
   const handleModalDismiss = useCallback(() => {
     setSelectedTask(null);
   }, []);
+
+  const handleOutcomeDismiss = useCallback(() => {
+    setTaskOutcomeTask(null);
+  }, []);
+
+  const handleOutcomeStillDry = useCallback(
+    (task: Task) => {
+      const params = getTaskOutcomeCheckInParams(task);
+      if (!params) return;
+      router.push({ pathname: '/(modals)/plant-check-in', params });
+    },
+    [router]
+  );
 
   const listData = useMemo(
     () =>
@@ -473,6 +502,13 @@ export default function CalendarScreen(): React.ReactElement {
         task={selectedTask}
         onComplete={handleCompleteTask}
         onDismiss={handleModalDismiss}
+      />
+
+      <TaskOutcomeModal
+        ref={taskOutcomeModalRef}
+        task={taskOutcomeTask}
+        onStillDry={handleOutcomeStillDry}
+        onDismiss={handleOutcomeDismiss}
       />
     </View>
   );
