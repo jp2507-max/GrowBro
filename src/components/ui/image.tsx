@@ -13,6 +13,8 @@ import { Image as NImage } from 'expo-image';
 import { cssInterop } from 'nativewind';
 import * as React from 'react';
 
+import { DEFAULT_IMAGE_BLURHASH } from '@/lib/media/image-placeholders';
+
 export type ImgProps = ImageProps & {
   className?: string;
   testID?: string;
@@ -23,7 +25,7 @@ cssInterop(NImage, { className: 'style' });
 export const Image = ({
   style,
   className,
-  placeholder = 'L6PZfSi_.AyE_3t7t7R**0o#DgR4',
+  placeholder = DEFAULT_IMAGE_BLURHASH,
   testID,
   ...props
 }: ImgProps): React.JSX.Element => {

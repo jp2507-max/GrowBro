@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { StyleSheet } from 'react-native';
 import Animated from 'react-native-reanimated';
 
-import { Button, ScrollView, Switch, Text, View } from '@/components/ui';
+import { Button, ScrollView, Text, View } from '@/components/ui';
+import { Switch } from '@/components/ui/switch';
 import { createStaggeredFadeInUp, onboardingMotion } from '@/lib/animations';
 import type { LegalDocumentType } from '@/lib/compliance/legal-acceptances';
 import {
@@ -67,8 +68,7 @@ function LegalDocumentSection({
           </Text>
         </View>
         <Switch
-          checked={accepted}
-          onChange={onChange}
+          value={accepted}
           onValueChange={onChange}
           testID={`legal-switch-${documentType}`}
           accessibilityLabel={title}

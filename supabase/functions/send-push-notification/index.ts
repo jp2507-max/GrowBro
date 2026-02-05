@@ -16,8 +16,17 @@ import type {
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, X-Function-Secret',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
+
+function isServiceRoleRequest(req: Request, expected: string): boolean {
+  const authHeader = req.headers.get('authorization') ?? '';
+  const match = authHeader.match(/^Bearer\s+(.+)$/i);
+  if (!match) return false;
+
+  const token = match[1];
+  return Boolean(expected) && token === expected;
+}
 
 /**
  * Maps notification type to Android channel ID
@@ -234,11 +243,9 @@ Deno.serve(async (req: Request): Promise<Response> => {
   }
 
   try {
-    // Guard: ensure the Edge Function has the configured secret in its environment
-    const configuredSecret = Deno.env.get('EDGE_FUNCTION_SECRET') ?? null;
-    if (!configuredSecret) {
-      // Fail fast: refuse to run without a configured secret to avoid accepting
-      // unauthenticated requests
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    if (!supabaseUrl || !supabaseServiceKey) {
       return new Response(
         JSON.stringify({ success: false, error: 'Service unavailable' }),
         {
@@ -247,10 +254,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         }
       );
     }
-
-    // Validate incoming request header 'X-Function-Secret' matches configured secret
-    const incomingSecret = req.headers.get('x-function-secret') ?? null;
-    if (!incomingSecret || incomingSecret !== configuredSecret) {
+    if (!isServiceRoleRequest(req, supabaseServiceKey)) {
       return new Response(
         JSON.stringify({ success: false, error: 'Unauthorized' }),
         {
@@ -280,19 +284,6 @@ Deno.serve(async (req: Request): Promise<Response> => {
     }
 
     // Initialize Supabase client with service role key
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-
-    if (!supabaseUrl || !supabaseServiceKey) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Service unavailable' }),
-        {
-          headers: { 'Content-Type': 'application/json', ...corsHeaders },
-          status: 503,
-        }
-      );
-    }
-
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get user's push tokens

@@ -4,7 +4,7 @@ import {
   type FlashListRef,
   type ListRenderItemInfo,
 } from '@shopify/flash-list';
-import React, { forwardRef, useMemo } from 'react';
+import React, { forwardRef, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
@@ -16,6 +16,10 @@ import {
 
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
+import {
+  getMediumFlashListConfig,
+  getOptimizedFlashListConfig,
+} from '@/lib/flashlist-config';
 import { useThemeConfig } from '@/lib/use-theme-config';
 
 const SKELETON_PLACEHOLDERS = 6;
@@ -35,6 +39,49 @@ type ListProps<ItemT> = Omit<FlashListProps<ItemT>, 'estimatedItemSize'> & {
   readonly onRetry?: () => void;
   readonly ListSkeletonComponent?: React.ComponentType<{ index: number }>;
   readonly strings?: Partial<ListStrings>;
+};
+
+type ListRestProps<ItemT> = Omit<
+  ListProps<ItemT>,
+  | 'data'
+  | 'renderItem'
+  | 'ListEmptyComponent'
+  | 'ListFooterComponent'
+  | 'ListSkeletonComponent'
+  | 'keyExtractor'
+  | 'onRetry'
+  | 'error'
+  | 'isLoading'
+  | 'isSkeletonTimedOut'
+  | 'strings'
+  | 'drawDistance'
+  | 'removeClippedSubviews'
+  | 'scrollEventThrottle'
+  | 'contentContainerStyle'
+  | 'style'
+>;
+
+type ListDerivedState<ItemT> = {
+  readonly resolvedStrings: ListStrings;
+  readonly showSkeleton: boolean;
+  readonly showError: boolean;
+  readonly isEmpty: boolean;
+  readonly isJest: boolean;
+  readonly itemCount: number;
+  readonly listData: readonly ItemT[];
+  readonly renderItemResolved: (
+    info: ListRenderItemInfo<ItemT>
+  ) => React.ReactElement | null;
+  readonly keyExtractorResolved: (item: ItemT, index: number) => string;
+  readonly ListEmptyComponentResolved: () => React.ReactElement;
+};
+
+type ListLayoutConfig = {
+  readonly mergedContentContainerStyle: ViewStyle;
+  readonly mergedListStyle: ViewStyle;
+  readonly resolvedDrawDistance: number;
+  readonly resolvedRemoveClippedSubviews: boolean;
+  readonly resolvedScrollEventThrottle: number;
 };
 
 type ListStateBaseProps = {
@@ -69,6 +116,11 @@ const baseListStyle = StyleSheet.flatten(styles.list) as ViewStyle;
 const baseContentStyle = StyleSheet.flatten(
   styles.contentContainer
 ) as ViewStyle;
+const EMPTY_LIST: readonly unknown[] = [];
+const SKELETON_DATA: readonly number[] = Array.from(
+  { length: SKELETON_PLACEHOLDERS },
+  (_, index) => index
+);
 
 function mergeListStyle(
   styleProp: StyleProp<ViewStyle>,
@@ -93,14 +145,11 @@ function mergeContentStyle(styleProp: StyleProp<ViewStyle>): ViewStyle {
 function buildListData<ItemT>(
   showSkeleton: boolean,
   data: readonly ItemT[] | null | undefined
-): ItemT[] {
+): readonly ItemT[] {
   if (showSkeleton) {
-    return Array.from(
-      { length: SKELETON_PLACEHOLDERS },
-      (_, index) => index as unknown as ItemT
-    );
+    return SKELETON_DATA as unknown as readonly ItemT[];
   }
-  return data ? [...data] : [];
+  return data ?? (EMPTY_LIST as readonly ItemT[]);
 }
 
 function resolveStrings(
@@ -169,6 +218,170 @@ function renderEmptyContent({
   return <ListEmptyState title={strings.emptyTitle} body={strings.emptyBody} />;
 }
 
+function useListDerivedState<ItemT>({
+  data,
+  renderItem,
+  ListEmptyComponent,
+  ListSkeletonComponent,
+  keyExtractor,
+  onRetry,
+  error,
+  isLoading,
+  isSkeletonTimedOut,
+  strings,
+}: ListProps<ItemT>): ListDerivedState<ItemT> {
+  const { t } = useTranslation();
+  const resolvedStrings = useMemo(
+    () => resolveStrings(t, strings),
+    [strings, t]
+  );
+  const showSkeleton = Boolean(isLoading && !isSkeletonTimedOut);
+  const showError = Boolean(error);
+  const isEmpty = !data || data.length === 0;
+  const isJest = Boolean(process?.env?.JEST_WORKER_ID);
+  const itemCount = showSkeleton ? SKELETON_PLACEHOLDERS : (data?.length ?? 0);
+  const Skeleton = useMemo(
+    () => ListSkeletonComponent ?? DefaultListSkeleton,
+    [ListSkeletonComponent]
+  );
+  const listData = useMemo(
+    () => buildListData(showSkeleton, data),
+    [data, showSkeleton]
+  );
+  const keyExtractorResolved = useCallback(
+    (item: ItemT, index: number) =>
+      showSkeleton
+        ? `skeleton-${index}`
+        : (keyExtractor ?? fallbackKeyExtractor)(item, index),
+    [keyExtractor, showSkeleton]
+  );
+  const renderItemResolved = useCallback(
+    (info: ListRenderItemInfo<ItemT>) => {
+      if (showSkeleton) return <Skeleton index={info.index} />;
+      return renderItem?.(info) ?? null;
+    },
+    [renderItem, showSkeleton, Skeleton]
+  );
+  const ListEmptyComponentResolved = useCallback(
+    () =>
+      renderEmptyContent({
+        hasError: showSkeleton ? false : showError,
+        strings: resolvedStrings,
+        onRetry,
+        ListEmptyComponent,
+      }),
+    [showSkeleton, showError, resolvedStrings, onRetry, ListEmptyComponent]
+  );
+
+  return {
+    resolvedStrings,
+    showSkeleton,
+    showError,
+    isEmpty,
+    isJest,
+    itemCount,
+    listData,
+    renderItemResolved,
+    keyExtractorResolved,
+    ListEmptyComponentResolved,
+  };
+}
+
+function useListLayoutConfig({
+  itemCount,
+  drawDistance,
+  removeClippedSubviews,
+  scrollEventThrottle,
+  contentContainerStyle,
+  style,
+}: {
+  itemCount: number;
+  drawDistance?: number;
+  removeClippedSubviews?: boolean;
+  scrollEventThrottle?: number;
+  contentContainerStyle?: StyleProp<ViewStyle>;
+  style?: StyleProp<ViewStyle>;
+}): ListLayoutConfig {
+  const theme = useThemeConfig();
+  const flashListConfig = useMemo(
+    () =>
+      itemCount >= 100
+        ? getOptimizedFlashListConfig()
+        : getMediumFlashListConfig(),
+    [itemCount]
+  );
+  const resolvedDrawDistance = drawDistance ?? flashListConfig.drawDistance;
+  const resolvedRemoveClippedSubviews =
+    removeClippedSubviews ?? flashListConfig.removeClippedSubviews;
+  const resolvedScrollEventThrottle =
+    scrollEventThrottle ?? flashListConfig.scrollEventThrottle;
+  const mergedContentContainerStyle = useMemo(
+    () => mergeContentStyle(contentContainerStyle as StyleProp<ViewStyle>),
+    [contentContainerStyle]
+  );
+  const mergedListStyle = useMemo(
+    () =>
+      mergeListStyle(style as StyleProp<ViewStyle>, theme.colors.background),
+    [style, theme.colors.background]
+  );
+
+  return {
+    mergedContentContainerStyle,
+    mergedListStyle,
+    resolvedDrawDistance,
+    resolvedRemoveClippedSubviews,
+    resolvedScrollEventThrottle,
+  };
+}
+
+function buildSharedProps<ItemT>(params: {
+  data: ListProps<ItemT>['data'];
+  renderItem: ListProps<ItemT>['renderItem'];
+  ListEmptyComponent: ListProps<ItemT>['ListEmptyComponent'];
+  ListFooterComponent: ListProps<ItemT>['ListFooterComponent'];
+  ListSkeletonComponent: ListProps<ItemT>['ListSkeletonComponent'];
+  keyExtractor: ListProps<ItemT>['keyExtractor'];
+  onRetry: ListProps<ItemT>['onRetry'];
+  error: ListProps<ItemT>['error'];
+  isLoading: ListProps<ItemT>['isLoading'];
+  isSkeletonTimedOut: ListProps<ItemT>['isSkeletonTimedOut'];
+  strings: ListStrings;
+  showSkeleton: boolean;
+  showError: boolean;
+  drawDistance: number;
+  removeClippedSubviews: boolean;
+  scrollEventThrottle: number;
+  contentContainerStyle: ViewStyle;
+  style: ViewStyle;
+  restProps: ListRestProps<ItemT>;
+}): ListProps<ItemT> & {
+  readonly strings: ListStrings;
+  readonly showSkeleton: boolean;
+  readonly showError: boolean;
+} {
+  return {
+    data: params.data,
+    renderItem: params.renderItem,
+    ListEmptyComponent: params.ListEmptyComponent,
+    ListFooterComponent: params.ListFooterComponent,
+    ListSkeletonComponent: params.ListSkeletonComponent,
+    keyExtractor: params.keyExtractor,
+    onRetry: params.onRetry,
+    error: params.error,
+    isLoading: params.isLoading,
+    isSkeletonTimedOut: params.isSkeletonTimedOut,
+    strings: params.strings,
+    showSkeleton: params.showSkeleton,
+    showError: params.showError,
+    drawDistance: params.drawDistance,
+    removeClippedSubviews: params.removeClippedSubviews,
+    scrollEventThrottle: params.scrollEventThrottle,
+    contentContainerStyle: params.contentContainerStyle,
+    style: params.style,
+    ...params.restProps,
+  };
+}
+
 function renderJestList<ItemT>(
   props: ListProps<ItemT> & {
     readonly strings: ListStrings;
@@ -212,7 +425,7 @@ function renderJestList<ItemT>(
   }
 
   const footer = renderFooter(ListFooterComponent);
-  const items = (data ?? []) as ItemT[];
+  const items = (data ?? []) as readonly ItemT[];
 
   return (
     <View className="flex-1" testID="list-content">
@@ -231,60 +444,41 @@ function renderNativeList<ItemT>(
     readonly strings: ListStrings;
     readonly showSkeleton: boolean;
     readonly showError: boolean;
-    readonly themeBackground: string;
     readonly ref: React.ForwardedRef<FlashListRef<ItemT>>;
+    readonly listData: readonly ItemT[];
+    readonly renderItemResolved: (
+      info: ListRenderItemInfo<ItemT>
+    ) => React.ReactElement | null;
+    readonly keyExtractorResolved: (item: ItemT, index: number) => string;
+    readonly ListEmptyComponentResolved: () => React.ReactElement;
+    readonly mergedContentContainerStyle: ViewStyle;
+    readonly mergedListStyle: ViewStyle;
   }
 ): React.ReactElement {
   const {
-    data,
-    renderItem,
-    ListEmptyComponent,
+    data: _data,
+    renderItem: _renderItem,
+    keyExtractor: _keyExtractor,
+    ListEmptyComponent: _ListEmptyComponent,
     ListFooterComponent,
-    ListSkeletonComponent,
-    keyExtractor = fallbackKeyExtractor,
-    onRetry,
-    strings,
-    showSkeleton,
-    showError,
-    themeBackground,
     ref,
     onEndReachedThreshold,
-    contentContainerStyle,
-    style,
+    listData,
+    renderItemResolved,
+    keyExtractorResolved,
+    ListEmptyComponentResolved,
+    mergedContentContainerStyle,
+    mergedListStyle,
     ...rest
   } = props;
-
-  const Skeleton = ListSkeletonComponent ?? DefaultListSkeleton;
-  const listData = buildListData(showSkeleton, data);
-  const mergedContentContainerStyle = mergeContentStyle(
-    contentContainerStyle as StyleProp<ViewStyle>
-  );
-  const mergedListStyle = mergeListStyle(
-    style as StyleProp<ViewStyle>,
-    themeBackground
-  );
 
   return (
     <FlashList<ItemT>
       ref={ref}
       data={listData}
-      renderItem={(info: ListRenderItemInfo<ItemT>) => {
-        if (showSkeleton) {
-          return <Skeleton index={info.index} />;
-        }
-        return renderItem?.(info) ?? null;
-      }}
-      keyExtractor={(item, index) =>
-        showSkeleton ? `skeleton-${index}` : keyExtractor(item, index)
-      }
-      ListEmptyComponent={() =>
-        renderEmptyContent({
-          hasError: showSkeleton ? false : showError,
-          strings,
-          onRetry,
-          ListEmptyComponent,
-        })
-      }
+      renderItem={renderItemResolved}
+      keyExtractor={keyExtractorResolved}
+      ListEmptyComponent={ListEmptyComponentResolved}
       ListFooterComponent={ListFooterComponent}
       onEndReachedThreshold={onEndReachedThreshold ?? 0.4}
       contentContainerStyle={mergedContentContainerStyle}
@@ -311,26 +505,36 @@ function ListInner<ItemT>(
     isLoading,
     isSkeletonTimedOut,
     strings,
+    drawDistance,
+    removeClippedSubviews,
+    scrollEventThrottle,
+    contentContainerStyle,
+    style,
     ...rest
   }: ListProps<ItemT>,
   ref: React.ForwardedRef<FlashListRef<ItemT>>
 ): React.ReactElement {
-  const { t } = useTranslation();
-  const theme = useThemeConfig();
-  const resolvedStrings = useMemo(
-    () => resolveStrings(t, strings),
-    [strings, t]
-  );
-  const showSkeleton = Boolean(isLoading && !isSkeletonTimedOut);
-  const showError = Boolean(error);
-  const isEmpty = !data || (data as ItemT[]).length === 0;
-  const isJest = Boolean(process?.env?.JEST_WORKER_ID);
-
-  const sharedProps: ListProps<ItemT> & {
-    readonly strings: ListStrings;
-    readonly showSkeleton: boolean;
-    readonly showError: boolean;
-  } = {
+  const derivedState = useListDerivedState({
+    data,
+    renderItem,
+    ListEmptyComponent,
+    ListSkeletonComponent,
+    keyExtractor,
+    onRetry,
+    error,
+    isLoading,
+    isSkeletonTimedOut,
+    strings,
+  });
+  const layoutConfig = useListLayoutConfig({
+    itemCount: derivedState.itemCount,
+    drawDistance,
+    removeClippedSubviews,
+    scrollEventThrottle,
+    contentContainerStyle,
+    style,
+  });
+  const sharedProps = buildSharedProps({
     data,
     renderItem,
     ListEmptyComponent,
@@ -341,20 +545,30 @@ function ListInner<ItemT>(
     error,
     isLoading,
     isSkeletonTimedOut,
-    strings: resolvedStrings,
-    showSkeleton,
-    showError,
-    ...rest,
-  };
+    strings: derivedState.resolvedStrings,
+    showSkeleton: derivedState.showSkeleton,
+    showError: derivedState.showError,
+    drawDistance: layoutConfig.resolvedDrawDistance,
+    removeClippedSubviews: layoutConfig.resolvedRemoveClippedSubviews,
+    scrollEventThrottle: layoutConfig.resolvedScrollEventThrottle,
+    contentContainerStyle: layoutConfig.mergedContentContainerStyle,
+    style: layoutConfig.mergedListStyle,
+    restProps: rest,
+  });
 
-  if (isJest) {
-    return renderJestList({ ...sharedProps, isEmpty });
+  if (derivedState.isJest) {
+    return renderJestList({ ...sharedProps, isEmpty: derivedState.isEmpty });
   }
 
   return renderNativeList({
     ...sharedProps,
-    themeBackground: theme.colors.background,
     ref,
+    listData: derivedState.listData,
+    renderItemResolved: derivedState.renderItemResolved,
+    keyExtractorResolved: derivedState.keyExtractorResolved,
+    ListEmptyComponentResolved: derivedState.ListEmptyComponentResolved,
+    mergedContentContainerStyle: layoutConfig.mergedContentContainerStyle,
+    mergedListStyle: layoutConfig.mergedListStyle,
   });
 }
 
@@ -400,7 +614,7 @@ export const ListEmptyState = React.memo(function ListEmptyState({
       className={`flex-1 items-center justify-center px-6 py-12 ${className ?? ''}`.trim()}
       testID="list-empty"
     >
-      <Text className="text-center text-lg font-semibold text-charcoal-50 dark:text-neutral-100">
+      <Text className="text-center text-lg font-semibold text-neutral-900 dark:text-neutral-100">
         {title}
       </Text>
       {body ? (
@@ -426,7 +640,7 @@ export const ListErrorState = React.memo(function ListErrorState({
       className={`flex-1 items-center justify-center px-6 py-12 ${className ?? ''}`.trim()}
       testID="list-error"
     >
-      <Text className="text-center text-lg font-semibold text-charcoal-50 dark:text-neutral-100">
+      <Text className="text-center text-lg font-semibold text-neutral-900 dark:text-neutral-100">
         {title}
       </Text>
       {body ? (

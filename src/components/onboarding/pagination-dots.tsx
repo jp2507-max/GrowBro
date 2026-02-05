@@ -6,11 +6,8 @@
 
 import React from 'react';
 import Reanimated, {
-  // @ts-expect-error - Reanimated 4.x type exports issue
   Extrapolation,
-  // @ts-expect-error - Reanimated 4.x type exports issue
   interpolate,
-  // @ts-expect-error - Reanimated 4.x type exports issue
   interpolateColor,
   type SharedValue,
   useAnimatedStyle,
@@ -41,8 +38,6 @@ type DotProps = {
 
 function Dot({ index, activeIndex }: DotProps): React.ReactElement {
   const rStyle = useAnimatedStyle(() => {
-    'worklet';
-
     const distance = Math.abs(activeIndex.value - index);
 
     // Width: morphs from circle (8px) to pill (24px) when active

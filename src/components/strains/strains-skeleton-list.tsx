@@ -13,7 +13,7 @@ export function StrainsSkeletonList(): React.ReactElement {
       className="gap-5 px-4"
       testID="strains-skeleton-list"
       accessibilityLabel={translate('accessibility.strains.loading_label')}
-      accessibilityHint={translate('accessibility.common.loading_hint')}
+      accessibilityHint={translate('accessibility.common.loadingHint')}
       accessibilityRole="progressbar"
     >
       {PLACEHOLDER_ITEMS.map((_, index) => (

@@ -176,8 +176,8 @@ function LinksSection({ iconColor }: { iconColor: string }): ReactElement {
 
 export default function Settings() {
   const router = useRouter();
-  const signOut = useAuth.use.signOut();
-  const user = useAuth.use.user();
+  const signOut = useAuth((s) => s.signOut);
+  const user = useAuth((s) => s.user);
   const { colorScheme } = useColorScheme();
   const iconColor =
     colorScheme === 'dark' ? colors.neutral[400] : colors.neutral[500];

@@ -1,13 +1,18 @@
 import { useQuery } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 
-import { getTasksByDateRange } from '@/lib/task-manager';
+import {
+  getCompletedTasksByDateRange,
+  getTasksByDateRange,
+} from '@/lib/task-manager';
 import type { Task } from '@/types/calendar';
 
 export type PlantTask = {
   id: string;
   title: string;
+  description?: string;
   type: 'water' | 'feed' | 'other';
+  completed: boolean;
 };
 
 function inferTaskType(title: string): PlantTask['type'] {
@@ -27,18 +32,17 @@ function inferTaskType(title: string): PlantTask['type'] {
 
 function transformTask(task: Task): PlantTask {
   const metadataType = task.metadata?.type;
-  if (metadataType === 'water' || metadataType === 'feed') {
-    return {
-      id: task.id,
-      title: task.title,
-      type: metadataType,
-    };
-  }
+  const type =
+    metadataType === 'water' || metadataType === 'feed'
+      ? metadataType
+      : inferTaskType(task.title);
 
   return {
     id: task.id,
     title: task.title,
-    type: inferTaskType(task.title),
+    description: task.description,
+    type,
+    completed: task.status === 'completed',
   };
 }
 
@@ -47,12 +51,29 @@ async function fetchTodaysTasksForPlant(plantId: string): Promise<PlantTask[]> {
   const startOfDay = now.startOf('day').toJSDate();
   const endOfDay = now.endOf('day').toJSDate();
 
-  const allTasks = await getTasksByDateRange(startOfDay, endOfDay);
+  // Fetch both pending and completed tasks for today
+  const [pendingTasks, completedTasks] = await Promise.all([
+    getTasksByDateRange(startOfDay, endOfDay),
+    getCompletedTasksByDateRange(startOfDay, endOfDay),
+  ]);
+
+  // Merge and deduplicate by task id
+  const taskMap = new Map<string, Task>();
+  for (const task of [...pendingTasks, ...completedTasks]) {
+    if (!taskMap.has(task.id)) {
+      taskMap.set(task.id, task);
+    }
+  }
+  const allTasks = Array.from(taskMap.values());
 
   // Filter tasks for this specific plant
   const plantTasks = allTasks.filter((task) => task.plantId === plantId);
 
-  return plantTasks.map(transformTask);
+  // Sort: pending tasks first, then completed
+  return plantTasks.map(transformTask).sort((a, b) => {
+    if (a.completed === b.completed) return 0;
+    return a.completed ? 1 : -1;
+  });
 }
 
 type UsePlantTasksOptions = {
@@ -67,7 +88,7 @@ type UsePlantTasksResult = {
 };
 
 /**
- * Hook to fetch today's pending tasks for a specific plant.
+ * Hook to fetch today's tasks (pending and completed) for a specific plant.
  */
 export function usePlantTasks(
   plantId: string,

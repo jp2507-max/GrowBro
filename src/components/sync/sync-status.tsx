@@ -1,10 +1,10 @@
 import React from 'react';
-import { AppState } from 'react-native';
+import { AppState, InteractionManager } from 'react-native';
 
 import { ActivityIndicator, Text, View } from '@/components/ui';
 import { translate } from '@/lib';
 import { getItem } from '@/lib/storage';
-import { useSyncState } from '@/lib/sync/sync-state';
+import { useSyncStateStore } from '@/lib/sync/sync-state';
 import { getPendingChangesCount } from '@/lib/sync-engine';
 import { cn } from '@/lib/utils';
 
@@ -14,6 +14,8 @@ type Props = {
 };
 
 const SYNC_STATUS_POLL_INTERVAL_MS = 5000;
+const SYNC_STATUS_STARTUP_DELAY_MS = 8000;
+const SYNC_STATUS_FOREGROUND_DELAY_MS = 2000;
 
 function formatTime(ts: number | null): string {
   if (!ts) return '-';
@@ -27,7 +29,7 @@ export function SyncStatus({
   className,
   testID,
 }: Props): React.ReactElement | null {
-  const syncInFlight = useSyncState.use.syncInFlight();
+  const syncInFlight = useSyncStateStore((s) => s.syncInFlight);
   const [pendingCount, setPendingCount] = React.useState<number>(0);
   const [lastSyncMs, setLastSyncMs] = React.useState<number | null>(
     getItem<number>('sync.lastPulledAt')
@@ -38,6 +40,7 @@ export function SyncStatus({
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
     let appStateSub: ReturnType<typeof AppState.addEventListener> | null = null;
     let pollToken = 0;
+    let refreshAfterInteractionsTask: { cancel: () => void } | null = null;
 
     const refresh = async (): Promise<void> => {
       const token = pollToken;
@@ -53,11 +56,21 @@ export function SyncStatus({
       }
     };
 
+    const refreshAfterInteractions = async (): Promise<void> => {
+      await new Promise<void>((resolve) => {
+        refreshAfterInteractionsTask = InteractionManager.runAfterInteractions(
+          () => {
+            void refresh().finally(resolve);
+          }
+        );
+      });
+    };
+
     const loop = async (): Promise<void> => {
       const token = pollToken;
       if (AppState.currentState !== 'active') return;
 
-      await refresh();
+      await refreshAfterInteractions();
       if (!isMounted || token !== pollToken) return;
 
       timeoutId = setTimeout(() => {
@@ -65,23 +78,29 @@ export function SyncStatus({
       }, SYNC_STATUS_POLL_INTERVAL_MS);
     };
 
+    const startPolling = (delayMs: number): void => {
+      const token = (pollToken += 1);
+      if (timeoutId) clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        if (!isMounted || token !== pollToken) return;
+        void loop();
+      }, delayMs);
+    };
+
     if (AppState.currentState === 'active') {
-      pollToken += 1;
-      void loop();
+      startPolling(SYNC_STATUS_STARTUP_DELAY_MS);
     }
 
     appStateSub = AppState.addEventListener('change', (nextAppState) => {
       if (nextAppState === 'active') {
-        if (timeoutId) clearTimeout(timeoutId);
-        timeoutId = null;
-        pollToken += 1;
-        void loop();
+        startPolling(SYNC_STATUS_FOREGROUND_DELAY_MS);
       }
     });
 
     return () => {
       isMounted = false;
       pollToken += 1;
+      refreshAfterInteractionsTask?.cancel?.();
       if (timeoutId) {
         clearTimeout(timeoutId);
         timeoutId = null;

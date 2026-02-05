@@ -1,10 +1,10 @@
+import { DateTime } from 'luxon';
+
 import i18n from '@/lib/i18n';
 
 import type { PlantSettings, SeriesSpec } from './types';
 import {
   AUTOFLOWER_NUDGE_START_DAY,
-  CURE_DAILY_BURP_DAYS,
-  CURE_TOTAL_MONITORING_DAYS,
   FLUSH_DAYS,
   STEM_SNAP_CHECK_DAYS,
   STRETCH_WARNING_DAY,
@@ -23,6 +23,13 @@ import {
  * These specs are used by the TaskEngine to create actual series in the database.
  */
 export class TaskFactory {
+  private static buildMetadata(
+    engineKey: string,
+    extra: Record<string, unknown> = {}
+  ): Record<string, unknown> {
+    return { engineKey, ...extra };
+  }
+
   /**
    * Generate all series specs for a plant based on its current stage and settings.
    */
@@ -63,6 +70,9 @@ export class TaskFactory {
         dtstartLocal,
         dtstartUtc,
         timezone,
+        metadata: this.buildMetadata('legacy.seedling.check_humidity_dome', {
+          category: 'legacy',
+        }),
       },
     ];
   }
@@ -102,6 +112,9 @@ export class TaskFactory {
         dtstartLocal,
         dtstartUtc,
         timezone,
+        metadata: this.buildMetadata('legacy.nutrition.top_dressing', {
+          category: 'nutrition',
+        }),
       });
     }
 
@@ -124,6 +137,9 @@ export class TaskFactory {
         dtstartLocal,
         dtstartUtc,
         timezone,
+        metadata: this.buildMetadata('legacy.autoflower.check_preflowers', {
+          category: 'legacy',
+        }),
       });
     }
 
@@ -181,6 +197,9 @@ export class TaskFactory {
         dtstartUtc,
         timezone,
         count: 1,
+        metadata: this.buildMetadata('legacy.flowering.switch_lights', {
+          category: 'legacy',
+        }),
       });
     }
 
@@ -229,6 +248,12 @@ export class TaskFactory {
         dtstartUtc,
         timezone,
         count: 1,
+        metadata: this.buildMetadata(
+          'legacy.environment.check_light_distance',
+          {
+            category: 'environment',
+          }
+        ),
       },
     ];
   }
@@ -260,6 +285,9 @@ export class TaskFactory {
         dtstartUtc,
         timezone,
         untilUtc: buildUntilUtc(harvestDate),
+        metadata: this.buildMetadata('legacy.nutrition.start_flushing', {
+          category: 'nutrition',
+        }),
       },
     ];
   }
@@ -281,12 +309,15 @@ export class TaskFactory {
         dtstartUtc,
         timezone,
         count: STEM_SNAP_CHECK_DAYS,
+        metadata: this.buildMetadata('legacy.harvest.check_stem_snap', {
+          category: 'legacy',
+        }),
       },
     ];
   }
 
   /**
-   * Curing stage: Burp jars - daily for weeks 1-2, every 3 days for weeks 3-4
+   * Curing stage: Burp jars - 2x daily week 1, daily week 2, weekly thereafter
    */
   private static createCuringTasks(settings: PlantSettings): SeriesSpec[] {
     const { timezone, stageEnteredAt } = settings;
@@ -295,35 +326,70 @@ export class TaskFactory {
 
     const specs: SeriesSpec[] = [];
 
-    // Weeks 1-2: Daily burping (14 days)
+    const week1Start = DateTime.fromJSDate(cureStart, { zone: timezone }).set({
+      hour: 9,
+      minute: 0,
+      second: 0,
+      millisecond: 0,
+    });
+    const week2Start = week1Start.plus({ days: 7 });
+    const week3Start = week1Start.plus({ days: 14 });
+
+    // Week 1: 2x daily (14 occurrences)
     const { dtstartLocal: dtstartLocal1, dtstartUtc: dtstartUtc1 } =
-      buildDtstartTimestamps(cureStart, timezone);
+      buildDtstartTimestamps(week1Start.toJSDate(), timezone);
     specs.push({
       title: i18n.t('tasks.burp_jars_week1.title'),
       description: i18n.t('tasks.burp_jars_week1.description_rich'),
-      rrule: 'FREQ=DAILY;INTERVAL=1',
+      rrule: 'FREQ=DAILY;INTERVAL=1;BYHOUR=9,21;BYMINUTE=0;BYSECOND=0',
       dtstartLocal: dtstartLocal1,
       dtstartUtc: dtstartUtc1,
       timezone,
-      count: CURE_DAILY_BURP_DAYS,
+      count: 14,
+      metadata: this.buildMetadata('legacy.curing.burp_jars_week1', {
+        category: 'curing',
+      }),
     });
 
-    // Weeks 3-4: Every 3 days
-    const week3Start = addDays(cureStart, CURE_DAILY_BURP_DAYS);
-    if (week3Start > now) {
-      const { dtstartLocal: dtstartLocal2, dtstartUtc: dtstartUtc2 } =
-        buildDtstartTimestamps(week3Start, timezone);
-      const week4End = addDays(cureStart, CURE_TOTAL_MONITORING_DAYS);
-      specs.push({
-        title: i18n.t('tasks.burp_jars_week3.title'),
-        description: i18n.t('tasks.burp_jars_week3.description_rich'),
-        rrule: 'FREQ=DAILY;INTERVAL=3',
-        dtstartLocal: dtstartLocal2,
-        dtstartUtc: dtstartUtc2,
-        timezone,
-        untilUtc: buildUntilUtc(week4End),
-      });
-    }
+    // Week 2: Daily
+    const { dtstartLocal: dtstartLocal2, dtstartUtc: dtstartUtc2 } =
+      buildDtstartTimestamps(week2Start.toJSDate(), timezone);
+    specs.push({
+      title: i18n.t('tasks.burp_jars_week2.title'),
+      description: i18n.t('tasks.burp_jars_week2.description_rich'),
+      rrule: 'FREQ=DAILY;INTERVAL=1;BYHOUR=9;BYMINUTE=0;BYSECOND=0',
+      dtstartLocal: dtstartLocal2,
+      dtstartUtc: dtstartUtc2,
+      timezone,
+      count: 7,
+      metadata: this.buildMetadata('legacy.curing.burp_jars_week2', {
+        category: 'curing',
+      }),
+    });
+
+    // Week 3+: Weekly thereafter
+    const weeklyStart =
+      week3Start > DateTime.fromJSDate(now, { zone: timezone })
+        ? week3Start
+        : DateTime.fromJSDate(now, { zone: timezone }).set({
+            hour: 9,
+            minute: 0,
+            second: 0,
+            millisecond: 0,
+          });
+    const { dtstartLocal: dtstartLocal3, dtstartUtc: dtstartUtc3 } =
+      buildDtstartTimestamps(weeklyStart.toJSDate(), timezone);
+    specs.push({
+      title: i18n.t('tasks.burp_jars_week3.title'),
+      description: i18n.t('tasks.burp_jars_week3.description_rich'),
+      rrule: 'FREQ=WEEKLY;INTERVAL=1;BYHOUR=9;BYMINUTE=0;BYSECOND=0',
+      dtstartLocal: dtstartLocal3,
+      dtstartUtc: dtstartUtc3,
+      timezone,
+      metadata: this.buildMetadata('legacy.curing.burp_jars_week3', {
+        category: 'curing',
+      }),
+    });
 
     return specs;
   }
@@ -364,7 +430,10 @@ export class TaskFactory {
         dtstartLocal,
         dtstartUtc,
         timezone,
-        metadata: { type: 'water' },
+        metadata: this.buildMetadata('legacy.hydrology.check_water_need', {
+          category: 'hydrology',
+          type: 'water',
+        }),
       },
     ];
   }
@@ -422,7 +491,10 @@ export class TaskFactory {
         dtstartUtc,
         timezone,
         ...(untilDate && { untilUtc: buildUntilUtc(untilDate) }),
-        metadata: { type: 'feed' },
+        metadata: this.buildMetadata('legacy.nutrition.feed_plant', {
+          category: 'nutrition',
+          type: 'feed',
+        }),
       },
     ];
   }
@@ -448,6 +520,9 @@ export class TaskFactory {
         dtstartLocal,
         dtstartUtc,
         timezone,
+        metadata: this.buildMetadata('legacy.hydrology.check_ph_ec', {
+          category: 'hydrology',
+        }),
       },
       {
         title: i18n.t('tasks.check_water_temp.title'),
@@ -456,6 +531,9 @@ export class TaskFactory {
         dtstartLocal,
         dtstartUtc,
         timezone,
+        metadata: this.buildMetadata('legacy.hydrology.check_water_temp', {
+          category: 'hydrology',
+        }),
       },
       {
         title: i18n.t('tasks.change_reservoir.title'),
@@ -464,6 +542,9 @@ export class TaskFactory {
         dtstartLocal,
         dtstartUtc,
         timezone,
+        metadata: this.buildMetadata('legacy.hydrology.change_reservoir', {
+          category: 'hydrology',
+        }),
       },
     ];
   }
@@ -496,6 +577,9 @@ export class TaskFactory {
         dtstartLocal,
         dtstartUtc,
         timezone,
+        metadata: this.buildMetadata('legacy.environment.climate_check', {
+          category: 'environment',
+        }),
       },
     ];
   }

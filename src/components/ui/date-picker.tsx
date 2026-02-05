@@ -110,20 +110,6 @@ function formatDateISO(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
-type IOSDatePickerModalProps = {
-  modal: ReturnType<typeof useModal>;
-  tempDate: Date;
-  label?: string;
-  testID?: string;
-  minimumDate?: Date;
-  maximumDate?: Date;
-  isDark: boolean;
-  onDismiss: () => void;
-  onConfirm: () => void;
-  onReset: () => void;
-  onDateChange: (event: DateTimePickerEvent, date?: Date) => void;
-};
-
 type DatePickerTriggerProps = {
   label?: string;
   displayValue: string;
@@ -204,6 +190,20 @@ function DatePickerTrigger({
   );
 }
 
+type IOSDatePickerModalProps = {
+  modal: ReturnType<typeof useModal>;
+  tempDate: Date;
+  label?: string;
+  testID?: string;
+  minimumDate?: Date;
+  maximumDate?: Date;
+  isDark: boolean;
+  onDismiss: () => void;
+  onConfirm: () => void;
+  onReset: () => void;
+  onDateChange: (event: DateTimePickerEvent, date?: Date) => void;
+};
+
 function IOSDatePickerModal({
   modal,
   tempDate,
@@ -219,13 +219,17 @@ function IOSDatePickerModal({
 }: IOSDatePickerModalProps) {
   const { t } = useTranslation();
 
-  const backgroundStyle = React.useMemo(() => {
-    return {
-      backgroundColor: isDark ? colors.charcoal[900] : colors.white,
-      borderTopLeftRadius: 24,
-      borderTopRightRadius: 24,
-    };
-  }, [isDark]);
+  const glassSurfaceProps = React.useMemo(
+    () => ({
+      glassEffectStyle: 'regular' as const,
+      style: {
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+      },
+      fallbackClassName: 'bg-white dark:bg-charcoal-900',
+    }),
+    []
+  );
 
   const handleStyle = React.useMemo(() => {
     return {
@@ -240,8 +244,9 @@ function IOSDatePickerModal({
       ref={modal.ref}
       snapPoints={['50%']}
       onDismiss={onDismiss}
-      backgroundStyle={backgroundStyle}
       handleIndicatorStyle={handleStyle}
+      useGlassSurface
+      glassSurfaceProps={glassSurfaceProps}
     >
       <View className="flex-1 px-4 pb-6">
         <View className="mb-4 flex-row items-center justify-between">
@@ -313,7 +318,6 @@ function useDatePickerState(props: DatePickerProps) {
   React.useEffect(() => {
     if (parsedDate) setTempDate(parsedDate);
   }, [parsedDate]);
-
   const styles = React.useMemo(
     () =>
       datePickerTv({

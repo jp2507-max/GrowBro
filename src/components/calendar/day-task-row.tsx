@@ -65,6 +65,61 @@ function getTaskType(task: Task): 'water' | 'feed' | 'other' {
   return 'other';
 }
 
+type TaskRowMeta = {
+  dueTime: string;
+  recurringLabel: string;
+  showRecurring: boolean;
+  taskType: ReturnType<typeof getTaskType>;
+};
+
+function getTaskRowMeta(task: Task): TaskRowMeta {
+  const dueTime = formatDueTime(task.dueAtLocal, task.timezone);
+  const isEphemeral = task.metadata?.ephemeral === true;
+  const recurringLabel = translate('calendar.task_row.recurring');
+
+  return {
+    dueTime,
+    recurringLabel,
+    showRecurring: Boolean(task.seriesId || isEphemeral),
+    taskType: getTaskType(task),
+  };
+}
+
+function usePressScaleAnimation(): {
+  animatedStyle: ReturnType<typeof useAnimatedStyle>;
+  onPressIn: () => void;
+  onPressOut: () => void;
+} {
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.get() }],
+  }));
+
+  const onPressIn = React.useCallback(() => {
+    haptics.selection();
+    scale.set(
+      withSpring(0.97, {
+        damping: 10,
+        stiffness: 300,
+        reduceMotion: ReduceMotion.System,
+      })
+    );
+  }, [scale]);
+
+  const onPressOut = React.useCallback(() => {
+    scale.set(
+      withSpring(1, {
+        damping: 10,
+        stiffness: 300,
+        reduceMotion: ReduceMotion.System,
+      })
+    );
+  }, [scale]);
+
+  return { animatedStyle, onPressIn, onPressOut };
+}
+
 /**
  * Returns the appropriate icon for the task type
  */
@@ -95,6 +150,34 @@ function TaskTypeIcon({
       style={{ opacity }}
     >
       <Leaf color={colors.success[500]} width={iconSize} height={iconSize} />
+    </View>
+  );
+}
+
+function TaskMetaRow({
+  plantName,
+  plantImage,
+  dueTime,
+  showRecurring,
+  recurringLabel,
+}: {
+  plantName?: string;
+  plantImage?: string;
+  dueTime: string;
+  showRecurring: boolean;
+  recurringLabel: string;
+}): React.ReactElement {
+  return (
+    <View className="flex-row flex-wrap items-center gap-2">
+      {plantName ? <PlantBadge name={plantName} imageUrl={plantImage} /> : null}
+      <Text className="text-xs text-neutral-500 dark:text-neutral-400">
+        {dueTime}
+      </Text>
+      {showRecurring && (
+        <Text className="text-xs text-primary-600 dark:text-primary-400">
+          🔄 {recurringLabel}
+        </Text>
+      )}
     </View>
   );
 }
@@ -146,16 +229,24 @@ function PlantBadge({
   name: string;
   imageUrl?: string;
 }): React.ReactElement {
+  const imageSource = React.useMemo(
+    () => (imageUrl ? { uri: imageUrl } : undefined),
+    [imageUrl]
+  );
+
   return (
     <View
       className="flex-row items-center gap-1 rounded-full bg-primary-50 px-2 py-0.5 dark:bg-primary-900/30"
       testID="plant-badge"
     >
-      {imageUrl ? (
+      {imageSource ? (
         <Image
-          source={{ uri: imageUrl }}
+          source={imageSource}
           className="size-4 rounded-full"
           contentFit="cover"
+          cachePolicy="memory-disk"
+          recyclingKey={imageUrl}
+          transition={0}
           testID="plant-avatar"
         />
       ) : (
@@ -185,28 +276,7 @@ export function DayTaskRowComponent({
   isCompleted = false,
   testID,
 }: DayTaskRowProps): React.ReactElement {
-  const scale = useSharedValue(1);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
-  const handlePressIn = React.useCallback(() => {
-    haptics.selection();
-    scale.value = withSpring(0.97, {
-      damping: 10,
-      stiffness: 300,
-      reduceMotion: ReduceMotion.System,
-    });
-  }, [scale]);
-
-  const handlePressOut = React.useCallback(() => {
-    scale.value = withSpring(1, {
-      damping: 10,
-      stiffness: 300,
-      reduceMotion: ReduceMotion.System,
-    });
-  }, [scale]);
+  const { animatedStyle, onPressIn, onPressOut } = usePressScaleAnimation();
 
   const handlePress = React.useCallback(() => {
     onPress?.(task);
@@ -218,16 +288,14 @@ export function DayTaskRowComponent({
     }
   }, [isCompleted, onComplete, task]);
 
-  const dueTime = formatDueTime(task.dueAtLocal, task.timezone);
-  const isEphemeral = task.metadata?.ephemeral === true;
-  const recurringLabel = translate('calendar.task_row.recurring');
-  const taskType = getTaskType(task);
+  const { dueTime, recurringLabel, showRecurring, taskType } =
+    getTaskRowMeta(task);
 
   return (
     <AnimatedPressable
       onPress={handlePress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
+      onPressIn={onPressIn}
+      onPressOut={onPressOut}
       style={[styles.card, animatedStyle]}
       className={cn(
         'flex-row items-center gap-3 rounded-3xl border border-neutral-100 bg-white p-4 dark:border-white/5 dark:bg-charcoal-900',
@@ -264,19 +332,13 @@ export function DayTaskRowComponent({
         ) : null}
 
         {/* Meta row: Plant badge, time, recurring indicator */}
-        <View className="flex-row flex-wrap items-center gap-2">
-          {plantName ? (
-            <PlantBadge name={plantName} imageUrl={plantImage} />
-          ) : null}
-          <Text className="text-xs text-neutral-500 dark:text-neutral-400">
-            {dueTime}
-          </Text>
-          {(task.seriesId || isEphemeral) && (
-            <Text className="text-xs text-primary-600 dark:text-primary-400">
-              🔄 {recurringLabel}
-            </Text>
-          )}
-        </View>
+        <TaskMetaRow
+          plantName={plantName}
+          plantImage={plantImage}
+          dueTime={dueTime}
+          showRecurring={showRecurring}
+          recurringLabel={recurringLabel}
+        />
       </View>
 
       {/* Checkbox */}

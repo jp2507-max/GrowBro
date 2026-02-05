@@ -83,7 +83,6 @@ describe('PostDetailContent', () => {
   });
 
   test('scrolls to highlighted comment when layout is known', () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const scrollViewRef = { current: {} } as any;
 
     const comments: PostComment[] = [
@@ -96,7 +95,6 @@ describe('PostDetailContent', () => {
         post={createTestPost()}
         displayUsername="user"
         relativeTime="now"
-        isDark={false}
         hasImage={false}
         commentBody=""
         setCommentBody={() => {}}

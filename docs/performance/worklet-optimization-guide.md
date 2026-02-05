@@ -35,7 +35,7 @@ Reanimated 4.x automatically workletizes callbacks passed to these APIs:
 - `useDerivedValue`
 - `useAnimatedScrollHandler` - ✅ Still supported in 4.x
 - `useAnimatedReaction`
-- `runOnUI`
+- `scheduleOnUI` (react-native-worklets)
 - **RNGH v2 Gesture handlers**: `Gesture.Pan()`, `Gesture.Tap()`, etc. with `.onStart()`, `.onUpdate()`, `.onEnd()`, `.onFinalize()`
 - **Layout animations**: `entering`, `exiting`, `layout` callbacks
 
@@ -120,9 +120,19 @@ const animatedStyle = useAnimatedStyle(() => {
 });
 ```
 
-### ✅ DO: Use `runOnJS` for Side Effects (NEVER Per-Frame)
+### ✅ DO: Use `scheduleOnRN` for Side Effects (NEVER Per-Frame)
 
 ```typescript
+import { scheduleOnRN } from 'react-native-worklets';
+
+const handleGestureComplete = useCallback(() => {
+  onGestureComplete();
+}, [onGestureComplete]);
+
+const logPosition = useCallback((x: number) => {
+  console.log(x);
+}, []);
+
 // ✅ Good: Schedule side effects on JS thread AFTER gesture
 const pan = Gesture.Pan()
   .onUpdate((e) => {
@@ -130,19 +140,18 @@ const pan = Gesture.Pan()
     translateX.value = e.translationX;
   })
   .onEnd(() => {
-    // Use runOnJS for callbacks, analytics, haptics
     // Only called once at the end, NOT per frame
-    runOnJS(onGestureComplete)();
+    scheduleOnRN(handleGestureComplete);
   });
 
-// ❌ BAD: runOnJS per frame (kills performance)
+// ❌ BAD: scheduleOnRN per frame (kills performance)
 const pan = Gesture.Pan().onUpdate((e) => {
   translateX.value = e.translationX;
-  runOnJS(logPosition)(e.translationX); // ❌ Called every frame!
+  scheduleOnRN(logPosition, e.translationX); // ❌ Called every frame!
 });
 ```
 
-**Critical Rule**: `runOnJS` should **NEVER** be called inside `onUpdate` or any per-frame callback. Use it only for one-time events like `onStart`, `onEnd`, or animation completion callbacks.
+**Critical Rule**: `scheduleOnRN` should **NEVER** be called inside `onUpdate` or any per-frame callback. Use it only for one-time events like `onStart`, `onEnd`, or animation completion callbacks.
 
 ### ❌ DON'T: Heavy Computations in Worklets
 
@@ -154,8 +163,12 @@ const animatedStyle = useAnimatedStyle(() => {
   return { opacity: result.length > 0 ? 1 : 0 };
 });
 
-// ✅ Good: Precompute or use runOnJS
+// ✅ Good: Precompute or use scheduleOnRN
 const processedValue = useSharedValue(0);
+const processData = useCallback((data) => {
+  const result = heavyComputation(data);
+  processedValue.value = result;
+}, []);
 
 const pan = Gesture.Pan()
   .onUpdate((e) => {
@@ -164,10 +177,7 @@ const pan = Gesture.Pan()
   })
   .onEnd(() => {
     // Heavy computation on JS thread
-    runOnJS((data) => {
-      const result = heavyComputation(data);
-      processedValue.value = result;
-    })(someData);
+    scheduleOnRN(processData, someData);
   });
 ```
 
@@ -235,6 +245,8 @@ const pan = Gesture.Pan().onUpdate((e) => {
 ### Using Gesture Performance Tracker
 
 ```typescript
+import { useCallback } from 'react';
+import { scheduleOnRN } from 'react-native-worklets';
 import { useGesturePerformanceTracker } from '@/lib/performance/worklet-monitor';
 
 function MyComponent() {
@@ -244,6 +256,14 @@ function MyComponent() {
     trackGestureEnd,
     getMetrics,
   } = useGesturePerformanceTracker();
+  const logMetrics = useCallback(() => {
+    const metrics = getMetrics();
+    console.log('Gesture Performance:', {
+      avgLatency: metrics.averageLatency.toFixed(2),
+      p95Latency: metrics.p95Latency.toFixed(2),
+      droppedFrames: metrics.frameDropPercentage.toFixed(2),
+    });
+  }, [getMetrics]);
 
   const pan = Gesture.Pan()
     .onStart(() => {
@@ -258,14 +278,7 @@ function MyComponent() {
 
       // Log metrics in development
       if (__DEV__) {
-        runOnJS(() => {
-          const metrics = getMetrics();
-          console.log('Gesture Performance:', {
-            avgLatency: metrics.averageLatency.toFixed(2),
-            p95Latency: metrics.p95Latency.toFixed(2),
-            droppedFrames: metrics.frameDropPercentage.toFixed(2),
-          });
-        })();
+        scheduleOnRN(logMetrics);
       }
     });
 
@@ -362,16 +375,20 @@ opacity.value = withTiming(1, {
 
 ```typescript
 import * as Haptics from 'expo-haptics';
+import { useCallback } from 'react';
+import { scheduleOnRN } from 'react-native-worklets';
+
+const triggerHaptics = useCallback(() => {
+  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+}, []);
 
 const pan = Gesture.Pan()
   .onUpdate((e) => {
     translateX.value = e.translationX;
   })
   .onEnd(() => {
-    // Use runOnJS for haptics (NOT in onUpdate)
-    runOnJS(() => {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    })();
+    // Use scheduleOnRN for haptics (NOT in onUpdate)
+    scheduleOnRN(triggerHaptics);
   });
 ```
 
@@ -388,7 +405,7 @@ const animateIn = useCallback(() => {
     (finished) => {
       'worklet';
       if (finished) {
-        runOnJS(onAnimationComplete)();
+        scheduleOnRN(onAnimationComplete);
       }
     }
   );
@@ -448,7 +465,7 @@ Before merging worklet code, verify:
 
 - [ ] All worklets are marked with `'worklet'` directive (if not auto-workletized)
 - [ ] No `console.log` or side effects in worklets
-- [ ] Heavy computations use `runOnJS` or are precomputed
+- [ ] Heavy computations use `scheduleOnRN` or are precomputed
 - [ ] Shared values use `useSharedValue`/`useDerivedValue`
 - [ ] Closures capture minimal data (primitives, not large objects)
 - [ ] One write per shared value per frame
@@ -456,7 +473,7 @@ Before merging worklet code, verify:
 ### Reanimated 4.x Specific
 
 - [ ] Not using removed `useWorkletCallback` (use `useCallback` + `'worklet'` instead)
-- [ ] No `runOnJS` calls inside `onUpdate` or per-frame callbacks
+- [ ] No `scheduleOnRN` calls inside `onUpdate` or per-frame callbacks
 - [ ] All animations include `.reduceMotion(ReduceMotion.System)`
 - [ ] Prefer layout/shared transitions over manual width/height animations
 - [ ] Using RNGH v2 `Gesture.*()` API for gesture handling (preferred over legacy handlers)

@@ -1,4 +1,5 @@
 import type { Race, Strain } from '@/api/strains/types';
+import { supabase } from '@/lib/supabase';
 
 import {
   DEFAULT_DESCRIPTION,
@@ -63,34 +64,51 @@ export function buildCustomStrain(name: string, race: Race = 'hybrid'): Strain {
   };
 }
 
-async function upsertStrainToSupabase(strain: Strain): Promise<void> {
+function logSubmissionError(error: unknown): void {
+  const errorWithCode = error as { code?: string };
+  const isDuplicate = errorWithCode.code === '23505';
+  if (isDuplicate) {
+    console.debug('[custom-strain] duplicate submission ignored', error);
+  } else {
+    console.warn('[custom-strain] submission failed', error);
+  }
+}
+
+async function submitCustomStrainToSupabase(strain: Strain): Promise<void> {
+  // IMPORTANT:
+  // `public.strain_cache` is service-role-only writable (RLS). So we do NOT write
+  // user-generated strains into that table.
+  //
+  // Instead, user-created strains are submitted into `public.community_strains`
+  // with a `pending` status for moderation, and only become visible to others
+  // after approval.
   try {
-    const { supabase } = await import('@/lib/supabase');
-    const { error } = await supabase.from('strain_cache').upsert(
-      {
-        id: strain.id,
-        slug: strain.slug,
-        name: strain.name,
-        race: strain.race,
-        data: strain,
-      },
-      { onConflict: 'id' }
-    );
+    const { error } = await supabase.from('community_strains').insert({
+      id: strain.id,
+      slug: strain.slug,
+      name: strain.name,
+      race: strain.race,
+      data: strain,
+      status: 'pending',
+    });
 
     if (error) {
-      console.debug('[custom-strain-cache] upsert failed', error);
+      logSubmissionError(error);
     }
   } catch (error) {
-    console.debug('[custom-strain-cache] Supabase client unavailable', error);
+    logSubmissionError(error);
   }
 }
 
 export async function saveCustomStrainToSupabase(
   strain: Strain
 ): Promise<void> {
-  return upsertStrainToSupabase(strain);
+  return submitCustomStrainToSupabase(strain);
 }
 
 export async function saveStrainToSupabase(strain: Strain): Promise<void> {
-  return upsertStrainToSupabase(strain);
+  // NOTE:
+  // `public.strain_cache` is service-role-only writable. Server-side caching is
+  // handled by the `strains-proxy` Edge Function / backfill scripts.
+  void strain;
 }

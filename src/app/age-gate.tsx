@@ -16,12 +16,12 @@ import {
 import { createStaggeredFadeInUp, onboardingMotion } from '@/lib/animations';
 import {
   startAgeGateSession,
-  useAgeGate,
+  useAgeGateStore,
   verifyAgeGate,
 } from '@/lib/compliance/age-gate';
 import {
   completeOnboardingStep,
-  useOnboardingState,
+  useOnboardingStateStore,
 } from '@/lib/compliance/onboarding-state';
 import { translate } from '@/lib/i18n';
 import type { LegalAcceptances } from '@/types/settings';
@@ -39,8 +39,8 @@ type BirthDateInputsProps = {
 
 function useAgeGateForm() {
   const router = useRouter();
-  const status = useAgeGate.status();
-  const currentStep = useOnboardingState.currentStep();
+  const status = useAgeGateStore((s) => s.status);
+  const currentStep = useOnboardingStateStore((s) => s.currentStep);
   const [birthDay, setBirthDay] = React.useState('');
   const [birthMonth, setBirthMonth] = React.useState('');
   const [birthYear, setBirthYear] = React.useState('');

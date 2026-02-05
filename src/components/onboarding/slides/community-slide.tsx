@@ -40,21 +40,25 @@ export function CommunitySlide({
   const titleOpacity = useSharedValue(0);
 
   React.useEffect(() => {
-    titleOpacity.value = withDelay(
-      200,
-      withSpring(1, {
-        damping: 25,
-        stiffness: 80,
-        reduceMotion: ReduceMotion.System,
-      })
+    titleOpacity.set(
+      withDelay(
+        200,
+        withSpring(1, {
+          damping: 25,
+          stiffness: 80,
+          reduceMotion: ReduceMotion.System,
+        })
+      )
     );
-    titleScale.value = withDelay(
-      200,
-      withSpring(1, {
-        damping: 20,
-        stiffness: 80,
-        reduceMotion: ReduceMotion.System,
-      })
+    titleScale.set(
+      withDelay(
+        200,
+        withSpring(1, {
+          damping: 20,
+          stiffness: 80,
+          reduceMotion: ReduceMotion.System,
+        })
+      )
     );
 
     return () => {
@@ -64,8 +68,8 @@ export function CommunitySlide({
   }, [titleOpacity, titleScale]);
 
   const titleStyle = useAnimatedStyle(() => ({
-    opacity: titleOpacity.value,
-    transform: [{ scale: titleScale.value }],
+    opacity: titleOpacity.get(),
+    transform: [{ scale: titleScale.get() }],
   }));
 
   const gradientColors: readonly [ColorValue, ColorValue, ColorValue] = isDark

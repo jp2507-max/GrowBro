@@ -9,7 +9,7 @@ import colors from '@/components/ui/colors';
 import { Check, Edit, Trash } from '@/components/ui/icons';
 import { BottomSheetView } from '@/components/ui/modal';
 import { haptics } from '@/lib/haptics';
-import { translate } from '@/lib/i18n';
+import { translate, translateDynamic } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import type { Task } from '@/types/calendar';
 
@@ -101,10 +101,13 @@ function ActionButton({
 }
 
 type ModalStyles = {
-  backgroundStyle: {
-    backgroundColor: string;
-    borderTopLeftRadius: number;
-    borderTopRightRadius: number;
+  glassSurfaceProps: {
+    glassEffectStyle: 'regular';
+    style: {
+      borderTopLeftRadius: number;
+      borderTopRightRadius: number;
+    };
+    fallbackClassName: string;
   };
   handleStyle: {
     backgroundColor: string;
@@ -121,13 +124,16 @@ function useModalDarkModeStyles(): ModalStyles {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
 
-  const backgroundStyle = React.useMemo(
+  const glassSurfaceProps = React.useMemo(
     () => ({
-      backgroundColor: isDark ? colors.darkSurface.card : colors.white,
-      borderTopLeftRadius: 35,
-      borderTopRightRadius: 35,
+      glassEffectStyle: 'regular' as const,
+      style: {
+        borderTopLeftRadius: 35,
+        borderTopRightRadius: 35,
+      },
+      fallbackClassName: 'bg-white dark:bg-charcoal-900',
     }),
-    [isDark]
+    []
   );
 
   const handleStyle = React.useMemo(
@@ -141,9 +147,51 @@ function useModalDarkModeStyles(): ModalStyles {
   );
 
   return React.useMemo(
-    () => ({ backgroundStyle, handleStyle }),
-    [backgroundStyle, handleStyle]
+    () => ({ glassSurfaceProps, handleStyle }),
+    [glassSurfaceProps, handleStyle]
   );
+}
+
+/**
+ * Re-translate task title/description from engineKey metadata.
+ * This allows tasks created in one language to display in the user's current language.
+ */
+function getTranslatedTaskContent(task: Task): {
+  title: string;
+  description: string | null | undefined;
+} {
+  const engineKey = task.metadata?.engineKey as string | undefined;
+  if (!engineKey) {
+    return { title: task.title, description: task.description };
+  }
+
+  // Convert engineKey like 'legacy.seedling.check_humidity_dome' to translation key 'tasks.check_humidity_dome'
+  const keyParts = engineKey.split('.');
+  // Get the last part as the task identifier
+  let taskKey: string | undefined;
+  if (keyParts.length >= 3) {
+    taskKey = keyParts.slice(-1)[0];
+  } else if (keyParts.length === 2) {
+    taskKey = keyParts[1];
+  }
+
+  if (!taskKey) {
+    return { title: task.title, description: task.description };
+  }
+
+  const titleKey = `tasks.${taskKey}.title`;
+  const descriptionKey = `tasks.${taskKey}.description`;
+
+  const translatedTitle = translateDynamic(titleKey);
+  const translatedDescription = translateDynamic(descriptionKey);
+
+  // If translation returns the key itself, fall back to stored value
+  return {
+    title: translatedTitle.startsWith('tasks.') ? task.title : translatedTitle,
+    description: translatedDescription.startsWith('tasks.')
+      ? task.description
+      : translatedDescription,
+  };
 }
 
 export function TaskDetailModal({
@@ -154,7 +202,7 @@ export function TaskDetailModal({
   onDelete,
   onDismiss,
 }: TaskDetailModalProps): React.ReactElement {
-  const { backgroundStyle, handleStyle } = useModalDarkModeStyles();
+  const { glassSurfaceProps, handleStyle } = useModalDarkModeStyles();
   const dismiss = React.useCallback(() => {
     modalRef.current?.dismiss();
     onDismiss?.();
@@ -192,8 +240,9 @@ export function TaskDetailModal({
         ref={modalRef}
         snapPoints={['40%']}
         testID="task-detail-modal"
-        backgroundStyle={backgroundStyle}
         handleIndicatorStyle={handleStyle}
+        useGlassSurface
+        glassSurfaceProps={glassSurfaceProps}
       >
         <BottomSheetView style={styles.content}>
           <Text className="text-center text-neutral-500 dark:text-neutral-400">
@@ -209,19 +258,23 @@ export function TaskDetailModal({
 
   const category = task.metadata?.category as string | undefined;
 
+  const { title: displayTitle, description: displayDescription } =
+    getTranslatedTaskContent(task);
+
   return (
     <Modal
       ref={modalRef}
       snapPoints={['50%']}
       title={title}
       testID="task-detail-modal"
-      backgroundStyle={backgroundStyle}
       handleIndicatorStyle={handleStyle}
+      useGlassSurface
+      glassSurfaceProps={glassSurfaceProps}
     >
       <BottomSheetView style={styles.content}>
         {/* Task Title */}
         <Text className="text-xl font-bold text-neutral-900 dark:text-white">
-          {task.title}
+          {displayTitle}
         </Text>
 
         {/* Category Badge */}
@@ -247,7 +300,7 @@ export function TaskDetailModal({
             {translate('calendar.task_detail.description')}:
           </Text>
           <Text className="mt-1 text-base text-neutral-700 dark:text-neutral-200">
-            {task.description || noDescription}
+            {displayDescription || noDescription}
           </Text>
         </View>
 

@@ -38,8 +38,27 @@ const testOccurrenceOverridesTable = () => {
 };
 
 const testSchemaVersion = () => {
-  it('has schema version 39', () => {
-    expect((schema as any).version).toBe(39);
+  it('has schema version 40', () => {
+    expect((schema as any).version).toBe(40);
+  });
+};
+
+const testPlantStageHistoryTables = () => {
+  it('includes plant stage history tables and stage_entered_at column', () => {
+    const tables = (schema as any).tables as any[];
+
+    const plantsTable = getTableByName(tables, 'plants');
+    expect(plantsTable).toBeTruthy();
+    const stageEnteredAtColumn = getColumnByName(
+      plantsTable.columns,
+      'stage_entered_at'
+    );
+    expect(stageEnteredAtColumn).toBeTruthy();
+
+    const stageHistoryTable = getTableByName(tables, 'plant_stage_history');
+    expect(stageHistoryTable).toBeTruthy();
+    const eventsTable = getTableByName(tables, 'plant_events');
+    expect(eventsTable).toBeTruthy();
   });
 };
 
@@ -279,9 +298,10 @@ const testVersion17Migration = () => {
   });
 };
 
-describe('WatermelonDB migrations', () => {
+describe('Watermelon migrations + schema consistency', () => {
   testOccurrenceOverridesTable();
   testSchemaVersion();
+  testPlantStageHistoryTables();
   testNutrientEngineTables();
   testDataTypeConsistency();
   testMigrationVersions();

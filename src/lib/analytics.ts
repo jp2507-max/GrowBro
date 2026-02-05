@@ -115,6 +115,8 @@ export type AnalyticsEvents = {
       | 'series'
       | 'tasks'
       | 'occurrence_overrides'
+      | 'plant_stage_history'
+      | 'plant_events'
       | 'harvests'
       | 'inventory'
       | 'harvest_audits'
@@ -128,6 +130,8 @@ export type AnalyticsEvents = {
       | 'series'
       | 'tasks'
       | 'occurrence_overrides'
+      | 'plant_stage_history'
+      | 'plant_events'
       | 'harvests'
       | 'inventory'
       | 'harvest_audits'
@@ -142,6 +146,8 @@ export type AnalyticsEvents = {
       | 'series'
       | 'tasks'
       | 'occurrence_overrides'
+      | 'plant_stage_history'
+      | 'plant_events'
       | 'harvests'
       | 'inventory'
       | 'harvest_audits'
@@ -759,11 +765,14 @@ function sanitizeStrainSearchPayload<N extends AnalyticsEventName>(
   // Type-safe approach: build new object with correct shape by destructuring
   // the query property and reconstructing with sanitized_query
   if ('query' in payload && typeof payload.query === 'string') {
-    const { query, ...rest } = payload as any;
-    return {
+    const { query, ...rest } = payload as AnalyticsEventPayload<N> & {
+      query: string;
+    };
+    const sanitized = {
       ...rest,
       sanitized_query: sanitizeSearchQuery(query),
-    } as AnalyticsEventPayload<N>;
+    };
+    return sanitized as unknown as AnalyticsEventPayload<N>;
   }
   return payload;
 }

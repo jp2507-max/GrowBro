@@ -1,54 +1,42 @@
 /**
- * useCardInteractions - Card interaction handlers for delete and options
+ * useCardInteractions - Interactions for post card options/delete
  */
 
-import { useCallback, useRef } from 'react';
+import type { BottomSheetModal } from '@gorhom/bottom-sheet';
+import React from 'react';
 
 import type { useDeletePost } from '@/api/community';
-import { showErrorMessage } from '@/lib/flash-message';
-import { haptics } from '@/lib/haptics';
-import { translate } from '@/lib/i18n';
 
-import type { PostOptionsSheetRef } from './post-options-sheet';
-import type { PressEvent } from './types';
-
-type UseCardInteractionsParams = {
+type UseCardInteractionsOptions = {
   postId: number | string;
   onDelete?: (postId: number | string, undoExpiresAt: string) => void;
   deleteMutation: ReturnType<typeof useDeletePost>;
+};
+
+type UseCardInteractionsReturn = {
+  optionsSheetRef: React.RefObject<BottomSheetModal | null>;
+  handleDeleteConfirm: () => Promise<void>;
 };
 
 export function useCardInteractions({
   postId,
   onDelete,
   deleteMutation,
-}: UseCardInteractionsParams) {
-  const optionsSheetRef = useRef<PostOptionsSheetRef>(null);
+}: UseCardInteractionsOptions): UseCardInteractionsReturn {
+  const optionsSheetRef = React.useRef<BottomSheetModal | null>(null);
 
-  const handleOptionsPress = useCallback((e: PressEvent) => {
-    e.stopPropagation();
-    haptics.selection();
-    optionsSheetRef.current?.present();
-  }, []);
-
-  const handleDeleteConfirm = useCallback(async () => {
-    optionsSheetRef.current?.dismiss();
-    haptics.medium();
+  const handleDeleteConfirm = React.useCallback(async () => {
     try {
       const result = await deleteMutation.mutateAsync({
         postId: String(postId),
       });
-      onDelete?.(postId, result.undo_expires_at);
-    } catch (error) {
-      console.error('Delete post failed:', error);
-      showErrorMessage(translate('accessibility.community.delete_post_failed'));
-      haptics.error();
+      if (result?.undo_expires_at) {
+        onDelete?.(postId, result.undo_expires_at);
+      }
+    } finally {
+      optionsSheetRef.current?.dismiss();
     }
   }, [deleteMutation, postId, onDelete]);
 
-  return {
-    optionsSheetRef,
-    handleOptionsPress,
-    handleDeleteConfirm,
-  };
+  return { optionsSheetRef, handleDeleteConfirm };
 }

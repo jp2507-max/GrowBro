@@ -8,33 +8,37 @@ trigger: always_on
 
 ## Worklets — What runs on the UI thread
 
-- **Auto‑workletization**: callbacks passed to Reanimated APIs (`useAnimatedStyle`, `useDerivedValue`, gesture callbacks, entering/exiting/layout) run on the **UI runtime**.
-- **Add `'worklet'`** when you (1) call imported/external functions, (2) create worklets via expressions/ternaries, (3) define worklet callbacks inside **custom hooks**, or (4) expose reusable top‑level worklet utilities.
-- **`runOnUI`**: inline callbacks are workletized automatically; external references still need `'worklet'`.
-- **Never read** `.value` in React render; **derive inside worklets**. Assign to shared values; avoid deep object mutations.
-- **One write per frame**: don’t set the same shared value multiple times in a single tick.
+- **Auto‑workletization**: callbacks passed to Reanimated APIs (`useAnimatedStyle`, `useDerivedValue`, `useAnimatedReaction`, gesture callbacks, entering/exiting/layout) run on the **UI runtime**. No `'worklet'` directive needed.
+- **Avoid `'worklet'`** in 99.9% of cases. The worklets plugin handles conversion automatically for Reanimated APIs and scheduling functions.
+- **`scheduleOnUI`**: workletizes the callback and schedules it on the UI runtime (define with `useCallback` and pass by reference).
+- **`scheduleOnRN`**: schedules a JS callback from a worklet—does **not** workletize. Use for side-effects like state updates or async work.
+- **When `'worklet'` IS needed**: Only when a function defined outside Reanimated APIs (e.g., with `useCallback`) is called **directly** inside a worklet context (gesture `.onUpdate()`, inside `useAnimatedStyle`, etc.), not through `scheduleOnUI`/`scheduleOnRN`.
+- **React Compiler**: Use `.get()/.set()` in React render contexts and JS-thread code to avoid Compiler capture issues. `.value` remains valid inside genuine worklets (useAnimatedStyle, gesture callbacks, etc.).
+- **One write per frame**: don't set the same shared value multiple times in a single tick.
 - **No hooks in worklets**.
 
 ```ts
-// Auto‑workletized (UI thread)
+// ✅ Auto‑workletized - no 'worklet' needed
 const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
-// Imported function as worklet
-export function cardWorklet() {
-  'worklet';
-  return { opacity: 1 };
-}
+// ✅ scheduleOnUI - no 'worklet' needed
+const updateScale = useCallback(() => {
+  scale.set(withSpring(1.2));
+}, []);
+scheduleOnUI(updateScale);
 
-// Expression‑defined worklet
-const makeStyle = isOn
-  ? () => {
-      'worklet';
-      return { opacity: 1 };
-    }
-  : () => {
-      'worklet';
-      return { opacity: 0.5 };
-    };
+// ✅ 'worklet' IS needed - called directly in gesture context
+const checkThreshold = useCallback((y: number) => {
+  'worklet';
+  return y > 100;
+}, []);
+
+const gesture = Gesture.Pan().onUpdate((e) => {
+  if (checkThreshold(e.absoluteY)) {
+    // direct call in worklet
+    scale.value = 1.2;
+  }
+});
 ```
 
 ---
@@ -43,7 +47,7 @@ const makeStyle = isOn
 
 **Do**: Tailwind for static, Reanimated for dynamic; respect Reduced Motion.
 
-**Avoid**: per-frame class churn; per-frame `runOnJS`.
+**Avoid**: per-frame class churn; per-frame `scheduleOnRN`.
 
 ---
 
@@ -54,17 +58,18 @@ const makeStyle = isOn
 - One‑shot heavy calc tied to UI:
 
 ```ts
-runOnUI(() => {
-  'worklet';
+const doUiWork = useCallback(() => {
   // expensive but synchronous logic here
-})();
+}, []);
+
+scheduleOnUI(doUiWork);
 ```
 
 ### Captures (Closures)
 
 - Capture only **small, serializable** values. Avoid large objects/functions; pass **params** or use **Shared Values**.
 
-### `runOnJS` — DO / DON'T
+### `scheduleOnRN` — DO / DON'T
 
 **DO:** Haptics/toasts, analytics, logging, update React state **after** animation/gesture.
 
@@ -72,12 +77,12 @@ runOnUI(() => {
 
 ### Async & Side‑Effects
 
-- Worklets are **synchronous & side‑effect‑free** (no network/storage/timers). For async/IO, jump to JS via `runOnJS`.
+- Worklets are **synchronous & side‑effect‑free** (no network/storage/timers). For async/IO, jump to JS via `scheduleOnRN`.
 
 ### Quick Perf Check
 
 - Use Expo Dev Menu FPS monitor; ensure animations stay smooth while JS is busy.
-- Log only on **events** (start/finish) via `runOnJS`, not every frame.
+- Log only on **events** (start/finish) via `scheduleOnRN`, not every frame.
 
 ---
 
@@ -86,8 +91,8 @@ runOnUI(() => {
 **Bad** (recomputes classes every frame):
 
 ```tsx
-// ❌ don't flip classes per frame
-<View className={progress.value > 0.5 ? 'opacity-100' : 'opacity-50'} />
+// ❌ don't flip classes per frame or read .value in render
+<View className={progress.get() > 0.5 ? 'opacity-100' : 'opacity-50'} />
 ```
 
 **Good:**
@@ -124,13 +129,17 @@ function ToggleBox({ isActive }: { isActive: boolean }) {
   const bgProgress = useSharedValue(0);
 
   useEffect(() => {
-    width.value = withSpring(isActive ? 200 : 100, {
-      reduceMotion: ReduceMotion.System,
-    });
-    bgProgress.value = withTiming(isActive ? 1 : 0, {
-      duration: motion.dur.md,
-      reduceMotion: ReduceMotion.System,
-    });
+    width.set(
+      withSpring(isActive ? 200 : 100, {
+        reduceMotion: ReduceMotion.System,
+      })
+    );
+    bgProgress.set(
+      withTiming(isActive ? 1 : 0, {
+        duration: motion.dur.md,
+        reduceMotion: ReduceMotion.System,
+      })
+    );
   }, [isActive]);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -169,29 +178,33 @@ function PulsingDot() {
   const opacity = useSharedValue(0.5);
 
   useEffect(() => {
-    scale.value = withRepeat(
-      withSequence(
-        withTiming(1.2, {
-          duration: 500,
-          easing: Easing.inOut(Easing.ease),
-          reduceMotion: ReduceMotion.System,
-        }),
-        withTiming(1, {
-          duration: 500,
-          easing: Easing.inOut(Easing.ease),
-          reduceMotion: ReduceMotion.System,
-        })
-      ),
-      -1,
-      true
+    scale.set(
+      withRepeat(
+        withSequence(
+          withTiming(1.2, {
+            duration: 500,
+            easing: Easing.inOut(Easing.ease),
+            reduceMotion: ReduceMotion.System,
+          }),
+          withTiming(1, {
+            duration: 500,
+            easing: Easing.inOut(Easing.ease),
+            reduceMotion: ReduceMotion.System,
+          })
+        ),
+        -1,
+        true
+      )
     );
-    opacity.value = withRepeat(
-      withSequence(
-        withTiming(1, { duration: 500, reduceMotion: ReduceMotion.System }),
-        withTiming(0.5, { duration: 500, reduceMotion: ReduceMotion.System })
-      ),
-      -1,
-      true
+    opacity.set(
+      withRepeat(
+        withSequence(
+          withTiming(1, { duration: 500, reduceMotion: ReduceMotion.System }),
+          withTiming(0.5, { duration: 500, reduceMotion: ReduceMotion.System })
+        ),
+        -1,
+        true
+      )
     );
 
     // ⚠️ Cancel on unmount
@@ -231,7 +244,7 @@ _List items, conditional rendering. Always wrap with `withRM` (from `src/lib/ani
 _Gestures, Scroll, Sensors. The "Heavy Lifting"._
 
 - **APIs:** `useSharedValue`, `useAnimatedStyle`, `Gesture` (RNGH v2), `GestureDetector`
-- **Logic:** Keep math in worklets; avoid `runOnJS` in `onUpdate`
+- **Logic:** Keep math in worklets; avoid `scheduleOnRN` in `onUpdate`
 - **Legacy Warning:** Never use `useAnimatedGestureHandler` (v1). Use `Gesture.Pan().onUpdate(...)` (v2)
 
 ```tsx
@@ -286,7 +299,7 @@ function DraggableBox() {
 - Use the **`Gesture` builder API** with `GestureDetector`.
 - Replace old `useAnimatedGestureHandler` (3.x) with `onStart/onUpdate/onEnd` chain.
 - Keep your own shared `ctx` via `useSharedValue` if needed.
-- Heavy math stays in **UI worklets**; no `runOnJS` inside `onUpdate`.
+- Heavy math stays in **UI worklets**; no `scheduleOnRN` inside `onUpdate`.
 
 ---
 
@@ -299,9 +312,9 @@ function DraggableBox() {
 
 ## 🔀 Crossing threads
 
-- **UI → JS**: `runOnJS(fn)(args...)` only for side‑effects, analytics, or updating React state **after** animation/gesture.
-- **JS → UI**: `runOnUI(() => { 'worklet'; /* ui logic */ })()`.
-- Keep boundaries **coarse‑grained**; never call `runOnJS` per frame.
+- **UI → JS**: `scheduleOnRN(fn, ...args)` only for side‑effects, analytics, or updating React state **after** animation/gesture.
+- **JS → UI**: `scheduleOnUI(fn, ...args)` with a `useCallback` function reference.
+- Keep boundaries **coarse‑grained**; never call `scheduleOnRN` per frame.
 
 ---
 
@@ -313,21 +326,13 @@ function DraggableBox() {
 4. Per‑frame `className` churn; derive styles from shared values.
 5. Multiple writes to the same shared value in one frame.
 6. Forgetting `cancelAnimation` on long/looping sequences.
-7. Overusing `runOnJS` in `onUpdate` handlers.
+7. Overusing `scheduleOnRN` in `onUpdate` handlers.
 
 ---
 
-## ⚙️ Expo SDK 54 specifics
-
-- Reanimated 4.x is bundled with SDK 54.
-- RNGH: **v2 Gesture API**.
-- Babel: `react-native-reanimated/plugin` via `babel-preset-expo` → no manual changes typically needed.
-- Install deps with the Expo‑pinned versions:
-  `npx expo install react-native-reanimated react-native-gesture-handler`.
-
 ---
 
-**Short agent take**: Tailwind for static, Reanimated for dynamic; keep `className` stable; prefer layout/shared transitions; honor Reduced Motion; use tokens; prefix `sharedTransitionTag` by feature; keep heavy logic on the UI runtime and cross to JS only for side‑effects/state.
+**Short agent take**: Tailwind for static, Reanimated for dynamic; keep `className` stable; prefer layout/shared transitions; honor Reduced Motion; use tokens; prefix `sharedTransitionTag` by feature; keep heavy logic on the UI runtime and cross to JS only for side‑effects/state via `scheduleOnRN`.
 
 ---
 
@@ -364,7 +369,7 @@ entering={withRM(FadeInUp.duration(motion.dur.md).easing(motion.ease.standard))}
 - `Gesture.Exclusive(press, pan)` — press wins unless pan exceeds threshold.
 - `Gesture.Race(longPress, tap)` — first to activate cancels others.
 
-> Heavy math stays in `onUpdate` worklets; use `runOnJS` only in `onEnd`.
+> Heavy math stays in `onUpdate` worklets; use `scheduleOnRN` only in `onEnd`.
 
 ## 🧭 Scroll recipe (programmatic)
 
@@ -384,6 +389,6 @@ scrollTo(scrollRef, 0, y.value, true);
 
 - Reduced Motion respected everywhere?
 - List insert/remove uses `layout` and looks smooth?
-- Any per‑frame `runOnJS` or class churn left?
+- Any per‑frame `scheduleOnRN` or class churn left?
 - Looping animations canceled on unmount?
 - Style keys stable per frame; compute once in `useDerivedValue`, reuse across styles.

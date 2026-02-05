@@ -1,6 +1,6 @@
 import React from 'react';
 import type { PressableProps, View } from 'react-native';
-import { ActivityIndicator, Pressable } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet } from 'react-native';
 import Animated, {
   ReduceMotion,
   useAnimatedStyle,
@@ -13,6 +13,7 @@ import { tv } from 'tailwind-variants';
 import type { TxKeyPath } from '@/lib/i18n';
 import { translate } from '@/lib/i18n';
 
+import { GlassSurface } from '../shared/glass-surface';
 import { Text } from './text';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -80,6 +81,12 @@ const button = tv({
         label: 'text-white',
         indicator: 'text-white',
       },
+      /** Glass button with iOS 26+ liquid glass effect, blur fallback on older devices */
+      glass: {
+        container: 'overflow-hidden',
+        label: 'text-neutral-900 dark:text-white',
+        indicator: 'text-neutral-900 dark:text-white',
+      },
     },
     size: {
       default: {
@@ -137,6 +144,104 @@ interface Props extends ButtonVariants, Omit<PressableProps, 'disabled'> {
   noAnimation?: boolean;
 }
 
+interface ButtonContentProps {
+  loading: boolean;
+  testID?: string;
+  indicatorClass: string;
+  labelClass: string;
+  tx?: TxKeyPath;
+  text?: string;
+}
+
+function ButtonContent({
+  loading,
+  testID,
+  indicatorClass,
+  labelClass,
+  tx,
+  text,
+}: ButtonContentProps) {
+  if (loading) {
+    return (
+      <ActivityIndicator
+        size="small"
+        className={indicatorClass}
+        testID={testID ? `${testID}-activity-indicator` : undefined}
+      />
+    );
+  }
+  return (
+    <Text
+      testID={testID ? `${testID}-label` : undefined}
+      className={labelClass}
+      tx={tx}
+    >
+      {text}
+    </Text>
+  );
+}
+
+const glassButtonStyles = StyleSheet.create({
+  surface: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 8,
+  },
+});
+
+type PressEvent = Parameters<NonNullable<PressableProps['onPressIn']>>[0];
+
+interface UsePressAnimationOptions {
+  noAnimation: boolean;
+  disabled: boolean;
+  loading: boolean;
+  onPressIn?: PressableProps['onPressIn'];
+  onPressOut?: PressableProps['onPressOut'];
+}
+
+function usePressAnimation(opts: UsePressAnimationOptions) {
+  const { noAnimation, disabled, loading, onPressIn, onPressOut } = opts;
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(
+    () => ({ transform: [{ scale: scale.get() }] }),
+    []
+  );
+
+  const handlePressIn = React.useCallback(
+    (e: PressEvent) => {
+      if (!noAnimation && !disabled && !loading) {
+        scale.set(
+          withTiming(PRESS_SCALE, {
+            duration: PRESS_DURATION,
+            reduceMotion: ReduceMotion.System,
+          })
+        );
+      }
+      onPressIn?.(e);
+    },
+    [scale, noAnimation, disabled, loading, onPressIn]
+  );
+
+  const handlePressOut = React.useCallback(
+    (e: PressEvent) => {
+      if (!noAnimation && !disabled && !loading) {
+        scale.set(
+          withTiming(1, {
+            duration: PRESS_DURATION,
+            reduceMotion: ReduceMotion.System,
+          })
+        );
+      }
+      onPressOut?.(e);
+    },
+    [scale, noAnimation, disabled, loading, onPressOut]
+  );
+
+  return { animatedStyle, handlePressIn, handlePressOut };
+}
+
 export const Button = React.forwardRef<View, Props>(
   (
     {
@@ -156,40 +261,13 @@ export const Button = React.forwardRef<View, Props>(
     },
     ref
   ) => {
-    const scale = useSharedValue(1);
-
-    const animatedStyle = useAnimatedStyle(
-      () => ({
-        transform: [{ scale: scale.value }],
-      }),
-      []
-    );
-
-    const handlePressIn = React.useCallback(
-      (e: Parameters<NonNullable<PressableProps['onPressIn']>>[0]) => {
-        if (!noAnimation && !disabled && !loading) {
-          scale.value = withTiming(PRESS_SCALE, {
-            duration: PRESS_DURATION,
-            reduceMotion: ReduceMotion.System,
-          });
-        }
-        onPressIn?.(e);
-      },
-      [scale, noAnimation, disabled, loading, onPressIn]
-    );
-
-    const handlePressOut = React.useCallback(
-      (e: Parameters<NonNullable<PressableProps['onPressOut']>>[0]) => {
-        if (!noAnimation && !disabled && !loading) {
-          scale.value = withTiming(1, {
-            duration: PRESS_DURATION,
-            reduceMotion: ReduceMotion.System,
-          });
-        }
-        onPressOut?.(e);
-      },
-      [scale, noAnimation, disabled, loading, onPressOut]
-    );
+    const { animatedStyle, handlePressIn, handlePressOut } = usePressAnimation({
+      noAnimation,
+      disabled,
+      loading,
+      onPressIn,
+      onPressOut,
+    });
 
     const styles = React.useMemo(
       () => button({ variant, disabled, size }),
@@ -198,6 +276,20 @@ export const Button = React.forwardRef<View, Props>(
 
     // Derive a default accessibilityLabel if not provided
     const defaultA11yLabel = tx ? translate(tx) : text;
+    const isGlass = variant === 'glass';
+    const labelClass = styles.label({ className: textClassName });
+    const indicatorClass = styles.indicator();
+
+    const content = (
+      <ButtonContent
+        loading={loading}
+        testID={testID}
+        indicatorClass={indicatorClass}
+        labelClass={labelClass}
+        tx={tx}
+        text={text}
+      />
+    );
 
     return (
       <AnimatedPressable
@@ -219,27 +311,19 @@ export const Button = React.forwardRef<View, Props>(
           translate('accessibility.common.doubleTapHint' as TxKeyPath)
         }
       >
-        {props.children ? (
-          props.children
-        ) : (
-          <>
-            {loading ? (
-              <ActivityIndicator
-                size="small"
-                className={styles.indicator()}
-                testID={testID ? `${testID}-activity-indicator` : undefined}
-              />
-            ) : (
-              <Text
-                testID={testID ? `${testID}-label` : undefined}
-                className={styles.label({ className: textClassName })}
-                tx={tx}
-              >
-                {text}
-              </Text>
-            )}
-          </>
-        )}
+        {props.children ??
+          (isGlass ? (
+            <GlassSurface
+              glassEffectStyle="clear"
+              isInteractive
+              style={glassButtonStyles.surface}
+              fallbackClassName="bg-white/20 dark:bg-charcoal-800/50"
+            >
+              {content}
+            </GlassSurface>
+          ) : (
+            content
+          ))}
       </AnimatedPressable>
     );
   }

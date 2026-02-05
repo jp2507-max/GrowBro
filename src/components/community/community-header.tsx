@@ -1,10 +1,10 @@
 /**
- * CommunityHeader - "Deep Garden" Identity Header
+ * CommunityHeader - "Stitch" Design Header
  *
  * Premium immersive header with:
  * - LinearGradient background for rich depth
- * - Glass-style search bar placeholder
- * - Native SegmentedControl for tabs
+ * - Glass-style search bar with notification bell
+ * - Native SegmentedControl with liquid glass styling
  * - Content overlaps with negative margin (handled by parent)
  */
 
@@ -12,13 +12,13 @@ import SegmentedControl from '@react-native-segmented-control/segmented-control'
 import { LinearGradient } from 'expo-linear-gradient';
 import { useColorScheme } from 'nativewind';
 import React from 'react';
-import { StyleSheet } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 import type { EdgeInsets } from 'react-native-safe-area-context';
 
 import { GlassSurface } from '@/components/shared/glass-surface';
-import { GlassButton, Pressable, Text, View } from '@/components/ui';
+import { GlassButton, Text, View } from '@/components/ui';
 import colors from '@/components/ui/colors';
-import { Search } from '@/components/ui/icons';
+import { PlatformIcon, Search, SlidersHorizontal } from '@/components/ui/icons';
 import { haptics } from '@/lib/haptics';
 import { translate } from '@/lib/i18n';
 
@@ -28,63 +28,75 @@ const styles = StyleSheet.create({
   gradientContainer: {
     minHeight: 220,
   },
-  segmentedControl: {
-    height: 40,
-  },
   searchPill: {
+    borderRadius: 24,
+  },
+  filterPill: {
     borderRadius: 20,
+  },
+  notificationDot: {
+    shadowColor: colors.neon.lime,
+    shadowOpacity: 0.8,
+    shadowRadius: 4,
+  },
+  gradientFade: {
+    height: 40,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1,
+  },
+  segmentedControl: {
+    height: 44,
+  },
+  segmentedFont: {
+    color: 'rgba(255, 255, 255, 0.6)',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  segmentedFontActive: {
+    color: colors.primary[900],
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  segmentedWrapper: {
+    borderRadius: 22,
+    overflow: 'hidden',
   },
 });
 
-// Gradient colors for light and dark modes (using centralized color tokens)
+// Gradient colors for dark mode - deep forest tones
 const GRADIENT_COLORS = {
   light: [
-    colors.primary[800],
-    colors.primary[700],
     colors.primary[600],
-  ] as const,
-  dark: [
-    colors.primary[950],
-    colors.primary[900],
+    colors.primary[700],
     colors.primary[800],
   ] as const,
+  dark: [colors.charcoal[950], '#151e13', '#0f1f15'] as const,
 };
 
-const SEGMENT_FONT_STYLE = {
-  color: 'rgba(255, 255, 255, 0.85)',
-  fontWeight: '500' as const,
-  fontSize: 14,
-};
-
-type SearchBarPlaceholderProps = {
-  onPress: () => void;
-};
-
-const SearchBarPlaceholder = React.memo<SearchBarPlaceholderProps>(
-  ({ onPress }) => (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={translate('community.filters_label')}
-      accessibilityHint={translate('community.filters_hint')}
-      testID="community-search-bar"
-      className="active:opacity-90"
+const SearchBarPlaceholder = React.memo(function SearchBarPlaceholder() {
+  return (
+    <GlassSurface
+      glassEffectStyle="clear"
+      style={styles.searchPill}
+      fallbackClassName="bg-white/5 border border-white/10"
     >
-      <GlassSurface
-        glassEffectStyle="clear"
-        style={styles.searchPill}
-        fallbackClassName="bg-white/12 dark:bg-white/12"
-      >
-        <View className="flex-row items-center gap-3 px-5 py-3.5">
-          <Search size={20} color="rgba(255, 255, 255, 0.7)" />
-          <Text className="flex-1 text-base font-medium text-white/60">
-            {translate('community.search_placeholder')}
-          </Text>
-        </View>
-      </GlassSurface>
-    </Pressable>
-  )
-);
+      <View className="flex-row items-center gap-3 px-4 py-3">
+        <PlatformIcon
+          iosName="magnifyingglass"
+          size={20}
+          color="rgba(255, 255, 255, 0.5)"
+          fallback={<Search color="rgba(255, 255, 255, 0.5)" size={20} />}
+        />
+        <Text className="flex-1 text-sm font-medium text-white/40">
+          {translate('community.search_placeholder')}
+        </Text>
+      </View>
+    </GlassSurface>
+  );
+});
 SearchBarPlaceholder.displayName = 'SearchBarPlaceholder';
 
 type CommunityHeaderProps = {
@@ -109,13 +121,6 @@ export function CommunityHeader({
 
   const gradientColors = isDark ? GRADIENT_COLORS.dark : GRADIENT_COLORS.light;
 
-  const handleSegmentChange = React.useCallback(
-    (event: { nativeEvent: { selectedSegmentIndex: number } }) => {
-      onSegmentChange(event.nativeEvent.selectedSegmentIndex);
-    },
-    [onSegmentChange]
-  );
-
   const handleFilterPress = React.useCallback(() => {
     haptics.selection();
     onFilterPress();
@@ -132,56 +137,73 @@ export function CommunityHeader({
       ]}
       testID="community-header"
     >
-      <View className="z-0 px-5 pb-16">
-        {/* Top Row: Title + Filter Button */}
-        <View className="flex-row items-center justify-between">
-          {/* Title */}
-          <Text className="text-3xl font-bold tracking-tight text-white">
-            {translate('community.title')}
-          </Text>
+      <View className="z-0 px-4 pb-16">
+        {/* Search Row: Search Bar + Notification Bell */}
+        <View className="flex-row items-center gap-3">
+          <View className="flex-1">
+            <SearchBarPlaceholder />
+          </View>
 
-          {/* Filter/Search Button */}
+          {/* Filter/Notification Button */}
           <View className="relative">
             <GlassButton
               onPress={handleFilterPress}
               accessibilityLabel={translate('community.filters_label')}
               accessibilityHint={translate('community.filters_hint')}
               testID="community-filter-button"
-              fallbackClassName="bg-white/15 dark:bg-white/15"
+              fallbackClassName="bg-white/5 border border-white/10"
             >
-              <Search size={20} color={colors.white} />
+              <PlatformIcon
+                iosName="bell"
+                size={20}
+                color={colors.white}
+                fallback={<SlidersHorizontal color={colors.white} size={20} />}
+              />
             </GlassButton>
-            {/* Active indicator dot */}
+            {/* Notification indicator dot */}
             {hasActiveFilters && (
-              <View className="absolute -right-0.5 -top-0.5 size-3 rounded-full border-2 border-primary-800 bg-terracotta-500 dark:border-primary-400 dark:bg-terracotta-500" />
+              <View
+                className="absolute -right-0.5 -top-0.5 size-2.5 rounded-full bg-neon-lime"
+                style={styles.notificationDot}
+              />
             )}
           </View>
         </View>
 
-        {/* Glass Search Bar Placeholder */}
-        <View className="mt-5">
-          <SearchBarPlaceholder onPress={handleFilterPress} />
-        </View>
-
-        {/* Segmented Control for Showcase / Help Station */}
-        <View className="mt-5">
-          <SegmentedControl
-            values={segmentLabels}
-            selectedIndex={selectedIndex}
-            onChange={handleSegmentChange}
-            style={styles.segmentedControl}
-            backgroundColor="rgba(255, 255, 255, 0.12)"
-            fontStyle={SEGMENT_FONT_STYLE}
-            // eslint-disable-next-line react-native/no-inline-styles
-            activeFontStyle={{
-              color: isDark ? colors.primary[300] : colors.primary[800],
-              fontWeight: '600',
-              fontSize: 14,
-            }}
-            testID="community-segment-control"
-          />
+        {/* Segmented Control with Glass Background */}
+        <View className="mt-6">
+          <GlassSurface
+            glassEffectStyle="clear"
+            style={styles.segmentedWrapper}
+            fallbackClassName="bg-white/10 border border-white/15"
+          >
+            <SegmentedControl
+              values={segmentLabels}
+              selectedIndex={selectedIndex}
+              onChange={(event) => {
+                haptics.selection();
+                onSegmentChange(event.nativeEvent.selectedSegmentIndex);
+              }}
+              style={styles.segmentedControl}
+              backgroundColor="transparent"
+              tintColor={colors.white}
+              fontStyle={styles.segmentedFont}
+              activeFontStyle={styles.segmentedFontActive}
+              appearance={Platform.OS === 'ios' ? 'light' : undefined}
+            />
+          </GlassSurface>
         </View>
       </View>
+
+      {/* Gradient Fade at Bottom */}
+      <LinearGradient
+        colors={[
+          'transparent',
+          isDark ? colors.charcoal[950] : colors.primary[800],
+        ]}
+        style={styles.gradientFade}
+        pointerEvents="none"
+      />
     </LinearGradient>
   );
 }

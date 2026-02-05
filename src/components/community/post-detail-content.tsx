@@ -11,6 +11,7 @@ import Animated, {
   // @ts-ignore - Reanimated 4.x type exports issue
   scrollTo,
 } from 'react-native-reanimated';
+import { scheduleOnUI } from 'react-native-worklets';
 
 import { CommentInputFooter } from '@/components/community/comment-input-footer';
 import { PostActionBar } from '@/components/community/post-action-bar';
@@ -22,7 +23,7 @@ import colors from '@/components/ui/colors';
 import type { Post, PostComment } from '@/types/community';
 
 const styles = StyleSheet.create({
-  scrollContent: { paddingBottom: 128 },
+  scrollContent: { paddingBottom: 16 },
   contentSheet: {
     shadowColor: colors.black,
     shadowOffset: { width: 0, height: -4 },
@@ -36,7 +37,6 @@ type PostDetailContentProps = {
   post: Post;
   displayUsername: string;
   relativeTime: string;
-  isDark: boolean;
   hasImage: boolean;
   commentBody: string;
   setCommentBody: (value: string) => void;
@@ -74,6 +74,12 @@ function useScrollToHighlightedComment({
     number | null
   >(null);
   const lastHighlightedScrollKeyRef = React.useRef<string | null>(null);
+  const scrollToHighlightedComment = React.useCallback(
+    (y: number, animated: boolean): void => {
+      scrollTo(scrollViewRef, 0, y, animated);
+    },
+    [scrollViewRef]
+  );
 
   const handleCommentListLayout = React.useCallback((y: number) => {
     setCommentListY(y);
@@ -101,27 +107,54 @@ function useScrollToHighlightedComment({
     if (lastHighlightedScrollKeyRef.current === scrollKey) return;
     lastHighlightedScrollKeyRef.current = scrollKey;
 
-    const scrollToHighlightedComment = (): void => {
-      scrollTo(scrollViewRef, 0, targetY, true);
-    };
-
     const raf = requestAnimationFrame(() => {
-      scrollToHighlightedComment();
+      scheduleOnUI(scrollToHighlightedComment, targetY, true);
     });
 
     return () => {
       cancelAnimationFrame(raf);
     };
-  }, [commentListY, highlightedCommentId, highlightedCommentY, scrollViewRef]);
+  }, [
+    commentListY,
+    highlightedCommentId,
+    highlightedCommentY,
+    scrollViewRef,
+    scrollToHighlightedComment,
+  ]);
 
   return { handleCommentListLayout, handleHighlightedCommentLayout };
+}
+
+/**
+ * Renders post body with lime-colored hashtags
+ */
+function PostBodyWithHashtags({ body }: { body: string }): React.ReactElement {
+  // Split text by hashtags and render them with lime color
+  const parts = body.split(/(#\w+)/g);
+
+  return (
+    <Text className="mb-4 text-base leading-relaxed text-neutral-300 dark:text-neutral-200">
+      {parts.map((part, index) => {
+        if (part.startsWith('#')) {
+          return (
+            <Text
+              key={index}
+              className="font-medium text-lime-500 dark:text-lime-400"
+            >
+              {part}
+            </Text>
+          );
+        }
+        return part;
+      })}
+    </Text>
+  );
 }
 
 export function PostDetailContent({
   post,
   displayUsername,
   relativeTime,
-  isDark,
   hasImage,
   commentBody,
   setCommentBody,
@@ -142,7 +175,7 @@ export function PostDetailContent({
 
   return (
     <View
-      className="z-10 -mt-10 flex-1 overflow-hidden rounded-t-[32px] bg-white shadow-2xl dark:bg-charcoal-900"
+      className="z-10 flex-1 overflow-hidden bg-white dark:bg-charcoal-950"
       style={styles.contentSheet as StyleProp<ViewStyle>}
     >
       <Animated.ScrollView
@@ -158,7 +191,6 @@ export function PostDetailContent({
             displayUsername={displayUsername}
             relativeTime={relativeTime}
             strain={post.strain}
-            isDark={isDark}
             onAuthorPress={onAuthorPress}
             onStrainPress={onStrainPress}
           />
@@ -180,17 +212,12 @@ export function PostDetailContent({
             likeCount={post.like_count ?? 0}
             commentCount={post.comment_count ?? 0}
             userHasLiked={post.user_has_liked ?? false}
-            isDark={isDark}
             onSharePress={onSharePress}
           />
 
-          {post.body && (
-            <Text className="mb-4 text-base leading-relaxed text-neutral-800 dark:text-neutral-200">
-              {post.body}
-            </Text>
-          )}
+          {post.body && <PostBodyWithHashtags body={post.body} />}
 
-          <View className="my-6 h-px w-full bg-neutral-200/80 dark:bg-white/10" />
+          <View className="my-6 h-px w-full bg-white/10" />
 
           <PostDetailCommentSection
             comments={comments}

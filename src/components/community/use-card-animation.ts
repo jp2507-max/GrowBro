@@ -1,9 +1,7 @@
 /**
- * useCardAnimation - Card press animation hook
- * Provides scale animation for card press interactions
+ * useCardAnimation - Press animation for post cards
  */
-
-import { useCallback, useEffect } from 'react';
+import React from 'react';
 import {
   ReduceMotion,
   useAnimatedStyle,
@@ -11,43 +9,38 @@ import {
   withSpring,
 } from 'react-native-reanimated';
 
-import { haptics } from '@/lib/haptics';
+const SPRING_CONFIG = {
+  damping: 15,
+  stiffness: 150,
+  reduceMotion: ReduceMotion.System,
+};
 
-type UseCardAnimationReturn = {
+type CardAnimationReturn = {
   animatedStyle: ReturnType<typeof useAnimatedStyle>;
   onPressIn: () => void;
   onPressOut: () => void;
 };
 
+/**
+ * Press animation for post cards.
+ * @param _postId - Reserved for future per-card animation customization
+ */
 export function useCardAnimation(
-  resetKey?: string | number
-): UseCardAnimationReturn {
+  _postId: number | string
+): CardAnimationReturn {
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }));
 
-  useEffect(() => {
-    scale.value = 1;
-  }, [resetKey, scale]);
+  const onPressIn = React.useCallback(() => {
+    scale.value = withSpring(0.97, SPRING_CONFIG);
+  }, [scale]);
 
-  const onPressIn = useCallback(() => {
-    scale.value = withSpring(0.98, {
-      damping: 15,
-      stiffness: 350,
-      reduceMotion: ReduceMotion.System,
-    });
-    haptics.selection();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const onPressOut = useCallback(() => {
-    scale.value = withSpring(1, {
-      damping: 15,
-      stiffness: 350,
-      reduceMotion: ReduceMotion.System,
-    });
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const onPressOut = React.useCallback(() => {
+    scale.value = withSpring(1, SPRING_CONFIG);
+  }, [scale]);
 
   return { animatedStyle, onPressIn, onPressOut };
 }

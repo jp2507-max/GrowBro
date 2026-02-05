@@ -21,59 +21,62 @@ export function useScrollDirection(param?: 'include-negative'): {
   const prevOffsetY = useSharedValue(0);
   const offsetYAnchorOnBeginDrag = useSharedValue(0);
   const offsetYAnchorOnChangeDirection = useSharedValue(0);
+  const includeNegative = param === 'include-negative';
 
-  const onBeginDrag = (e: ReanimatedScrollEvent) => {
+  const onBeginDrag = (e: ReanimatedScrollEvent): void => {
     'worklet';
-    offsetYAnchorOnBeginDrag.value = e.contentOffset.y;
+    const normalizedOffsetY = includeNegative
+      ? e.contentOffset.y
+      : Math.max(e.contentOffset.y, 0);
+    offsetYAnchorOnBeginDrag.set(normalizedOffsetY);
   };
 
-  const onScroll = (e: ReanimatedScrollEvent) => {
+  const onScroll = (e: ReanimatedScrollEvent): void => {
     'worklet';
     const offsetY = e.contentOffset.y;
-    const positiveOffsetY =
-      param === 'include-negative' ? offsetY : Math.max(offsetY, 0);
-    const positivePrevOffsetY =
-      param === 'include-negative'
-        ? prevOffsetY.value
-        : Math.max(prevOffsetY.value, 0);
+    const normalizedOffsetY = includeNegative ? offsetY : Math.max(offsetY, 0);
+    const normalizedPrevOffsetY = includeNegative
+      ? prevOffsetY.get()
+      : Math.max(prevOffsetY.get(), 0);
+    const delta = normalizedPrevOffsetY - normalizedOffsetY;
+
+    const currentDirection = scrollDirection.get();
 
     if (
-      positivePrevOffsetY - positiveOffsetY < 0 &&
-      (scrollDirection.value === 'idle' || scrollDirection.value === 'to-top')
+      delta < 0 &&
+      (currentDirection === 'idle' || currentDirection === 'to-top')
     ) {
-      scrollDirection.value = 'to-bottom';
-      offsetYAnchorOnChangeDirection.value = offsetY;
-    }
-    if (
-      positivePrevOffsetY - positiveOffsetY > 0 &&
-      (scrollDirection.value === 'idle' ||
-        scrollDirection.value === 'to-bottom')
+      scrollDirection.set('to-bottom');
+      offsetYAnchorOnChangeDirection.set(normalizedOffsetY);
+    } else if (
+      delta > 0 &&
+      (currentDirection === 'idle' || currentDirection === 'to-bottom')
     ) {
-      scrollDirection.value = 'to-top';
-      offsetYAnchorOnChangeDirection.value = offsetY;
+      scrollDirection.set('to-top');
+      offsetYAnchorOnChangeDirection.set(normalizedOffsetY);
     }
-    prevOffsetY.value = offsetY;
+    prevOffsetY.set(normalizedOffsetY);
   };
 
-  const onEndDrag = () => {
+  const onEndDrag = (): void => {
     'worklet';
-    prevOffsetY.value = 0;
+    prevOffsetY.set(0);
   };
 
-  const reset = () => {
+  const reset = (): void => {
     'worklet';
-    scrollDirection.value = 'idle';
-    prevOffsetY.value = 0;
-    offsetYAnchorOnBeginDrag.value = 0;
-    offsetYAnchorOnChangeDirection.value = 0;
+    scrollDirection.set('idle');
+    prevOffsetY.set(0);
+    offsetYAnchorOnBeginDrag.set(0);
+    offsetYAnchorOnChangeDirection.set(0);
   };
 
   // JS thread version - shared value assignments are thread-safe
-  const resetFromJS = () => {
-    scrollDirection.value = 'idle';
-    prevOffsetY.value = 0;
-    offsetYAnchorOnBeginDrag.value = 0;
-    offsetYAnchorOnChangeDirection.value = 0;
+  const resetFromJS = (): void => {
+    scrollDirection.set('idle');
+    prevOffsetY.set(0);
+    offsetYAnchorOnBeginDrag.set(0);
+    offsetYAnchorOnChangeDirection.set(0);
   };
 
   return {

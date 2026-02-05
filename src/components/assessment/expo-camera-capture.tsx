@@ -3,11 +3,11 @@ import { randomUUID } from 'expo-crypto';
 import * as FileSystem from 'expo-file-system';
 import type { JSX } from 'react';
 import { useCallback, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 
-import { Button, colors, View } from '@/components/ui';
+import { View } from '@/components/ui';
 import { stripExifData } from '@/lib/assessment/image-processing';
+import { haptics } from '@/lib/haptics';
 import { qualityAssessmentEngine } from '@/lib/quality/engine';
 import type {
   CapturedPhoto,
@@ -15,6 +15,7 @@ import type {
   QualityResult,
 } from '@/types/assessment';
 
+import { CaptureButton } from './capture-button';
 import { CaptureGuidance } from './capture-guidance';
 
 type ExpoCameraCaptureProps = {
@@ -35,11 +36,11 @@ export function ExpoCameraCapture({
   const cameraRef = useRef<CameraView | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
   const isCapturingRef = useRef(false);
-  const { t } = useTranslation();
 
   const handleCapture = useCallback(async (): Promise<void> => {
     if (!cameraRef.current || isCapturingRef.current) return;
 
+    haptics.medium();
     isCapturingRef.current = true;
     setIsCapturing(true);
     try {
@@ -97,28 +98,7 @@ export function ExpoCameraCapture({
         maxPhotos={maxPhotos}
       />
 
-      {/* Capture Button */}
-      <View className="absolute inset-x-0 bottom-0 items-center pb-12">
-        <Button
-          testID="capture-button"
-          accessibilityLabel={t('assessment.camera.actions.capture')}
-          accessibilityHint={t('assessment.camera.actions.capture_hint')}
-          onPress={handleCapture}
-          disabled={isCapturing}
-          className="size-20 rounded-full bg-neutral-100"
-        >
-          {isCapturing ? (
-            <ActivityIndicator
-              size="small"
-              color={colors.charcoal[950]}
-              accessibilityLabel={t('assessment.camera.status.capturing')}
-              accessibilityHint={t('assessment.camera.status.capturing_hint')}
-            />
-          ) : (
-            <View className="size-16 rounded-full border-4 border-charcoal-950 bg-neutral-100" />
-          )}
-        </Button>
-      </View>
+      <CaptureButton onPress={handleCapture} isCapturing={isCapturing} />
     </View>
   );
 }

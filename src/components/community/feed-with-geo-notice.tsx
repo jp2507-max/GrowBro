@@ -3,10 +3,11 @@
  */
 
 import { FlashList } from '@shopify/flash-list';
-import React from 'react';
+import React, { useMemo } from 'react';
 
 import type { Post as ApiPost } from '@/api/posts';
 import { Text, View } from '@/components/ui';
+import { getOptimizedFlashListConfig } from '@/lib/flashlist-config';
 import { translate } from '@/lib/i18n';
 
 interface FeedWithGeoNoticeProps {
@@ -36,6 +37,8 @@ export function FeedWithGeoNotice({
   ListFooterComponent,
   testID,
 }: FeedWithGeoNoticeProps): React.ReactElement {
+  const flashListConfig = useMemo(() => getOptimizedFlashListConfig(), []);
+
   return (
     <View className="flex-1">
       <View className="m-4 rounded-lg border border-warning-300 bg-warning-50 p-4 dark:border-warning-700 dark:bg-warning-950">
@@ -57,6 +60,9 @@ export function FeedWithGeoNotice({
           onEndReachedThreshold={0.5}
           ListEmptyComponent={ListEmptyComponent}
           ListFooterComponent={ListFooterComponent}
+          scrollEventThrottle={flashListConfig.scrollEventThrottle}
+          removeClippedSubviews={flashListConfig.removeClippedSubviews}
+          drawDistance={flashListConfig.drawDistance}
         />
       </View>
     </View>

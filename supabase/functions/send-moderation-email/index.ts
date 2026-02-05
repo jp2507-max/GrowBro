@@ -9,7 +9,6 @@
  * - Include appeal instructions and deadlines
  */
 
-import { serve } from 'jsr:@std/http/server';
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 interface ModerationEmailRequest {
@@ -20,12 +19,37 @@ interface ModerationEmailRequest {
   appealDeadline: string;
 }
 
-serve(async (req: Request) => {
+function isServiceRoleRequest(req: Request, expected: string): boolean {
+  const authHeader = req.headers.get('authorization') ?? '';
+  const match = authHeader.match(/^Bearer\s+(.+)$/i);
+  if (!match) return false;
+  return Boolean(expected) && match[1] === expected;
+}
+
+Deno.serve(async (req: Request) => {
   try {
     // Verify request method
     if (req.method !== 'POST') {
       return new Response(JSON.stringify({ error: 'Method not allowed' }), {
         status: 405,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    if (!serviceRoleKey) {
+      return new Response(
+        JSON.stringify({ error: 'Server configuration error' }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    if (!isServiceRoleRequest(req, serviceRoleKey)) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
         headers: { 'Content-Type': 'application/json' },
       });
     }
@@ -127,7 +151,7 @@ serve(async (req: Request) => {
     return new Response(
       JSON.stringify({
         error: 'Internal server error',
-        message: error.message,
+        message: error instanceof Error ? error.message : 'Unknown error',
       }),
       {
         status: 500,

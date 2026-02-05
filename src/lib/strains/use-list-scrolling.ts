@@ -2,13 +2,13 @@
  * Hook to compose scroll handlers for FlashList with performance monitoring.
  */
 
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import {
-  runOnJS,
   useAnimatedScrollHandler,
   useComposedEventHandler,
 } from 'react-native-reanimated';
 import type { ReanimatedScrollEvent } from 'react-native-reanimated/lib/typescript/hook/commonTypes';
+import { scheduleOnRN } from 'react-native-worklets';
 
 import { useStrainListPerformance } from '@/lib/strains/use-strain-list-performance';
 
@@ -37,9 +37,13 @@ export function useListScrolling({
     listSize,
   });
 
+  const handlePerfScrollJS = useCallback((): void => {
+    handlePerfScroll();
+  }, [handlePerfScroll]);
+
   const perfScrollHandler = useAnimatedScrollHandler({
     onEnd: () => {
-      runOnJS(handlePerfScroll)();
+      scheduleOnRN(handlePerfScrollJS);
     },
   });
 

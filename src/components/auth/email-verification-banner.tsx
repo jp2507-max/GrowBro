@@ -14,7 +14,7 @@ export const EmailVerificationBanner = ({
   onDismiss,
 }: EmailVerificationBannerProps) => {
   const { t } = useTranslation();
-  const user = useAuth.use.user();
+  const user = useAuth((s) => s.user);
   const [isDismissed, setIsDismissed] = useState(false);
 
   const resendMutation = useResendVerificationEmail({

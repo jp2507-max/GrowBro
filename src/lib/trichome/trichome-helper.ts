@@ -7,9 +7,9 @@
 
 import type { Database } from '@nozbe/watermelondb';
 
+import { triggerDigitalTwinSync } from '@/lib/digital-twin/sync-helpers';
+import { type TrichomeAssessmentModel } from '@/lib/watermelon-models/trichome-assessment';
 import type { TrichomeAssessment } from '@/types/playbook';
-
-import { type TrichomeAssessmentModel } from '../watermelon-models/trichome-assessment';
 
 export type TrichomeStage = 'clear' | 'milky' | 'cloudy' | 'amber';
 
@@ -220,6 +220,8 @@ export class TrichomeHelper {
         record.harvestWindowSuggestion = assessment.harvestWindowSuggestion;
       });
     });
+
+    triggerDigitalTwinSync(assessment.plantId, 'TrichomeHelper');
 
     return created.toTrichomeAssessment();
   }

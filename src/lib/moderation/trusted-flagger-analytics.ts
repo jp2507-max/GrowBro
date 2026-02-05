@@ -4,6 +4,7 @@
  * Requirements: 11.1-11.7
  */
 
+import { client } from '@/api/common';
 import { supabase } from '@/lib/supabase';
 import type {
   TrustedFlagger,
@@ -24,6 +25,16 @@ type RawFlaggerData = {
   updated_at: string;
   deleted_at?: string;
 };
+
+type RawTrustedFlagger = RawFlaggerData &
+  Omit<
+    TrustedFlagger,
+    | 'certification_date'
+    | 'review_date'
+    | 'created_at'
+    | 'updated_at'
+    | 'deleted_at'
+  >;
 
 /**
  * Calculate accuracy rate for a trusted flagger
@@ -168,10 +179,11 @@ async function calculateFlaggerMetrics(
     .select('action')
     .eq('reporter_id', flagger.id);
 
-  const falsePositiveRate = decisions
-    ? decisions.filter((d) => d.action === 'no_action').length /
-      decisions.length
-    : 0;
+  const falsePositiveRate =
+    decisions && decisions.length > 0
+      ? decisions.filter((d) => d.action === 'no_action').length /
+        decisions.length
+      : 0;
 
   return {
     flagger_id: flagger.id,
@@ -254,18 +266,10 @@ export async function getTrustedFlaggerAnalytics(): Promise<TrustedFlaggerAnalyt
 export async function getTrustedFlaggerMetrics(
   flaggerId: string
 ): Promise<TrustedFlaggerMetrics> {
-  // TODO: Replace with actual Supabase query
-  const response = await fetch(
-    `/api/moderation/trusted-flaggers/${flaggerId}/metrics`
+  const response = await client.get<TrustedFlaggerMetrics>(
+    `/moderation/trusted-flaggers/${flaggerId}/metrics`
   );
-
-  if (!response.ok) {
-    throw new Error(
-      `Failed to fetch trusted flagger metrics: ${response.statusText}`
-    );
-  }
-
-  const rawData = await response.json();
+  const rawData = response.data;
 
   // Convert date string to Date object
   return {
@@ -282,48 +286,28 @@ export async function getTrustedFlaggerMetrics(
 export async function getTrustedFlaggers(
   status?: 'active' | 'warning' | 'suspended'
 ): Promise<TrustedFlagger[]> {
-  // TODO: Replace with actual Supabase query
-  const url = status
-    ? `/api/moderation/trusted-flaggers?status=${status}`
-    : '/api/moderation/trusted-flaggers';
+  const response = await client.get<RawTrustedFlagger[]>(
+    '/moderation/trusted-flaggers',
+    {
+      params: status ? { status } : undefined,
+    }
+  );
 
-  const response = await fetch(url);
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch trusted flaggers: ${response.statusText}`);
-  }
-
-  const rawData = await response.json();
+  const rawData = response.data;
 
   // Convert date strings to Date objects for each flagger
-  return rawData.map(
-    (
-      flagger: RawFlaggerData &
-        Omit<
-          TrustedFlagger,
-          | 'certification_date'
-          | 'review_date'
-          | 'created_at'
-          | 'updated_at'
-          | 'deleted_at'
-        >
-    ) => ({
-      ...flagger,
-      certification_date: flagger.certification_date
-        ? new Date(flagger.certification_date)
-        : null,
-      review_date: flagger.review_date
-        ? new Date(flagger.review_date)
-        : new Date(),
-      created_at: flagger.created_at
-        ? new Date(flagger.created_at)
-        : new Date(),
-      updated_at: flagger.updated_at
-        ? new Date(flagger.updated_at)
-        : new Date(),
-      deleted_at: flagger.deleted_at ? new Date(flagger.deleted_at) : undefined,
-    })
-  ) as TrustedFlagger[];
+  return rawData.map((flagger) => ({
+    ...flagger,
+    certification_date: flagger.certification_date
+      ? new Date(flagger.certification_date)
+      : null,
+    review_date: flagger.review_date
+      ? new Date(flagger.review_date)
+      : new Date(),
+    created_at: flagger.created_at ? new Date(flagger.created_at) : new Date(),
+    updated_at: flagger.updated_at ? new Date(flagger.updated_at) : new Date(),
+    deleted_at: flagger.deleted_at ? new Date(flagger.deleted_at) : undefined,
+  })) as TrustedFlagger[];
 }
 
 /**
@@ -459,14 +443,16 @@ export async function exportFlaggerMetrics(
   startDate: Date,
   endDate: Date
 ): Promise<Blob> {
-  // TODO: Replace with actual Supabase query and CSV generation
-  const response = await fetch(
-    `/api/moderation/trusted-flaggers/export?start=${startDate.toISOString()}&end=${endDate.toISOString()}`
+  const response = await client.get<Blob>(
+    '/moderation/trusted-flaggers/export',
+    {
+      params: {
+        start: startDate.toISOString(),
+        end: endDate.toISOString(),
+      },
+      responseType: 'blob',
+    }
   );
 
-  if (!response.ok) {
-    throw new Error(`Failed to export flagger metrics: ${response.statusText}`);
-  }
-
-  return response.blob();
+  return response.data;
 }

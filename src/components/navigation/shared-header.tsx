@@ -20,6 +20,7 @@ import { useAnimatedScrollList } from '@/lib/animations/animated-scroll-list-pro
 import { motion, withRM } from '@/lib/animations/motion';
 import type { TxKeyPath } from '@/lib/i18n';
 import { useThemeConfig } from '@/lib/use-theme-config';
+import { isEnvFlagEnabled } from '@/lib/utils/env-flags';
 
 type SharedHeaderProps = {
   rightComponent?: React.ReactNode;
@@ -140,24 +141,26 @@ function useSharedHeaderAnimation({
     const baseHeight =
       SHARED_TAB_HEIGHTS[routeKey] ?? SHARED_TAB_HEIGHTS[DEFAULT_ROUTE_KEY];
     const target = baseHeight + insetsTop + HEADER_TOP_SPACING;
-    height.value = withSpring(target, motion.spring.header);
+    height.set(withSpring(target, motion.spring.header));
   }, [height, insetsTop, routeKey]);
 
   // Update header position based on scroll
   useDerivedValue(() => {
     if (!isCollapsible) {
-      translateY.value = 0;
+      translateY.set(0);
       return;
     }
     const currentHeight =
       SHARED_TAB_HEIGHTS[routeKey] ?? SHARED_TAB_HEIGHTS[DEFAULT_ROUTE_KEY];
     const maxOffset = currentHeight + HEADER_TOP_SPACING + insetsTop;
-    const anchor = Math.max(offsetYAnchorOnBeginDrag.value, 0);
-    const delta = Math.max(listOffsetY.value - anchor, 0);
-    translateY.value =
-      scrollDirection.value === 'to-bottom'
+    const anchor = Math.max(offsetYAnchorOnBeginDrag.get(), 0);
+    const offset = listOffsetY.get();
+    const delta = Math.max(offset - anchor, 0);
+    translateY.set(
+      scrollDirection.get() === 'to-bottom'
         ? -Math.min(delta, maxOffset)
-        : -Math.max(maxOffset - listOffsetY.value, 0);
+        : -Math.max(maxOffset - offset, 0)
+    );
   }, [
     insetsTop,
     isCollapsible,
@@ -169,9 +172,9 @@ function useSharedHeaderAnimation({
 
   const animatedContainerStyle = useAnimatedStyle(
     () => ({
-      height: height.value,
-      transform: [{ translateY: translateY.value }],
-      opacity: isCollapsible ? 1 + translateY.value / (height.value || 1) : 1,
+      height: height.get(),
+      transform: [{ translateY: translateY.get() }],
+      opacity: isCollapsible ? 1 + translateY.get() / (height.get() || 1) : 1,
     }),
     [isCollapsible]
   );
@@ -216,6 +219,8 @@ function HeaderPerTabContent({
   const theme = useThemeConfig();
   const isDark = theme.colors.background === colors.charcoal[950];
   const syncSurface = isDark ? colors.charcoal[800] : colors.neutral[100];
+  const shouldRenderSync =
+    showSync && !isEnvFlagEnabled('EXPO_PUBLIC_DISABLE_SYNC_STATUS');
 
   return (
     <View className="gap-2 px-5 pb-4">
@@ -226,7 +231,7 @@ function HeaderPerTabContent({
           testID="shared-header-connectivity-banner"
         />
       ) : null}
-      {showSync ? (
+      {shouldRenderSync ? (
         <View
           className="rounded-xl px-3 py-2"
           style={{ backgroundColor: syncSurface }}

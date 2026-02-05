@@ -125,6 +125,8 @@ export const TABLE_NAMES = {
   IMAGE_UPLOAD_QUEUE: 'image_upload_queue',
   FAVORITES: 'favorites',
   CACHED_STRAINS: 'cached_strains',
+  PLANT_STAGE_HISTORY: 'plant_stage_history',
+  PLANT_EVENTS: 'plant_events',
   PLAYBOOKS: 'playbooks',
   PLAYBOOK_APPLICATIONS: 'playbook_applications',
   UNDO_DESCRIPTORS: 'undo_descriptors',

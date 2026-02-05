@@ -5,9 +5,10 @@
  * that should have the glass effect on supported devices.
  */
 
+import { useColorScheme } from 'nativewind';
 import React from 'react';
 import type { StyleProp, ViewStyle } from 'react-native';
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { GlassSurface } from '@/components/shared/glass-surface';
 
@@ -56,6 +57,9 @@ export function GlassButton({
   hitSlop,
   children,
 }: GlassButtonProps): React.ReactElement {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   const containerStyle = React.useMemo((): ViewStyle => {
     if (variant === 'circular') {
       return {
@@ -88,14 +92,33 @@ export function GlassButton({
         style,
       ]}
     >
-      <GlassSurface
-        glassEffectStyle="clear"
-        isInteractive
-        style={[styles.surface, containerStyle]}
-        fallbackClassName={fallbackClassName}
-      >
-        {children}
-      </GlassSurface>
+      {({ pressed }) => (
+        <GlassSurface
+          glassEffectStyle="clear"
+          isInteractive
+          style={[styles.surface, containerStyle]}
+          fallbackClassName={fallbackClassName}
+        >
+          {pressed ? (
+            <View
+              pointerEvents="none"
+              style={[
+                StyleSheet.absoluteFill,
+                // eslint-disable-next-line react-native/no-inline-styles -- Dynamic theme color requires inline style
+                {
+                  backgroundColor: isDark
+                    ? 'rgba(255, 255, 255, 0.12)'
+                    : 'rgba(0, 0, 0, 0.08)',
+                },
+              ]}
+              accessible={false}
+              importantForAccessibility="no-hide-descendants"
+              testID={testID ? `${testID}-pressed-overlay` : undefined}
+            />
+          ) : null}
+          {children}
+        </GlassSurface>
+      )}
     </Pressable>
   );
 }
@@ -105,7 +128,7 @@ const styles = StyleSheet.create({
     // No additional styles needed; the GlassSurface handles appearance
   },
   pressed: {
-    opacity: 0.7,
+    transform: [{ scale: 0.96 }],
   },
   surface: {
     alignItems: 'center',

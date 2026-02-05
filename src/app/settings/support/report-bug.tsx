@@ -5,6 +5,7 @@
  */
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import * as Sentry from '@sentry/react-native';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
@@ -53,7 +54,7 @@ type BugReportFormData = z.infer<typeof bugReportSchema>;
 // eslint-disable-next-line max-lines-per-function -- Complex form screen
 export default function ReportBugScreen() {
   const router = useRouter();
-  const user = useAuth.use.user();
+  const user = useAuth((s) => s.user);
   const { isInternetReachable } = useNetworkStatus();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [diagnostics, setDiagnostics] = useState<BugDiagnostics | null>(null);
@@ -79,11 +80,17 @@ export default function ReportBugScreen() {
   useEffect(() => {
     void (async () => {
       const collected = await collectDiagnostics();
-      collected.networkStatus =
-        isInternetReachable === false ? 'offline' : 'online';
       setDiagnostics(collected);
     })();
-  }, [isInternetReachable]);
+  }, []);
+
+  // Update network status separately when it changes
+  useEffect(() => {
+    if (!diagnostics) return;
+    const status = isInternetReachable === false ? 'offline' : 'online';
+    if (diagnostics.networkStatus === status) return;
+    setDiagnostics({ ...diagnostics, networkStatus: status });
+  }, [diagnostics, isInternetReachable]);
 
   const onSubmit = async (data: BugReportFormData) => {
     if (!diagnostics) {
@@ -136,6 +143,10 @@ export default function ReportBugScreen() {
       }
     } catch (error) {
       console.error('Failed to submit bug report:', error);
+      Sentry.captureException(error, {
+        tags: { feature: 'bug-report' },
+        extra: { category: data.category },
+      });
       Alert.alert(
         translate('settings.support.report_bug.error_title'),
         translate('settings.support.report_bug.error_message')
@@ -269,7 +280,7 @@ export default function ReportBugScreen() {
             </View>
 
             {/* Include Diagnostics Toggle */}
-            <View className="mb-4 rounded-lg border border-neutral-200 bg-white p-4 dark:border-charcoal-700 dark:bg-charcoal-900">
+            <View className="mb-4 rounded-lg border border-neutral-200 bg-white p-4 dark:border-white/10 dark:bg-charcoal-900">
               <View className="mb-2 flex-row items-center justify-between">
                 <Text className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
                   {translate('settings.support.report_bug.include_diagnostics')}

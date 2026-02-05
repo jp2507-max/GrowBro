@@ -21,6 +21,13 @@ interface LockoutNotificationRequest {
   failedAttempts: number;
 }
 
+function isServiceRoleRequest(req: Request, expected: string): boolean {
+  const authHeader = req.headers.get('authorization') ?? '';
+  const match = authHeader.match(/^Bearer\s+(.+)$/i);
+  if (!match) return false;
+  return Boolean(expected) && match[1] === expected;
+}
+
 interface ResendEmailResponse {
   id: string;
 }
@@ -31,16 +38,6 @@ Deno.serve(async (req: Request) => {
     if (req.method !== 'POST') {
       return new Response(JSON.stringify({ error: 'Method not allowed' }), {
         status: 405,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Check shared secret
-    const sharedSecret = req.headers.get('x-shared-secret');
-    const expectedSecret = Deno.env.get('PROCESS_SHARED_SECRET');
-    if (!expectedSecret || sharedSecret !== expectedSecret) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
         headers: { 'Content-Type': 'application/json' },
       });
     }
@@ -59,6 +56,20 @@ Deno.serve(async (req: Request) => {
         status: 500,
         headers: { 'Content-Type': 'application/json' },
       });
+    }
+
+    if (!isServiceRoleRequest(req, supabaseKey)) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Check shared secret
+    const sharedSecret = req.headers.get('x-shared-secret');
+    const expectedSecret = Deno.env.get('PROCESS_SHARED_SECRET');
+    if (expectedSecret && sharedSecret !== expectedSecret) {
+      console.warn('[send-lockout-notification] Shared secret mismatch');
     }
 
     // Parse request body

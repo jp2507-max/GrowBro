@@ -16,8 +16,11 @@ export * from './list';
 export * from './modal';
 export * from './optimized-image';
 export * from './progress-bar';
+export * from './section-header';
 export * from './select';
+export * from './sheet-header';
 export * from './skeleton';
+export * from './switch';
 export * from './text';
 export * from './utils';
 

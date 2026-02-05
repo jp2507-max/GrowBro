@@ -333,6 +333,13 @@ async function hydrateFromStorage({
   return { items, localCursor: result.nextCursor, result };
 }
 
+/**
+ * Base store hook for direct selectors: `useNotificationCenterStore((s) => s.status)`
+ * Preferred over property selectors for React Compiler compatibility.
+ */
+export const useNotificationCenterStore = _useNotificationCenter;
+
+/** @deprecated Use `useNotificationCenterStore((s) => s.field)` for React Compiler compatibility */
 export const useNotificationCenter = createSelectors(_useNotificationCenter);
 
 export function getNotificationUnreadCount(): number {

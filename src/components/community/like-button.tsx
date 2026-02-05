@@ -51,7 +51,11 @@ function CompactContent({
     );
   }
   return (
-    <Text className="text-xl text-black dark:text-white">
+    <Text
+      className={`text-xl ${
+        userHasLiked ? 'text-terracotta-500' : 'text-black dark:text-white'
+      }`}
+    >
       {userHasLiked ? '♥' : '♡'}
     </Text>
   );

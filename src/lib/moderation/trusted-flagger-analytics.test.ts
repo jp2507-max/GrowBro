@@ -15,9 +15,17 @@ import {
   shouldWarnFlagger,
 } from './trusted-flagger-analytics';
 
-// Mock fetch globally
-const mockFetch = jest.fn();
-global.fetch = mockFetch;
+jest.mock('@/api/common', () => ({
+  client: {
+    get: jest.fn(),
+  },
+}));
+
+jest.mock('@/lib/supabase', () => ({
+  supabase: {
+    from: jest.fn(),
+  },
+}));
 
 afterEach(cleanup);
 afterEach(() => {
@@ -26,100 +34,48 @@ afterEach(() => {
 
 describe('Trusted Flagger Analytics', () => {
   describe('getTrustedFlaggerAnalytics', () => {
-    test('fetches analytics and converts date strings to Date objects', async () => {
-      const mockResponse = {
-        total_flaggers: 2,
-        active_flaggers: 2,
-        flaggers: [
-          {
-            flagger_id: '1',
-            flagger_name: 'Test Flagger 1',
-            accuracy_rate: 0.95,
-            false_positive_rate: 0.05,
-            average_response_time_ms: 3600000,
-            report_volume: { total: 100, this_week: 10, this_month: 25 },
-            quality_trend: 'improving' as const,
-            last_reviewed_at: '2024-01-15T10:00:00Z',
-            status: 'active' as const,
-          },
-          {
-            flagger_id: '2',
-            flagger_name: 'Test Flagger 2',
-            accuracy_rate: 0.88,
-            false_positive_rate: 0.12,
-            average_response_time_ms: 7200000,
-            report_volume: { total: 50, this_week: 5, this_month: 15 },
-            quality_trend: 'stable' as const,
-            last_reviewed_at: '2024-01-10T10:00:00Z',
-            status: 'active' as const,
-          },
-        ],
-        aggregate_metrics: {
-          average_accuracy: 0.915,
-          average_response_time_ms: 5400000,
-          total_reports_this_month: 40,
-        },
+    test('returns empty analytics when no active flaggers exist', async () => {
+      const { supabase } = jest.requireMock('@/lib/supabase') as {
+        supabase: { from: jest.Mock };
       };
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: jest.fn().mockResolvedValue(mockResponse),
+      supabase.from.mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        is: jest.fn().mockResolvedValue({ data: [], error: null }),
       });
 
       const result = await getTrustedFlaggerAnalytics();
 
-      expect(mockFetch).toHaveBeenCalledWith(
-        '/api/moderation/trusted-flaggers/analytics'
-      );
-      expect(result.total_flaggers).toBe(2);
-      expect(result.active_flaggers).toBe(2);
-      expect(result.flaggers).toHaveLength(2);
-      expect(result.flaggers[0].last_reviewed_at).toBeInstanceOf(Date);
-      expect(result.flaggers[0].last_reviewed_at?.toISOString()).toBe(
-        '2024-01-15T10:00:00.000Z'
-      );
-      expect(result.flaggers[1].last_reviewed_at).toBeInstanceOf(Date);
-      expect(result.flaggers[1].last_reviewed_at?.toISOString()).toBe(
-        '2024-01-10T10:00:00.000Z'
-      );
-    });
-
-    test('handles empty flaggers array', async () => {
-      const mockResponse = {
-        total_flaggers: 0,
-        active_flaggers: 0,
-        flaggers: [],
-        aggregate_metrics: {
-          average_accuracy: 0,
-          average_response_time_ms: 0,
-          total_reports_this_month: 0,
-        },
-      };
-
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: jest.fn().mockResolvedValue(mockResponse),
-      });
-
-      const result = await getTrustedFlaggerAnalytics();
-
+      expect(result.total_flaggers).toBe(0);
+      expect(result.active_flaggers).toBe(0);
       expect(result.flaggers).toEqual([]);
     });
 
-    test('throws error on failed response', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        statusText: 'Internal Server Error',
+    test('throws error when Supabase query fails', async () => {
+      const { supabase } = jest.requireMock('@/lib/supabase') as {
+        supabase: { from: jest.Mock };
+      };
+
+      supabase.from.mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        is: jest
+          .fn()
+          .mockResolvedValue({ data: null, error: { message: 'boom' } }),
       });
 
       await expect(getTrustedFlaggerAnalytics()).rejects.toThrow(
-        'Failed to fetch trusted flagger analytics: Internal Server Error'
+        'Failed to fetch trusted flaggers: boom'
       );
     });
   });
 
   describe('getTrustedFlaggerMetrics', () => {
     test('fetches metrics and converts date string to Date object', async () => {
+      const { client } = jest.requireMock('@/api/common') as {
+        client: { get: jest.Mock };
+      };
       const mockResponse = {
         flagger_id: '1',
         flagger_name: 'Test Flagger',
@@ -132,15 +88,12 @@ describe('Trusted Flagger Analytics', () => {
         status: 'active' as const,
       };
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: jest.fn().mockResolvedValue(mockResponse),
-      });
+      client.get.mockResolvedValueOnce({ data: mockResponse });
 
       const result = await getTrustedFlaggerMetrics('1');
 
-      expect(mockFetch).toHaveBeenCalledWith(
-        '/api/moderation/trusted-flaggers/1/metrics'
+      expect(client.get).toHaveBeenCalledWith(
+        '/moderation/trusted-flaggers/1/metrics'
       );
       expect(result.last_reviewed_at).toBeInstanceOf(Date);
       expect(result.last_reviewed_at?.toISOString()).toBe(
@@ -149,6 +102,9 @@ describe('Trusted Flagger Analytics', () => {
     });
 
     test('handles undefined last_reviewed_at', async () => {
+      const { client } = jest.requireMock('@/api/common') as {
+        client: { get: jest.Mock };
+      };
       const mockResponse = {
         flagger_id: '1',
         flagger_name: 'Test Flagger',
@@ -161,10 +117,7 @@ describe('Trusted Flagger Analytics', () => {
         status: 'active' as const,
       };
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: jest.fn().mockResolvedValue(mockResponse),
-      });
+      client.get.mockResolvedValueOnce({ data: mockResponse });
 
       const result = await getTrustedFlaggerMetrics('1');
 
@@ -174,6 +127,9 @@ describe('Trusted Flagger Analytics', () => {
 
   describe('getTrustedFlaggers', () => {
     test('fetches flaggers and converts date strings to Date objects', async () => {
+      const { client } = jest.requireMock('@/api/common') as {
+        client: { get: jest.Mock };
+      };
       const mockResponse = [
         {
           id: '1',
@@ -210,16 +166,13 @@ describe('Trusted Flagger Analytics', () => {
         },
       ];
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: jest.fn().mockResolvedValue(mockResponse),
-      });
+      client.get.mockResolvedValueOnce({ data: mockResponse });
 
       const result = await getTrustedFlaggers();
 
-      expect(mockFetch).toHaveBeenCalledWith(
-        '/api/moderation/trusted-flaggers'
-      );
+      expect(client.get).toHaveBeenCalledWith('/moderation/trusted-flaggers', {
+        params: undefined,
+      });
       expect(result).toHaveLength(2);
 
       // Check first flagger
@@ -253,27 +206,27 @@ describe('Trusted Flagger Analytics', () => {
     });
 
     test('handles status filter', async () => {
-      const mockResponse: any[] = [];
+      const { client } = jest.requireMock('@/api/common') as {
+        client: { get: jest.Mock };
+      };
+      const mockResponse: unknown[] = [];
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: jest.fn().mockResolvedValue(mockResponse),
-      });
+      client.get.mockResolvedValueOnce({ data: mockResponse });
 
       await getTrustedFlaggers('active');
 
-      expect(mockFetch).toHaveBeenCalledWith(
-        '/api/moderation/trusted-flaggers?status=active'
-      );
+      expect(client.get).toHaveBeenCalledWith('/moderation/trusted-flaggers', {
+        params: { status: 'active' },
+      });
     });
 
     test('handles empty response array', async () => {
-      const mockResponse: any[] = [];
+      const { client } = jest.requireMock('@/api/common') as {
+        client: { get: jest.Mock };
+      };
+      const mockResponse: unknown[] = [];
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: jest.fn().mockResolvedValue(mockResponse),
-      });
+      client.get.mockResolvedValueOnce({ data: mockResponse });
 
       const result = await getTrustedFlaggers();
 
@@ -423,7 +376,7 @@ describe('Trusted Flagger Analytics', () => {
         },
       ];
 
-      const result = calculateAggregateMetrics(flaggers as any);
+      const result = calculateAggregateMetrics(flaggers as never[]);
 
       expect(result.averageAccuracy).toBeCloseTo(0.85);
       expect(result.averageResponseTime).toBe(5400000);
@@ -462,7 +415,7 @@ describe('Trusted Flagger Analytics', () => {
         }, // Should suspend
       ];
 
-      const result = getFlaggersRequiringReview(flaggers as any);
+      const result = getFlaggersRequiringReview(flaggers as never[]);
 
       expect(result).toHaveLength(2);
       expect(result[0].accuracy_rate).toBe(0.65);
@@ -485,7 +438,7 @@ describe('Trusted Flagger Analytics', () => {
         },
       ];
 
-      const result = getFlaggersRequiringReview(flaggers as any);
+      const result = getFlaggersRequiringReview(flaggers as never[]);
 
       expect(result).toEqual([]);
     });
@@ -527,34 +480,41 @@ describe('Trusted Flagger Analytics', () => {
 
   describe('exportFlaggerMetrics', () => {
     test('exports metrics with date range', async () => {
+      const { client } = jest.requireMock('@/api/common') as {
+        client: { get: jest.Mock };
+      };
       const startDate = new Date('2024-01-01');
       const endDate = new Date('2024-01-31');
       const mockBlob = new Blob(['test data'], { type: 'text/csv' });
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        blob: jest.fn().mockResolvedValue(mockBlob),
-      });
+      client.get.mockResolvedValueOnce({ data: mockBlob });
 
       const result = await exportFlaggerMetrics(startDate, endDate);
 
-      expect(mockFetch).toHaveBeenCalledWith(
-        `/api/moderation/trusted-flaggers/export?start=${startDate.toISOString()}&end=${endDate.toISOString()}`
+      expect(client.get).toHaveBeenCalledWith(
+        '/moderation/trusted-flaggers/export',
+        {
+          params: {
+            start: startDate.toISOString(),
+            end: endDate.toISOString(),
+          },
+          responseType: 'blob',
+        }
       );
       expect(result).toBeInstanceOf(Blob);
     });
 
     test('throws error on failed response', async () => {
+      const { client } = jest.requireMock('@/api/common') as {
+        client: { get: jest.Mock };
+      };
       const startDate = new Date('2024-01-01');
       const endDate = new Date('2024-01-31');
 
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        statusText: 'Internal Server Error',
-      });
+      client.get.mockRejectedValueOnce(new Error('Internal Server Error'));
 
       await expect(exportFlaggerMetrics(startDate, endDate)).rejects.toThrow(
-        'Failed to export flagger metrics: Internal Server Error'
+        'Internal Server Error'
       );
     });
   });

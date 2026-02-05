@@ -53,9 +53,7 @@ function ToggleRow({
         </Text>
       </View>
       <Switch
-        checked={checked}
-        onChange={onChange}
-        // Support tests that dispatch `valueChange` on Switch
+        value={checked}
         onValueChange={onChange}
         testID={`${testID}-switch`}
         accessibilityLabel={title}
@@ -154,14 +152,7 @@ function useLoadConsents(
     return () => {
       mounted = false;
     };
-  }, [
-    isVisible,
-    setters,
-    setters.setTelemetry,
-    setters.setExperiments,
-    setters.setAiTraining,
-    setters.setCrashDiagnostics,
-  ]);
+  }, [isVisible, setters]);
 
   return loaded;
 }

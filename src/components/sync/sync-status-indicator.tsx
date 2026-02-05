@@ -3,7 +3,7 @@ import { ActivityIndicator } from 'react-native';
 
 import { Text, View } from '@/components/ui';
 import colors from '@/components/ui/colors';
-import { useSyncState } from '@/lib/sync/sync-state';
+import { useSyncStateStore } from '@/lib/sync/sync-state';
 
 type SyncStatusIndicatorProps = {
   showLabel?: boolean;
@@ -14,7 +14,7 @@ export function SyncStatusIndicator({
   showLabel = true,
   size = 'small',
 }: SyncStatusIndicatorProps) {
-  const syncInFlight = useSyncState.use.syncInFlight();
+  const syncInFlight = useSyncStateStore((s) => s.syncInFlight);
 
   if (!syncInFlight) {
     return null;

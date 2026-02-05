@@ -138,6 +138,8 @@ const _useRegionalCompliance = create<RegionalComplianceState>((set, get) =>
 
 const regionalComplianceStore = createSelectors(_useRegionalCompliance);
 
+export const useRegionalComplianceStore = _useRegionalCompliance;
+/** @deprecated Use `useRegionalComplianceStore((s) => s.field)` for React Compiler compatibility. */
 export const useRegionalCompliance = regionalComplianceStore;
 
 export function initializeRegionalCompliance(): void {

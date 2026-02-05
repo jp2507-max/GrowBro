@@ -4,6 +4,13 @@
  * Requirements: 2.5, 4.5
  */
 
+import {
+  apiCheckConflictOfInterest,
+  apiGetAlternativeModerators,
+  apiHasPreviousDecision,
+  apiHasRelationship,
+  apiLogCOIEvent,
+} from '@/api/moderation/conflict-of-interest-api';
 import type { ConflictOfInterest } from '@/types/moderation';
 
 import { getDecisionsByModerator } from './similar-decisions';
@@ -15,23 +22,7 @@ export async function checkConflictOfInterest(
   reportId: string,
   moderatorId: string
 ): Promise<ConflictOfInterest> {
-  // TODO: Replace with actual Supabase query
-  const response = await fetch(
-    `/api/moderation/reports/${reportId}/conflict-check?moderator_id=${moderatorId}`
-  );
-
-  if (!response.ok) {
-    console.error(
-      `[COI] Conflict check failed for report ${reportId}, moderator ${moderatorId}: ${response.status} ${response.statusText}`
-    );
-    // Err on side of caution
-    return {
-      has_conflict: true,
-      reasons: ['moderation_check_failed'],
-    };
-  }
-
-  return response.json();
+  return apiCheckConflictOfInterest(reportId, moderatorId);
 }
 
 /**
@@ -41,21 +32,8 @@ export async function hasPreviousDecision(
   moderatorId: string,
   contentId: string
 ): Promise<{ hasDecision: boolean; decisionIds: string[] }> {
-  // TODO: Replace with actual Supabase query
-  const response = await fetch(
-    `/api/moderation/moderators/${moderatorId}/decisions?content_id=${contentId}`
-  );
-
-  if (!response.ok) {
-    return { hasDecision: false, decisionIds: [] };
-  }
-
-  const decisions = (await response.json()) as { id: string }[];
-
-  return {
-    hasDecision: decisions.length > 0,
-    decisionIds: decisions.map((d) => d.id),
-  };
+  const result = await apiHasPreviousDecision(moderatorId, contentId);
+  return { hasDecision: result.hasDecision, decisionIds: result.decisionIds };
 }
 
 /**
@@ -66,16 +44,7 @@ export async function hasRelationship(
   moderatorId: string,
   userId: string
 ): Promise<{ hasRelationship: boolean; relationshipType?: string }> {
-  // TODO: Replace with actual Supabase query checking follows, blocks, etc.
-  const response = await fetch(
-    `/api/moderation/moderators/${moderatorId}/relationships?user_id=${userId}`
-  );
-
-  if (!response.ok) {
-    return { hasRelationship: false };
-  }
-
-  return response.json();
+  return apiHasRelationship(moderatorId, userId);
 }
 
 /**
@@ -229,16 +198,7 @@ export async function getAlternativeModerators(
   reportId: string,
   excludeModeratorIds: string[]
 ): Promise<string[]> {
-  // TODO: Replace with actual Supabase query
-  const response = await fetch(
-    `/api/moderation/reports/${reportId}/alternative-moderators?exclude=${excludeModeratorIds.join(',')}`
-  );
-
-  if (!response.ok) {
-    return [];
-  }
-
-  return response.json();
+  return apiGetAlternativeModerators(reportId, excludeModeratorIds);
 }
 
 /**
@@ -249,17 +209,5 @@ export async function logCOIEvent(
   moderatorId: string,
   conflict: ConflictOfInterest
 ): Promise<void> {
-  // TODO: Replace with actual audit event creation
-  await fetch('/api/moderation/audit/coi-events', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      report_id: reportId,
-      moderator_id: moderatorId,
-      has_conflict: conflict.has_conflict,
-      reasons: conflict.reasons,
-      conflict_type: conflict.conflict_type,
-      timestamp: new Date().toISOString(),
-    }),
-  });
+  await apiLogCOIEvent(reportId, moderatorId, conflict);
 }

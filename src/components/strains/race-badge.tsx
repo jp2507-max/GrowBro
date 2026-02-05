@@ -7,7 +7,7 @@ import type { StrainRace } from '@/types/strains';
 type Props = {
   race: StrainRace;
   testID?: string;
-  variant?: 'default' | 'premium';
+  variant?: 'default' | 'premium' | 'neon';
 };
 
 const getRaceStyles = (race: StrainRace): string => {
@@ -39,26 +39,29 @@ const getRaceTextStyles = (race: StrainRace): string => {
 export const RaceBadge = React.memo<Props>(
   ({ race, testID, variant = 'default' }) => {
     const isPremium = variant === 'premium';
-    const containerStyles = isPremium
-      ? 'bg-primary-50 dark:bg-primary-900/30'
-      : getRaceStyles(race);
-    const textStyles = isPremium
-      ? 'text-primary-800 dark:text-primary-200'
-      : getRaceTextStyles(race);
+    const isNeon = variant === 'neon';
+
+    const containerStyles = isNeon
+      ? 'bg-neon-lime px-3 py-1 shadow-[0_0_15px_rgba(148,250,46,0.4)]'
+      : isPremium
+        ? 'bg-primary-50 dark:bg-primary-900/30 px-4 py-2'
+        : `${getRaceStyles(race)} px-3 py-1.5`;
+
+    const textStyles = isNeon
+      ? 'text-black text-xs font-bold uppercase tracking-widest'
+      : isPremium
+        ? 'text-[11px] font-bold uppercase tracking-wider text-primary-800 dark:text-primary-200'
+        : `text-[11px] font-bold uppercase tracking-wider ${getRaceTextStyles(race)}`;
 
     return (
       <View
-        className={`rounded-full ${isPremium ? 'px-4 py-2' : 'px-3 py-1.5'} ${containerStyles}`}
+        className={`rounded-full ${containerStyles}`}
         testID={testID}
         accessibilityRole="text"
         accessibilityLabel={translate(`strains.race.${race}`)}
         accessibilityHint={translate(`strains.race.${race}`)}
       >
-        <Text
-          className={`text-[11px] font-bold uppercase tracking-wider ${textStyles}`}
-        >
-          {translate(`strains.race.${race}`)}
-        </Text>
+        <Text className={textStyles}>{translate(`strains.race.${race}`)}</Text>
       </View>
     );
   }

@@ -1,12 +1,6 @@
 import { MotiView } from 'moti';
 import React, { useCallback } from 'react';
-import {
-  I18nManager,
-  Pressable,
-  type PressableProps,
-  StyleSheet,
-  View,
-} from 'react-native';
+import { Pressable, type PressableProps, StyleSheet } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
 import colors from '@/components/ui/colors';
@@ -14,11 +8,6 @@ import colors from '@/components/ui/colors';
 import { Text } from './text';
 
 const SIZE = 20;
-const WIDTH = 50;
-const HEIGHT = 28;
-const THUMB_HEIGHT = 22;
-const THUMB_WIDTH = 22;
-const THUMB_OFFSET = 4;
 
 export interface RootProps extends Omit<PressableProps, 'onPress'> {
   onChange?: (checked: boolean) => void;
@@ -204,62 +193,6 @@ export const Radio = Object.assign(RadioBase, {
   Label,
 });
 
-export const SwitchIcon = ({ checked = false }: IconProps) => {
-  const offDist = WIDTH - THUMB_WIDTH - THUMB_OFFSET;
-  // Distance from the right edge; keep right: 0 anchoring
-  const dist = I18nManager.isRTL
-    ? checked
-      ? offDist
-      : THUMB_OFFSET // RTL: ON = left
-    : checked
-      ? THUMB_OFFSET
-      : offDist; // LTR: ON = right
-
-  const backgroundColor = checked ? colors.primary[300] : colors.charcoal[400];
-
-  return (
-    <View className="w-[50px] justify-center">
-      <View className="overflow-hidden rounded-full">
-        <View style={[styles.switchTrack, { backgroundColor }]} />
-      </View>
-      <MotiView
-        style={styles.switchThumb}
-        animate={{ translateX: -dist }}
-        transition={{ translateX: { overshootClamping: true } }}
-      />
-    </View>
-  );
-};
-const SwitchRoot = ({ checked = false, children, ...props }: RootProps) => {
-  return (
-    <Root checked={checked} accessibilityRole="switch" {...props}>
-      {children}
-    </Root>
-  );
-};
-
-const SwitchBase = ({
-  checked = false,
-  testID,
-  label,
-  ...props
-}: RootProps & { label?: string }) => {
-  return (
-    <SwitchRoot checked={checked} testID={testID} {...props}>
-      <SwitchIcon checked={checked} />
-      {label ? (
-        <Label text={label} testID={testID ? `${testID}-label` : undefined} />
-      ) : null}
-    </SwitchRoot>
-  );
-};
-
-export const Switch = Object.assign(SwitchBase, {
-  Icon: SwitchIcon,
-  Root: SwitchRoot,
-  Label,
-});
-
 const styles = StyleSheet.create({
   checkboxIcon: {
     height: SIZE,
@@ -268,17 +201,5 @@ const styles = StyleSheet.create({
   radioIcon: {
     height: SIZE,
     width: SIZE,
-  },
-  switchThumb: {
-    backgroundColor: colors.white,
-    borderRadius: 13,
-    height: THUMB_HEIGHT,
-    position: 'absolute',
-    right: 0,
-    width: THUMB_WIDTH,
-  },
-  switchTrack: {
-    height: HEIGHT,
-    width: WIDTH,
   },
 });

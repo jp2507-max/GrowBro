@@ -4,13 +4,69 @@
  */
 
 import type { ImageProps } from 'expo-image';
+import { Image } from 'expo-image';
+import { InteractionManager } from 'react-native';
 
-const FALLBACK_BLURHASH = 'L6PZfSi_.AyE_3t7t7R**0o#DgR4';
+import { DEFAULT_IMAGE_BLURHASH } from '@/lib/media/image-placeholders';
 
 type PlaceholderConfig =
   | { blurhash: string }
   | { thumbhash: string }
   | { uri: string };
+
+type PrefetchQueueState = {
+  scheduled: ReturnType<typeof InteractionManager.runAfterInteractions> | null;
+  queued: Set<string>;
+};
+
+const PREFETCH_QUEUE: PrefetchQueueState = {
+  scheduled: null,
+  queued: new Set<string>(),
+};
+
+const MAX_QUEUE_SIZE = 24;
+const FLUSH_COUNT_PER_TICK = 4;
+let isFlushing = false;
+
+function trimQueueToMaxSize(): void {
+  while (PREFETCH_QUEUE.queued.size > MAX_QUEUE_SIZE) {
+    const first = PREFETCH_QUEUE.queued.values().next().value as
+      | string
+      | undefined;
+    if (!first) break;
+    PREFETCH_QUEUE.queued.delete(first);
+  }
+}
+
+function scheduleFlush(): void {
+  if (PREFETCH_QUEUE.scheduled || isFlushing) return;
+
+  PREFETCH_QUEUE.scheduled = InteractionManager.runAfterInteractions(() => {
+    isFlushing = true;
+    PREFETCH_QUEUE.scheduled = null;
+
+    const batch: string[] = [];
+    const iter = PREFETCH_QUEUE.queued.values();
+    for (let i = 0; i < FLUSH_COUNT_PER_TICK; i++) {
+      const { value, done } = iter.next();
+      if (done) break;
+      batch.push(value);
+    }
+
+    for (const uri of batch) {
+      PREFETCH_QUEUE.queued.delete(uri);
+    }
+
+    for (const uri of batch) {
+      Image.prefetch(uri).catch((error) => {
+        console.debug('[prefetchCommunityImages] Prefetch failed:', uri, error);
+      });
+    }
+
+    isFlushing = false;
+    if (PREFETCH_QUEUE.queued.size > 0) scheduleFlush();
+  });
+}
 
 export interface CommunityImageProps {
   source?: { uri: string } | undefined;
@@ -19,6 +75,32 @@ export interface CommunityImageProps {
   recyclingKey?: string | undefined;
   transition?: number | ImageProps['transition'];
   priority?: ImageProps['priority'];
+}
+
+export type CommunityImageSource = {
+  media_uri?: string | null;
+  media_resized_uri?: string | null;
+  media_thumbnail_uri?: string | null;
+};
+
+export function getCommunityPrefetchUris(
+  items: CommunityImageSource[]
+): string[] {
+  return items
+    .map(
+      (item) =>
+        item.media_resized_uri || item.media_uri || item.media_thumbnail_uri
+    )
+    .filter((uri): uri is string => typeof uri === 'string' && uri.length > 0);
+}
+
+export function prefetchCommunityImages(imageUris: string[]): void {
+  for (const uri of imageUris) {
+    if (!uri || uri.length === 0) continue;
+    PREFETCH_QUEUE.queued.add(uri);
+  }
+  trimQueueToMaxSize();
+  scheduleFlush();
 }
 
 /**
@@ -49,7 +131,7 @@ export function getCommunityImageProps(props: {
     if (thumbnailUri) {
       return { uri: thumbnailUri };
     }
-    return FALLBACK_BLURHASH;
+    return DEFAULT_IMAGE_BLURHASH;
   })();
 
   // Prefer resized for quality, fallback to original, then thumbnail

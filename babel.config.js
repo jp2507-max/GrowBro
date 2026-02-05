@@ -1,5 +1,6 @@
 module.exports = function (api) {
   api.cache(true);
+
   return {
     presets: [
       [
@@ -7,6 +8,16 @@ module.exports = function (api) {
         {
           jsxImportSource: 'nativewind',
           unstable_transformImportMeta: true,
+          // Expo docs: incremental adoption by controlling which files are compiled.
+          // https://docs.expo.dev/guides/react-compiler/#incremental-adoption
+          'react-compiler': {
+            sources: (filename) => {
+              if (!filename) return false;
+              const normalized = filename.replace(/\\/g, '/');
+              if (!normalized.includes('/src/')) return false;
+              return true;
+            },
+          },
         },
       ],
       'nativewind/babel',

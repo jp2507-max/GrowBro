@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Keyboard } from 'react-native';
+import { Keyboard, type TextInput } from 'react-native';
 
 import { Input, Pressable, Text, View } from '@/components/ui';
 import { translate } from '@/lib/i18n';
@@ -16,6 +16,7 @@ interface SearchInputProps {
   onChangeText: (text: string) => void;
   onClear?: () => void;
   placeholder?: string;
+  inputRef?: React.Ref<TextInput>;
   testID?: string;
 }
 
@@ -198,6 +199,7 @@ export function SearchInput({
   onChangeText,
   onClear,
   placeholder,
+  inputRef,
   testID = 'strains-search-input',
 }: SearchInputProps) {
   const searchHistory = useSearchHistory(onChangeText);
@@ -221,6 +223,7 @@ export function SearchInput({
           onChangeText={onChangeText}
           onFocus={searchHistory.handleFocus}
           onBlur={searchHistory.handleBlur}
+          ref={inputRef}
           placeholder={placeholder || translate('strains.search_placeholder')}
           testID={testID}
           className="pr-10"

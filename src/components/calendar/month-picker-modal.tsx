@@ -149,13 +149,16 @@ export function MonthPickerModal({
 
   const title = translate('calendar.month_picker.title');
 
-  const backgroundStyle = React.useMemo(
+  const glassSurfaceProps = React.useMemo(
     () => ({
-      backgroundColor: isDark ? colors.darkSurface.card : colors.white,
-      borderTopLeftRadius: 35,
-      borderTopRightRadius: 35,
+      glassEffectStyle: 'regular' as const,
+      style: {
+        borderTopLeftRadius: 35,
+        borderTopRightRadius: 35,
+      },
+      fallbackClassName: 'bg-white dark:bg-charcoal-900',
     }),
-    [isDark]
+    []
   );
 
   const handleStyle = React.useMemo(
@@ -174,8 +177,9 @@ export function MonthPickerModal({
       snapPoints={['45%']}
       title={title}
       testID="month-picker-modal"
-      backgroundStyle={backgroundStyle}
       handleIndicatorStyle={handleStyle}
+      useGlassSurface
+      glassSurfaceProps={glassSurfaceProps}
     >
       <BottomSheetView style={styles.content}>
         <YearSelector year={displayYear} onYearChange={setDisplayYear} />

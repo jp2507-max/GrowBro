@@ -4,6 +4,7 @@
  * Requirements: 2.2, 2.7
  */
 
+import { client } from '@/api/common';
 import type {
   ModerationAction,
   ModerationDecision,
@@ -18,24 +19,21 @@ export async function findSimilarDecisions(
   category: string,
   limit = 5
 ): Promise<PriorDecision[]> {
-  // TODO: Replace with actual Supabase query using vector similarity or content hash matching
-  const response = await fetch(
-    `/api/moderation/similar-decisions?content_id=${encodeURIComponent(contentId)}&category=${encodeURIComponent(category)}&limit=${limit}`,
+  const response = await client.get<PriorDecision[]>(
+    '/moderation/similar-decisions',
     {
+      params: {
+        content_id: contentId,
+        category,
+        limit,
+      },
       headers: {
         Accept: 'application/json',
       },
     }
   );
 
-  if (!response.ok) {
-    throw new Error(
-      `Failed to fetch similar decisions: ${response.statusText}`
-    );
-  }
-
-  const data: PriorDecision[] = await response.json();
-  return data;
+  return response.data;
 }
 
 /**
@@ -45,24 +43,20 @@ export async function getDecisionsByModerator(
   moderatorId: string,
   contentUserId: string
 ): Promise<ModerationDecision[]> {
-  // TODO: Replace with actual Supabase query
-  const response = await fetch(
-    `/api/moderation/decisions?moderator_id=${encodeURIComponent(moderatorId)}&user_id=${encodeURIComponent(contentUserId)}`,
+  const response = await client.get<ModerationDecision[]>(
+    '/moderation/decisions',
     {
+      params: {
+        moderator_id: moderatorId,
+        user_id: contentUserId,
+      },
       headers: {
         Accept: 'application/json',
       },
     }
   );
 
-  if (!response.ok) {
-    throw new Error(
-      `Failed to fetch moderator decisions: ${response.statusText}`
-    );
-  }
-
-  const data: ModerationDecision[] = await response.json();
-  return data;
+  return response.data;
 }
 
 /**
@@ -105,18 +99,14 @@ export async function getModeratorConsistency(moderatorId: string): Promise<{
   reversalRate: number; // 0-1
   averageDecisionTime: number; // ms
 }> {
-  // TODO: Replace with actual Supabase aggregation query
-  const response = await fetch(
-    `/api/moderation/moderators/${moderatorId}/consistency`
-  );
+  const response = await client.get<{
+    totalDecisions: number;
+    consistencyScore: number;
+    reversalRate: number;
+    averageDecisionTime: number;
+  }>(`/moderation/moderators/${moderatorId}/consistency`);
 
-  if (!response.ok) {
-    throw new Error(
-      `Failed to fetch moderator consistency: ${response.statusText}`
-    );
-  }
-
-  return response.json();
+  return response.data;
 }
 
 /**
@@ -128,18 +118,14 @@ export async function getUserViolationPattern(userId: string): Promise<{
   actions: Record<ModerationAction, number>;
   escalationTrend: 'improving' | 'stable' | 'worsening';
 }> {
-  // TODO: Replace with actual Supabase aggregation query
-  const response = await fetch(
-    `/api/moderation/users/${userId}/violation-pattern`
-  );
+  const response = await client.get<{
+    totalReports: number;
+    violationsByCategory: Record<string, number>;
+    actions: Record<ModerationAction, number>;
+    escalationTrend: 'improving' | 'stable' | 'worsening';
+  }>(`/moderation/users/${userId}/violation-pattern`);
 
-  if (!response.ok) {
-    throw new Error(
-      `Failed to fetch user violation pattern: ${response.statusText}`
-    );
-  }
-
-  return response.json();
+  return response.data;
 }
 
 /**

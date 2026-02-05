@@ -8,10 +8,8 @@ import { useColorScheme } from 'nativewind';
 import React from 'react';
 import { StyleSheet, type ViewStyle } from 'react-native';
 import Animated, {
-  // @ts-expect-error - Reanimated 4.x type exports issue
   cancelAnimation,
   Easing,
-  ReduceMotion,
   type SharedValue,
   useAnimatedStyle,
   useSharedValue,
@@ -24,6 +22,8 @@ import Animated, {
 
 import { View } from '@/components/ui';
 import colors from '@/components/ui/colors';
+import { withRM } from '@/lib/animations/motion';
+import { useReduceMotionEnabled } from '@/lib/strains/accessibility';
 
 type AnimationValues = {
   translateY: SharedValue<number>;
@@ -32,60 +32,92 @@ type AnimationValues = {
   glowOpacity: SharedValue<number>;
 };
 
-function usePrimerIconAnimation(): AnimationValues {
+function usePrimerIconAnimation(reduceMotion: boolean): AnimationValues {
   const translateY = useSharedValue(0);
   const scale = useSharedValue(0.9);
   const opacity = useSharedValue(0);
   const glowOpacity = useSharedValue(0.2);
 
   React.useEffect(() => {
-    opacity.value = withTiming(1, {
-      duration: 600,
-      easing: Easing.out(Easing.ease),
-      reduceMotion: ReduceMotion.System,
-    });
-    scale.value = withSpring(1, {
-      damping: 20,
-      stiffness: 80,
-      mass: 1,
-      reduceMotion: ReduceMotion.System,
-    });
-    translateY.value = withDelay(
-      400,
-      withRepeat(
-        withSequence(
-          withTiming(-6, {
-            duration: 2500,
-            easing: Easing.inOut(Easing.sin),
-            reduceMotion: ReduceMotion.System,
-          }),
-          withTiming(0, {
-            duration: 2500,
-            easing: Easing.inOut(Easing.sin),
-            reduceMotion: ReduceMotion.System,
-          })
-        ),
-        -1,
-        false
+    if (reduceMotion) {
+      cancelAnimation(translateY);
+      cancelAnimation(scale);
+      cancelAnimation(opacity);
+      cancelAnimation(glowOpacity);
+      translateY.set(0);
+      scale.set(1);
+      opacity.set(1);
+      glowOpacity.set(0.2);
+      return;
+    }
+
+    opacity.set(
+      withTiming(
+        1,
+        withRM({
+          duration: 600,
+          easing: Easing.out(Easing.ease),
+        })
       )
     );
-    glowOpacity.value = withDelay(
-      500,
-      withRepeat(
-        withSequence(
-          withTiming(0.4, {
-            duration: 2000,
-            easing: Easing.inOut(Easing.ease),
-            reduceMotion: ReduceMotion.System,
-          }),
-          withTiming(0.2, {
-            duration: 2000,
-            easing: Easing.inOut(Easing.ease),
-            reduceMotion: ReduceMotion.System,
-          })
-        ),
-        -1,
-        false
+    scale.set(
+      withSpring(
+        1,
+        withRM({
+          damping: 20,
+          stiffness: 80,
+          mass: 1,
+        })
+      )
+    );
+    translateY.set(
+      withDelay(
+        400,
+        withRepeat(
+          withSequence(
+            withTiming(
+              -6,
+              withRM({
+                duration: 2500,
+                easing: Easing.inOut(Easing.sin),
+              })
+            ),
+            withTiming(
+              0,
+              withRM({
+                duration: 2500,
+                easing: Easing.inOut(Easing.sin),
+              })
+            )
+          ),
+          -1,
+          false
+        )
+      )
+    );
+    glowOpacity.set(
+      withDelay(
+        500,
+        withRepeat(
+          withSequence(
+            withTiming(
+              0.4,
+              withRM({
+                duration: 2000,
+                easing: Easing.inOut(Easing.ease),
+              })
+            ),
+            withTiming(
+              0.2,
+              withRM({
+                duration: 2000,
+                easing: Easing.inOut(Easing.ease),
+              })
+            )
+          ),
+          -1,
+          false
+        )
       )
     );
 
@@ -95,7 +127,7 @@ function usePrimerIconAnimation(): AnimationValues {
       cancelAnimation(opacity);
       cancelAnimation(glowOpacity);
     };
-  }, [translateY, scale, opacity, glowOpacity]);
+  }, [reduceMotion, translateY, scale, opacity, glowOpacity]);
 
   return { translateY, scale, opacity, glowOpacity };
 }
@@ -113,13 +145,15 @@ export function AnimatedPrimerIcon({
 }: AnimatedPrimerIconProps): React.ReactElement {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
-  const { translateY, scale, opacity, glowOpacity } = usePrimerIconAnimation();
+  const reduceMotion = useReduceMotionEnabled();
+  const { translateY, scale, opacity, glowOpacity } =
+    usePrimerIconAnimation(reduceMotion);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-    transform: [{ translateY: translateY.value }, { scale: scale.value }],
+    opacity: opacity.get(),
+    transform: [{ translateY: translateY.get() }, { scale: scale.get() }],
   }));
-  const glowStyle = useAnimatedStyle(() => ({ opacity: glowOpacity.value }));
+  const glowStyle = useAnimatedStyle(() => ({ opacity: glowOpacity.get() }));
 
   const glowColor =
     variant === 'success'

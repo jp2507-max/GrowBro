@@ -59,7 +59,7 @@ export class InventoryBatchModel extends Model {
   @readonly @date('updated_at') updatedAt!: Date;
 
   /** Soft delete timestamp for sync tombstones */
-  @date('deleted_at') deletedAt?: Date;
+  @date('deleted_at') deletedAt?: Date | null;
 
   /** Relation: parent item */
   @relation('inventory_items', 'item_id') item!: Relation<InventoryItemModel>;

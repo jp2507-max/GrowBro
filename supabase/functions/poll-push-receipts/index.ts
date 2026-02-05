@@ -12,8 +12,17 @@ import type {
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, X-Function-Secret',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
+
+function isServiceRoleRequest(req: Request, expected: string): boolean {
+  const authHeader = req.headers.get('authorization') ?? '';
+  const match = authHeader.match(/^Bearer\s+(.+)$/i);
+  if (!match) return false;
+
+  const token = match[1];
+  return Boolean(expected) && token === expected;
+}
 
 /**
  * Deactivates a push token due to delivery failure
@@ -180,15 +189,17 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    // Guard: ensure the Edge Function has the configured secret
-    const configuredSecret = Deno.env.get('EDGE_FUNCTION_SECRET') ?? null;
-    if (!configuredSecret) {
-      throw new Error('EDGE_FUNCTION_SECRET is not configured');
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    if (!serviceRoleKey) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Server configuration error' }),
+        {
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+          status: 500,
+        }
+      );
     }
-
-    // Validate incoming request header
-    const incomingSecret = req.headers.get('x-function-secret') ?? null;
-    if (!incomingSecret || incomingSecret !== configuredSecret) {
+    if (!isServiceRoleRequest(req, serviceRoleKey)) {
       return new Response(
         JSON.stringify({ success: false, error: 'Unauthorized' }),
         {
@@ -200,7 +211,7 @@ Deno.serve(async (req: Request) => {
 
     // Initialize Supabase client with service role key
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    const supabaseServiceKey = serviceRoleKey;
 
     if (!supabaseUrl || !supabaseServiceKey) {
       throw new Error('Supabase environment variables not configured');

@@ -1,5 +1,7 @@
 import type { AccessibilityProps } from 'react-native';
 
+import { translate } from '@/lib/i18n';
+
 /**
  * Creates accessibility props for interactive elements
  */
@@ -41,7 +43,25 @@ export function createPlaybookA11yLabel(config: {
   weekCount: number;
   taskCount: number;
 }): string {
-  return `${config.name} playbook, ${config.setup} setup, ${config.weekCount} weeks, ${config.taskCount} tasks`;
+  return translate('playbooks.accessibility.playbook_card', {
+    name: config.name,
+    setup: config.setup,
+    weeks: config.weekCount,
+    tasks: config.taskCount,
+  });
+}
+
+function getTaskStatusLabel(
+  status: 'pending' | 'completed' | 'skipped'
+): string {
+  switch (status) {
+    case 'completed':
+      return translate('accessibility.task.status_completed');
+    case 'skipped':
+      return translate('accessibility.task.status_skipped');
+    default:
+      return translate('accessibility.task.status_pending');
+  }
 }
 
 /**
@@ -53,13 +73,16 @@ export function createTaskA11yLabel(config: {
   status: 'pending' | 'completed' | 'skipped';
   hasReminder?: boolean;
 }): string {
-  const parts = [config.title, `due ${config.dueDate}`, config.status];
+  const reminder = config.hasReminder
+    ? translate('playbooks.accessibility.task_item_with_reminder')
+    : '';
 
-  if (config.hasReminder) {
-    parts.push('has reminder');
-  }
-
-  return parts.join(', ');
+  return translate('playbooks.accessibility.task_item', {
+    title: config.title,
+    date: config.dueDate,
+    status: getTaskStatusLabel(config.status),
+    reminder,
+  });
 }
 
 /**
@@ -71,20 +94,37 @@ export function createPhaseA11yLabel(config: {
   totalTasks: number;
   isActive: boolean;
 }): string {
-  const status = config.isActive ? 'active' : 'inactive';
-  const progress = `${config.completedTasks} of ${config.totalTasks} tasks completed`;
+  const status = config.isActive
+    ? translate('accessibility.phase.status_active')
+    : translate('accessibility.phase.status_inactive');
 
-  return `${config.phase} phase, ${status}, ${progress}`;
+  return translate('playbooks.accessibility.phase_progress', {
+    phase: config.phase,
+    status,
+    completed: config.completedTasks,
+    total: config.totalTasks,
+  });
 }
 
 /**
  * Creates accessibility hint for shift schedule action
  */
 export function createShiftScheduleA11yHint(daysDelta: number): string {
-  const direction = daysDelta > 0 ? 'forward' : 'backward';
+  const direction =
+    daysDelta > 0
+      ? translate('accessibility.shift.direction_forward')
+      : translate('accessibility.shift.direction_backward');
   const days = Math.abs(daysDelta);
+  const daysUnit =
+    days === 1
+      ? translate('accessibility.shift.day_one')
+      : translate('accessibility.shift.day_other');
 
-  return `Shifts all tasks ${direction} by ${days} ${days === 1 ? 'day' : 'days'}`;
+  return translate('playbooks.accessibility.shift_schedule_hint', {
+    direction,
+    days,
+    daysUnit,
+  });
 }
 
 /**
@@ -96,7 +136,12 @@ export function createTrichomeA11yLabel(config: {
   amberPercent: number;
   recommendation: string;
 }): string {
-  return `Trichome assessment: ${config.clearPercent}% clear, ${config.milkyPercent}% milky, ${config.amberPercent}% amber. Recommendation: ${config.recommendation}`;
+  return translate('playbooks.accessibility.trichome_assessment', {
+    clear: config.clearPercent,
+    milky: config.milkyPercent,
+    amber: config.amberPercent,
+    recommendation: config.recommendation,
+  });
 }
 
 /**
@@ -108,12 +153,18 @@ export function createHarvestStageA11yLabel(config: {
   isCurrent: boolean;
 }): string {
   if (config.isCurrent) {
-    return `${config.stage} - current stage`;
+    return translate('accessibility.harvest.stage_current', {
+      stage: config.stage,
+    });
   }
   if (config.isCompleted) {
-    return `${config.stage} - completed`;
+    return translate('accessibility.harvest.stage_completed', {
+      stage: config.stage,
+    });
   }
-  return `${config.stage} - upcoming`;
+  return translate('accessibility.harvest.stage_upcoming', {
+    stage: config.stage,
+  });
 }
 
 /**
@@ -124,11 +175,17 @@ export function createWeightInputA11yLabel(config: {
   unit: string;
   value?: number;
 }): string {
-  const valuePart =
-    config.value != null
-      ? `, current value: ${config.value} ${config.unit}`
-      : '';
-  return `${config.fieldName} input${valuePart}`;
+  if (config.value != null) {
+    return translate('accessibility.form.input_with_value', {
+      field: config.fieldName,
+      value: config.value,
+      unit: config.unit,
+    });
+  }
+
+  return translate('accessibility.form.input_without_value', {
+    field: config.fieldName,
+  });
 }
 
 /**
@@ -139,20 +196,25 @@ export function createStageActionA11yLabel(config: {
   targetStage?: string;
   undoSeconds?: number;
 }): string {
-  const stageLabel = config.targetStage ?? 'next stage';
+  const stageLabel =
+    config.targetStage ?? translate('accessibility.stage_action.next_stage');
   switch (config.action) {
     case 'advance':
-      return `Advance to ${stageLabel}`;
+      return translate('accessibility.stage_action.advance_label', {
+        stage: stageLabel,
+      });
     case 'undo':
       return config.undoSeconds
-        ? `Undo last stage change (${config.undoSeconds}s remaining)`
-        : 'Undo last stage change';
+        ? translate('accessibility.stage_action.undo_label_with_time', {
+            seconds: config.undoSeconds,
+          })
+        : translate('accessibility.stage_action.undo_label');
     case 'revert':
-      return 'Revert to previous stage';
+      return translate('accessibility.stage_action.revert_label');
     case 'override':
-      return 'Skip to later stage';
+      return translate('accessibility.stage_action.override_label');
     default:
-      return 'Stage action';
+      return translate('accessibility.stage_action.default_label');
   }
 }
 
@@ -163,18 +225,21 @@ export function createStageActionA11yHint(config: {
   action: 'advance' | 'undo' | 'revert' | 'override';
   targetStage?: string;
 }): string {
-  const stageLabel = config.targetStage ?? 'next stage';
+  const stageLabel =
+    config.targetStage ?? translate('accessibility.stage_action.next_stage');
   switch (config.action) {
     case 'advance':
-      return `Double-tap to advance to ${stageLabel}`;
+      return translate('accessibility.stage_action.advance_hint', {
+        stage: stageLabel,
+      });
     case 'undo':
-      return 'Double-tap to undo last stage change';
+      return translate('accessibility.stage_action.undo_hint');
     case 'revert':
-      return 'Double-tap to revert to previous stage';
+      return translate('accessibility.stage_action.revert_hint');
     case 'override':
-      return 'Double-tap to skip to a later stage';
+      return translate('accessibility.stage_action.override_hint');
     default:
-      return 'Double-tap to perform action';
+      return translate('accessibility.stage_action.default_hint');
   }
 }
 
@@ -188,16 +253,22 @@ export function createHarvestHistoryA11yLabel(config: {
   hasConflict: boolean;
 }): string {
   const parts = [
-    `Harvest in ${config.stage} stage`,
-    `updated ${config.updatedAt}`,
+    translate('accessibility.harvest.history_base', {
+      stage: config.stage,
+      updatedAt: config.updatedAt,
+    }),
   ];
 
   if (config.dryWeight != null) {
-    parts.push(`dry weight ${config.dryWeight} grams`);
+    parts.push(
+      translate('accessibility.harvest.history_dry_weight', {
+        weight: config.dryWeight,
+      })
+    );
   }
 
   if (config.hasConflict) {
-    parts.push('needs review');
+    parts.push(translate('accessibility.harvest.history_conflict'));
   }
 
   return parts.join(', ');
@@ -211,5 +282,9 @@ export function createStageProgressA11yLabel(config: {
   totalStages: number;
   completedStages: number;
 }): string {
-  return `Harvest progress: ${config.currentStage} stage, ${config.completedStages} of ${config.totalStages} stages completed`;
+  return translate('accessibility.harvest.progress', {
+    stage: config.currentStage,
+    completed: config.completedStages,
+    total: config.totalStages,
+  });
 }

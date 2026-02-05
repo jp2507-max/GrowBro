@@ -14,6 +14,11 @@ export function DevDiagnosticsItem(): React.ReactElement | null {
           {translate('diagnostics.title')}
         </Text>
       </Link>
+      <Link href="/sentry-test">
+        <Text className="text-primary-600 underline">
+          {translate('sentry_test.title')}
+        </Text>
+      </Link>
     </ItemsContainer>
   );
 }

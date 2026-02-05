@@ -2,8 +2,8 @@ import * as React from 'react';
 
 import { ItemsContainer } from '@/components/settings/items-container';
 import { Text, View } from '@/components/ui';
-import { Switch } from '@/components/ui/checkbox';
 import { Shield } from '@/components/ui/icons';
+import { Switch } from '@/components/ui/switch';
 import {
   showErrorMessage,
   showSuccessMessage,

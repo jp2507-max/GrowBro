@@ -198,7 +198,7 @@ function WebDeletionSection(): React.ReactElement | null {
 }
 
 export default function PrivacyAndDataScreen(): React.ReactElement {
-  const signOut = useAuth.use.signOut();
+  const signOut = useAuth((s) => s.signOut);
   const { ref: reAuthModalRef, present: presentReAuthModal } = useReAuthModal();
 
   // Create a ref to store the performExport function

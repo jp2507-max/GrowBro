@@ -21,6 +21,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { Text, View } from '@/components/ui';
+import { useReduceMotionEnabled } from '@/lib/strains/accessibility';
 
 type AnimatedHeroProps = {
   emoji: string;
@@ -36,55 +37,72 @@ export function AnimatedHero({
   const translateY = useSharedValue(0);
   const scale = useSharedValue(0.8);
   const glowOpacity = useSharedValue(0.3);
+  const reduceMotion = useReduceMotionEnabled();
 
   React.useEffect(() => {
+    if (reduceMotion) {
+      cancelAnimation(translateY);
+      cancelAnimation(scale);
+      cancelAnimation(glowOpacity);
+      translateY.set(0);
+      scale.set(1);
+      glowOpacity.set(0.3);
+      return;
+    }
+
     // Entrance spring
-    scale.value = withSpring(1, {
-      damping: 12,
-      stiffness: 100,
-      mass: 0.8,
-      reduceMotion: ReduceMotion.System,
-    });
+    scale.set(
+      withSpring(1, {
+        damping: 12,
+        stiffness: 100,
+        mass: 0.8,
+        reduceMotion: ReduceMotion.System,
+      })
+    );
 
     // Continuous float animation
-    translateY.value = withDelay(
-      300,
-      withRepeat(
-        withSequence(
-          withTiming(-8, {
-            duration: 2000,
-            easing: Easing.inOut(Easing.sin),
-            reduceMotion: ReduceMotion.System,
-          }),
-          withTiming(0, {
-            duration: 2000,
-            easing: Easing.inOut(Easing.sin),
-            reduceMotion: ReduceMotion.System,
-          })
-        ),
-        -1,
-        false
+    translateY.set(
+      withDelay(
+        300,
+        withRepeat(
+          withSequence(
+            withTiming(-8, {
+              duration: 2000,
+              easing: Easing.inOut(Easing.sin),
+              reduceMotion: ReduceMotion.System,
+            }),
+            withTiming(0, {
+              duration: 2000,
+              easing: Easing.inOut(Easing.sin),
+              reduceMotion: ReduceMotion.System,
+            })
+          ),
+          -1,
+          false
+        )
       )
     );
 
     // Pulsing glow
-    glowOpacity.value = withDelay(
-      500,
-      withRepeat(
-        withSequence(
-          withTiming(0.6, {
-            duration: 1500,
-            easing: Easing.inOut(Easing.ease),
-            reduceMotion: ReduceMotion.System,
-          }),
-          withTiming(0.3, {
-            duration: 1500,
-            easing: Easing.inOut(Easing.ease),
-            reduceMotion: ReduceMotion.System,
-          })
-        ),
-        -1,
-        false
+    glowOpacity.set(
+      withDelay(
+        500,
+        withRepeat(
+          withSequence(
+            withTiming(0.6, {
+              duration: 1500,
+              easing: Easing.inOut(Easing.ease),
+              reduceMotion: ReduceMotion.System,
+            }),
+            withTiming(0.3, {
+              duration: 1500,
+              easing: Easing.inOut(Easing.ease),
+              reduceMotion: ReduceMotion.System,
+            })
+          ),
+          -1,
+          false
+        )
       )
     );
     return () => {
@@ -92,14 +110,14 @@ export function AnimatedHero({
       cancelAnimation(scale);
       cancelAnimation(glowOpacity);
     };
-  }, [translateY, scale, glowOpacity]);
+  }, [reduceMotion, translateY, scale, glowOpacity]);
 
   const iconStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value }, { scale: scale.value }],
+    transform: [{ translateY: translateY.get() }, { scale: scale.get() }],
   }));
 
   const glowStyle = useAnimatedStyle(() => ({
-    opacity: glowOpacity.value,
+    opacity: glowOpacity.get(),
   }));
 
   return (

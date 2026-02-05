@@ -51,6 +51,25 @@ const METADATA_STORE_OPTIONS: SecureStore.SecureStoreOptions = {
   keychainAccessible: SecureStore.ALWAYS_THIS_DEVICE_ONLY,
 };
 
+// ==================== Metadata Key Helpers ====================
+
+/**
+ * Get the standardized metadata key for a given encryption key ID
+ * Format: growbro_key_metadata_{keyId}
+ */
+function getMetadataKey(keyId: string): string {
+  return `${KEY_METADATA_KEY}_${keyId}`;
+}
+
+/**
+ * Get the legacy metadata key for a given encryption key ID
+ * Format: growbro_key_metadata:{keyId}
+ * Used for migration support from older versions
+ */
+function getLegacyMetadataKey(keyId: string): string {
+  return `${KEY_METADATA_KEY}:${keyId}`;
+}
+
 // ==================== Key Generation ====================
 
 /**
@@ -160,11 +179,18 @@ async function deleteKey(keyId: string): Promise<void> {
   try {
     await SecureStore.deleteItemAsync(keyId, SECURE_STORE_OPTIONS);
 
-    // Also delete metadata
-    const metadataKey = `${KEY_METADATA_KEY}:${keyId}`;
+    // Also delete metadata (clean up both new and old formats)
+    const metadataKey = getMetadataKey(keyId);
     await SecureStore.deleteItemAsync(metadataKey, METADATA_STORE_OPTIONS);
 
-    log.info(`Deleted encryption key for domain: ${keyId}`);
+    const oldMetadataKey = getLegacyMetadataKey(keyId);
+    try {
+      await SecureStore.deleteItemAsync(oldMetadataKey, METADATA_STORE_OPTIONS);
+    } catch {
+      // Ignore error if old key doesn't exist
+    }
+
+    log.info(`Deleted encryption key and metadata for domain: ${keyId}`);
   } catch (error) {
     log.error(`Failed to delete key for ${keyId}`, error);
     throw new Error('Key deletion failed');
@@ -226,7 +252,7 @@ async function storeKeyMetadata(
   metadata: KeyMetadata
 ): Promise<void> {
   try {
-    const metadataKey = `${KEY_METADATA_KEY}:${keyId}`;
+    const metadataKey = getMetadataKey(keyId);
     const metadataJson = JSON.stringify(metadata);
 
     // Store metadata in secure storage
@@ -249,12 +275,46 @@ async function storeKeyMetadata(
  */
 async function getKeyMetadata(keyId: string): Promise<KeyMetadata | null> {
   try {
-    const metadataKey = `${KEY_METADATA_KEY}:${keyId}`;
+    const metadataKey = getMetadataKey(keyId);
 
-    const metadataJson = await SecureStore.getItemAsync(
+    let metadataJson = await SecureStore.getItemAsync(
       metadataKey,
       METADATA_STORE_OPTIONS
     );
+
+    // Fallback to old key format if not found (migration support)
+    if (!metadataJson) {
+      const oldMetadataKey = getLegacyMetadataKey(keyId);
+      metadataJson = await SecureStore.getItemAsync(
+        oldMetadataKey,
+        METADATA_STORE_OPTIONS
+      );
+
+      if (metadataJson) {
+        log.debug(
+          `Retrieved metadata using legacy key format for ${keyId} (migration pending)`
+        );
+
+        // Proactively migrate to new format
+        try {
+          await SecureStore.setItemAsync(
+            metadataKey,
+            metadataJson,
+            METADATA_STORE_OPTIONS
+          );
+
+          // Delete legacy key after successful migration
+          await SecureStore.deleteItemAsync(
+            oldMetadataKey,
+            METADATA_STORE_OPTIONS
+          );
+          log.debug(`Migrated metadata for ${keyId} to new format`);
+        } catch (error) {
+          // Non-critical, migration will happen on next rotation
+          log.debug(`Failed to migrate metadata for ${keyId}`, error);
+        }
+      }
+    }
 
     if (!metadataJson) {
       return null;

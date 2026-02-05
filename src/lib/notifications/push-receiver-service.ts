@@ -197,7 +197,7 @@ async function handleNotificationResponse(
 
     // Handle deep link navigation
     if (data.deepLink) {
-      await DeepLinkService.handle(data.deepLink);
+      await DeepLinkService.handle(data.deepLink, { source: 'notifications' });
     } else {
       // Fallback: navigate to notification center if no deep link
       const { router } = await import('expo-router');

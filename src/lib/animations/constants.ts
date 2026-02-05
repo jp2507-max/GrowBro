@@ -1,4 +1,5 @@
 import type Reanimated from 'react-native-reanimated';
+import { ReduceMotion } from 'react-native-reanimated';
 
 type WithSpringConfig = Parameters<typeof Reanimated.withSpring>[1];
 
@@ -7,6 +8,7 @@ export const SPRING: WithSpringConfig = {
   mass: 1,
   stiffness: 240,
   damping: 20,
+  reduceMotion: ReduceMotion.System,
 };
 
 export type SpringOptions = {

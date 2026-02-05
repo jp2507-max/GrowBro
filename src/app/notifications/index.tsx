@@ -1,7 +1,8 @@
 import { FlashList } from '@shopify/flash-list';
-import { useRouter } from 'expo-router';
+import { type Href, useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
 import { RefreshControl, StyleSheet } from 'react-native';
+import { useShallow } from 'zustand/react/shallow';
 
 import { NotificationRow } from '@/components/notifications/notification-row';
 import { NotificationSectionHeader } from '@/components/notifications/notification-section-header';
@@ -15,7 +16,7 @@ import {
 import type { NotificationSnapshot } from '@/lib/notifications/notification-storage';
 import {
   type NotificationCenterStatus,
-  useNotificationCenter,
+  useNotificationCenterStore,
 } from '@/lib/notifications/use-notification-center';
 import { openLinkInBrowser } from '@/lib/utils';
 
@@ -442,6 +443,8 @@ function NotificationListView({
 
 function useNotificationInbox(): NotificationInboxViewModel {
   const router = useRouter();
+  const { redirect } = useLocalSearchParams<{ redirect?: string }>();
+  const hasHandledRedirect = React.useRef(false);
   const [filter, setFilter] = React.useState<FilterKey>('all');
 
   const selectors = useNotificationCenterSelectors();
@@ -466,6 +469,21 @@ function useNotificationInbox(): NotificationInboxViewModel {
       void initialize();
     }
   }, [initialize, status]);
+
+  React.useEffect(() => {
+    if (!redirect || hasHandledRedirect.current) return;
+    hasHandledRedirect.current = true;
+    let target = String(redirect);
+    try {
+      target = decodeURIComponent(target);
+    } catch {
+      target = String(redirect);
+    }
+    // Reject protocol-relative URLs (//example.com) and ensure it's a relative path
+    if (!target.startsWith('/') || target.startsWith('//')) return;
+    router.replace('/notifications');
+    router.push(target as Href);
+  }, [redirect, router]);
 
   const derived = useNotificationDerivedState({
     filter,
@@ -520,33 +538,22 @@ type NotificationCenterSelectors = {
 };
 
 function useNotificationCenterSelectors(): NotificationCenterSelectors {
-  const status = useNotificationCenter.use.status();
-  const error = useNotificationCenter.use.error();
-  const items = useNotificationCenter.use.items();
-  const includeArchived = useNotificationCenter.use.includeArchived();
-  const unreadCount = useNotificationCenter.use.unreadCount();
-  const isLoadingMore = useNotificationCenter.use.isLoadingMore();
-  const initialize = useNotificationCenter.use.initialize();
-  const refresh = useNotificationCenter.use.refresh();
-  const loadMore = useNotificationCenter.use.loadMore();
-  const toggleArchived = useNotificationCenter.use.toggleArchived();
-  const markAsRead = useNotificationCenter.use.markAsRead();
-  const markAllAsRead = useNotificationCenter.use.markAllAsRead();
-
-  return {
-    status,
-    error,
-    items,
-    includeArchived,
-    unreadCount,
-    isLoadingMore,
-    initialize,
-    refresh,
-    loadMore,
-    toggleArchived,
-    markAsRead,
-    markAllAsRead,
-  };
+  return useNotificationCenterStore(
+    useShallow((s) => ({
+      status: s.status,
+      error: s.error,
+      items: s.items,
+      includeArchived: s.includeArchived,
+      unreadCount: s.unreadCount,
+      isLoadingMore: s.isLoadingMore,
+      initialize: s.initialize,
+      refresh: s.refresh,
+      loadMore: s.loadMore,
+      toggleArchived: s.toggleArchived,
+      markAsRead: s.markAsRead,
+      markAllAsRead: s.markAllAsRead,
+    }))
+  );
 }
 
 type NotificationDerivedState = {

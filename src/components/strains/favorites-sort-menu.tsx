@@ -126,7 +126,7 @@ export const FavoritesSortMenu = React.forwardRef<
     }, [sortBy, sortDirection, onApply]);
 
     return (
-      <Modal ref={ref} snapPoints={['50%']}>
+      <Modal ref={ref} snapPoints={['50%']} useGlassSurface>
         <View className="p-4">
           <Text
             className="mb-4 text-xl font-semibold text-charcoal-900 dark:text-neutral-100"

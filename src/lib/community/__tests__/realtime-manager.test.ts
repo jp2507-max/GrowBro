@@ -72,6 +72,9 @@ describe('RealtimeConnectionManager', () => {
     });
 
     it('should call onPollRefresh during polling', async () => {
+      // Make polling start immediately on the first connection error for this unit test.
+      (manager as any).maxReconnectAttempts = 0;
+
       // Mock a failed connection that triggers polling
       const mockSupabase = require('@/lib/supabase').supabase;
       mockSupabase.channel.mockReturnValueOnce({
@@ -80,12 +83,6 @@ describe('RealtimeConnectionManager', () => {
           // Simulate connection failure leading to polling
           setTimeout(() => {
             callback('CHANNEL_ERROR');
-            // After max retries, should start polling
-            setTimeout(() => {
-              if (manager.isPollingActive()) {
-                expect(mockCallbacks.onPollRefresh).toHaveBeenCalled();
-              }
-            }, 100);
           }, 10);
           return { unsubscribe: jest.fn() };
         }),
@@ -110,6 +107,9 @@ describe('RealtimeConnectionManager', () => {
         // onPollRefresh intentionally omitted
       };
 
+      // Make polling start immediately on the first connection error for this unit test.
+      (manager as any).maxReconnectAttempts = 0;
+
       // Mock a failed connection that triggers polling
       const mockSupabase = require('@/lib/supabase').supabase;
       mockSupabase.channel.mockReturnValueOnce({
@@ -117,15 +117,6 @@ describe('RealtimeConnectionManager', () => {
         subscribe: jest.fn((callback) => {
           setTimeout(() => {
             callback('CHANNEL_ERROR');
-            // After max retries, should start polling and trigger error
-            setTimeout(() => {
-              expect(consoleErrorSpy).toHaveBeenCalledWith(
-                '[Realtime] CRITICAL: Polling active but onPollRefresh not implemented. ' +
-                  'Data will NOT update. This is a bug in consumer implementation. Stopping polling.'
-              );
-              // Polling should be stopped
-              expect(manager.isPollingActive()).toBe(false);
-            }, 100);
           }, 10);
           return { unsubscribe: jest.fn() };
         }),
@@ -137,10 +128,19 @@ describe('RealtimeConnectionManager', () => {
       // Wait for polling to start and error to be logged
       await new Promise((resolve) => setTimeout(resolve, 200));
 
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        '[Realtime] CRITICAL: Polling active but onPollRefresh not implemented. ' +
+          'Data will NOT update. This is a bug in consumer implementation. Stopping polling.'
+      );
+      expect(manager.isPollingActive()).toBe(false);
+
       consoleErrorSpy.mockRestore();
     });
 
     it('should track polling state', async () => {
+      // Make polling start immediately on the first connection error
+      (manager as any).maxReconnectAttempts = 0;
+
       // Mock a failed connection that triggers polling
       const mockSupabase = require('@/lib/supabase').supabase;
       mockSupabase.channel.mockReturnValueOnce({
@@ -149,12 +149,6 @@ describe('RealtimeConnectionManager', () => {
           // Simulate connection failure leading to polling
           setTimeout(() => {
             callback('CHANNEL_ERROR');
-            // After max retries, should start polling
-            setTimeout(() => {
-              if (manager.isPollingActive()) {
-                expect(manager.isPollingActive()).toBe(true);
-              }
-            }, 100);
           }, 10);
           return { unsubscribe: jest.fn() };
         }),
@@ -166,8 +160,7 @@ describe('RealtimeConnectionManager', () => {
       // Wait for polling to start
       await new Promise((resolve) => setTimeout(resolve, 200));
 
-      // Note: In a real test environment, we'd need to mock timers properly
-      // This test demonstrates the polling state tracking capability
+      expect(manager.isPollingActive()).toBe(true);
     });
   });
 

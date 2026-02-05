@@ -13,6 +13,7 @@ type HandleOptions = {
   ensureAuthenticated?: () => Promise<boolean>;
   stashRedirect?: (path: string) => Promise<void> | void;
   onInvalid?: (reason: string) => void;
+  source?: 'notifications' | 'default';
 };
 
 type HandleResult = { ok: true; path: string } | { ok: false; reason: string };
@@ -32,21 +33,47 @@ export const DeepLinkService = {
     }
 
     const resolvedPath = resolvePath(url);
+    const stashPath = buildStashPath(resolvedPath, options?.source);
     const requiresAuth = isProtectedDeepLinkPath(resolvedPath);
 
     if (requiresAuth && options?.ensureAuthenticated) {
       const authed = await options.ensureAuthenticated();
       if (!authed) {
-        stashPendingDeepLink(resolvedPath);
-        await options.stashRedirect?.(resolvedPath);
+        stashPendingDeepLink(stashPath);
+        await options.stashRedirect?.(stashPath);
         return { ok: false, reason: 'auth-required' };
       }
+    }
+
+    if (options?.source === 'notifications') {
+      navigateFromNotifications(resolvedPath);
+      return { ok: true, path: resolvedPath };
     }
 
     router.push(resolvedPath as Href);
     return { ok: true, path: resolvedPath };
   },
 };
+
+function navigateFromNotifications(resolvedPath: string): void {
+  if (resolvedPath.startsWith('/notifications')) {
+    router.push(resolvedPath as Href);
+    return;
+  }
+  router.push('/notifications');
+  router.push(resolvedPath as Href);
+}
+
+function buildStashPath(
+  resolvedPath: string,
+  source?: HandleOptions['source']
+): string {
+  if (source !== 'notifications') return resolvedPath;
+  if (resolvedPath.startsWith('/notifications')) {
+    return resolvedPath;
+  }
+  return `/notifications?redirect=${encodeURIComponent(resolvedPath)}`;
+}
 
 function resolvePath(url: string): string {
   const parsed = new URL(url);

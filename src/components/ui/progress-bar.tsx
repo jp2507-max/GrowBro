@@ -32,14 +32,16 @@ export const ProgressBar = forwardRef<ProgressBarRef, Props>(
     useImperativeHandle(ref, () => {
       return {
         setProgress: (value: number) => {
-          progress.value = withTiming(
-            value,
-            {
-              duration: 250,
-              easing: Easing.inOut(Easing.quad),
-            },
-            undefined,
-            ReduceMotion.System
+          progress.set(
+            withTiming(
+              value,
+              {
+                duration: 250,
+                easing: Easing.inOut(Easing.quad),
+                reduceMotion: ReduceMotion.System,
+              },
+              undefined
+            )
           );
         },
       };
@@ -48,16 +50,16 @@ export const ProgressBar = forwardRef<ProgressBarRef, Props>(
     const handleLayout = React.useCallback(
       (event: LayoutChangeEvent): void => {
         const width = event.nativeEvent.layout.width;
-        if (width > 0 && width !== containerWidth.value) {
-          containerWidth.value = width;
+        if (width > 0 && width !== containerWidth.get()) {
+          containerWidth.set(width);
         }
       },
       [containerWidth]
     );
 
     const style = useAnimatedStyle(() => {
-      const width = containerWidth.value;
-      const clamped = Math.min(100, Math.max(0, progress.value));
+      const width = containerWidth.get();
+      const clamped = Math.min(100, Math.max(0, progress.get()));
       const scaleX = clamped / 100;
       const translateX = width ? -(width * (1 - scaleX)) / 2 : 0;
       const barColor =

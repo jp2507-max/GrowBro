@@ -22,15 +22,15 @@ describe('PhotoCapture', () => {
       ).toBeOnTheScreen();
     });
 
-    test('renders correctly with custom button text', async () => {
-      const customText = 'Upload Harvest Photo';
+    test('renders correctly with custom button text key', async () => {
+      const customKey = 'harvest.photo.actions.add_photo';
       setup(
         <PhotoCapture
           onPhotoCaptured={mockOnPhotoCaptured}
-          buttonText={customText}
+          buttonTextKey={customKey}
         />
       );
-      expect(await screen.findByText(customText)).toBeOnTheScreen();
+      expect(await screen.findByText('Add Photo')).toBeOnTheScreen();
     });
 
     test('renders correctly when disabled', async () => {

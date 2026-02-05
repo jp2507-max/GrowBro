@@ -82,6 +82,8 @@ export async function trackConflict(params: {
       | 'series'
       | 'tasks'
       | 'occurrence_overrides'
+      | 'plant_stage_history'
+      | 'plant_events'
       | 'harvests'
       | 'inventory'
       | 'harvest_audits'
@@ -89,6 +91,8 @@ export async function trackConflict(params: {
       series: 'series',
       tasks: 'tasks',
       occurrence_overrides: 'occurrence_overrides',
+      plant_stage_history: 'plant_stage_history',
+      plant_events: 'plant_events',
       harvests: 'harvests',
       inventory: 'inventory',
       harvest_audits: 'harvest_audits',

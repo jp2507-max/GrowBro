@@ -9,6 +9,7 @@ import type { Strain } from '@/api';
 import type { StrainFilters } from '@/api/strains/types';
 import { applyStrainFilters } from '@/lib/strains/filtering';
 import { prefetchStrainImages } from '@/lib/strains/image-optimization';
+import { isEnvFlagEnabled } from '@/lib/utils/env-flags';
 
 import { useLegacyQuerySync } from './use-legacy-query-sync';
 import { useStateChangeNotification } from './use-state-change-notification';
@@ -64,17 +65,17 @@ export function useStrainListState({
     return data.pages.flatMap((page) => page.data);
   }, [data?.pages]);
 
-  const strains = useMemo(
-    () => applyStrainFilters(rawStrains, filters, searchQuery),
-    [rawStrains, filters, searchQuery]
-  );
+  const strains = useMemo(() => {
+    return applyStrainFilters(rawStrains, filters, searchQuery);
+  }, [rawStrains, filters, searchQuery]);
 
   const prefetchUpcomingImages = useCallback(() => {
+    if (isEnvFlagEnabled('EXPO_PUBLIC_DISABLE_STRAINS_IMAGE_PREFETCH')) return;
     if (!data?.pages) return;
     const lastPage = data.pages[data.pages.length - 1];
     if (lastPage?.data) {
       const imageUris = lastPage.data
-        .slice(-12)
+        .slice(-4)
         .map((strain) => strain.imageUrl)
         .filter(Boolean);
       if (imageUris.length > 0) {

@@ -4,6 +4,7 @@
  * Requirements: 2.2, 3.2, 7.1-7.7
  */
 
+import { client } from '@/api/common';
 import type { PolicyCatalogEntry } from '@/types/moderation';
 
 /**
@@ -12,17 +13,11 @@ import type { PolicyCatalogEntry } from '@/types/moderation';
 export async function getPolicyCatalogEntry(
   category: string
 ): Promise<PolicyCatalogEntry> {
-  // TODO: Replace with actual Supabase query
-  const response = await fetch(
-    `/api/moderation/policy-catalog/${encodeURIComponent(category)}`
+  const response = await client.get<PolicyCatalogEntry>(
+    `/moderation/policy-catalog/${encodeURIComponent(category)}`
   );
 
-  if (!response.ok) {
-    throw new Error(`Failed to fetch policy: ${response.statusText}`);
-  }
-
-  const data = (await response.json()) as PolicyCatalogEntry;
-  return data;
+  return response.data;
 }
 
 /**
@@ -31,30 +26,25 @@ export async function getPolicyCatalogEntry(
 export async function searchPolicyCatalog(
   query: string
 ): Promise<PolicyCatalogEntry[]> {
-  // TODO: Replace with actual Supabase full-text search
-  const response = await fetch(
-    `/api/moderation/policy-catalog/search?q=${encodeURIComponent(query)}`
+  const response = await client.get<PolicyCatalogEntry[]>(
+    '/moderation/policy-catalog/search',
+    {
+      params: { q: query },
+    }
   );
 
-  if (!response.ok) {
-    throw new Error(`Failed to search policies: ${response.statusText}`);
-  }
-
-  return response.json();
+  return response.data;
 }
 
 /**
  * Get all policy catalog entries
  */
 export async function getAllPolicies(): Promise<PolicyCatalogEntry[]> {
-  // TODO: Replace with actual Supabase query
-  const response = await fetch('/api/moderation/policy-catalog');
+  const response = await client.get<PolicyCatalogEntry[]>(
+    '/moderation/policy-catalog'
+  );
 
-  if (!response.ok) {
-    throw new Error(`Failed to fetch policies: ${response.statusText}`);
-  }
-
-  return response.json();
+  return response.data;
 }
 
 /**

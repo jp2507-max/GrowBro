@@ -1,3 +1,5 @@
+import { InteractionManager } from 'react-native';
+
 import { onConnectivityChange } from '@/lib/sync/network-manager';
 
 import { offlineQueueManager } from './offline-queue-manager';
@@ -11,6 +13,9 @@ let connectivityUnsubscribe: (() => void) | null = null;
 let isRunning = false;
 let wasOffline = false;
 let isProcessing = false;
+let scheduledProcess: ReturnType<
+  typeof InteractionManager.runAfterInteractions
+> | null = null;
 
 const SYNC_INTERVAL_MS = 30 * 1000; // 30 seconds
 
@@ -25,9 +30,19 @@ export function startSyncScheduler(): void {
 
   isRunning = true;
 
+  const scheduleProcessQueue = (): void => {
+    if (!isRunning) return;
+    if (scheduledProcess) return;
+    scheduledProcess = InteractionManager.runAfterInteractions(() => {
+      scheduledProcess = null;
+      if (!isRunning) return;
+      void processQueueSafely();
+    });
+  };
+
   // Set up periodic sync
   syncInterval = setInterval(() => {
-    void processQueueSafely();
+    scheduleProcessQueue();
   }, SYNC_INTERVAL_MS);
 
   // Set up connectivity change listener
@@ -37,14 +52,14 @@ export function startSyncScheduler(): void {
     // When connectivity is restored, immediately process queue
     if (isOnline && wasOffline) {
       notifyNetworkRestored();
-      void processQueueSafely();
+      scheduleProcessQueue();
     }
 
     wasOffline = !isOnline;
   });
 
   // Initial sync attempt
-  void processQueueSafely();
+  scheduleProcessQueue();
 }
 
 /**
@@ -56,6 +71,11 @@ export function stopSyncScheduler(): void {
   }
 
   isRunning = false;
+
+  if (scheduledProcess) {
+    scheduledProcess.cancel();
+    scheduledProcess = null;
+  }
 
   if (syncInterval) {
     clearInterval(syncInterval);
@@ -80,11 +100,12 @@ async function processQueueSafely(): Promise<void> {
   }
 
   isProcessing = true;
+  let pendingCount = 0;
 
   try {
     // Get queue status before processing
     const statusBefore = await offlineQueueManager.getQueueStatus();
-    const pendingCount = statusBefore.pending + statusBefore.failed;
+    pendingCount = statusBefore.pending + statusBefore.failed;
 
     if (pendingCount > 0) {
       notifySyncStarted(pendingCount);

@@ -193,8 +193,8 @@ describe('KeyManager', () => {
 
       await keyManager.deleteKey('test-domain');
 
-      // Should delete both key and metadata
-      expect(mockSecureStore.deleteItemAsync).toHaveBeenCalledTimes(2);
+      // Should delete key, metadata, and legacy metadata
+      expect(mockSecureStore.deleteItemAsync).toHaveBeenCalledTimes(3);
     });
 
     it('should throw error if deletion fails', async () => {
@@ -298,7 +298,7 @@ describe('KeyManager', () => {
         if (key.startsWith('mmkv.')) {
           // Return the actual key for key retrieval
           return Promise.resolve(originalKey);
-        } else if (key.startsWith('security:encryption:metadata:')) {
+        } else if (key.startsWith('security:encryption:metadata_')) {
           // Return metadata for metadata retrieval
           return Promise.resolve(
             JSON.stringify({

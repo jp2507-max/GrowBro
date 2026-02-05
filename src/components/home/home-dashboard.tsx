@@ -18,6 +18,8 @@ type TaskSnapshot = {
 
 type TaskSnapshotState = {
   snapshot: TaskSnapshot;
+  /** Pending tasks: overdue first (sorted by dueAtLocal), then today's (sorted by dueAtLocal) */
+  tasks: Task[];
   isLoading: boolean;
   hasError: boolean;
   refresh: () => void;
@@ -32,6 +34,7 @@ const INITIAL_SNAPSHOT: TaskSnapshot = {
 export function useTaskSnapshot(): TaskSnapshotState {
   const [snapshot, setSnapshot] =
     React.useState<TaskSnapshot>(INITIAL_SNAPSHOT);
+  const [tasks, setTasks] = React.useState<Task[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [hasError, setHasError] = React.useState(false);
 
@@ -51,42 +54,54 @@ export function useTaskSnapshot(): TaskSnapshotState {
       const rangeEnd = now.plus({ days: 7 }).endOf('day').toJSDate();
       const rangeEndDt = DateTime.fromJSDate(rangeEnd);
 
-      const tasks = await getTasksByDateRange(rangeStart, rangeEnd);
+      const allTasks = await getTasksByDateRange(rangeStart, rangeEnd);
       if (isCancelled()) return;
 
       const startOfToday = now.startOf('day');
       const endOfToday = now.endOf('day');
       const tomorrowStart = now.plus({ days: 1 }).startOf('day');
 
-      const normalized = tasks.filter(
+      const pendingTasks = allTasks.filter(
         (task: Task) => task.status === 'pending'
       );
 
-      const overdue = normalized.filter((task) => {
+      // Separate overdue and today's tasks
+      const overdueTasks = pendingTasks.filter((task) => {
         return DateTime.fromISO(task.dueAtLocal) < startOfToday;
-      }).length;
-      const today = normalized.filter((task) => {
+      });
+      const todayTasks = pendingTasks.filter((task) => {
         const due = DateTime.fromISO(task.dueAtLocal);
         return due >= startOfToday && due <= endOfToday;
-      }).length;
-      const upcoming = normalized.filter((task) => {
+      });
+      const upcomingTasks = pendingTasks.filter((task) => {
         const due = DateTime.fromISO(task.dueAtLocal);
         return due >= tomorrowStart && due <= rangeEndDt;
-      }).length;
+      });
+
+      // Sort by dueAtLocal: overdue first, then today's
+      const sortByDue = (a: Task, b: Task) =>
+        DateTime.fromISO(a.dueAtLocal).toMillis() -
+        DateTime.fromISO(b.dueAtLocal).toMillis();
+
+      const sortedOverdue = [...overdueTasks].sort(sortByDue);
+      const sortedToday = [...todayTasks].sort(sortByDue);
+      const focusTasks = [...sortedOverdue, ...sortedToday];
 
       if (isCancelled()) return;
 
       setSnapshot({
-        overdue,
-        today,
-        upcoming,
+        overdue: overdueTasks.length,
+        today: todayTasks.length,
+        upcoming: upcomingTasks.length,
       });
+      setTasks(focusTasks);
       setHasError(false);
     } catch (error) {
       console.error('[home-dashboard] failed to load task snapshot', error);
       if (!isCancelled()) {
         setHasError(true);
         setSnapshot(INITIAL_SNAPSHOT);
+        setTasks([]);
       }
     } finally {
       if (!isCancelled()) {
@@ -106,6 +121,7 @@ export function useTaskSnapshot(): TaskSnapshotState {
 
   return {
     snapshot,
+    tasks,
     isLoading,
     hasError,
     refresh: loadSnapshot,

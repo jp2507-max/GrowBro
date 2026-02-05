@@ -28,6 +28,12 @@ export default defineConfig([
     'dist/*',
     'package/dist',
     'node_modules',
+    '.agent/',
+    '.codex/',
+    '.cursor/',
+    '.gemini/',
+    '.windsurf/',
+    '.github/skills/',
     '__tests__/',
     'coverage',
     '.expo',
@@ -177,6 +183,15 @@ export default defineConfig([
         sourceType: 'module',
       },
     },
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+    },
+  },
+  {
+    files: ['**/*.d.ts'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+    },
   },
   {
     files: ['src/translations/en.json', 'src/translations/de.json'],
@@ -255,6 +270,7 @@ export default defineConfig([
       'max-lines-per-function': 'off',
       'max-params': 'off',
       '@typescript-eslint/no-require-imports': 'off', // Jest dynamic mocking requires require()
+      '@typescript-eslint/no-explicit-any': 'off',
     },
   },
   // Scripts and generated packages run in Node; allow __dirname/Buffer and relax length

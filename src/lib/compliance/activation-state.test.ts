@@ -11,7 +11,7 @@ import {
   isActivationActionCompleted,
   resetActivationState,
   shouldShowActivationChecklist,
-  useActivationState,
+  useActivationStore,
 } from './activation-state';
 
 describe('activation-state', () => {
@@ -196,14 +196,14 @@ describe('activation-state', () => {
   describe('Zustand Selectors', () => {
     test('should provide reactive state updates', () => {
       const { result } = renderHook(() => ({
-        actions: useActivationState.actions(),
-        dismissed: useActivationState.dismissed(),
-        shouldShow: useActivationState.shouldShowChecklist(),
+        actions: useActivationStore((s) => s.actions),
+        dismissed: useActivationStore((s) => s.dismissed),
+        shouldShowChecklist: useActivationStore((s) => s.shouldShowChecklist),
       }));
 
       expect(result.current.actions['create-task']?.completed).toBe(false);
       expect(result.current.dismissed).toBe(false);
-      expect(result.current.shouldShow()).toBe(true);
+      expect(result.current.shouldShowChecklist()).toBe(true);
 
       act(() => {
         completeActivationAction('create-task');

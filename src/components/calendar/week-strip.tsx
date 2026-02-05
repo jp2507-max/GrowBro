@@ -11,6 +11,7 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from 'react-native-reanimated';
+import { scheduleOnUI } from 'react-native-worklets';
 
 import { Pressable, Text, View } from '@/components/ui';
 import colors from '@/components/ui/colors';
@@ -105,32 +106,38 @@ function DayPill({
   const selectedScale = useSharedValue(item.isSelected ? 1.08 : 1);
 
   React.useEffect(() => {
-    selectedScale.value = withSpring(item.isSelected ? 1.08 : 1, {
-      damping: 12,
-      stiffness: 180,
-      reduceMotion: ReduceMotion.System,
-    });
+    selectedScale.set(
+      withSpring(item.isSelected ? 1.08 : 1, {
+        damping: 12,
+        stiffness: 180,
+        reduceMotion: ReduceMotion.System,
+      })
+    );
   }, [item.isSelected, selectedScale]);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value * selectedScale.value }],
+    transform: [{ scale: scale.get() * selectedScale.get() }],
   }));
 
   const handlePressIn = React.useCallback(() => {
     haptics.selection();
-    scale.value = withSpring(0.92, {
-      damping: 10,
-      stiffness: 350,
-      reduceMotion: ReduceMotion.System,
-    });
+    scale.set(
+      withSpring(0.92, {
+        damping: 10,
+        stiffness: 350,
+        reduceMotion: ReduceMotion.System,
+      })
+    );
   }, [scale]);
 
   const handlePressOut = React.useCallback(() => {
-    scale.value = withSpring(1, {
-      damping: 10,
-      stiffness: 350,
-      reduceMotion: ReduceMotion.System,
-    });
+    scale.set(
+      withSpring(1, {
+        damping: 10,
+        stiffness: 350,
+        reduceMotion: ReduceMotion.System,
+      })
+    );
   }, [scale]);
 
   // Determine pill style based on state
@@ -147,57 +154,71 @@ function DayPill({
       onPressOut={handlePressOut}
       style={[pillStyle, animatedStyle]}
       className={cn(
-        'mx-0.5 min-w-[44px] items-center rounded-[18px] px-2 py-3',
+        'items-center mx-0.5 px-2 py-4 min-w-[52px] rounded-[24px]',
         item.isSelected
-          ? 'bg-primary-500'
+          ? 'bg-neutral-200 dark:bg-lime-400'
           : item.isToday
-            ? 'border-2 border-primary-400 bg-white/95 dark:border-primary-500 dark:bg-charcoal-800/95'
-            : 'bg-white/90 dark:bg-charcoal-800/80'
+            ? 'border border-neutral-200 dark:border-lime-400/40 bg-neutral-50 dark:bg-white/10'
+            : 'border border-neutral-200 dark:border-white/5 bg-neutral-100 dark:bg-white/5'
       )}
       accessibilityRole="button"
-      accessibilityLabel={
-        item.date.toFormat('EEEE, MMMM d') +
-        (item.isToday ? ', ' + todayLabel : '')
-      }
+      accessibilityLabel={`${item.date.toFormat('EEEE, MMMM d')}${item.isToday ? `, ${todayLabel}` : ''}`}
       accessibilityHint={translate('calendar.week_strip.select_day_hint')}
       accessibilityState={{ selected: item.isSelected }}
       testID={'week-strip-day-' + item.date.toFormat('yyyy-MM-dd')}
     >
       <Text
         className={cn(
-          'text-[10px] font-bold uppercase tracking-wider',
+          'text-[10px] font-semibold uppercase tracking-wider',
           item.isSelected
-            ? 'text-white/90'
+            ? 'text-neutral-900 dark:text-charcoal-950'
             : item.isToday
-              ? 'text-primary-600 dark:text-primary-400'
-              : 'text-neutral-500 dark:text-neutral-400'
+              ? 'text-neutral-900 dark:text-lime-400'
+              : 'text-neutral-600 dark:text-white/50'
         )}
       >
-        {item.isToday ? todayLabel : item.dayOfWeek}
+        {item.dayOfWeek}
       </Text>
       <Text
         className={cn(
-          'mt-0.5 text-2xl font-black',
+          'mt-1 text-xl font-bold',
           item.isSelected
-            ? 'text-white'
-            : item.isToday
-              ? 'text-primary-600 dark:text-primary-400'
-              : 'text-charcoal-900 dark:text-neutral-50'
+            ? 'text-neutral-900 dark:text-charcoal-950'
+            : 'text-neutral-900 dark:text-white'
         )}
       >
         {item.dayOfMonth}
       </Text>
-      {/* Task indicator dot */}
-      {item.taskCount > 0 && (
-        <View
-          className={cn(
-            'mt-1.5 size-1.5 rounded-full',
-            item.isSelected ? 'bg-white' : 'bg-primary-500 dark:bg-primary-400'
-          )}
-          testID={`task-indicator-${item.date.toFormat('yyyy-MM-dd')}`}
-        />
-      )}
+      <TaskIndicator
+        taskCount={item.taskCount}
+        isSelected={item.isSelected}
+        dateKey={item.date.toFormat('yyyy-MM-dd')}
+      />
     </AnimatedPressable>
+  );
+}
+
+function TaskIndicator({
+  taskCount,
+  isSelected,
+  dateKey,
+}: {
+  taskCount: number;
+  isSelected: boolean;
+  dateKey: string;
+}): React.ReactElement {
+  return (
+    <View
+      className={cn(
+        'mt-2 size-1.5 rounded-full',
+        taskCount > 0
+          ? isSelected
+            ? 'bg-neutral-900 dark:bg-charcoal-950'
+            : 'bg-neutral-400 dark:bg-lime-400'
+          : 'bg-transparent'
+      )}
+      testID={`task-indicator-${dateKey}`}
+    />
   );
 }
 
@@ -212,6 +233,12 @@ export function WeekStrip({
   const { width: screenWidth } = useWindowDimensions();
   const hasScrolledRef = React.useRef(false);
   const [isLayoutReady, setIsLayoutReady] = React.useState(false);
+  const scrollToWeek = React.useCallback(
+    (x: number, animated: boolean): void => {
+      scrollTo(scrollViewRef, x, 0, animated);
+    },
+    [scrollViewRef]
+  );
 
   // Anchor week is stable - only shifts when selected date goes outside buffer range
   const [anchorWeekStart, setAnchorWeekStart] = React.useState(() =>
@@ -255,10 +282,10 @@ export function WeekStrip({
         Math.min(targetWeekIndex, TOTAL_WEEKS - 1)
       );
       const scrollX = clampedIndex * screenWidth;
-      scrollTo(scrollViewRef, scrollX, 0, hasScrolledRef.current);
+      scheduleOnUI(scrollToWeek, scrollX, hasScrolledRef.current);
       hasScrolledRef.current = true;
     }
-  }, [selectedWeekOffset, screenWidth, isLayoutReady, scrollViewRef]);
+  }, [selectedWeekOffset, screenWidth, isLayoutReady, scrollToWeek]);
 
   return (
     <Animated.ScrollView
@@ -295,25 +322,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   defaultPill: {
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 2,
-      },
-    }),
+    // No shadow for default pills in Stitch design
   },
   todayPill: {
     ...Platform.select({
       ios: {
-        shadowColor: colors.primary[500],
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 6,
+        shadowColor: colors.neon.lime,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
       },
       android: {
         elevation: 3,
@@ -323,10 +340,10 @@ const styles = StyleSheet.create({
   selectedPill: {
     ...Platform.select({
       ios: {
-        shadowColor: colors.primary[500],
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.45,
-        shadowRadius: 14,
+        shadowColor: colors.neon.lime,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.6,
+        shadowRadius: 15,
       },
       android: {
         elevation: 8,

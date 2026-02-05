@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, ScrollView, Switch, Text, View } from 'react-native';
+import { Alert, ScrollView, Text, View } from 'react-native';
 
-import { Button } from '@/components/ui';
+import { Button, Switch } from '@/components/ui';
 import { translate } from '@/lib';
 import type { TxKeyPath } from '@/lib/i18n/utils';
 import { ConsentService } from '@/lib/privacy/consent-service';

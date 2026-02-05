@@ -1,10 +1,16 @@
 /**
  * CommentInputFooter - Sticky messenger-style comment input
+ * Design: Full-width glass input pill | Terracotta send button
  */
 import * as React from 'react';
-import { StyleSheet, type TextInput } from 'react-native';
+import { StyleSheet, TextInput } from 'react-native';
+import { useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller';
+import Animated, {
+  useAnimatedStyle,
+  useDerivedValue,
+} from 'react-native-reanimated';
 
-import { ActivityIndicator, Input, Pressable, View } from '@/components/ui';
+import { ActivityIndicator, Pressable, View } from '@/components/ui';
 import colors from '@/components/ui/colors';
 import { Send } from '@/components/ui/icons';
 import { translate, type TxKeyPath } from '@/lib/i18n';
@@ -21,20 +27,29 @@ type CommentInputFooterProps = {
 };
 
 const styles = StyleSheet.create({
-  borderlessInput: {
-    borderWidth: 0,
+  input: {
+    flex: 1,
+    minHeight: 48,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    fontSize: 14,
+    color: colors.white,
   },
   sendButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: colors.black,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.2,
     shadowRadius: 4,
-    elevation: 3,
+    elevation: 4,
   },
   sendButtonActive: {
     backgroundColor: colors.terracotta[500],
@@ -58,31 +73,40 @@ export function CommentInputFooter({
   const isEmpty = value.trim().length === 0;
   const isDisabled = isEmpty || isOverLimit || isPending;
 
-  return (
-    <View
-      className="border-t border-neutral-100 bg-white px-4 py-3 dark:border-white/5 dark:bg-charcoal-950"
-      style={{ paddingBottom: Math.max(bottomInset, 32) }}
-    >
-      <View className="flex-row items-center">
-        {/* Messenger-style rounded input */}
-        <View className="mr-3 min-h-[44px] flex-1 flex-row items-center rounded-full bg-neutral-100 px-5 py-3 dark:bg-white/5">
-          <Input
-            ref={inputRef}
-            placeholder={translate(
-              'community.comment_placeholder' as TxKeyPath
-            )}
-            placeholderTextColor={colors.neutral[400]}
-            value={value}
-            onChangeText={onChangeText}
-            multiline
-            numberOfLines={1}
-            maxLength={MAX_COMMENT_LENGTH}
-            className="min-h-[24px] flex-1 border-0 bg-transparent text-base text-neutral-900 dark:text-neutral-100"
-            style={styles.borderlessInput}
-          />
-        </View>
+  // Detect keyboard visibility to reduce bottom padding when keyboard is shown
+  const { height: keyboardHeight } = useReanimatedKeyboardAnimation();
+  const isKeyboardVisible = useDerivedValue(() => keyboardHeight.value > 0);
 
-        {/* Circular Send Button */}
+  const animatedPaddingStyle = useAnimatedStyle(() => ({
+    paddingBottom: isKeyboardVisible.value ? 8 : Math.max(bottomInset, 8),
+  }));
+
+  return (
+    <Animated.View
+      className="border-t border-white/10 bg-charcoal-950/90 px-4 py-2 backdrop-blur-xl"
+      style={animatedPaddingStyle}
+    >
+      <View className="flex-row items-center gap-3">
+        {/* Single Glass Pill Input */}
+        <TextInput
+          ref={inputRef}
+          placeholder={translate('community.comment_placeholder' as TxKeyPath)}
+          placeholderTextColor={colors.neutral[500]}
+          value={value}
+          onChangeText={onChangeText}
+          multiline
+          numberOfLines={1}
+          maxLength={MAX_COMMENT_LENGTH}
+          style={styles.input}
+          accessibilityLabel={translate(
+            'community.comment_placeholder' as TxKeyPath
+          )}
+          accessibilityHint={translate(
+            'accessibility.community.write_comment_hint' as TxKeyPath
+          )}
+        />
+
+        {/* Send Button */}
         <Pressable
           onPress={onSubmit}
           disabled={isDisabled}
@@ -104,6 +128,6 @@ export function CommentInputFooter({
           )}
         </Pressable>
       </View>
-    </View>
+    </Animated.View>
   );
 }

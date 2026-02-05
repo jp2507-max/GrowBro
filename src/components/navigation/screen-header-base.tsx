@@ -1,3 +1,4 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import React from 'react';
@@ -6,16 +7,40 @@ import type { EdgeInsets } from 'react-native-safe-area-context';
 
 import { GlassSurface } from '@/components/shared/glass-surface';
 import { GlassButton, Text, View } from '@/components/ui';
-import { Settings as SettingsIcon } from '@/components/ui/icons';
+import colors from '@/components/ui/colors';
+import { PlatformIcon, Settings as SettingsIcon } from '@/components/ui/icons';
+import { getTimeBasedGreeting } from '@/lib/greeting';
 import { translate } from '@/lib/i18n';
 import type { TxKeyPath } from '@/lib/i18n/utils';
 import { getHeaderColors } from '@/lib/theme-utils';
 import { cn } from '@/lib/utils';
 
+// Gradient colors matching Stitch "Organic Tech" design
+const HEADER_GRADIENT_COLORS = {
+  light: [
+    colors.primary[600],
+    colors.primary[700],
+    colors.primary[800],
+  ] as const,
+  dark: [
+    colors.charcoal[950],
+    colors.charcoal[900],
+    colors.primary[950],
+  ] as const,
+};
+
 const styles = StyleSheet.create({
   statsPill: {
     borderRadius: 999,
-    overflow: 'hidden',
+  },
+  headerContainer: {
+    paddingHorizontal: 16,
+  },
+  headerContainerCompact: {
+    paddingBottom: 16,
+  },
+  headerContainerNormal: {
+    paddingBottom: 24,
   },
 });
 
@@ -43,7 +68,7 @@ type ScreenHeaderBaseProps = {
 
 /**
  * Base component for screen headers with consistent styling.
- * Uses theme-aware background color for proper theming support.
+ * Uses gradient background matching community header style.
  */
 export function ScreenHeaderBase({
   insets,
@@ -57,24 +82,34 @@ export function ScreenHeaderBase({
 }: ScreenHeaderBaseProps): React.ReactElement {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
-  const colors = getHeaderColors(isDark);
+  const headerColors = getHeaderColors(isDark);
+  const gradientColors = isDark
+    ? HEADER_GRADIENT_COLORS.dark
+    : HEADER_GRADIENT_COLORS.light;
 
   const paddingTop = compact ? HEADER_PADDING_TOP_COMPACT : HEADER_PADDING_TOP;
 
+  const borderStyle = showBottomBorder
+    ? {
+        borderBottomWidth: 1,
+        borderBottomColor: isDark
+          ? 'rgba(68, 64, 60, 1)'
+          : 'rgba(204, 235, 217, 1)',
+      }
+    : undefined;
+
   return (
-    <View
-      className={cn(
-        'z-0 px-4',
-        compact ? 'pb-4' : 'pb-6',
-        'shadow-lg',
-        showBottomBorder &&
-          'border-b border-neutral-200 dark:border-charcoal-700'
-      )}
-      style={{
-        paddingTop: insets.top + paddingTop,
-        backgroundColor: colors.background,
-      }}
+    <LinearGradient
+      colors={gradientColors}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
       testID={testID}
+      style={[
+        styles.headerContainer,
+        compact ? styles.headerContainerCompact : styles.headerContainerNormal,
+        { paddingTop: insets.top + paddingTop },
+        borderStyle,
+      ]}
     >
       {/* Top Row: Left content + Right icons */}
       {(topRowLeft || topRowRight) && (
@@ -91,7 +126,7 @@ export function ScreenHeaderBase({
             'font-bold tracking-tight',
             compact ? 'text-2xl' : 'text-3xl'
           )}
-          style={{ color: colors.text }}
+          style={{ color: headerColors.text }}
         >
           {title}
         </Text>
@@ -101,7 +136,7 @@ export function ScreenHeaderBase({
       {children && (
         <View className={compact ? 'mt-2' : 'mt-3'}>{children}</View>
       )}
-    </View>
+    </LinearGradient>
   );
 }
 
@@ -113,24 +148,9 @@ export function ScreenHeaderBase({
  * Time-based greeting text for Home screen
  */
 export function HeaderGreeting(): React.ReactElement {
-  const hour = new Date().getHours();
-  let greeting: string;
+  const greeting = getTimeBasedGreeting();
 
-  if (hour >= 5 && hour < 12) {
-    greeting = translate('home.greeting.morning' as TxKeyPath);
-  } else if (hour >= 12 && hour < 17) {
-    greeting = translate('home.greeting.afternoon' as TxKeyPath);
-  } else if (hour >= 17 && hour < 21) {
-    greeting = translate('home.greeting.evening' as TxKeyPath);
-  } else {
-    greeting = translate('home.greeting.night' as TxKeyPath);
-  }
-
-  return (
-    <Text className="text-lg font-medium text-charcoal-900 dark:text-neutral-100">
-      {greeting}
-    </Text>
-  );
+  return <Text className="text-lg font-medium text-white/90">{greeting}</Text>;
 }
 
 /**
@@ -142,6 +162,9 @@ export function HeaderSettingsButton(): React.ReactElement {
     'accessibility.home.open_settings_hint' as TxKeyPath
   );
 
+  const { colorScheme } = useColorScheme();
+  const headerColors = getHeaderColors(colorScheme === 'dark');
+
   return (
     <GlassButton
       onPress={() => router.push('/settings')}
@@ -150,7 +173,12 @@ export function HeaderSettingsButton(): React.ReactElement {
       fallbackClassName="bg-white/20 dark:bg-black/20"
       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
     >
-      <SettingsIcon className="text-white" />
+      <PlatformIcon
+        iosName="gearshape"
+        size={20}
+        color={headerColors.text}
+        fallback={<SettingsIcon />}
+      />
     </GlassButton>
   );
 }

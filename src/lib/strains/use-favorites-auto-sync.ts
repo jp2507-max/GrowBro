@@ -6,9 +6,9 @@ import { useEffect, useRef, useState } from 'react';
 import { InteractionManager } from 'react-native';
 
 import { useNetworkStatus } from '@/lib/hooks/use-network-status';
-import { useSyncState } from '@/lib/sync/sync-state';
+import { useSyncStateStore } from '@/lib/sync/sync-state';
 
-import { useFavorites } from './use-favorites';
+import { useFavoritesStore } from './use-favorites';
 
 /**
  * Hook that automatically syncs favorites when:
@@ -23,18 +23,30 @@ type FavoritesAutoSyncState = {
   lastSyncAttempt: number;
 };
 
-export function useFavoritesAutoSync(): FavoritesAutoSyncState {
+type FavoritesAutoSyncOptions = {
+  enabled?: boolean;
+};
+
+export function useFavoritesAutoSync(
+  options: FavoritesAutoSyncOptions = {}
+): FavoritesAutoSyncState {
+  const { enabled = true } = options;
   const { isInternetReachable } = useNetworkStatus();
-  const fullSync = useFavorites.use.fullSync();
-  const isSyncing = useFavorites.use.isSyncing();
-  const syncError = useFavorites.use.syncError();
-  const pipelineInFlight = useSyncState.use.pipelineInFlight();
+  const fullSync = useFavoritesStore((s) => s.fullSync);
+  const isSyncing = useFavoritesStore((s) => s.isSyncing);
+  const syncError = useFavoritesStore((s) => s.syncError);
+  const pipelineInFlight = useSyncStateStore((s) => s.pipelineInFlight);
   const wasOfflineRef = useRef(!isInternetReachable);
   const isSyncScheduledRef = useRef(false);
   const pendingOnlineSyncRef = useRef(false);
   const isMountedRef = useRef(true);
   const lastSyncAttemptRef = useRef(0);
   const [lastSyncAttempt, setLastSyncAttempt] = useState(0);
+  const enabledRef = useRef(enabled);
+
+  useEffect(() => {
+    enabledRef.current = enabled;
+  }, [enabled]);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -44,6 +56,11 @@ export function useFavoritesAutoSync(): FavoritesAutoSyncState {
   }, []);
 
   useEffect(() => {
+    if (!enabled) {
+      pendingOnlineSyncRef.current = false;
+      wasOfflineRef.current = !isInternetReachable;
+      return;
+    }
     const now = Date.now();
     const timeSinceLastSync = now - lastSyncAttemptRef.current;
     const justCameOnline = wasOfflineRef.current && isInternetReachable;
@@ -68,6 +85,10 @@ export function useFavoritesAutoSync(): FavoritesAutoSyncState {
 
       InteractionManager.runAfterInteractions(() => {
         if (!isMountedRef.current) return;
+        if (!enabledRef.current) {
+          isSyncScheduledRef.current = false;
+          return;
+        }
         void fullSync()
           .catch((error: Error) => {
             console.error('[useFavoritesAutoSync] Auto-sync failed:', error);
@@ -83,7 +104,7 @@ export function useFavoritesAutoSync(): FavoritesAutoSyncState {
     }
 
     wasOfflineRef.current = !isInternetReachable;
-  }, [isInternetReachable, isSyncing, fullSync, pipelineInFlight]);
+  }, [enabled, isInternetReachable, isSyncing, fullSync, pipelineInFlight]);
 
   return {
     isSyncing,

@@ -1,0 +1,78 @@
+---
+alwaysApply: true
+---
+
+# NativeWind Styling Guidelines
+
+## Core Principles
+
+- Keep `className` **stable**. Static styles in `className`, animated/gesture styles via Reanimated `style`.
+- Always write explicit Light/Dark pairs: `bg-white dark:bg-charcoal-900`. **No CSS vars**.
+- Never toggle Tailwind classes per frame; derive animation values in worklets.
+- Always respect Reduced Motion:
+  - Detect system `prefers-reduced-motion` and disable or simplify non-essential animations/gestures
+  - Use `ReduceMotion.System` in all Reanimated worklets and animated styles
+  - Verify smooth transitions with Expo Dev Menu FPS monitor
+- Class order: layout → flex → spacing → size → border → bg → text → effects → dark.
+- Custom components must forward/merge `className` via `cn` (tailwind-merge).
+
+---
+
+## UI & Theming
+
+- **Tokens (SSOT)**: `src/components/ui/colors.js` → imported into `tailwind.config.js` and reused for navigation colors.
+- **Theme state**: NativeWind `colorScheme` (`system | light | dark`), persisted in MMKV.
+- **Root wiring**: call `loadSelectedTheme()` at startup; compute nav theme via `useThemeConfig()`; apply `className={theme.dark ? 'dark' : undefined}` at the app root.
+- **Use Tailwind `dark:`** for component styling. Use React Navigation `ThemeProvider` only for APIs that require JS theme colors (navigation container, headers).
+
+---
+
+## GrowBro Styling
+
+- Prefer explicit utilities over semantic tokens (avoid `bg-card`, `bg-background`).
+- For JS values, import `colors` or use `useColorScheme()`.
+- Standard pairs:
+  - App: `bg-neutral-50 dark:bg-charcoal-950`
+  - Surface: `bg-white dark:bg-charcoal-900`
+  - Border: `border-neutral-200 dark:border-white/10`
+  - Text: `text-neutral-900 dark:text-neutral-50`
+  - Subtext: `text-neutral-600 dark:text-neutral-400`
+  - Brand: `text-primary-800 dark:text-primary-300`
+
+---
+
+## Component className Forwarding
+
+Custom components **must** forward and merge `className` props:
+
+```tsx
+import { cn } from '@/lib/utils';
+
+function Card({ className, ...props }: { className?: string }) {
+  return (
+    <View
+      className={cn('bg-white dark:bg-charcoal-900 rounded-lg p-4', className)}
+      {...props}
+    />
+  );
+}
+```
+
+---
+
+## ✅ Do / Avoid
+
+**Do**: Use explicit Light/Dark pairs; keep `className` stable; use Tailwind for static styles; forward `className` via `cn`.
+
+**Avoid**: Per-frame class churn; semantic background tokens; CSS variables; hard-coded colors.
+
+---
+
+## Animation & Motion Guidance
+
+- Tailwind remains for **static layouts**; drive motion with Reanimated styles (`style={animatedStyle}`) so the fluent UI runtime handles transforms/opacity. Keep `className` stable and inject dynamic values through `useAnimatedStyle`, `Animated.View`, or gesture worklets.
+- Prefer the shared motion tokens in `src/lib/animations/motion.ts` (`motion.dur`, `motion.ease`, `withRM`) when configuring timing/spring values so duration semantics (xs/sm/md/lg) and reduced-motion handling stay consistent.
+- Use layout animation builders (`withRM`, `FadeIn`, `LinearTransition`, etc.) for mount/unmount changes and always cancel long-lived animations (`cancelAnimation(sharedValue)`) during cleanup effects.
+- When composing shared transitions, use `sharedTransitionTag` prefixes scoped by feature (e.g., `feed.post.image`, `settings.avatar`) so hooks remain discoverable across screens.
+- State-driven animations should leverage `useSharedValue`, `useAnimatedStyle`, and helpers such as `interpolateColor` to interpolate between definitions instead of toggling classes; keep per-frame math inside worklets and only schedule JS side effects via `scheduleOnRN` (haptics, analytics, logging).
+- For gesture/motion guidance and primitives, see `src/lib/animations/README.md` and `src/lib/animations/shared.ts` (searchable via the main animation docs referenced in toolchain). Alternatively, cross-reference existing animation documentation in the repo when rebasing or updating instructions.

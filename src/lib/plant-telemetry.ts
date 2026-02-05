@@ -1,5 +1,8 @@
 import { NoopAnalytics } from '@/lib/analytics';
+import { triggerDigitalTwinSync } from '@/lib/digital-twin/sync-helpers';
 import { supabase } from '@/lib/supabase';
+import { database } from '@/lib/watermelon';
+import type { PlantModel } from '@/lib/watermelon-models/plant';
 import type { Series, Task } from '@/types/calendar';
 
 type TelemetryCategory = 'water' | 'feed' | null;
@@ -47,6 +50,28 @@ function isValidPlantId(plantId?: string): boolean {
   const uuidRe =
     /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   return uuidRe.test(plantId);
+}
+
+async function updatePlantFieldLocal(
+  plantId: string,
+  field: 'lastWateredAt' | 'lastFedAt',
+  nowIso: string
+): Promise<void> {
+  try {
+    await database.write(async () => {
+      const model = await database.get<PlantModel>('plants').find(plantId);
+      await model.update((record) => {
+        record[field] = nowIso;
+        record.updatedAt = new Date(nowIso);
+      });
+    });
+  } catch (error) {
+    // Non-blocking by design: log only
+    console.warn('[PlantTelemetry] Failed to update local plant field', {
+      field,
+      error,
+    });
+  }
 }
 
 async function updatePlantField(
@@ -98,17 +123,23 @@ export async function onTaskCompleted(
   // Extract task ID if available (for analytics tracking)
   const taskId = 'id' in input ? input.id : undefined;
 
+  const nowIso = new Date().toISOString();
+
   if (category === 'water') {
     NoopAnalytics.track('plant_watered', {
       taskId: taskId || 'series-occurrence',
     });
+    await updatePlantFieldLocal(taskData.plantId!, 'lastWateredAt', nowIso);
     await updatePlantField(taskData.plantId!, 'last_watered_at');
   } else if (category === 'feed') {
     NoopAnalytics.track('plant_fed', {
       taskId: taskId || 'series-occurrence',
     });
+    await updatePlantFieldLocal(taskData.plantId!, 'lastFedAt', nowIso);
     await updatePlantField(taskData.plantId!, 'last_fed_at');
   }
+
+  triggerDigitalTwinSync(taskData.plantId!, 'PlantTelemetry');
 }
 
 export async function onSeriesOccurrenceCompleted(

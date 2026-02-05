@@ -190,7 +190,7 @@ describe('PlaybookService', () => {
     service = new PlaybookService({ database, analytics });
 
     // Spy on the ScheduleShifter methods
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     mockScheduleShifter = (service as any).scheduleShifter;
     jest.spyOn(mockScheduleShifter, 'generatePreview');
     jest.spyOn(mockScheduleShifter, 'applyShift');
@@ -221,7 +221,6 @@ describe('PlaybookService', () => {
           isCommunity: false,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         })) as any,
       };
 
@@ -421,7 +420,7 @@ describe('PlaybookService', () => {
       const events = analytics.getAll();
       expect(events).toHaveLength(1);
       expect(events[0].name).toBe('playbook_apply');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       expect((events[0].payload as any).playbookId).toBe('playbook-1');
     });
 

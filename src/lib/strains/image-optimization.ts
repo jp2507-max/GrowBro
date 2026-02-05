@@ -4,13 +4,83 @@
  */
 
 import { Image } from 'expo-image';
-import { Platform } from 'react-native';
+import { InteractionManager, Platform } from 'react-native';
+
+import { DEFAULT_IMAGE_BLURHASH } from '@/lib/media/image-placeholders';
+
+type PrefetchQueueState = {
+  scheduled: ReturnType<typeof InteractionManager.runAfterInteractions> | null;
+  queued: Set<string>;
+};
+
+const PREFETCH_QUEUE: PrefetchQueueState = {
+  scheduled: null,
+  queued: new Set<string>(),
+};
+
+const MAX_QUEUE_SIZE = 24;
+const FLUSH_COUNT_PER_TICK = 4;
+let isFlushing = false;
+
+function trimQueueToMaxSize(): void {
+  while (PREFETCH_QUEUE.queued.size > MAX_QUEUE_SIZE) {
+    const first = PREFETCH_QUEUE.queued.values().next().value as
+      | string
+      | undefined;
+    if (!first) break;
+    PREFETCH_QUEUE.queued.delete(first);
+  }
+}
+
+function scheduleFlush(): void {
+  if (PREFETCH_QUEUE.scheduled || isFlushing) return;
+
+  PREFETCH_QUEUE.scheduled = InteractionManager.runAfterInteractions(() => {
+    isFlushing = true;
+    PREFETCH_QUEUE.scheduled = null;
+
+    try {
+      const batch: string[] = [];
+      const iter = PREFETCH_QUEUE.queued.values();
+      for (let i = 0; i < FLUSH_COUNT_PER_TICK; i++) {
+        const { value, done } = iter.next();
+        if (done) break;
+        batch.push(value);
+      }
+
+      for (const uri of batch) {
+        PREFETCH_QUEUE.queued.delete(uri);
+      }
+
+      // Fire-and-forget (avoid Promise.allSettled microtask storms)
+      for (const uri of batch) {
+        Image.prefetch(uri).catch((err) => {
+          console.debug('[scheduleFlush] Prefetch failed:', uri, err);
+        });
+      }
+    } finally {
+      isFlushing = false;
+    }
+    // If more remain, schedule another idle flush.
+    if (PREFETCH_QUEUE.queued.size > 0) scheduleFlush();
+  });
+}
+
+/**
+ * Cancel all pending prefetches
+ * Call this when the strains screen unmounts or during rapid navigation
+ */
+export function cancelPendingPrefetches(): void {
+  PREFETCH_QUEUE.scheduled?.cancel();
+  PREFETCH_QUEUE.scheduled = null;
+  PREFETCH_QUEUE.queued.clear();
+}
 
 /**
  * BlurHash placeholder for strain images
  * Generic cannabis leaf pattern
  */
-export const STRAIN_IMAGE_BLURHASH = 'L6PZfSi_.AyE_3t7t7R**0o#DgR4';
+export const STRAIN_IMAGE_BLURHASH = DEFAULT_IMAGE_BLURHASH;
 
 /**
  * Default placeholder image for strain images
@@ -67,32 +137,25 @@ export function getOptimizedImageUri(
  * Prefetch images for visible-next items
  * Call this when items are about to become visible
  *
- * Optimized for fast scrolling:
- * - Larger batch size (6) for parallel prefetching
- * - No awaiting between batches for faster throughput
+ * Optimized for fast scrolling via idle-time queue:
+ * - Coalesces requests to avoid concurrent native prefetches
+ * - Processes batches after interactions complete
+ * - Returns immediately; prefetching happens asynchronously
  */
-export async function prefetchStrainImages(
+export function prefetchStrainImages(
   imageUris: string[],
-  size: keyof typeof IMAGE_SIZES = 'thumbnail'
-): Promise<void> {
+  _size: keyof typeof IMAGE_SIZES = 'thumbnail' // Reserved for future CDN/resize support
+): void {
   try {
-    const optimizedUris = imageUris
-      .filter((uri) => uri && uri.length > 0)
-      .map((uri) => getOptimizedImageUri(uri, size));
-
-    // Prefetch in parallel with larger batches for faster pre-loading
-    // Using Promise.allSettled to not fail if individual images fail
-    const BATCH_SIZE = 6;
-    const batches: Promise<PromiseSettledResult<boolean>[]>[] = [];
-
-    for (let i = 0; i < optimizedUris.length; i += BATCH_SIZE) {
-      const batch = optimizedUris.slice(i, i + BATCH_SIZE);
-      // Fire batches concurrently, don't await each batch sequentially
-      batches.push(Promise.allSettled(batch.map((uri) => Image.prefetch(uri))));
+    // Coalesce prefetch requests to avoid creating many concurrent native prefetches
+    // during fast scrolling. Run after interactions to keep scrolling responsive.
+    for (const uri of imageUris) {
+      if (!uri || uri.length === 0) continue;
+      PREFETCH_QUEUE.queued.add(uri);
     }
+    trimQueueToMaxSize();
 
-    // Wait for all batches to complete
-    await Promise.all(batches);
+    scheduleFlush();
   } catch (error) {
     console.debug('[prefetchStrainImages] Prefetch failed:', error);
   }

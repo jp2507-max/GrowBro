@@ -20,17 +20,18 @@ export function usePostSharing(postId: string): UsePostSharingReturn {
     try {
       // Create a deep link to the post using expo-linking
       const url = Linking.createURL(`/feed/${postId}`);
-      const message = `Check out this post on GrowBro: ${url}`;
+      const message = translate('community.share_post_message', { url });
+      const title = translate('community.share_post_title');
 
       const result = await NativeShare.share(
         {
           message,
           url, // iOS: url parameter
-          title: 'Share Post', // Android: dialog title
+          title, // Android: dialog title
         },
         {
           // Android: show choose dialog
-          dialogTitle: 'Share Post',
+          dialogTitle: title,
         }
       );
 

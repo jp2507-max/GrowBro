@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { AccessibilityInfo, Platform } from 'react-native';
+import { AccessibilityInfo, AppState, Platform } from 'react-native';
 
 import { getMinTouchTargetSize } from '../accessibility/constants';
 
@@ -15,16 +15,22 @@ export function useScreenReaderEnabled(): boolean {
   const [isEnabled, setIsEnabled] = useState(false);
 
   useEffect(() => {
+    let isActive = true;
+    const setIfActive = (value: boolean) => {
+      if (isActive) setIsEnabled(value);
+    };
+
     // Check initial state
-    AccessibilityInfo.isScreenReaderEnabled().then(setIsEnabled);
+    AccessibilityInfo.isScreenReaderEnabled().then(setIfActive);
 
     // Listen for changes
     const subscription = AccessibilityInfo.addEventListener(
       'screenReaderChanged',
-      setIsEnabled
+      setIfActive
     );
 
     return () => {
+      isActive = false;
       subscription.remove();
     };
   }, []);
@@ -35,22 +41,40 @@ export function useScreenReaderEnabled(): boolean {
 /**
  * Hook to detect if reduce motion is enabled
  */
+
 export function useReduceMotionEnabled(): boolean {
   const [isEnabled, setIsEnabled] = useState(false);
 
   useEffect(() => {
-    if (Platform.OS === 'ios') {
-      AccessibilityInfo.isReduceMotionEnabled().then(setIsEnabled);
+    let isActive = true;
+    const setIfActive = (value: boolean) => {
+      if (isActive) setIsEnabled(value);
+    };
 
-      const subscription = AccessibilityInfo.addEventListener(
-        'reduceMotionChanged',
-        setIsEnabled
-      );
+    // Check initial state
+    AccessibilityInfo.isReduceMotionEnabled().then(setIfActive);
 
-      return () => {
-        subscription.remove();
-      };
-    }
+    // iOS: Listen for real-time changes
+    const subscription =
+      Platform.OS === 'ios'
+        ? AccessibilityInfo.addEventListener('reduceMotionChanged', setIfActive)
+        : undefined;
+
+    // Android/All: Check when app returns to foreground since Android doesn't emit reduceMotionChanged
+    const appStateSubscription = AppState.addEventListener(
+      'change',
+      (nextAppState) => {
+        if (nextAppState === 'active') {
+          AccessibilityInfo.isReduceMotionEnabled().then(setIfActive);
+        }
+      }
+    );
+
+    return () => {
+      isActive = false;
+      subscription?.remove();
+      appStateSubscription.remove();
+    };
   }, []);
 
   return isEnabled;
@@ -64,21 +88,32 @@ export function useFontScale(): number {
   const [fontScale, setFontScale] = useState(1);
 
   useEffect(() => {
+    let isActive = true;
+
     const updateFontScale = async () => {
       try {
         // Get system font scale using isScreenReaderEnabled as a proxy
         // If screen reader is enabled, we can assume larger text preferences
         const screenReaderEnabled =
           await AccessibilityInfo.isScreenReaderEnabled();
+
+        if (!isActive) return;
+
         // Set a reasonable scale based on screen reader status
         const scale = screenReaderEnabled ? 1.5 : 1;
         setFontScale(scale);
       } catch {
-        setFontScale(1);
+        if (isActive) {
+          setFontScale(1);
+        }
       }
     };
 
     updateFontScale();
+
+    return () => {
+      isActive = false;
+    };
   }, []);
 
   return fontScale;

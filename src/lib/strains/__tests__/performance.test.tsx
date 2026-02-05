@@ -109,6 +109,7 @@ describe('Strains Performance Tests', () => {
         refetch: jest.fn(),
         isOffline: false,
         isUsingCache: false,
+        queryKey: ['test-key'],
       });
 
       const startTime = performance.now();

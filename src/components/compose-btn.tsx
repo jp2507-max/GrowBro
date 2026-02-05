@@ -1,8 +1,10 @@
 import React from 'react';
 import Animated, {
   ReduceMotion,
+  useAnimatedReaction,
   useAnimatedStyle,
   useDerivedValue,
+  useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
 
@@ -30,20 +32,35 @@ export function ComposeBtn({
 
   const isHiddenOrCollapsed = useDerivedValue(
     () =>
-      listOffsetY.value >= offsetYAnchorOnBeginDrag.value &&
-      scrollDirection.value === 'to-bottom'
+      listOffsetY.get() >= offsetYAnchorOnBeginDrag.get() &&
+      scrollDirection.get() === 'to-bottom'
+  );
+
+  const collapseProgress = useSharedValue(0);
+
+  useAnimatedReaction(
+    () => isHiddenOrCollapsed.get(),
+    (current: boolean, previous: boolean | null) => {
+      if (current !== previous) {
+        collapseProgress.set(
+          withTiming(current ? 1 : 0, {
+            duration: DURATION,
+            reduceMotion: ReduceMotion.System,
+          })
+        );
+      }
+    }
+  );
+
+  const clampedProgress = useDerivedValue(() =>
+    Math.min(Math.max(collapseProgress.get(), 0), 1)
   );
 
   const rContainerStyle = useAnimatedStyle(() => {
-    const isCollapsed = isHiddenOrCollapsed.value;
-    const scaleX = withTiming(isCollapsed ? COLLAPSED_SCALE_X : 1, {
-      duration: DURATION,
-      reduceMotion: ReduceMotion.System,
-    });
-    const translateX = withTiming(isCollapsed ? COLLAPSED_TRANSLATE_X : 0, {
-      duration: DURATION,
-      reduceMotion: ReduceMotion.System,
-    });
+    const clamped = clampedProgress.get();
+    const scaleX = 1 - (1 - COLLAPSED_SCALE_X) * clamped;
+    const translateX = COLLAPSED_TRANSLATE_X * clamped;
+    const translateY = netHeight * clamped;
     return {
       width: BTN_WIDTH,
       height: BTN_HEIGHT,
@@ -51,21 +68,16 @@ export function ComposeBtn({
         { scaleX },
         { translateX },
         {
-          translateY: withTiming(isCollapsed ? netHeight : 0, {
-            duration: DURATION,
-            reduceMotion: ReduceMotion.System,
-          }),
+          translateY,
         },
       ],
     };
   }, [netHeight]);
 
   const rTextStyle = useAnimatedStyle(() => {
+    const clamped = clampedProgress.get();
     return {
-      opacity: withTiming(isHiddenOrCollapsed.value ? 0 : 1, {
-        duration: isHiddenOrCollapsed.value ? DURATION / 2 : DURATION,
-        reduceMotion: ReduceMotion.System,
-      }),
+      opacity: 1 - clamped,
     };
   }, []);
 
@@ -82,6 +94,7 @@ export function ComposeBtn({
       accessibilityLabel={translate('community.create_post')}
       accessibilityHint={translate('accessibility.community.compose_hint')}
       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      testID="compose-btn"
     >
       <AnimatedText className="text-base text-primary-300" style={rTextStyle}>
         {translate('community.create_post')}

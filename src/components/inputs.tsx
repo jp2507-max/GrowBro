@@ -1,7 +1,15 @@
 import React from 'react';
 
 import type { OptionType } from '@/components/ui';
-import { Checkbox, Input, Radio, Select, Switch, View } from '@/components/ui';
+import {
+  Checkbox,
+  Input,
+  Radio,
+  Select,
+  Switch,
+  Text,
+  View,
+} from '@/components/ui';
 import { translate, type TxKeyPath } from '@/lib';
 
 import { Title } from './title';
@@ -18,9 +26,13 @@ export const Inputs = () => {
     <>
       <Title text="Form" />
       <View>
-        <Input label="Default" placeholder="Lorem ipsum dolor sit amet" />
-        <Input label="Error" error="This is a message error" />
-        <Input label="Focused" />
+        <Input label="Default" testID="input-default" />
+        <Input
+          label="Error"
+          error="This is a message error"
+          testID="input-error"
+        />
+        <Input label="Focused" testID="input-focused" />
         <Select
           label="Select"
           options={options}
@@ -60,14 +72,15 @@ const RadioExample = () => {
     <Radio.Root
       checked={selected}
       onChange={setSelected}
-      accessibilityLabel="radio button"
+      accessibilityLabel={translate('inputs.radio_label' as TxKeyPath)}
       accessibilityHint={translate(
         'accessibility.common.toggle_hint' as TxKeyPath
       )}
       className="pb-2"
+      testID="radio-example"
     >
       <Radio.Icon checked={selected} />
-      <Radio.Label text="radio button" />
+      <Radio.Label text={translate('inputs.radio_label' as TxKeyPath)} />
     </Radio.Root>
   );
 };
@@ -75,17 +88,17 @@ const RadioExample = () => {
 const SwitchExample = () => {
   const [active, setActive] = React.useState(false);
   return (
-    <Switch.Root
-      checked={active}
-      onChange={setActive}
-      accessibilityLabel={translate('inputs.switch_label' as TxKeyPath)}
-      accessibilityHint={translate(
-        'accessibility.common.toggle_hint' as TxKeyPath
-      )}
-      className="pb-2"
-    >
-      <Switch.Icon checked={active} />
-      <Switch.Label text={translate('inputs.switch_label' as TxKeyPath)} />
-    </Switch.Root>
+    <View className="flex-row items-center justify-between pb-2">
+      <Text tx="inputs.switch_label" className="text-lg font-medium" />
+      <Switch
+        value={active}
+        onValueChange={setActive}
+        accessibilityLabel={translate('inputs.switch_label' as TxKeyPath)}
+        accessibilityHint={translate(
+          'accessibility.common.toggle_hint' as TxKeyPath
+        )}
+        testID="switch-example"
+      />
+    </View>
   );
 };

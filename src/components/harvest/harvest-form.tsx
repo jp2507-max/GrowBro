@@ -270,7 +270,7 @@ function PhotoSection({
             type: 'warning',
           });
         }}
-        buttonText={t('harvest.photo.actions.add_photo')}
+        buttonTextKey="harvest.photo.actions.add_photo"
       />
     </View>
   );

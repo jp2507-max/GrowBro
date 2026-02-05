@@ -1,5 +1,5 @@
 // colors.js - Modern Organic Tech palette
-// Slate neutrals for clean, premium look
+// Deep charcoal surfaces with neon-lime accents for dark mode
 // Terracotta for strong CTA guidance
 module.exports = {
   white: '#ffffff',
@@ -35,13 +35,13 @@ module.exports = {
     800: '#292524',
     850: '#1F1E1D',
     900: '#1C1917', // Sheet background (slightly lighter than app bg)
-    950: '#0C0A09', // App background (deepest layer - stone-950)
+    950: '#0f2e1a', // App background - deep forest green matching Stitch gradient
   },
 
   // Dark mode specific surface colors - Premium Deep Garden
   // Depth hierarchy: background → surface → elevated → highlight
   darkSurface: {
-    background: '#050a08', // Level 0 - Deep forest black with green undertone
+    background: '#0f2e1a', // Level 0 - Deep forest green (matches charcoal-950 / Stitch gradient end)
     surface: '#121413', // Level 1 - Sheet/overlay (visible above background)
     card: '#181a19', // Level 2 - Cards sitting on surface
     cardHighlight: '#1e201f', // Level 3 - Elevated/highlighted cards
@@ -51,6 +51,10 @@ module.exports = {
     // Primary container - semi-transparent green for badges/active states
     primaryContainer: 'rgba(22, 163, 74, 0.18)', // #16A34A at 18% opacity
     onPrimaryContainer: '#86EFAC', // Light mint green text (primary-300)
+    // Neon lime accent for Organic Tech design
+    accent: '#a3e635', // Neon lime for primary actions in dark mode
+    accentMuted: '#84cc16', // Slightly darker for hover/pressed states
+    accentGlow: 'rgba(163, 230, 53, 0.35)', // Shadow/glow color
     // Glass pill tab bar
     glassPill: 'rgba(28, 25, 23, 0.70)', // Frosted glass overlay
     glassCapsule: 'rgba(255, 255, 255, 0.22)', // Active tab capsule - prominent glass
@@ -185,4 +189,45 @@ module.exports = {
 
   // Semantic shorthand (for quick access)
   info: '#3B82F6',
+
+  // Neon Lime accent - for dark mode Organic Tech design
+  // Use for primary actions, progress bars, and accents in dark mode
+  lime: {
+    50: '#f7fee7',
+    100: '#ecfccb',
+    200: '#d9f99d',
+    300: '#bef264',
+    400: '#a3e635', // Main neon-lime accent
+    500: '#84cc16',
+    600: '#65a30d',
+    700: '#4d7c0f',
+    800: '#3f6212',
+    900: '#365314',
+    950: '#1a2e05',
+  },
+
+  // Neon accent colors for Stitch lifecycle calendar design
+  neon: {
+    lime: '#94fa2e', // Primary neon-lime (Stitch primary)
+    limeDim: '#6ab81e', // Hover/pressed state
+    teal: '#2efac6', // Teal accent for timeline connections
+    tealDim: '#1ec9a0', // Teal pressed state
+  },
+
+  // Strains gradient colors
+  strains: {
+    dark: '#181d14', // dark forest
+    mid: '#0d1f12', // mid forest
+    deep: '#050a04', // deep black
+  },
+
+  // Cockpit/Dashboard header gradient colors
+  cockpit: {
+    gradient: {
+      start: '#1a1a1a', // Stitch gradient start
+      mid: '#151a14', // Mid - smoother transition
+      end: '#112b18', // End - slightly lighter to blend with body
+      final: '#0f2e1a', // Final - exact match with charcoal-950
+    },
+  },
 };

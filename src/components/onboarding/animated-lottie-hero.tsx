@@ -13,6 +13,7 @@ import Animated, {
   cancelAnimation,
   Easing,
   ReduceMotion,
+  type SharedValue,
   useAnimatedStyle,
   useSharedValue,
   // @ts-ignore - Reanimated 4.x type exports issue
@@ -25,6 +26,7 @@ import Animated, {
 
 import { View } from '@/components/ui';
 import colors from '@/components/ui/colors';
+import { useReduceMotionEnabled } from '@/lib/strains/accessibility';
 
 // Lottie animation sources - plant-themed animations
 const LOTTIE_SOURCES = {
@@ -40,36 +42,33 @@ type AnimatedLottieHeroProps = {
   testID?: string;
 };
 
-export function AnimatedLottieHero({
-  animation,
-  testID = 'animated-lottie-hero',
-}: AnimatedLottieHeroProps): React.ReactElement {
-  const { colorScheme } = useColorScheme();
-  const isDark = colorScheme === 'dark';
+function startHeroAnimations(params: {
+  translateY: SharedValue<number>;
+  scale: SharedValue<number>;
+  opacity: SharedValue<number>;
+  glowOpacity: SharedValue<number>;
+}): void {
+  const { translateY, scale, opacity, glowOpacity } = params;
 
-  const translateY = useSharedValue(0);
-  const scale = useSharedValue(0.9);
-  const opacity = useSharedValue(0);
-  const glowOpacity = useSharedValue(0.2);
-
-  React.useEffect(() => {
-    // Gentle fade in
-    opacity.value = withTiming(1, {
+  opacity.set(
+    withTiming(1, {
       duration: 600,
       easing: Easing.out(Easing.ease),
       reduceMotion: ReduceMotion.System,
-    });
+    })
+  );
 
-    // Soft entrance scale
-    scale.value = withSpring(1, {
+  scale.set(
+    withSpring(1, {
       damping: 20,
       stiffness: 80,
       mass: 1,
       reduceMotion: ReduceMotion.System,
-    });
+    })
+  );
 
-    // Gentle continuous float animation
-    translateY.value = withDelay(
+  translateY.set(
+    withDelay(
       400,
       withRepeat(
         withSequence(
@@ -87,10 +86,11 @@ export function AnimatedLottieHero({
         -1,
         false
       )
-    );
+    )
+  );
 
-    // Pulsing glow
-    glowOpacity.value = withDelay(
+  glowOpacity.set(
+    withDelay(
       500,
       withRepeat(
         withSequence(
@@ -108,7 +108,37 @@ export function AnimatedLottieHero({
         -1,
         false
       )
-    );
+    )
+  );
+}
+
+export function AnimatedLottieHero({
+  animation,
+  testID = 'animated-lottie-hero',
+}: AnimatedLottieHeroProps): React.ReactElement {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
+  const translateY = useSharedValue(0);
+  const scale = useSharedValue(0.9);
+  const opacity = useSharedValue(0);
+  const glowOpacity = useSharedValue(0.2);
+  const reduceMotion = useReduceMotionEnabled();
+
+  React.useEffect(() => {
+    if (reduceMotion) {
+      cancelAnimation(translateY);
+      cancelAnimation(scale);
+      cancelAnimation(opacity);
+      cancelAnimation(glowOpacity);
+      translateY.set(0);
+      scale.set(1);
+      opacity.set(1);
+      glowOpacity.set(0.2);
+      return;
+    }
+
+    startHeroAnimations({ translateY, scale, opacity, glowOpacity });
 
     return () => {
       cancelAnimation(translateY);
@@ -116,15 +146,15 @@ export function AnimatedLottieHero({
       cancelAnimation(opacity);
       cancelAnimation(glowOpacity);
     };
-  }, [translateY, scale, opacity, glowOpacity]);
+  }, [reduceMotion, translateY, scale, opacity, glowOpacity]);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-    transform: [{ translateY: translateY.value }, { scale: scale.value }],
+    opacity: opacity.get(),
+    transform: [{ translateY: translateY.get() }, { scale: scale.get() }],
   }));
 
   const glowStyle = useAnimatedStyle(() => ({
-    opacity: glowOpacity.value,
+    opacity: glowOpacity.get(),
   }));
 
   // Theme-aware glow color
@@ -141,8 +171,8 @@ export function AnimatedLottieHero({
         <LottieView
           source={LOTTIE_SOURCES[animation]}
           style={styles.lottie}
-          autoPlay
-          loop
+          autoPlay={!reduceMotion}
+          loop={!reduceMotion}
         />
       </Animated.View>
     </View>

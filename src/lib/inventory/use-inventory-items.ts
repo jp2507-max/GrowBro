@@ -67,7 +67,7 @@ export function useInventoryItems(): UseInventoryItemsResult {
         userId: item.userId,
         createdAt: item.createdAt,
         updatedAt: item.updatedAt,
-        deletedAt: item.deletedAt,
+        deletedAt: item.deletedAt ?? undefined,
         currentStock: 0, // TODO: Calculate from movements
         unitCost: 0, // TODO: Calculate from latest batch or average
         totalValue: 0, // currentStock * unitCost

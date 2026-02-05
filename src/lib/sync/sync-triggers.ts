@@ -1,5 +1,6 @@
 import { AppState, InteractionManager } from 'react-native';
 
+import { getItem } from '@/lib/storage';
 import { onConnectivityChange } from '@/lib/sync/network-manager';
 import { getSyncPrefs } from '@/lib/sync/preferences';
 import {
@@ -17,6 +18,8 @@ type SyncState = {
   lastOnline: boolean | null;
   lastAutoSyncAttemptAt: number;
 };
+
+const SYNC_DISABLED_UNTIL_KEY = 'sync.disabledUntilMs';
 
 /**
  * Process image upload queue when conditions allow.
@@ -73,6 +76,10 @@ function createMaybeRunSync(
     const prefs = getSyncPrefs();
     if (!prefs.autoSyncEnabled) return;
 
+    const disabledUntilMs = getItem<number>(SYNC_DISABLED_UNTIL_KEY);
+    if (typeof disabledUntilMs === 'number' && disabledUntilMs > Date.now())
+      return;
+
     const now = Date.now();
     if (now - state.lastAutoSyncAttemptAt < minInterval) return;
     state.lastAutoSyncAttemptAt = now;
@@ -108,13 +115,15 @@ export function setupSyncTriggers(
     lastAutoSyncAttemptAt: 0,
   };
   const deferMs = 1500;
+  const startupDeferMs = 10_000;
   const minAutoSyncIntervalMs = 60_000;
 
   const scheduleAfterInteractions = createScheduler(state, deferMs);
+  const scheduleAfterStartupIdle = createScheduler(state, startupDeferMs);
   const maybeRunSync = createMaybeRunSync(state, opts, minAutoSyncIntervalMs);
 
   // Run once on registration (app start)
-  scheduleAfterInteractions(() => {
+  scheduleAfterStartupIdle(() => {
     void maybeRunSync();
   });
 

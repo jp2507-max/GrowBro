@@ -87,11 +87,14 @@
       "confirm_date_hint": "Confirms the selected date.",
       "expand_section_hint": "Double-tap to expand section",
       "go_back": "Go back",
-      "loading_hint": "Content is loading, please wait",
+      "loading": "Loading",
+      "loadingHint": "Content is loading, please wait",
       "loading_label": "Loading",
       "opens_screen_hint": "Opens the {{label}} screen.",
+      "read_only_hint": "Read-only information.",
       "refresh_hint": "Refreshes the current content.",
       "reset_date_hint": "Clears the selected date.",
+      "retry": "Retry",
       "retry_hint": "Retries the last action.",
       "return_to_previous": "Returns to the previous screen",
       "saves_changes": "Saves your changes",
@@ -123,6 +126,7 @@
       "post_image_hint": "Part of the post content.",
       "post_options": "Post options",
       "post_options_hint": "Double-tap to view post options.",
+      "reply_hint": "Opens the reply input for this comment.",
       "retry_comment_hint": "Retries posting this comment.",
       "retry_sync": "Retry sync",
       "share": "Share this post",
@@ -139,9 +143,27 @@
       "view_comments_hint": "Double-tap to view comments for this post.",
       "view_strain_hint": "Opens details for this strain."
     },
+    "form": {
+      "input_with_value": "{{field}} input, current value: {{value}} {{unit}}",
+      "input_without_value": "{{field}} input"
+    },
+    "harvest": {
+      "history_base": "Harvest in {{stage}} stage, updated {{updatedAt}}",
+      "history_conflict": "needs review",
+      "history_dry_weight": "dry weight {{weight}} grams",
+      "progress": "Harvest progress: {{stage}} stage, {{completed}} of {{total}} stages completed",
+      "stage_completed": "{{stage}} - completed",
+      "stage_current": "{{stage}} - current stage",
+      "stage_upcoming": "{{stage}} - upcoming"
+    },
     "home": {
       "activation_action_hint": "Double-tap to {{action}}",
       "activation_dismiss_hint": "Double-tap to dismiss the activation checklist",
+      "cockpit": {
+        "day": "Day {{day}}",
+        "needs_water": "Needs water",
+        "week": "Week {{week}}"
+      },
       "open_settings_hint": "Opens the Settings screen.",
       "quick_action_hint": "Opens the {{action}} quick action.",
       "share_update_hint": "Opens the Create Post screen."
@@ -154,21 +176,31 @@
       "input_label": "{{label}} input"
     },
     "nutrient": {
-      "access_denied": "[EN] Zugriff verweigert",
+      "access_denied": "Access denied",
       "add_reading": "Add Reading",
       "add_reading_description": "Manually log pH and EC values",
       "atc_label": "ATC",
       "edit_reading": "Edit Reading",
-      "error_loading_reading": "[EN] Fehler beim Laden der Messung",
+      "error_loading_reading": "Error loading reading",
       "load_error": "Failed to load readings",
       "reading_error": "Failed to save reading",
       "reading_history": "Reading History",
-      "reading_not_found": "[EN] Messung nicht gefunden",
+      "reading_not_found": "Reading not found",
       "reading_saved": "Reading saved successfully",
       "reading_update_error": "Failed to update reading",
       "reading_updated": "Reading updated successfully",
       "readings_count": "{{count}} readings",
       "save_reading": "Save Reading"
+    },
+    "nutrition": {
+      "adjustments": {
+        "deficiency_generic": "Potential nutrient deficiency detected. Consider adjusting nutrient mix or frequency.",
+        "deficiency_with_nutrient": "Potential {{nutrient}} deficiency detected. Consider adjusting nutrient mix or frequency."
+      }
+    },
+    "phase": {
+      "status_active": "active",
+      "status_inactive": "inactive"
     },
     "plant_hero_image": "Plant hero image",
     "plants": {
@@ -186,6 +218,26 @@
       "offline_banner_hint": "Shows saved plants while offline.",
       "open_detail_hint": "Opens plant details.",
       "search_hint": "Filters plants as you type."
+    },
+    "shift": {
+      "day_one": "day",
+      "day_other": "days",
+      "direction_backward": "backward",
+      "direction_forward": "forward"
+    },
+    "stage_action": {
+      "advance_hint": "Double-tap to advance to {{stage}}",
+      "advance_label": "Advance to {{stage}}",
+      "default_hint": "Double-tap to perform action",
+      "default_label": "Stage action",
+      "next_stage": "next stage",
+      "override_hint": "Double-tap to skip to a later stage",
+      "override_label": "Skip to later stage",
+      "revert_hint": "Double-tap to revert to previous stage",
+      "revert_label": "Revert to previous stage",
+      "undo_hint": "Double-tap to undo last stage change",
+      "undo_label": "Undo last stage change",
+      "undo_label_with_time": "Undo last stage change ({{seconds}}s remaining)"
     },
     "strains": {
       "about_title": "About this strain",
@@ -208,6 +260,8 @@
       "retry_load_hint": "Retry loading the strain details",
       "search_for_query_label": "Search for {{query}}",
       "search_hint": "Filters strains as you type.",
+      "search_strains_hint": "Enter text to search for strains",
+      "search_strains_label": "Search strains",
       "select_search_query_hint": "Fills search with this query",
       "toggle_effect_hint": "Toggles effect filter.",
       "toggle_flavor_hint": "Toggles flavor filter."
@@ -227,6 +281,13 @@
         "syncing_title": "Syncing your settings..."
       },
       "clear_logs_hint": "Clears the sync diagnostics log.",
+      "status": {
+        "error": "Sync Error",
+        "offline": "Offline",
+        "offline_pending": "Offline ({{count}})",
+        "retry_button_label": "Retry sync",
+        "syncing": "Syncing..."
+      },
       "sync_failed": "Sync failed",
       "sync_now_hint": "Starts a manual sync immediately.",
       "syncing": "Syncing..."
@@ -238,6 +299,11 @@
       "inventory_hint": "Double-tap to open the Inventory tab.",
       "plants_hint": "Double-tap to open the Plants inventory.",
       "strains_hint": "Double-tap to browse strains."
+    },
+    "task": {
+      "status_completed": "completed",
+      "status_pending": "pending",
+      "status_skipped": "skipped"
     }
   },
   "appeals": {
@@ -498,7 +564,7 @@
     "account_deleted_success": "Your account has been deleted successfully.",
     "already_have_account": "Already have an account?",
     "back_to_login": "Back to Sign In",
-    "code_already_used": "[EN] Der Autorisierungscode wurde bereits verwendet oder ist abgelaufen. Bitte versuche dich erneut anzumelden.",
+    "code_already_used": "The authorization code was already used or has expired. Please try signing in again.",
     "confirm_password_label": "Confirm Password",
     "confirm_password_placeholder": "Re-enter password",
     "delete_account_error": "Failed to delete account. Please try again or contact support.",
@@ -549,13 +615,13 @@
     "error_verification_failed": "Email verification failed. Please try again or request a new link.",
     "forgot_password": "Forgot Password?",
     "forgot_password_link": "Forgot your password?",
-    "invalid_authorization_code": "[EN] Ungültiger Autorisierungscode.",
-    "network_connection_issue": "[EN] Netzwerkverbindungsproblem. Bitte überprüfe deine Internetverbindung und versuche es erneut.",
-    "network_issue": "[EN] Netzwerkproblem",
+    "invalid_authorization_code": "Invalid authorization code.",
+    "network_connection_issue": "Network connection issue. Please check your internet connection and try again.",
+    "network_issue": "Network issue",
     "new_password_label": "New Password",
     "new_password_placeholder": "Enter new password",
-    "oauth_error": "[EN] OAuth-Fehler",
-    "oauth_failed": "[EN] OAuth-Authentifizierung fehlgeschlagen. Der Autorisierungscode ist möglicherweise ungültig oder abgelaufen.",
+    "oauth_error": "OAuth error",
+    "oauth_failed": "OAuth authentication failed. The authorization code may be invalid or expired.",
     "offline_banner_blocked": "Session expired - please reconnect to continue",
     "offline_banner_readonly": "Offline - changes will sync later",
     "offline_blocked_message": "Your session has expired. Please reconnect to continue using the app.",
@@ -581,7 +647,7 @@
     "reset_password_success": "Check your email for a password reset link.",
     "reset_password_title": "Reset Password",
     "resetting_password": "Resetting password...",
-    "retrying_connection": "[EN] Verbindungsproblem erkannt. Wiederhole... ({{attempt}}/{{max}})",
+    "retrying_connection": "Connection issue detected. Retrying... ({{attempt}}/{{max}})",
     "security": {
       "active_sessions": "Active Sessions",
       "biometric_disable_error": "Failed to disable biometric login",
@@ -678,10 +744,10 @@
       "title": "Active Sessions"
     },
     "sign_in_button": "Sign In",
-    "sign_in_failed": "[EN] Anmeldung fehlgeschlagen",
+    "sign_in_failed": "Sign in failed",
     "sign_in_link": "Sign in",
     "sign_in_subtitle": "Welcome back! Sign in to access your grow data.",
-    "sign_in_successful": "[EN] Anmeldung erfolgreich",
+    "sign_in_successful": "Sign in successful",
     "sign_in_title": "Sign In",
     "sign_in_with_apple": "Sign in with Apple",
     "sign_in_with_google": "Sign in with Google",
@@ -692,10 +758,10 @@
     "sign_up_title": "Create Account",
     "sign_up_with_apple": "Sign up with Apple",
     "sign_up_with_google": "Sign up with Google",
-    "signed_in_successfully": "[EN] Du wurdest erfolgreich angemeldet.",
+    "signed_in_successfully": "You were signed in successfully.",
     "signing_in": "Signing in...",
     "signing_up": "Creating account...",
-    "unexpected_error": "[EN] Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es erneut.",
+    "unexpected_error": "An unexpected error occurred. Please try again.",
     "validation_confirm_password_required": "Please confirm your password.",
     "validation_email_invalid": "Please enter a valid email address.",
     "validation_email_required": "Email is required.",
@@ -707,6 +773,11 @@
     "verifying_email": "Verifying email..."
   },
   "calendar": {
+    "contextChips": {
+      "light18h": "18h Light",
+      "vegStageWk4": "Veg Stage (Wk 4)",
+      "waterDay": "Water Day"
+    },
     "day_counter": "DAY {{day}} / {{total}}",
     "day_counter_label": "DAY",
     "day_counter_separator": "/",
@@ -733,6 +804,7 @@
     },
     "header": {
       "jump_to_today": "Jump to today",
+      "lifecycle_tracker": "LIFECYCLE TRACKER",
       "month_label": "{{month}} {{year}}",
       "subtitle": "Your schedule",
       "today": "Today"
@@ -780,25 +852,32 @@
       "plan": "Plan"
     },
     "targets_title": "Targets",
+    "task_card_hint": "Double tap to view task details",
     "task_count": "{{count}} task",
     "task_count_plural": "{{count}} tasks",
     "task_detail": {
       "category": "Category",
       "complete": "Complete",
+      "complete_hint": "Double tap to mark this task as complete",
       "delete": "Delete",
       "delete_confirm": "Are you sure you want to delete this task?",
       "description": "Description",
       "edit": "Edit",
       "no_description": "No description",
       "time": "Time",
-      "title": "Task Details"
+      "title": "Task Details",
+      "view_hint": "Double tap to view task details"
     },
     "task_row": {
       "complete": "Mark as complete",
       "complete_hint": "Double-tap to mark this task as complete",
       "completed": "Task completed",
+      "overdue": "Overdue",
       "recurring": "Recurring",
       "task_hint": "Double-tap to view task details"
+    },
+    "timeline": {
+      "task_fallback": "Task"
     },
     "today": "Today",
     "tomorrow": "Tomorrow",
@@ -859,6 +938,7 @@
     "cancel": "Cancel",
     "clear": "Clear",
     "close": "Close",
+    "close_screen": "Closes this screen",
     "confirm": "Confirm",
     "continue": "Continue",
     "delete": "Delete",
@@ -867,10 +947,13 @@
     "edit": "Edit",
     "error": "Error",
     "go_back": "Go back",
+    "go_home": "Go to Home",
     "loading": "Loading...",
+    "loadingHint": "Content is loading, please wait",
     "na": "N/A",
     "no": "No",
     "not_selected": "not selected",
+    "now": "Now",
     "null": "null",
     "off": "OFF",
     "offline_mode": "Offline Mode",
@@ -885,6 +968,7 @@
     "retry": "Retry",
     "save": "Save",
     "saving": "Saving...",
+    "select": "Select...",
     "select_date": "Select date",
     "selected": "selected",
     "time_ago": {
@@ -907,6 +991,7 @@
       }
     },
     "undo": "Undo",
+    "unsure": "Not sure",
     "yes": "Yes"
   },
   "community": {
@@ -934,6 +1019,13 @@
       "verify_button": "Verify Age"
     },
     "cancel_comment_hint": "Cancels posting this comment.",
+    "categories": {
+      "equipment": "New Setup",
+      "general": "General",
+      "grow_tips": "Grow Tip",
+      "harvest": "Harvest Ready",
+      "problem": "Need Help"
+    },
     "characters_over": "characters over limit",
     "classification": "Issue detected",
     "clear_filters": "Clear filters",
@@ -968,6 +1060,7 @@
     "delete_post_hint": "Double-tap to delete this post. You will have 15 seconds to undo.",
     "discovery_empty_body": "Try a different search or clear your filters.",
     "discovery_empty_title": "No results",
+    "discussion": "Discussion",
     "empty_state": "No posts yet. Be the first to share!",
     "empty_state_educational": {
       "moderation_guidance": "All posts are reviewed to ensure a safe, educational community. Avoid commerce, illegal content, or personal attacks.",
@@ -979,6 +1072,7 @@
     "filter_photos_only": "Photos only",
     "filters_hint": "Opens filters and sorting",
     "filters_label": "Filters",
+    "follow": "Follow",
     "footer": "What do you think? Any advice appreciated!",
     "header": "🌱 Need help with plant diagnosis",
     "health": "Community health",
@@ -1049,6 +1143,7 @@
     "reply": "Reply",
     "retry_comment_hint": "Retries posting this comment.",
     "retry_sync": "Retry sync",
+    "save": "Save",
     "scheme": "growbro://feed",
     "search_clear_hint": "Clears the search text",
     "search_hint": "Filters posts as you type.",
@@ -1058,12 +1153,16 @@
       "help_station": "Help Station",
       "showcase": "Showcase"
     },
+    "share": "Share",
+    "share_post_message": "Check out this post on GrowBro: {{url}}",
+    "share_post_title": "Share Post",
     "sort_label": "Sort",
     "sort_newest": "Newest",
     "sort_top_7d": "Top (7d)",
     "subtitle": "Discover the latest grow updates from the community.",
     "symptoms": "Symptoms:",
     "title": "Community",
+    "top_rated": "Top Rated",
     "undo_dismiss_hint": "Dismiss the undo snackbar and cancel the action",
     "undo_expires": "Undo expires in {{seconds}}s",
     "unlike_failed": "Failed to unlike post",
@@ -1071,6 +1170,12 @@
     "view_author_profile_hint": "Double-tap to open this user's profile.",
     "view_comments": "{{count}} comments",
     "view_comments_hint": "Double-tap to view comments for this post."
+  },
+  "communityPost": {
+    "errorDescription": "Failed to create community post. Please try again.",
+    "errorTitle": "Error",
+    "postAddError": "Error adding post",
+    "postAdded": "Post added successfully"
   },
   "community_post": {
     "error_description": "Failed to create community post. Please try again.",
@@ -1184,6 +1289,10 @@
       "schedule_failed": "Failed to schedule reminder",
       "title": "Reminder Error"
     },
+    "page_not_found": {
+      "description": "The page you’re looking for doesn’t exist or has been moved.",
+      "title": "Page not found"
+    },
     "playbook": {
       "already_applied": "This playbook is already applied to this plant",
       "generation_failed": "Failed to generate tasks from playbook",
@@ -1246,20 +1355,20 @@
   },
   "feed": {
     "add_post": {
-      "add_photo": "[EN] Foto hinzufügen",
-      "capture_photo": "[EN] Foto aufnehmen",
-      "content_label": "[EN] Inhalt",
-      "content_placeholder": "[EN] Teile deine Gedanken...",
-      "publish_button": "[EN] Beitrag veröffentlichen",
-      "remove_photo": "[EN] Foto entfernen",
-      "remove_photo_hint": "[EN] Dieses Foto aus deinem Beitrag entfernen",
-      "select_photo": "[EN] Aus Mediathek wählen",
-      "select_strain": "[EN] Sorte auswählen",
-      "strain_hint": "[EN] Tagge deinen Beitrag mit einer Sorte",
-      "strain_label": "[EN] Sorte (optional)",
+      "add_photo": "Add Photo",
+      "capture_photo": "Take Photo",
+      "content_label": "Content",
+      "content_placeholder": "Share your thoughts...",
+      "publish_button": "Publish Post",
+      "remove_photo": "Remove Photo",
+      "remove_photo_hint": "Remove this photo from your post",
+      "select_photo": "Choose from Library",
+      "select_strain": "Select Strain",
+      "strain_hint": "Tag your post with a strain",
+      "strain_label": "Strain (optional)",
       "title": "Create Post",
-      "title_label": "[EN] Titel",
-      "title_placeholder": "[EN] Gib deinem Beitrag einen Titel..."
+      "title_label": "Title",
+      "title_placeholder": "Give your post a title..."
     },
     "attachment_image_hint": "Photo attached to the post",
     "prefilled_images": "Prefilled images",
@@ -1587,10 +1696,10 @@
       "offline_description": "Viewing cached data. Changes will sync when you're back online.",
       "permissions": {
         "exact_alarm": {
-          "fallback_body": "[EN] Exakte Alarm-Berechtigung wurde verweigert. Lagerbestandswarnungen können verzögert sein.",
-          "fallback_title": "[EN] Benachrichtigungs-Timing geändert",
-          "open_settings": "[EN] Einstellungen öffnen",
-          "open_settings_hint": "[EN] Gehe zu App-Einstellungen, um exakte Alarme zu aktivieren"
+          "fallback_body": "Exact alarm permission was denied. Inventory alerts may be delayed.",
+          "fallback_title": "Notification timing changed",
+          "open_settings": "Open settings",
+          "open_settings_hint": "Go to app settings to enable exact alarms"
         },
         "exact_alarm_benefits": "Enable precise low-stock alerts to reorder supplies on time and avoid running out.",
         "exact_alarm_description": "GrowBro needs permission to schedule exact alarms for timely low-stock notifications. This ensures you're alerted when supplies are running low.",
@@ -1788,6 +1897,25 @@
       "progress": "{{completed}} of {{total}} completed",
       "title": "Get started with GrowBro"
     },
+    "cockpit": {
+      "day": "Day {{day}}",
+      "due_time": "Due {{time}}",
+      "environment": {
+        "greenhouse": "Greenhouse",
+        "indoor": "Indoor",
+        "outdoor": "Outdoor"
+      },
+      "my_garden": "My Garden",
+      "needs_water": "Needs Water",
+      "no_plants": "No plants yet. Add your first plant to get started.",
+      "no_tasks_today": "No tasks today",
+      "pending_count": "{{count}} pending",
+      "tasks_pending": "{{count}} tasks need attention",
+      "todays_focus": "Today's Focus",
+      "view_all": "View All",
+      "view_calendar": "View Calendar",
+      "week": "Week {{week}}"
+    },
     "dashboard": {
       "quick_actions": "Quick actions",
       "tasks_error": "We couldn't load your tasks. Please retry.",
@@ -1838,9 +1966,15 @@
       "label": "Tasks for today"
     }
   },
+  "hydrology": {
+    "adjustments": {
+      "repeated_dryness": "We’ve seen dryness reported {{count}} times recently. Consider increasing watering frequency or reviewing your schedule."
+    }
+  },
   "inputs": {
     "accept_terms_label": "Accept terms and conditions",
     "checkbox_label": "Checkbox",
+    "radio_label": "Radio button",
     "switch_label": "Switch"
   },
   "list": {
@@ -1981,6 +2115,7 @@
     },
     "reports_per_month": "Reports/Month",
     "sla": {
+      "accessibilityHint": "Service level agreement status",
       "status": {
         "critical": "OVERDUE",
         "green": "On Track",
@@ -2348,6 +2483,12 @@
       "title": "Water Profile"
     }
   },
+  "nutrition": {
+    "adjustments": {
+      "deficiency_generic": "Potential nutrient deficiency detected. Consider adjusting nutrient mix or frequency.",
+      "deficiency_with_nutrient": "Potential {{nutrient}} deficiency detected. Consider adjusting nutrient mix or frequency."
+    }
+  },
   "onboarding": {
     "allow_button": "Allow notifications",
     "community": {
@@ -2450,21 +2591,56 @@
       "percent_complete": "{{percent}}% Complete"
     },
     "detail": {
-      "action_hub_title": "Today's Tasks",
+      "action_hub_title": "Daily Action Center",
+      "advanced_settings_title": "Advanced Settings",
       "all_good_message": "All good – No tasks today.",
+      "check_in": {
+        "cta": "Check in",
+        "disclaimer": "ⓘ Educational guidance only. If symptoms persist or worsen, consider measuring pH/EC and reviewing climate (temp/humidity).",
+        "dryness": {
+          "subtitle": "Answer a few quick questions. We’ll add safe next steps and adapt upcoming tasks.",
+          "title": "Feels too dry"
+        },
+        "note": {
+          "label": "Notes (optional)",
+          "placeholder": "Anything else you noticed? (e.g. droop, leaf curl, heat, dry air)"
+        },
+        "severity": {
+          "label": "How bad is it?",
+          "mild": "Mild",
+          "moderate": "Moderate",
+          "severe": "Severe"
+        },
+        "submit": "Save check-in",
+        "subtitle": "Tell us what you’re seeing so we can adapt your next tasks.",
+        "title": "Plant check-in",
+        "top_dry": {
+          "label": "Is the top 2–3 cm of the medium dry?"
+        },
+        "watered_last_12h": {
+          "label": "Have you watered in the last 12 hours?"
+        }
+      },
+      "day_count": "Day {{count}}",
       "no_tasks": "No pending tasks",
       "nutrient_section": {
         "empty": "No pH/EC readings yet",
         "latest": "Latest reading",
-        "log_reading": "Log Reading",
+        "log_reading": "Record Measurement",
         "title": "pH/EC Readings",
         "view_all": "View All"
       },
       "start_harvest": "Start Harvest",
-      "stats_day": "Day",
+      "stats_day": "Age",
+      "stats_empty_desc": "Log PH and EC levels consistently to optimize your yield.",
+      "stats_empty_title": "No measurements recorded",
       "stats_height": "Height",
+      "stats_history": "History",
+      "stats_next_feed": "Next Feed",
       "stats_phase": "Phase",
+      "stats_title": "Stats",
       "strain_profile_link": "Strain Profile & Details",
+      "tasks_remaining": "{{count}} Remaining",
       "water_needed": "Watering Needed"
     },
     "empty_state": "No plants in your inventory",
@@ -2474,11 +2650,14 @@
       "add_starter_tasks": "Add starter tasks",
       "added_body": "Great start! Add schedule info or go straight to your calendar.",
       "added_title": "Plant added",
+      "advanced_mode_hint": "Unlock optional inputs and training preferences.",
+      "advanced_mode_label": "Advanced mode",
       "autoflower_badge": "Autoflower",
       "cancel": "Cancel",
       "completion": "{{percent}}% Complete",
       "create_cta": "Create plant",
       "create_title": "New Plant",
+      "current_phase_label": "Current Phase",
       "default_water_desc": "Quick reminder to water after transplanting.",
       "default_water_title": "Water this plant",
       "delete_button": "Delete Plant",
@@ -2504,6 +2683,10 @@
         "strain_length": "Strain must be under 120 characters",
         "strain_required": "Strain is required"
       },
+      "expected_yield_label": "Expected Yield",
+      "expected_yield_placeholder": "Estimate in grams",
+      "expert_mode_desc": "Show detailed technical inputs",
+      "expert_mode_label": "Expert Mode",
       "genetic": {
         "balanced": "Balanced hybrid",
         "indica": "Indica-dominant",
@@ -2512,11 +2695,20 @@
       },
       "genetic_label": "Genetic lean",
       "genetic_placeholder": "Select genetic lean",
+      "genetics": {
+        "autoflower": "Autoflower",
+        "photoperiod": "Photoperiod (12/12 flip)"
+      },
+      "genetics_label": "Genetics",
+      "genetics_placeholder": "Photoperiod or autoflower",
       "go_to_schedule": "Go to Schedule",
       "height_label": "Plant height",
       "height_placeholder": "e.g., 45 cm",
       "invalid_id": "Invalid Plant ID",
       "keep_adding": "Keep adding plants",
+      "lean_label": "Lean",
+      "light_cycle_label": "Light Cycle",
+      "light_cycle_suffix": "HRS",
       "light_hours_label": "Hours of light",
       "light_hours_placeholder": "e.g., 18",
       "light_schedule_label": "Light schedule",
@@ -2545,41 +2737,79 @@
       "photoperiod_placeholder": "Photoperiod or autoflower",
       "planted_at_label": "Planted on (optional)",
       "planted_at_placeholder": "YYYY-MM-DD",
-      "pot_size_label": "Pot size",
+      "pot_size_label": "Pot Size",
       "pot_size_placeholder": "e.g., 3 gal / 11 L",
+      "pot_size_suffix": "GAL",
       "save": "Save",
       "save_cta": "Save changes",
       "section": {
+        "advanced": "Advanced",
         "care": "Care",
         "environment": "Environment",
+        "environment_care": "Environment & Care",
         "identity": "Identity",
         "photo": "Photo"
       },
+      "space_size": {
+        "large": "Large",
+        "medium": "Medium",
+        "small": "Small"
+      },
+      "space_size_label": "Grow space",
+      "space_size_placeholder": "Select grow space",
       "stage": {
         "curing": "Curing",
         "flowering": "Flowering",
+        "flowering_stretch": "Flowering stretch",
+        "germination": "Germination",
         "harvesting": "Harvesting",
         "ready": "Ready",
+        "ripening": "Ripening",
         "seedling": "Seedling",
         "vegetative": "Vegetative"
       },
       "stage_label": "Stage",
       "stage_placeholder": "Select stage",
+      "start_type": {
+        "clone": "Clone",
+        "seed": "Seed"
+      },
+      "start_type_label": "Start type",
+      "start_type_placeholder": "Seed or clone",
       "starter_tasks_created": "Starter tasks scheduled",
       "strain_create_custom": "Create custom strain “{{name}}”",
       "strain_create_custom_hint": "Save this strain for future use.",
-      "strain_label": "Strain",
+      "strain_label": "Strain (optional)",
       "strain_no_results": "No strains found for “{{query}}”",
       "strain_placeholder": "Afghan Haze, Super Silver Haze…",
       "strain_race_label": "Race: {{race}}",
       "strain_searching": "Searching strains…",
       "success_body": "Your plant was added to My Plants.",
       "success_title": "Plant created",
+      "training_prefs": {
+        "defoliation": "Defoliation",
+        "lst": "Low stress training (LST)",
+        "scrog": "SCROG",
+        "topping": "Topping"
+      },
+      "training_prefs_hint": "Only used when advanced mode is on.",
+      "training_prefs_label": "Training preferences",
       "update_success_body": "Your plant details were saved.",
       "update_success_title": "Plant updated",
       "view_plant": "View plant",
       "view_strain_profile": "View strain profile",
       "view_strain_profile_hint": "Opens the linked strain profile."
+    },
+    "lifecycle": {
+      "stage": {
+        "completed": "Completed",
+        "curing": "Curing",
+        "drying": "Drying",
+        "flowering": "Flowering",
+        "germination": "Germination",
+        "seedling": "Seedling",
+        "vegetative": "Vegetative"
+      }
     },
     "no_results": "No plants found",
     "offline_notice": "Showing saved plants",
@@ -3079,6 +3309,19 @@
       "syncing": "Syncing statistics...",
       "title": "Account Statistics"
     }
+  },
+  "sentry_test": {
+    "crash_consent_off": "Crash reporting consent: off",
+    "crash_consent_on": "Crash reporting consent: on",
+    "dsn_missing": "DSN: missing (set SENTRY_DSN to enable Sentry)",
+    "dsn_set": "DSN: set",
+    "initialized_off": "Sentry SDK: not initialized",
+    "initialized_on": "Sentry SDK: initialized",
+    "last_event_id": "Last event id: {{id}}",
+    "send_error": "Send test error",
+    "send_error_hint": "Sends a test error event to Sentry",
+    "subtitle": "Send a test event to verify Sentry delivery.",
+    "title": "Sentry Test"
   },
   "settings": {
     "a11y": {
@@ -3631,9 +3874,12 @@
       "effects_label": "Effects",
       "flavors_count": "{{count}} flavors",
       "flavors_label": "Flavors",
+      "high_cbd": "High CBD",
+      "race_all": "All",
       "race_label": "Type",
       "remove_hint": "Removes this filter",
       "remove_label": "Remove filter: {{label}}",
+      "tap_to_filter": "Tap to filter by this type",
       "thc_any": "Any",
       "thc_high": "High",
       "thc_label": "THC Content",
@@ -3658,6 +3904,17 @@
       "flowering_time": "Flowering",
       "yield": "Yield"
     },
+    "header": {
+      "catalog": "Catalog",
+      "discover": "DISCOVER",
+      "strains": "STRAINS"
+    },
+    "hero": {
+      "accessibility_label": "Featured strain: {{name}}. Tap to view details.",
+      "featured_label": "Strain of the Month",
+      "top_rated": "TOP RATED",
+      "view_details": "View Details"
+    },
     "no_results": "No strains found",
     "offline_notice": "Showing saved strains",
     "race": {
@@ -3671,12 +3928,15 @@
     "results_count_other": "{{count}} strains",
     "results_count_zero": "No strains",
     "retry": "Retry",
+    "save_failed": "Failed to save custom strain. Try again.",
     "search": {
       "clear_all": "Clear All",
       "did_you_mean_hint": "Applies suggested search term",
       "did_you_mean_label": "Did you mean {{suggestion}}?",
       "recent_searches": "Recent Searches"
     },
+    "search_button": "Search strains",
+    "search_hint": "Opens search to find strains by name, effects, or flavors",
     "search_placeholder": "Search strains…",
     "search_placeholder_count": "Search {{count}} strains…",
     "search_placeholder_count_one": "Search {{count}} strain…",
@@ -3925,8 +4185,12 @@
     "status": {
       "active": "Current",
       "completed": "✓ Completed",
+      "error": "Sync Error",
+      "offline": "Offline",
+      "offline_pending": "Offline ({{count}})",
       "overdue": "Overdue",
       "pending": "Pending",
+      "retry_button_label": "Retry sync",
       "syncing": "Syncing...",
       "upcoming": "Upcoming"
     },
@@ -3945,6 +4209,11 @@
     "burp_jars_week1": {
       "description": "Open jars for 15-30 minutes to release moisture and refresh air. Check for mold or ammonia smell.",
       "description_rich": "Open jar & air for 15 min. Check for mold or ammonia smell.",
+      "title": "Burp Jars"
+    },
+    "burp_jars_week2": {
+      "description": "Open jars daily to maintain proper humidity. Continue monitoring aroma and moisture levels.",
+      "description_rich": "Open jar & air for 15 min daily. Keep monitoring aroma and moisture.",
       "title": "Burp Jars"
     },
     "burp_jars_week3": {
@@ -3977,6 +4246,7 @@
       "title": "Check Stem Snap"
     },
     "check_water_need": {
+      "description": "Check if the top 2-3cm of growing medium is dry before watering.",
       "description_coco": "~{{min}}-{{max}}L – **ONLY if the top 2-3cm of medium is dry!** Check runoff EC/pH.",
       "description_soil": "~{{min}}-{{max}}L – **ONLY if the top 2-3cm of soil is dry!** Water until slight runoff.",
       "title": "Check Water Need"
@@ -3996,12 +4266,27 @@
       "description_coco_flower_safe": "Bloom nutrients. Watch for yellow leaf tips (nutrient burn). Monitor EC/pH.",
       "description_coco_veg": "Veg schedule (N-heavy). Feed with every watering, monitor EC/pH.",
       "description_coco_veg_safe": "Veg nutrients. **Tip: Start with 50% of manufacturer's dosage.** Monitor EC/pH.",
+      "description_ramp": "Target feed strength: {{percent}}% of label. {{base}}",
       "description_soil": "Apply nutrients according to your feeding schedule. Adjust based on plant response.",
       "description_soil_flower": "Bloom schedule (P/K-heavy). Apply nutrients based on plant response.",
       "description_soil_flower_safe": "Bloom nutrients. Watch for yellow leaf tips (nutrient burn).",
       "description_soil_veg": "Veg schedule (N-heavy). Apply nutrients based on plant response.",
       "description_soil_veg_safe": "Veg nutrients. **Tip: Start with 50% of manufacturer's dosage.**",
       "title": "Feed Plant"
+    },
+    "ipm_biological": {
+      "description": "Use biological controls (beneficials, sticky traps). Avoid spray applications during flowering.",
+      "title": "Biological IPM Check"
+    },
+    "ipm_preventative": {
+      "description": "Inspect leaves and stems for pests (undersides too). Wipe down surfaces and keep the grow area clean.",
+      "title": "Preventative IPM Check"
+    },
+    "outcome": {
+      "all_good": "All good",
+      "still_dry": "Still dry",
+      "subtitle": "If your plant still feels dry, log a quick check-in so we can adapt your next tasks.",
+      "title": "Did this help?"
     },
     "reorder_error": "Failed to reorder tasks. Please try again.",
     "reordered": "Tasks reordered",
@@ -4023,6 +4308,7 @@
     "water_plant": {
       "description_coco": "Water until ~10-20% runoff. Coco dries quickly - check daily.",
       "description_coco_rich": "~{{min}}-{{max}}L to water (when medium is dry). Check runoff EC/pH.",
+      "description_hydro": "Top off and maintain nutrient solution. Verify flow and root zone moisture.",
       "description_soil": "Water until ~10-20% runoff. Check soil moisture before watering.",
       "description_soil_rich": "~{{min}}-{{max}}L to water (when soil is dry). Water until slight runoff.",
       "title": "Water Plant"
@@ -4069,6 +4355,22 @@
     "trichome_ratio": "Trichome Ratio",
     "validation_max": "Must be {{max}} or less",
     "validation_min": "Must be {{min}} or greater"
+  },
+  "twin": {
+    "stageReason": {
+      "autoflower_day": "Autoflower day {{day}}",
+      "autoflower_grace": "Autoflower day {{day}} (auto-advance)",
+      "curing_complete": "Curing duration reached",
+      "drying_window": "Drying window reached ({{days}} days)",
+      "flowering_end": "Approaching end of flowering window",
+      "harvest_complete": "Harvest complete",
+      "light_cycle_switched": "Light cycle switched to 12/12",
+      "node_count": "Node count reached 3+",
+      "seedling_time": "Seedling window reached ({{days}} days)",
+      "sprout_confirmed": "Sprout confirmed",
+      "stretch_complete": "Stretch period complete",
+      "trichomes": "Trichomes indicate harvest window"
+    }
   },
   "units": {
     "celsius": "°C",

@@ -23,31 +23,20 @@ export function FormSection({
       entering={FadeIn.delay(delay)
         .duration(300)
         .reduceMotion(ReduceMotion.System)}
-      className="mt-8 gap-3"
+      className="gap-2"
       testID={testID}
     >
       {/* Section Header */}
-      <View className="flex-row items-center gap-2.5 px-1">
-        {icon ? (
-          <View className="size-8 items-center justify-center rounded-lg bg-primary-100 dark:bg-primary-900/40">
-            <Text className="text-base">{icon}</Text>
-          </View>
-        ) : null}
-        <Text className="text-lg font-bold tracking-tight text-neutral-800 dark:text-neutral-100">
+      <View className="flex-row items-center gap-2 px-1">
+        {icon ? <Text className="text-base">{icon}</Text> : null}
+        <Text className="text-xs font-bold uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
           {title}
         </Text>
       </View>
 
-      {/* Section Content */}
-      <View className="overflow-hidden rounded-2xl border border-neutral-300/50 bg-white shadow-sm dark:border-neutral-700/50 dark:bg-charcoal-900">
-        {React.Children.map(children, (child, index) => (
-          <React.Fragment key={index}>
-            {index > 0 && (
-              <View className="mx-4 h-px bg-neutral-100 dark:bg-neutral-800" />
-            )}
-            {child}
-          </React.Fragment>
-        ))}
+      {/* Section Content - Glass card styling with green contrast */}
+      <View className="gap-4 rounded-2xl border border-neutral-200 bg-white p-5 dark:border-white/10 dark:bg-charcoal-900">
+        {children}
       </View>
     </Animated.View>
   );

@@ -7,7 +7,7 @@ import { consumePendingDeepLink, useAuth } from '@/lib';
 
 export default function Login() {
   const router = useRouter();
-  const authStatus = useAuth.use.status();
+  const authStatus = useAuth((s) => s.status);
 
   // Navigate to app when auth status changes to signIn
   React.useEffect(() => {

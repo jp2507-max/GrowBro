@@ -476,7 +476,6 @@ describe('observeActiveAlerts', () => {
   });
 
   test('returns observable that filters by reservoir ID', () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const observable = observeActiveAlerts('test-reservoir-id', mockDb as any);
 
     expect(mockDb.get).toHaveBeenCalledWith('ph_ec_readings_v2');

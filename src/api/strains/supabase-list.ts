@@ -1,3 +1,5 @@
+import type { PostgrestError } from '@supabase/supabase-js';
+
 import {
   normalizeStrain,
   type RawApiStrain,
@@ -80,6 +82,52 @@ function applySort(
   return query.order('name', { ascending, nullsLast: true });
 }
 
+function buildStrainsQuery({
+  table,
+  params,
+  offset,
+  pageSize,
+}: {
+  table: 'strains_public' | 'strain_cache';
+  params: GetStrainsParams;
+  offset: number;
+  pageSize: number;
+}): SupabaseQuery {
+  const searchQuery = params.searchQuery?.trim();
+  let query = supabase.from(table).select('id, slug, name, race, data');
+
+  if (searchQuery && searchQuery.length > 0) {
+    // Escape special characters for PostgREST .or() and LIKE pattern
+    const escaped = searchQuery.replace(/[\\%_,()]/g, '\\$&');
+    const pattern = `%${escaped}%`;
+    query = query.or(`name.ilike.${pattern},slug.ilike.${pattern}`);
+  }
+
+  query = applyFilters(query, params.filters);
+  query = applySort(query, params.sortBy, params.sortDirection);
+  return query.range(offset, offset + pageSize - 1);
+}
+
+export async function withStrainTableFallback<T>(
+  queryFn: (
+    table: 'strains_public' | 'strain_cache'
+  ) => Promise<{ data: T; error: PostgrestError | null }>
+): Promise<{ data: T; error: PostgrestError | null }> {
+  let result = await queryFn('strains_public');
+  if (result.error) {
+    const code = result.error.code;
+    const message = result.error.message?.toLowerCase() ?? '';
+    const details = result.error.details?.toLowerCase() ?? '';
+    const isMissingTable =
+      code === '42P01' ||
+      code === 'PGRST116' ||
+      message.includes('does not exist') ||
+      details.includes('schema cache');
+    if (isMissingTable) result = await queryFn('strain_cache');
+  }
+  return result;
+}
+
 export async function fetchStrainsFromSupabase(
   params: GetStrainsParams = {}
 ): Promise<StrainsResponse> {
@@ -87,30 +135,28 @@ export async function fetchStrainsFromSupabase(
   const pageSize = params.pageSize ?? 20;
   const offset = page * pageSize;
 
-  const searchQuery = params.searchQuery?.trim();
+  const result = await withStrainTableFallback(async (table) => {
+    const query = buildStrainsQuery({
+      table,
+      params,
+      offset,
+      pageSize: pageSize + 1,
+    });
+    return await query;
+  });
 
-  let query = supabase
-    .from('strain_cache')
-    .select('id, slug, name, race, data', { count: 'exact' });
-
-  if (searchQuery && searchQuery.length > 0) {
-    const pattern = `%${searchQuery}%`;
-    query = query.or(`name.ilike.${pattern},slug.ilike.${pattern}`);
-  }
-
-  query = applyFilters(query, params.filters);
-  query = applySort(query, params.sortBy, params.sortDirection);
-  query = query.range(offset, offset + pageSize - 1);
-
-  const { data, error, count } = await query;
+  const { data, error } = result;
 
   if (error) {
     throw error;
   }
 
-  const strains = (data ?? []).map(mapSupabaseRowToStrain);
-  const totalCount = count ?? strains.length;
-  const hasMore = offset + strains.length < totalCount;
+  const rows = (data ?? []) as SupabaseStrainRow[];
+  const hasMore = rows.length > pageSize;
+  const strains = rows.slice(0, pageSize).map(mapSupabaseRowToStrain);
+
+  // Avoid expensive COUNT queries on every page.
+  // Fetch pageSize+1 rows to detect if more pages exist without false positives.
 
   return {
     data: strains,

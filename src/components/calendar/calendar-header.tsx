@@ -1,20 +1,38 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { DateTime } from 'luxon';
-import { useColorScheme } from 'nativewind';
 import React from 'react';
-import { Pressable } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 import type { EdgeInsets } from 'react-native-safe-area-context';
 
+import { ContextChips } from '@/components/calendar/context-chips';
 import {
   MonthPickerModal,
   useMonthPickerModal,
 } from '@/components/calendar/month-picker-modal';
 import { WeekStrip } from '@/components/calendar/week-strip';
 import { Text, View } from '@/components/ui';
-import { GlassButton } from '@/components/ui/glass-button';
-import { CaretDown } from '@/components/ui/icons';
+import colors from '@/components/ui/colors';
+import { Calendar } from '@/components/ui/icons';
 import { haptics } from '@/lib/haptics';
 import { translate } from '@/lib/i18n';
-import { getHeaderColors } from '@/lib/theme-utils';
+
+// Stitch-inspired organic gradient - deep forest green
+const HEADER_GRADIENT_COLORS = {
+  light: [colors.charcoal[950], colors.charcoal[950]] as const,
+  dark: [colors.charcoal[950], colors.charcoal[950]] as const,
+};
+
+const styles = StyleSheet.create({
+  headerContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+  },
+  brandingText: {
+    textShadowColor: colors.neon.lime,
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 8,
+  },
+});
 
 type CalendarHeaderProps = {
   selectedDate: DateTime;
@@ -27,16 +45,35 @@ type CalendarHeaderProps = {
 const HEADER_PADDING_TOP = 12;
 
 /**
- * Month dropdown button that opens the month picker modal
+ * GrowBro branding - replaces day counter in Stitch design
  */
-function MonthDropdown({
+function HeaderBranding(): React.ReactElement {
+  return (
+    <View className="flex-col">
+      <Text
+        className="text-2xl font-bold tracking-tight text-lime-400"
+        style={styles.brandingText}
+      >
+        GrowBro
+      </Text>
+      <Text className="text-[10px] font-medium uppercase tracking-widest text-white/50">
+        {translate('calendar.header.lifecycle_tracker')}
+      </Text>
+    </View>
+  );
+}
+
+/**
+ * Month picker pill button with calendar icon - Stitch style
+ */
+function MonthPickerPill({
   selectedDate,
   onPress,
 }: {
   selectedDate: DateTime;
   onPress: () => void;
 }): React.ReactElement {
-  const monthYear = selectedDate.toFormat('MMMM yyyy').toUpperCase();
+  const monthYear = selectedDate.toFormat('MMM yyyy');
 
   const handlePress = React.useCallback(() => {
     haptics.selection();
@@ -46,75 +83,53 @@ function MonthDropdown({
   return (
     <Pressable
       onPress={handlePress}
-      className="flex-row items-center gap-1"
+      className="flex-row items-center gap-2 rounded-full border border-white/10 bg-white/5 py-1.5 pl-4 pr-1"
       accessibilityRole="button"
       accessibilityLabel={translate('calendar.month_picker.select_month')}
       accessibilityHint={translate('accessibility.calendar.month_picker_hint')}
       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       testID="calendar-month-dropdown"
     >
-      <Text className="text-sm font-semibold tracking-wide text-white/90 dark:text-neutral-300">
-        {monthYear}
-      </Text>
-      <CaretDown size={16} className="text-white/90 dark:text-neutral-300" />
+      <Text className="text-sm font-bold text-white">{monthYear}</Text>
+      <View className="size-8 items-center justify-center rounded-full bg-white/10">
+        <Calendar size={18} color={colors.white} />
+      </View>
     </Pressable>
   );
 }
 
 /**
- * "Today" quick-jump pill button with Glass effect
+ * Today button - jumps to current date
  */
-function TodayButton({ onPress }: { onPress: () => void }): React.ReactElement {
+function TodayButton({
+  onPress,
+  isToday,
+}: {
+  onPress: () => void;
+  isToday: boolean;
+}): React.ReactElement | null {
   const handlePress = React.useCallback(() => {
     haptics.selection();
     onPress();
   }, [onPress]);
 
+  // Don't show if already viewing today
+  if (isToday) return null;
+
   return (
-    <GlassButton
+    <Pressable
       onPress={handlePress}
-      variant="pill"
-      size={32}
+      className="rounded-full border border-lime-400/30 bg-lime-400/10 px-3 py-1.5"
+      accessibilityRole="button"
       accessibilityLabel={translate('calendar.header.jump_to_today')}
       accessibilityHint={translate('accessibility.calendar.jump_to_today_hint')}
       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       testID="calendar-today-button"
-      fallbackClassName="border border-white/30 bg-white/95 dark:bg-charcoal-800/90"
     >
-      <Text className="text-sm font-semibold text-charcoal-900 dark:text-neutral-100">
+      <Text className="text-xs font-semibold text-lime-400">
         {translate('calendar.header.today')}
       </Text>
-    </GlassButton>
-  );
-}
-
-/**
- * Day counter display: "DAY X / Y"
- */
-function DayCounter({
-  selectedDate,
-}: {
-  selectedDate: DateTime;
-}): React.ReactElement {
-  const dayOfMonth = selectedDate.day;
-  const daysInMonth = selectedDate.daysInMonth ?? 31;
-
-  return (
-    <View
-      className="flex-row items-baseline gap-px"
-      accessibilityLabel={translate('calendar.day_counter', {
-        day: dayOfMonth,
-        total: daysInMonth,
-      })}
-      accessibilityHint={translate('accessibility.calendar.day_counter_hint')}
-    >
-      <Text className="text-4xl font-black tracking-tight text-neutral-900 dark:text-white">
-        {translate('calendar.day_counter_label')} {dayOfMonth}
-      </Text>
-      <Text className="text-xl font-medium text-neutral-400 dark:text-neutral-500">
-        {translate('calendar.day_counter_separator')} {daysInMonth}
-      </Text>
-    </View>
+    </Pressable>
   );
 }
 
@@ -124,15 +139,11 @@ export function CalendarHeader({
   insets,
   taskCounts,
 }: CalendarHeaderProps): React.ReactElement {
-  const { colorScheme } = useColorScheme();
-  const isDark = colorScheme === 'dark';
-  const headerColors = getHeaderColors(isDark);
-
   const monthPickerModal = useMonthPickerModal();
-
-  const handleTodayPress = React.useCallback(() => {
-    onDateSelect(DateTime.now().startOf('day'));
-  }, [onDateSelect]);
+  const isSelectedToday = selectedDate.hasSame(
+    DateTime.now().startOf('day'),
+    'day'
+  );
 
   const handleMonthPickerOpen = React.useCallback(() => {
     monthPickerModal.present();
@@ -145,32 +156,39 @@ export function CalendarHeader({
     [onDateSelect]
   );
 
+  const handleJumpToToday = React.useCallback(() => {
+    onDateSelect(DateTime.now().startOf('day'));
+  }, [onDateSelect]);
+
   return (
     <>
-      <View
-        className="z-0 px-4 pb-4"
-        style={{
-          paddingTop: insets.top + HEADER_PADDING_TOP,
-          backgroundColor: headerColors.background,
-        }}
+      <LinearGradient
+        colors={HEADER_GRADIENT_COLORS.dark}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={[
+          styles.headerContainer,
+          { paddingTop: insets.top + HEADER_PADDING_TOP },
+        ]}
         testID="calendar-header"
       >
-        {/* Top Row: Month dropdown + Today button */}
-        <View className="flex-row items-center justify-between">
-          <MonthDropdown
-            selectedDate={selectedDate}
-            onPress={handleMonthPickerOpen}
-          />
-          <TodayButton onPress={handleTodayPress} />
-        </View>
-
-        {/* Day Counter */}
-        <View className="mt-2">
-          <DayCounter selectedDate={selectedDate} />
+        {/* Top Row: GrowBro branding + Today + Month picker pill */}
+        <View className="flex-row items-center justify-between pb-2">
+          <HeaderBranding />
+          <View className="flex-row items-center gap-2">
+            <TodayButton
+              onPress={handleJumpToToday}
+              isToday={isSelectedToday}
+            />
+            <MonthPickerPill
+              selectedDate={selectedDate}
+              onPress={handleMonthPickerOpen}
+            />
+          </View>
         </View>
 
         {/* Week Strip - break out of px-4 and clip overflow */}
-        <View className="-mx-4 mt-4 overflow-hidden">
+        <View className="-mx-4 mt-2 overflow-hidden">
           <WeekStrip
             selectedDate={selectedDate}
             onDateSelect={onDateSelect}
@@ -178,7 +196,12 @@ export function CalendarHeader({
             testID="calendar-week-strip"
           />
         </View>
-      </View>
+
+        {/* Context Chips */}
+        <View className="-mx-4 mt-4">
+          <ContextChips />
+        </View>
+      </LinearGradient>
 
       {/* Month Picker Modal */}
       <MonthPickerModal
